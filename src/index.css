@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #14b8a6;
+  --color-brand-dark: #0f766e;
+  --color-surface: #0f172a;
+  --color-card: #1e293b;
+  --color-muted: #94a3b8;
+}
+
+/* 移动端 / PWA：占满可视区域，避免 100vh 留白或内容上漂 */
+html {
+  height: 100%;
+  height: 100dvh;
+}
+
+body {
+  @apply bg-surface text-slate-100 antialiased;
+  min-height: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+}
+
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 安全区（刘海、底部横条） */
+.safe-pt {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+.input {
+  @apply w-full rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 outline-none focus:ring-2 focus:ring-brand;
+}

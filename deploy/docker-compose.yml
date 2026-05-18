@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fitness
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_strong_password}
+      POSTGRES_DB: fitness
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../server/migrations/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fitness -d fitness']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ../server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://fitness:${POSTGRES_PASSWORD:-change_me_strong_password}@postgres:5432/fitness
+      JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret_min_32_chars}
+      PORT: 3001
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    # API 仅容器内网访问，对外由 Nginx /api 转发（更安全）
+    expose:
+      - '3001'
+
+  # 前端静态页 + /api 反代
+  web:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '80:80'
+    volumes:
+      - ../dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  pgdata:
