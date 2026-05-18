@@ -49,7 +49,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="safe-pt safe-pb flex min-h-dvh flex-col justify-center px-6">
+    <div className="page-standalone flex flex-col justify-center">
       <div className="mx-auto w-full max-w-sm">
         <h1 className="text-2xl font-bold text-brand">健身打卡</h1>
         <p className="mt-1 text-sm text-muted">记录运动与饮食，追踪热量缺口</p>

@@ -2,11 +2,8 @@ import {
   DEFICIT_LEVEL_CLASSES,
   EXERCISE_LEVEL_CLASSES,
 } from '../lib/calories'
-import {
-  formatMonthTitle,
-  getMonthGrid,
-  WEEKDAY_LABELS,
-} from '../lib/monthCalendar'
+import { getMonthGrid, WEEKDAY_LABELS } from '../lib/monthCalendar'
+import { isBeforeAccountStart } from '../lib/streaks'
 
 import type { MonthDayCell } from '../lib/monthData'
 
@@ -15,6 +12,7 @@ interface MonthHeatmapProps {
   month: number
   dayMap: Map<string, MonthDayCell>
   todayKey: string
+  accountStartKey?: string | null
   onDayClick?: (date: string) => void
 }
 
@@ -23,6 +21,7 @@ export function MonthHeatmap({
   month,
   dayMap,
   todayKey,
+  accountStartKey = null,
   onDayClick,
 }: MonthHeatmapProps) {
   const { weeks } = getMonthGrid(year, month)
@@ -34,6 +33,7 @@ export function MonthHeatmap({
         weeks={weeks}
         dayMap={dayMap}
         todayKey={todayKey}
+        accountStartKey={accountStartKey}
         type="exercise"
         levelClasses={EXERCISE_LEVEL_CLASSES}
         onDayClick={onDayClick}
@@ -43,6 +43,7 @@ export function MonthHeatmap({
         weeks={weeks}
         dayMap={dayMap}
         todayKey={todayKey}
+        accountStartKey={accountStartKey}
         type="deficit"
         levelClasses={DEFICIT_LEVEL_CLASSES}
         onDayClick={onDayClick}
@@ -56,6 +57,7 @@ function MonthGrid({
   weeks,
   dayMap,
   todayKey,
+  accountStartKey,
   type,
   levelClasses,
   onDayClick,
@@ -64,6 +66,7 @@ function MonthGrid({
   weeks: (string | null)[][]
   dayMap: Map<string, MonthDayCell>
   todayKey: string
+  accountStartKey: string | null
   type: 'exercise' | 'deficit'
   levelClasses: readonly string[]
   onDayClick?: (date: string) => void
@@ -84,19 +87,26 @@ function MonthGrid({
             )
           }
           const cell = dayMap.get(dateKey)
-          const level =
-            type === 'exercise'
+          const beforeAccount =
+            type === 'deficit' && isBeforeAccountStart(dateKey, accountStartKey)
+          const level = beforeAccount
+            ? 0
+            : type === 'exercise'
               ? (cell?.exerciseLevel ?? 0)
               : (cell?.deficitLevel ?? 0)
           const dayNum = parseInt(dateKey.slice(-2), 10)
           const isToday = dateKey === todayKey
           const isFuture = dateKey > todayKey
 
-          const titleText = cell
-            ? type === 'exercise'
-              ? `${dateKey} 运动 ${Math.round(cell.exerciseKcal)} kcal`
-              : `${dateKey} 缺口 ${Math.round(cell.deficit)} kcal`
-            : `${dateKey} 无记录`
+          const titleText = beforeAccount
+            ? `${dateKey} 注册前，代谢缺口不计入`
+            : cell
+              ? type === 'exercise'
+                ? `${dateKey} 运动 ${Math.round(cell.exerciseKcal)} kcal`
+                : `${dateKey} 缺口 ${Math.round(cell.deficit)} kcal`
+              : type === 'deficit' && accountStartKey && dateKey >= accountStartKey
+                ? `${dateKey} 缺口 0 kcal`
+                : `${dateKey} 无记录`
 
           return (
             <button

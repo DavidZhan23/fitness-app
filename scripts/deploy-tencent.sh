@@ -49,6 +49,10 @@ echo "📤 上传 dist/ ..."
 scp -r "$ROOT/dist" "${SSH_TARGET}:${REMOTE_DIR}/"
 
 echo ""
+echo "🔄 确保 Docker 服务运行中 ..."
+ssh "${SSH_TARGET}" "cd ${REMOTE_DIR}/deploy && docker compose up -d"
+
+echo ""
 echo "✅ 前端已更新（Nginx 会立即使用新文件）"
 echo "   访问: http://${SERVER_IP}"
 

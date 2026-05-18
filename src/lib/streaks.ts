@@ -21,6 +21,28 @@ export function formatDateKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
+/** 统一 API 返回的 log_date（可能带时间或时区后缀） */
+export function normalizeDateKey(value: string): string {
+  return value.slice(0, 10)
+}
+
+/** 账号起始日（注册日，本地时区 YYYY-MM-DD） */
+export function getAccountStartDateKey(
+  createdAt: string | null | undefined,
+): string | null {
+  if (!createdAt) return null
+  const d = new Date(createdAt)
+  if (Number.isNaN(d.getTime())) return null
+  return formatDateKey(d)
+}
+
+export function isBeforeAccountStart(
+  dateKey: string,
+  accountStartKey: string | null,
+): boolean {
+  return Boolean(accountStartKey && dateKey < accountStartKey)
+}
+
 export function parseDateKey(key: string): Date {
   const [y, m, d] = key.split('-').map(Number)
   return new Date(y, m - 1, d)

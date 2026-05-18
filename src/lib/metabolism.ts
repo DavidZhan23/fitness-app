@@ -1,8 +1,11 @@
 /** 将全日 TDEE 均匀摊到每一分钟的基础代谢 */
 
+import { toKcal } from './calories'
+
 const MINUTES_PER_DAY = 24 * 60
 
 export function getMetabolismPerMinute(tdee: number): number {
+  tdee = toKcal(tdee)
   if (tdee <= 0) return 0
   return tdee / MINUTES_PER_DAY
 }
@@ -41,7 +44,9 @@ export function calculateSpreadDeficit(
   now: Date = new Date(),
 ): number {
   const accumulated = getAccumulatedMetabolism(tdee, dateKey, now)
-  return Math.round(accumulated + exerciseKcal - mealKcal)
+  return Math.round(
+    accumulated + toKcal(exerciseKcal) - toKcal(mealKcal),
+  )
 }
 
 /** 展示用：今日 vs 历史日 */

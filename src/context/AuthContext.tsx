@@ -9,7 +9,12 @@ import {
 } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { httpAuth, httpData } from '../lib/api'
-import { calculateBmr, calculateTdee } from '../lib/calories'
+import {
+  calculateBmr,
+  calculateTdee,
+  resolveProfileMetabolism,
+} from '../lib/calories'
+import { buildProfilePatchBody, mergeProfileForCalc } from '../lib/profilePayload'
 import { seedDefaultTemplates } from '../lib/dayLogService'
 import { isBackendConfigured, isSelfHosted } from '../lib/config'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
@@ -50,23 +55,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    if (isSelfHosted) {
-      const data = await httpData.getProfile(userId)
-      setProfile(data as Profile)
-      await seedDefaultTemplates(userId)
-      return data as Profile
-    }
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (error) throw error
-    setProfile(data as Profile)
-    await seedDefaultTemplates(userId)
-    return data as Profile
+  const mergeProfileFromApi = useCallback((raw: Profile): Profile => {
+    const computed = resolveProfileMetabolism(raw)
+    return { ...raw, bmr: computed.bmr, tdee: computed.tdee }
   }, [])
+
+  const applyProfile = useCallback(
+    async (raw: Profile, userId: string) => {
+      const synced = mergeProfileFromApi(raw)
+      setProfile(synced)
+      seedDefaultTemplates(userId).catch(() => {})
+      return synced
+    },
+    [mergeProfileFromApi],
+  )
+
+  const fetchProfile = useCallback(
+    async (userId: string) => {
+      if (isSelfHosted) {
+        const data = await httpData.getProfile(userId)
+        return applyProfile(data as Profile, userId)
+      }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (error) throw error
+      return applyProfile(data as Profile, userId)
+    },
+    [applyProfile],
+  )
 
   const refreshProfile = useCallback(async () => {
     if (!user) return
@@ -165,33 +184,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (data: Partial<Profile>) => {
     if (!user) return
 
-    let bmr = profile?.bmr ?? null
-    let tdee = profile?.tdee ?? null
-    const weight = data.weight_kg ?? profile?.weight_kg
-    const height = data.height_cm ?? profile?.height_cm
-    const age = data.age ?? profile?.age
-    const sex = data.sex ?? profile?.sex
-    const factor = data.activity_factor ?? profile?.activity_factor ?? 1.2
-
-    if (weight && height && age && sex) {
-      bmr = calculateBmr(weight, height, age, sex)
-      tdee = calculateTdee(bmr, factor)
+    let bmr: number | null = null
+    let tdee: number | null = null
+    const merged = mergeProfileForCalc(data, profile)
+    if (merged) {
+      bmr = calculateBmr(
+        merged.weight_kg,
+        merged.height_cm,
+        merged.age,
+        merged.sex,
+      )
+      tdee = calculateTdee(bmr, merged.activity_factor)
     }
 
-    const payload = { ...data, bmr, tdee, updated_at: new Date().toISOString() }
+    const payload = buildProfilePatchBody(data, bmr, tdee)
+    if (Object.keys(payload).length === 0) {
+      throw new Error('请填写有效的身体资料')
+    }
 
     if (isSelfHosted) {
-      await httpData.updateProfile(user.id, payload)
-      await refreshProfile()
+      const saved = await httpData.updateProfile(user.id, payload)
+      setProfile(mergeProfileFromApi(saved as Profile))
       return
     }
 
-    const { error } = await supabase
+    const { data: row, error } = await supabase
       .from('profiles')
       .update(payload)
       .eq('id', user.id)
+      .select()
+      .single()
     if (error) throw error
-    await refreshProfile()
+    setProfile(mergeProfileFromApi(row as Profile))
   }
 
   const completeOnboarding = async (data: {
@@ -204,7 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return
     const bmr = calculateBmr(data.weight_kg, data.height_cm, data.age, data.sex)
     const tdee = calculateTdee(bmr, data.activity_factor)
-    const payload = { ...data, bmr, tdee, onboarding_complete: true }
+    const payload = buildProfilePatchBody(
+      { ...data, onboarding_complete: true },
+      bmr,
+      tdee,
+    )
 
     if (isSelfHosted) {
       await httpData.updateProfile(user.id, payload)
@@ -214,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ ...payload, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', user.id)
     if (error) throw error
     await refreshProfile()

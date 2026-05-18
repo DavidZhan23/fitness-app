@@ -6,20 +6,29 @@
   --color-surface: #0f172a;
   --color-card: #1e293b;
   --color-muted: #94a3b8;
+  --color-tabbar: #1e293b;
 }
 
-/* 移动端 / PWA：占满可视区域，避免 100vh 留白或内容上漂 */
+/* 安全区（PWA / 刘海屏） */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --tabbar-row-h: 3.25rem;
+}
+
 html {
   height: 100%;
-  height: 100dvh;
+  background-color: var(--color-surface);
 }
 
 body {
-  @apply bg-surface text-slate-100 antialiased;
-  min-height: 100%;
-  min-height: 100dvh;
+  @apply text-slate-100 antialiased;
   margin: 0;
+  height: 100%;
   overflow: hidden;
+  background-color: var(--color-surface);
   font-family:
     system-ui,
     -apple-system,
@@ -30,19 +39,110 @@ body {
 }
 
 #root {
-  min-height: 100%;
-  min-height: 100dvh;
+  height: 100%;
+}
+
+/*
+ * 整页 flex 列：主内容在上可滚动，底栏为最后一项自然贴底（不用 fixed，避免留白）。
+ */
+.app-shell {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--color-surface);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
-/* 安全区（刘海、底部横条） */
-.safe-pt {
-  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  /* 避开状态栏/刘海，标题不会顶到屏幕最上沿 */
+  padding-top: max(0.75rem, var(--safe-top));
 }
 
-.safe-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+.app-main__inner {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 32rem;
+  padding: 0 1rem 1rem;
+}
+
+.app-tabbar {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: -1cm;
+  border-top: 1px solid rgb(51 65 85 / 0.65);
+  background-color: var(--color-tabbar);
+  /* 负边距下压贴底后，用 padding 保住 Home 条区域可点 */
+  padding-bottom: calc(var(--safe-bottom) + 0.5cm);
+}
+
+.app-tabbar__row {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 0.25rem;
+  max-width: 32rem;
+  margin: 0 auto;
+  height: var(--tabbar-row-h);
+  padding: 0 0.5rem;
+}
+
+.app-tabbar__link {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  border-radius: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  color: var(--color-muted);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.app-tabbar__link:hover {
+  color: rgb(226 232 240);
+}
+
+.app-tabbar__link--active {
+  color: var(--color-brand);
+  font-weight: 600;
+  background-color: rgb(20 184 166 / 0.12);
+}
+
+.app-tabbar__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* 无底栏的全屏页（登录、引导） */
+.page-standalone {
+  box-sizing: border-box;
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding:
+    max(1rem, var(--safe-top))
+    max(1rem, var(--safe-right))
+    max(1rem, var(--safe-bottom))
+    max(1rem, var(--safe-left));
 }
 
 input,

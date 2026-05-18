@@ -53,7 +53,10 @@ export const httpData = {
     return apiFetch<Profile>('/profile')
   },
 
-  async updateProfile(_userId: string, data: Partial<Profile>): Promise<Profile> {
+  async updateProfile(
+    _userId: string,
+    data: Partial<Profile> | Record<string, string | number | boolean>,
+  ): Promise<Profile> {
     return apiFetch<Profile>('/profile', {
       method: 'PATCH',
       body: JSON.stringify(data),

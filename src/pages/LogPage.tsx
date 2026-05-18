@@ -95,7 +95,7 @@ export function LogPage() {
   }
 
   return (
-    <div className="safe-pt safe-pb min-h-dvh overflow-y-auto">
+    <div className="page-standalone">
       <div className="mx-auto max-w-lg space-y-6 px-4 py-4">
       <div>
         <button

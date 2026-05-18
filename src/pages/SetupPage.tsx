@@ -2,7 +2,7 @@ import { isSelfHosted } from '../lib/config'
 
 export function SetupPage() {
   return (
-    <div className="safe-pt safe-pb flex min-h-dvh flex-col justify-center px-6">
+    <div className="page-standalone flex flex-col justify-center">
       <div className="mx-auto max-w-md space-y-4">
         <h1 className="text-xl font-bold text-brand">需要配置后端</h1>
 

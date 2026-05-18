@@ -9,6 +9,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ../server/migrations/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ../server/migrations/002_widen_activity_factor.sql:/docker-entrypoint-initdb.d/002_widen_activity_factor.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U fitness -d fitness']
       interval: 5s
@@ -26,16 +27,27 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret_min_32_chars}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-    # API 仅容器内网访问，对外由 Nginx /api 转发（更安全）
     expose:
       - '3001'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
-  # 前端静态页 + /api 反代
   web:
     image: nginx:alpine
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - '80:80'
     volumes:

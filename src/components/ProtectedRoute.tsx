@@ -12,7 +12,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="safe-pt safe-pb flex min-h-dvh items-center justify-center">
+      <div className="page-standalone flex items-center justify-center">
         <p className="text-muted">加载中…</p>
       </div>
     )

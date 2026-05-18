@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { MetabolismSummary } from '../components/MetabolismSummary'
 import { ACTIVITY_LEVELS } from '../lib/calories'
 import type { Sex } from '../types'
 
@@ -11,7 +12,9 @@ export function SettingsPage() {
   const [height, setHeight] = useState(String(profile?.height_cm ?? ''))
   const [age, setAge] = useState(String(profile?.age ?? ''))
   const [sex, setSex] = useState<Sex>(profile?.sex ?? 'male')
-  const [activity, setActivity] = useState(profile?.activity_factor ?? 1.375)
+  const [activity, setActivity] = useState(
+    () => Number(profile?.activity_factor) || 1.375,
+  )
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,10 +24,17 @@ export function SettingsPage() {
     setLoading(true)
     setMessage('')
     try {
+      const w = parseFloat(weight)
+      const h = parseFloat(height)
+      const a = parseInt(age, 10)
+      if (!w || !h || !a) {
+        setMessage('请填写有效的体重、身高和年龄')
+        return
+      }
       await updateProfile({
-        weight_kg: parseFloat(weight),
-        height_cm: parseFloat(height),
-        age: parseInt(age, 10),
+        weight_kg: w,
+        height_cm: h,
+        age: a,
         sex,
         activity_factor: activity,
         deficit_threshold: parseInt(threshold, 10) || 0,
@@ -46,16 +56,7 @@ export function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-bold">设置</h1>
 
-      {profile && (
-        <div className="rounded-xl bg-card p-4 text-sm ring-1 ring-slate-700/50">
-          <p className="text-muted">当前估算</p>
-          <p className="mt-1">
-            BMR <span className="font-semibold tabular-nums">{profile.bmr ?? '—'}</span>{' '}
-            kcal · TDEE{' '}
-            <span className="font-semibold tabular-nums">{profile.tdee ?? '—'}</span> kcal
-          </p>
-        </div>
-      )}
+      {profile && <MetabolismSummary profile={profile} />}
 
       <form onSubmit={handleSave} className="space-y-4">
         <label className="block">
@@ -122,7 +123,15 @@ export function SettingsPage() {
           <p className="mt-1 text-xs text-muted">缺口大于此值才算打卡成功，默认 0</p>
         </label>
 
-        {message && <p className="text-sm text-brand">{message}</p>}
+        {message && (
+          <p
+            className={`text-sm ${
+              message === '已保存' ? 'text-brand' : 'text-amber-400'
+            }`}
+          >
+            {message}
+          </p>
+        )}
 
         <button
           type="submit"

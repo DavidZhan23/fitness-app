@@ -3,19 +3,24 @@ import { hasDeficitCheck } from '../lib/calories'
 interface DeficitCardProps {
   dateLabel: string
   deficit: number
-  tdee: number
+  metabolismKcal: number
+  metabolismLabel: string
   exerciseKcal: number
   mealKcal: number
   threshold: number
+  /** 全日基础代谢 BMR（Mifflin-St Jeor） */
+  fullDayBmr?: number
 }
 
 export function DeficitCard({
   dateLabel,
   deficit,
-  tdee,
+  metabolismKcal,
+  metabolismLabel,
   exerciseKcal,
   mealKcal,
   threshold,
+  fullDayBmr,
 }: DeficitCardProps) {
   const positive = hasDeficitCheck(deficit, threshold)
 
@@ -34,10 +39,15 @@ export function DeficitCard({
         <span className="text-lg text-muted">kcal 缺口</span>
       </div>
       <p className="mt-1 text-xs text-muted">
-        {positive ? '今日已达成代谢缺口目标' : '摄入偏多，继续加油'}
+        {positive ? '已达成代谢缺口' : '摄入偏多，继续加油'}
+        {fullDayBmr != null && fullDayBmr > 0 && (
+          <span className="block mt-0.5">
+            基础代谢 BMR 按分钟累计（全日约 {Math.round(fullDayBmr)} kcal）
+          </span>
+        )}
       </p>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
-        <Stat label="基础消耗" value={tdee} />
+        <Stat label={metabolismLabel} value={metabolismKcal} />
         <Stat label="运动" value={exerciseKcal} accent />
         <Stat label="饮食" value={mealKcal} />
       </div>

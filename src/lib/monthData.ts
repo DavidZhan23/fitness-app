@@ -2,8 +2,10 @@ import type { IntensityLevel } from './monthCalendar'
 import {
   getDeficitIntensityLevel,
   getExerciseIntensityLevel,
+  toKcal,
 } from './calories'
 import { calculateSpreadDeficit } from './metabolism'
+import { isBeforeAccountStart, normalizeDateKey } from './streaks'
 import type { DayLog } from '../types'
 
 export interface MonthDayCell {
@@ -12,31 +14,49 @@ export interface MonthDayCell {
   deficitLevel: IntensityLevel
   exerciseKcal: number
   deficit: number
+  /** 注册日之前，代谢缺口不计入 */
+  beforeAccount?: boolean
 }
 
 export function buildMonthDayMap(
   logs: DayLog[],
   threshold: number,
   todayKey: string,
+  accountStartKey: string | null,
+  dailyBmr: number,
 ): Map<string, MonthDayCell> {
   const map = new Map<string, MonthDayCell>()
 
   for (const log of logs) {
-    const exerciseKcal = Number(log.exercise_kcal)
-    const mealKcal = Number(log.meal_kcal)
-    const tdee = Number(log.tdee_snapshot)
-    const endOfDay = new Date(`${log.log_date}T23:59:59`)
-    const deficit =
-      log.log_date === todayKey
-        ? calculateSpreadDeficit(tdee, exerciseKcal, mealKcal, log.log_date)
-        : calculateSpreadDeficit(tdee, exerciseKcal, mealKcal, log.log_date, endOfDay)
+    const dateKey = normalizeDateKey(String(log.log_date))
+    const exerciseKcal = toKcal(log.exercise_kcal)
+    const mealKcal = toKcal(log.meal_kcal)
+    const beforeAccount = isBeforeAccountStart(dateKey, accountStartKey)
 
-    map.set(log.log_date, {
-      date: log.log_date,
+    const endOfDay = new Date(`${dateKey}T23:59:59`)
+    let deficit = beforeAccount
+      ? 0
+      : dateKey === todayKey
+        ? calculateSpreadDeficit(dailyBmr, exerciseKcal, mealKcal, dateKey)
+        : calculateSpreadDeficit(
+            dailyBmr,
+            exerciseKcal,
+            mealKcal,
+            dateKey,
+            endOfDay,
+          )
+
+    let deficitLevel: IntensityLevel = beforeAccount
+      ? 0
+      : getDeficitIntensityLevel(deficit, threshold)
+
+    map.set(dateKey, {
+      date: dateKey,
       exerciseKcal,
       deficit,
       exerciseLevel: getExerciseIntensityLevel(exerciseKcal),
-      deficitLevel: getDeficitIntensityLevel(deficit, threshold),
+      deficitLevel,
+      beforeAccount,
     })
   }
 

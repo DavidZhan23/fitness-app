@@ -47,11 +47,13 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="safe-pt safe-pb min-h-dvh overflow-y-auto">
+    <div className="page-standalone">
       <div className="mx-auto max-w-md space-y-6 px-4 py-4">
       <div>
         <h1 className="text-xl font-bold">完善身体资料</h1>
-        <p className="mt-1 text-sm text-muted">用于计算基础代谢与每日消耗</p>
+        <p className="mt-1 text-sm text-muted">
+          使用 Mifflin-St Jeor 公式计算基础代谢（BMR）与每日消耗（TDEE）
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

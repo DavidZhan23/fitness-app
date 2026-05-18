@@ -14,7 +14,7 @@ export default defineConfig({
         name: '健身打卡',
         short_name: '健身打卡',
         description: '记录运动与饮食，追踪热量缺口',
-        theme_color: '#0f766e',
+        theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
