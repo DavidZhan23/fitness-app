@@ -9,8 +9,6 @@ import {
 } from '../lib/dayLogService'
 import { formatDateKey } from '../lib/streaks'
 import { httpData } from '../lib/api'
-import { isSelfHosted } from '../lib/config'
-import { supabase } from '../lib/supabase'
 import {
   DEFAULT_EXERCISE_TEMPLATES,
   DEFAULT_MEAL_TEMPLATES,
@@ -44,30 +42,14 @@ export function LogPage() {
     if (!user) return
     const type = isExercise ? 'exercise' : 'meal'
     const loadTemplates = async () => {
-      if (isSelfHosted) {
-        const data = await httpData.listTemplates(type)
-        setTemplates(
-          data.length > 0
-            ? data
-            : isExercise
-              ? DEFAULT_EXERCISE_TEMPLATES
-              : DEFAULT_MEAL_TEMPLATES,
-        )
-        return
-      }
-      const table = isExercise ? 'exercise_templates' : 'meal_templates'
-      const { data } = await supabase
-        .from(table)
-        .select('id, name, kcal')
-        .eq('user_id', user.id)
-        .order('name')
-      if (data && data.length > 0) {
-        setTemplates(data)
-      } else {
-        setTemplates(
-          isExercise ? DEFAULT_EXERCISE_TEMPLATES : DEFAULT_MEAL_TEMPLATES,
-        )
-      }
+      const data = await httpData.listTemplates(type)
+      setTemplates(
+        data.length > 0
+          ? data
+          : isExercise
+            ? DEFAULT_EXERCISE_TEMPLATES
+            : DEFAULT_MEAL_TEMPLATES,
+      )
     }
     loadTemplates()
   }, [user, isExercise])

@@ -11,8 +11,6 @@ import {
   getTodayMonth,
   shiftMonth,
 } from '../lib/monthCalendar'
-import { isSelfHosted } from '../lib/config'
-import { supabase } from '../lib/supabase'
 import {
   computeStreak,
   formatDateKey,
@@ -46,41 +44,18 @@ export function CalendarPage() {
     setLoading(true)
     const { from, to } = getMonthRange(year, month)
 
-    let logs: DayLog[] = []
-    if (isSelfHosted) {
-      logs = await httpData.fetchDayLogsRange(user.id, from, to)
-    } else {
-      const { data, error } = await supabase
-        .from('day_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('log_date', from)
-        .lte('log_date', to)
-      if (error) {
-        console.error(error)
-        setLoading(false)
-        return
-      }
-      logs = (data ?? []) as DayLog[]
-    }
+    const logs = await httpData.fetchDayLogsRange(user.id, from, to)
 
     setDayMap(
       buildMonthDayMap(logs, threshold, todayKey, accountStartKey, profileBmr),
     )
 
     const streakFrom = getLastNDays(120)[0]
-    let streakLogs: DayLog[] = []
-    if (isSelfHosted) {
-      streakLogs = await httpData.fetchDayLogsRange(user.id, streakFrom, todayKey)
-    } else {
-      const { data } = await supabase
-        .from('day_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('log_date', streakFrom)
-        .lte('log_date', todayKey)
-      streakLogs = (data ?? []) as DayLog[]
-    }
+    const streakLogs = await httpData.fetchDayLogsRange(
+      user.id,
+      streakFrom,
+      todayKey,
+    )
 
     const streakDays: HeatmapDay[] = getLastNDays(120)
       .filter((d) => d <= todayKey)
@@ -129,18 +104,8 @@ export function CalendarPage() {
 
   const handleDayClick = async (date: string) => {
     if (!user) return
-    if (isSelfHosted) {
-      const log = await httpData.fetchDayLogByDate(user.id, date)
-      setSelected(log)
-      return
-    }
-    const { data } = await supabase
-      .from('day_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('log_date', date)
-      .maybeSingle()
-    setSelected(data as DayLog | null)
+    const log = await httpData.fetchDayLogByDate(user.id, date)
+    setSelected(log)
   }
 
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))

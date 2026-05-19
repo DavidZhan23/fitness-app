@@ -16,11 +16,9 @@ IP="${SERVER_IP%/}"
 API_URL="http://${IP}/api"
 
 echo "📦 构建前端..."
-echo "   VITE_BACKEND=selfhosted"
 echo "   VITE_API_URL=${API_URL}"
 echo ""
 
-export VITE_BACKEND=selfhosted
 export VITE_API_URL="${API_URL}"
 
 npm run build

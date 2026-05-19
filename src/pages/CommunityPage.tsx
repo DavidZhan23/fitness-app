@@ -4,7 +4,6 @@ import { CommunityMemberCard } from '../components/CommunityMemberCard'
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
-import { isSelfHosted } from '../lib/config'
 import { formatDateKey } from '../lib/streaks'
 import type { CommunityMember } from '../types'
 
@@ -16,7 +15,6 @@ export function CommunityPage() {
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
-    if (!isSelfHosted) return
     setLoading(true)
     setError('')
     try {
@@ -37,17 +35,6 @@ export function CommunityPage() {
   useEffect(() => {
     load()
   }, [load, profile?.community_visible])
-
-  if (!isSelfHosted) {
-    return (
-      <div className="space-y-4 py-8 text-center">
-        <p className="text-lg font-medium text-slate-200">社区</p>
-        <p className="text-sm text-muted">
-          社区功能需在自托管（腾讯云）部署模式下使用。
-        </p>
-      </div>
-    )
-  }
 
   const visible = Boolean(profile?.community_visible)
   const othersCount = members.filter((m) => !m.isSelf).length

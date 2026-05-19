@@ -1,50 +1,22 @@
-import { isSelfHosted } from '../lib/config'
-
 export function SetupPage() {
   return (
     <div className="page-standalone flex flex-col justify-center">
       <div className="mx-auto max-w-md space-y-4">
-        <h1 className="text-xl font-bold text-brand">需要配置后端</h1>
+        <h1 className="text-xl font-bold text-brand">需要配置 API 地址</h1>
+        <p className="text-sm text-muted leading-relaxed">
+          请在项目根目录创建 <code className="rounded bg-slate-800 px-1">.env.local</code>{' '}
+          并设置后端地址：
+        </p>
+        <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-300">
+          {`# 本地开发（先启动 server: cd server && npm run dev）
+VITE_API_URL=http://localhost:3001
 
-        {isSelfHosted ? (
-          <>
-            <p className="text-sm text-muted leading-relaxed">
-              自托管模式请在 <code className="rounded bg-slate-800 px-1">.env.local</code>{' '}
-              设置：
-            </p>
-            <pre className="rounded-lg bg-slate-900 p-3 text-xs text-slate-300 overflow-x-auto">
-              {`VITE_BACKEND=selfhosted
-VITE_API_URL=http://localhost:3001`}
-            </pre>
-            <p className="text-sm text-muted">
-              腾讯云部署见{' '}
-              <code className="rounded bg-slate-800 px-1">docs/tencent-cloud.md</code>
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-muted leading-relaxed">
-              Supabase 模式请复制 <code className="rounded bg-slate-800 px-1">.env.example</code>{' '}
-              为 <code className="rounded bg-slate-800 px-1">.env.local</code> 并填入 URL 与
-              anon key。
-            </p>
-            <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-300">
-              <li>
-                <a
-                  href="https://supabase.com"
-                  className="text-brand underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  supabase.com
-                </a>{' '}
-                创建项目
-              </li>
-              <li>执行 supabase/migrations/001_initial.sql</li>
-              <li>关闭 Confirm email（本地测试）</li>
-            </ol>
-          </>
-        )}
+# 腾讯云生产构建由 deploy 脚本自动注入，一般无需手写`}
+        </pre>
+        <p className="text-sm text-muted">
+          部署说明见{' '}
+          <code className="rounded bg-slate-800 px-1">docs/腾讯云部署-一步步做.md</code>
+        </p>
       </div>
     </div>
   )

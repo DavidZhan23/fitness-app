@@ -12,7 +12,6 @@
     "deploy:tencent:api": "bash scripts/deploy-tencent.sh --api"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1"

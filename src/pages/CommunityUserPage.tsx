@@ -5,7 +5,6 @@ import { MonthHeatmap } from '../components/MonthHeatmap'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
-import { isSelfHosted } from '../lib/config'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
   formatMonthTitle,
@@ -43,7 +42,7 @@ export function CommunityUserPage() {
 
   const loadDay = useCallback(
     async (date: string) => {
-      if (!userId || !isSelfHosted) return
+      if (!userId) return
       const data = await httpData.getCommunityUser(userId, date)
       setNickname(data.member.nickname)
       setIsSelf(data.member.isSelf)
@@ -56,7 +55,7 @@ export function CommunityUserPage() {
   )
 
   const loadMonth = useCallback(async () => {
-    if (!userId || !isSelfHosted) return
+    if (!userId) return
     const data = await httpData.getCommunityUserMonth(userId, year, month)
     setNickname(data.member.nickname)
     setIsSelf(data.member.isSelf)
@@ -110,12 +109,6 @@ export function CommunityUserPage() {
     'zh-CN',
     { month: 'long', day: 'numeric', weekday: 'short' },
   )
-
-  if (!isSelfHosted) {
-    return (
-      <p className="py-12 text-center text-muted">社区功能需在自托管模式下使用</p>
-    )
-  }
 
   if (loading) {
     return <p className="py-12 text-center text-muted">加载中…</p>

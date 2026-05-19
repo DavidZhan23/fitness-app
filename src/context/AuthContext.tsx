@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { Session } from '@supabase/supabase-js'
 import { httpAuth, httpData } from '../lib/api'
 import {
   calculateBmr,
@@ -16,9 +15,7 @@ import {
 } from '../lib/calories'
 import { buildProfilePatchBody, mergeProfileForCalc } from '../lib/profilePayload'
 import { seedDefaultTemplates } from '../lib/dayLogService'
-import { isBackendConfigured, isSelfHosted } from '../lib/config'
-import { assertRegistrationKey } from '../lib/registrationKey'
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { isBackendConfigured } from '../lib/config'
 import type { Profile, Sex } from '../types'
 
 export interface AppUser {
@@ -27,7 +24,6 @@ export interface AppUser {
 }
 
 interface AuthContextValue {
-  session: Session | null
   user: AppUser | null
   profile: Profile | null
   loading: boolean
@@ -52,7 +48,6 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<AppUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -74,16 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(
     async (userId: string) => {
-      if (isSelfHosted) {
-        const data = await httpData.getProfile(userId)
-        return applyProfile(data as Profile, userId)
-      }
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-      if (error) throw error
+      const data = await httpData.getProfile(userId)
       return applyProfile(data as Profile, userId)
     },
     [applyProfile],
@@ -99,42 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       return
     }
-
-    if (isSelfHosted) {
-      httpAuth.getSession().then(({ user: u }) => {
-        setUser(u)
-        setLoading(false)
-      })
-      return
-    }
-
-    if (!isSupabaseConfigured) {
-      setLoading(false)
-      return
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setUser(
-        data.session?.user
-          ? { id: data.session.user.id, email: data.session.user.email ?? '' }
-          : null,
-      )
+    httpAuth.getSession().then(({ user: u }) => {
+      setUser(u)
       setLoading(false)
     })
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-      setUser(
-        nextSession?.user
-          ? { id: nextSession.user.id, email: nextSession.user.email ?? '' }
-          : null,
-      )
-    })
-
-    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
@@ -146,13 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.id, fetchProfile])
 
   const signIn = async (email: string, password: string) => {
-    if (isSelfHosted) {
-      const { user: u } = await httpAuth.signIn(email, password)
-      setUser(u)
-      return
-    }
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    const { user: u } = await httpAuth.signIn(email, password)
+    setUser(u)
   }
 
   const signUp = async (
@@ -160,31 +109,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     registrationKey: string,
   ) => {
-    if (isSelfHosted) {
-      await httpAuth.signUp(email, password, registrationKey)
-      const { user: u } = await httpAuth.getSession()
-      setUser(u)
-      return { needsEmailConfirmation: false }
-    }
-    assertRegistrationKey(registrationKey)
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/` },
-    })
-    if (error) throw error
-    return { needsEmailConfirmation: Boolean(data.user && !data.session) }
+    await httpAuth.signUp(email, password, registrationKey)
+    const { user: u } = await httpAuth.getSession()
+    setUser(u)
+    return { needsEmailConfirmation: false }
   }
 
   const signOut = async () => {
-    if (isSelfHosted) {
-      await httpAuth.signOut()
-      setUser(null)
-      setProfile(null)
-      return
-    }
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    await httpAuth.signOut()
+    setUser(null)
     setProfile(null)
   }
 
@@ -209,20 +142,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('请填写有效的身体资料')
     }
 
-    if (isSelfHosted) {
-      const saved = await httpData.updateProfile(user.id, payload)
-      setProfile(mergeProfileFromApi(saved as Profile))
-      return
-    }
-
-    const { data: row, error } = await supabase
-      .from('profiles')
-      .update(payload)
-      .eq('id', user.id)
-      .select()
-      .single()
-    if (error) throw error
-    setProfile(mergeProfileFromApi(row as Profile))
+    const saved = await httpData.updateProfile(user.id, payload)
+    setProfile(mergeProfileFromApi(saved as Profile))
   }
 
   const completeOnboarding = async (data: {
@@ -240,24 +161,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bmr,
       tdee,
     )
-
-    if (isSelfHosted) {
-      await httpData.updateProfile(user.id, payload)
-      await refreshProfile()
-      return
-    }
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(payload)
-      .eq('id', user.id)
-    if (error) throw error
+    await httpData.updateProfile(user.id, payload)
     await refreshProfile()
   }
 
   const value = useMemo(
     () => ({
-      session,
       user,
       profile,
       loading,
@@ -268,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       completeOnboarding,
     }),
-    [session, user, profile, loading, refreshProfile],
+    [user, profile, loading, refreshProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
-import { isSelfHosted } from '../lib/config'
-import { supabase } from '../lib/supabase'
 import type { ExerciseTemplate, MealTemplate } from '../types'
 
 export function TemplatesPage() {
@@ -13,29 +11,12 @@ export function TemplatesPage() {
 
   const load = useCallback(async () => {
     if (!user) return
-    if (isSelfHosted) {
-      const [ex, meal] = await Promise.all([
-        httpData.listTemplates('exercise'),
-        httpData.listTemplates('meal'),
-      ])
-      setExercises(ex as ExerciseTemplate[])
-      setMeals(meal as MealTemplate[])
-      return
-    }
     const [ex, meal] = await Promise.all([
-      supabase
-        .from('exercise_templates')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name'),
-      supabase
-        .from('meal_templates')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name'),
+      httpData.listTemplates('exercise'),
+      httpData.listTemplates('meal'),
     ])
-    if (!ex.error) setExercises((ex.data ?? []) as ExerciseTemplate[])
-    if (!meal.error) setMeals((meal.data ?? []) as MealTemplate[])
+    setExercises(ex as ExerciseTemplate[])
+    setMeals(meal as MealTemplate[])
   }, [user])
 
   useEffect(() => {
@@ -51,23 +32,13 @@ export function TemplatesPage() {
     if (!kcal || kcal < 0) return
 
     const t = tab === 'exercise' ? 'exercise' : 'meal'
-    if (isSelfHosted) {
-      await httpData.addTemplate(t, name, kcal)
-    } else {
-      const table = tab === 'exercise' ? 'exercise_templates' : 'meal_templates'
-      await supabase.from(table).insert({ user_id: user.id, name, kcal })
-    }
+    await httpData.addTemplate(t, name, kcal)
     await load()
   }
 
   const deleteTemplate = async (id: string) => {
     const t = tab === 'exercise' ? 'exercise' : 'meal'
-    if (isSelfHosted) {
-      await httpData.deleteTemplate(t, id)
-    } else {
-      const table = tab === 'exercise' ? 'exercise_templates' : 'meal_templates'
-      await supabase.from(table).delete().eq('id', id)
-    }
+    await httpData.deleteTemplate(t, id)
     await load()
   }
 

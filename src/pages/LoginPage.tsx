@@ -28,20 +28,9 @@ export function LoginPage() {
     setLoading(true)
     try {
       if (isRegister) {
-        const { needsEmailConfirmation } = await signUp(
-          email,
-          password,
-          registrationKey,
-        )
-        if (needsEmailConfirmation) {
-          setError(
-            '注册成功！请先到邮箱点击确认链接，再回来登录。本地测试可在 Supabase 关闭 Confirm email 后重新注册。',
-          )
-        } else {
-          navigate('/')
-          return
-        }
-        setIsRegister(false)
+        await signUp(email, password, registrationKey)
+        navigate('/')
+        return
       } else {
         await signIn(email, password)
         navigate('/')

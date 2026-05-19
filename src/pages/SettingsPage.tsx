@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { MetabolismSummary } from '../components/MetabolismSummary'
-import { isSelfHosted } from '../lib/config'
 import { ACTIVITY_LEVELS } from '../lib/calories'
 import type { Sex } from '../types'
 
@@ -62,7 +61,7 @@ export function SettingsPage() {
 
       {profile && <MetabolismSummary profile={profile} />}
 
-      {isSelfHosted && <CommunityShareToggle />}
+      <CommunityShareToggle />
 
       <form onSubmit={handleSave} className="space-y-4">
         <label className="block">
