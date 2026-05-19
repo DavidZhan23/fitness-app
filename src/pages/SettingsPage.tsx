@@ -15,6 +15,7 @@ export function SettingsPage() {
   const [activity, setActivity] = useState(
     () => Number(profile?.activity_factor) || 1.375,
   )
+  const [nickname, setNickname] = useState(profile?.nickname ?? '')
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,6 +33,7 @@ export function SettingsPage() {
         return
       }
       await updateProfile({
+        nickname: nickname.trim() || null,
         weight_kg: w,
         height_cm: h,
         age: a,
@@ -59,6 +61,17 @@ export function SettingsPage() {
       {profile && <MetabolismSummary profile={profile} />}
 
       <form onSubmit={handleSave} className="space-y-4">
+        <label className="block">
+          <span className="text-sm text-muted">昵称</span>
+          <input
+            type="text"
+            maxLength={32}
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="input mt-1"
+            placeholder="给自己起个名字，留空则显示邮箱前缀"
+          />
+        </label>
         <label className="block">
           <span className="text-sm text-muted">体重 (kg)</span>
           <input

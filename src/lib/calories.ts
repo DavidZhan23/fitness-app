@@ -1,5 +1,21 @@
 import type { Profile, Sex } from '../types'
 
+/** 1 大卡 (kcal) = 4.184 千焦 (kJ) */
+export const KJ_PER_KCAL = 4.184
+
+/** 由食用克数与包装「千焦/100g」换算摄入热量 (kcal) */
+export function kcalFromGramsAndKjPer100g(
+  grams: number,
+  kjPer100g: number,
+): number {
+  const g = Number(grams)
+  const kj = Number(kjPer100g)
+  if (!Number.isFinite(g) || !Number.isFinite(kj) || g <= 0 || kj <= 0) {
+    return 0
+  }
+  return Math.round((g / 100) * (kj / KJ_PER_KCAL))
+}
+
 /** API / PG numeric 常为字符串，统一转为 kcal 数字 */
 export function toKcal(value: unknown): number {
   const n = Number(value)

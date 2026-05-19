@@ -3,6 +3,8 @@ export type Sex = 'male' | 'female'
 export interface Profile {
   id: string
   email: string | null
+  /** 用户自定义昵称，展示用 */
+  nickname?: string | null
   /** 账号注册时间，用于打卡墙「注册日前不计缺口」 */
   created_at?: string
   weight_kg: number | null

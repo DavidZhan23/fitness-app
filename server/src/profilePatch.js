@@ -1,6 +1,7 @@
 /** 清洗 PATCH /profile 请求体，避免 NaN、非法枚举导致 500 */
 
 const ALLOWED = [
+  'nickname',
   'weight_kg',
   'height_cm',
   'age',
@@ -27,6 +28,10 @@ export function buildProfileUpdate(body) {
     return Number.isFinite(n) ? n : null
   }
 
+  if (body.nickname !== undefined) {
+    const raw = typeof body.nickname === 'string' ? body.nickname.trim() : ''
+    push('nickname', raw ? raw.slice(0, 32) : null)
+  }
   if (body.weight_kg !== undefined) {
     const w = num(body.weight_kg)
     if (w != null && w > 0) push('weight_kg', w)

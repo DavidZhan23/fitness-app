@@ -14,6 +14,7 @@ import {
   getAccumulatedMetabolism,
   getMetabolismStatLabel,
 } from '../lib/metabolism'
+import { displayName } from '../lib/profileDisplay'
 import { formatDateKey } from '../lib/streaks'
 import type { DayLog, Exercise, Meal } from '../types'
 
@@ -95,8 +96,13 @@ export function TodayPage() {
   )
   const threshold = toKcal(profile?.deficit_threshold)
 
+  const greeting = displayName(profile, user)
+
   return (
     <div className="space-y-6">
+      <p className="text-sm text-muted">
+        你好，<span className="font-medium text-slate-200">{greeting}</span>
+      </p>
       <DeficitCard
         dateLabel={dateLabel}
         deficit={deficit}

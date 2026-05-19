@@ -6,12 +6,18 @@ export function buildProfilePatchBody(
   data: Partial<Profile>,
   bmr: number | null,
   tdee: number | null,
-): Record<string, string | number | boolean> {
-  const body: Record<string, string | number | boolean> = {}
+): Record<string, string | number | boolean | null> {
+  const body: Record<string, string | number | boolean | null> = {}
 
   const num = (v: unknown): number | undefined => {
     const n = Number(v)
     return Number.isFinite(n) ? n : undefined
+  }
+
+  if (data.nickname !== undefined) {
+    const nick =
+      typeof data.nickname === 'string' ? data.nickname.trim() : ''
+    body.nickname = nick ? nick.slice(0, 32) : null
   }
 
   const w = num(data.weight_kg)
