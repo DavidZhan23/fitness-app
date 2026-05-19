@@ -200,7 +200,7 @@ export function CommunityUserPage() {
           accountStartKey={accountStartKey}
         />
         <p className="mt-3 text-center text-xs text-muted">
-          只读查看，无法修改他人数据
+          {/* 只读查看，无法修改他人数据 */}
         </p>
       </section>
 
