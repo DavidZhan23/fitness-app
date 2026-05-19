@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
+import { DayCommentSection } from '../components/DayCommentSection'
+import { DayLikeButton } from '../components/DayLikeButton'
+import { FollowButton } from '../components/FollowButton'
 import { MonthHeatmap } from '../components/MonthHeatmap'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
@@ -16,6 +19,7 @@ import type {
   CommunityDaySnapshot,
   CommunityPublicExercise,
   CommunityPublicMeal,
+  DayComment,
   DayLog,
 } from '../types'
 
@@ -27,31 +31,56 @@ export function CommunityUserPage() {
   const [view, setView] = useState(getTodayMonth)
   const [nickname, setNickname] = useState('')
   const [isSelf, setIsSelf] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
   const [viewDate, setViewDate] = useState(todayKey)
   const [snapshot, setSnapshot] = useState<CommunityDaySnapshot | null>(null)
   const [exercises, setExercises] = useState<CommunityPublicExercise[]>([])
   const [meals, setMeals] = useState<CommunityPublicMeal[]>([])
+  const [likeCount, setLikeCount] = useState(0)
+  const [viewerLiked, setViewerLiked] = useState(false)
+  const [comments, setComments] = useState<DayComment[]>([])
   const [dayMap, setDayMap] = useState(() => new Map())
   const [accountStartKey, setAccountStartKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dayLoading, setDayLoading] = useState(false)
   const [error, setError] = useState('')
 
   const { year, month } = view
   const isCurrentMonth =
     year === getTodayMonth().year && month === getTodayMonth().month
 
-  const loadDay = useCallback(
-    async (date: string) => {
-      if (!userId) return
-      const data = await httpData.getCommunityUser(userId, date)
+  const applyDayData = useCallback(
+    (data: Awaited<ReturnType<typeof httpData.getCommunityUser>>) => {
       setNickname(data.member.nickname)
       setIsSelf(data.member.isSelf)
+      setIsFollowing(data.isFollowing)
       setSnapshot(data.snapshot)
       setExercises(data.exercises)
       setMeals(data.meals)
       setViewDate(data.date)
+      setLikeCount(data.likeCount)
+      setViewerLiked(data.viewerLiked)
+      setComments(data.comments)
     },
-    [userId],
+    [],
+  )
+
+  const loadDay = useCallback(
+    async (date: string, quiet = false) => {
+      if (!userId) return
+      if (quiet) setDayLoading(true)
+      try {
+        const data = await httpData.getCommunityUser(userId, date)
+        applyDayData(data)
+      } catch (err) {
+        if (!quiet) {
+          setError(err instanceof Error ? err.message : '无法查看该用户')
+        }
+      } finally {
+        if (quiet) setDayLoading(false)
+      }
+    },
+    [userId, applyDayData],
   )
 
   const loadMonth = useCallback(async () => {
@@ -105,6 +134,11 @@ export function CommunityUserPage() {
     setView(next)
   }
 
+  const handleDayClick = (date: string) => {
+    if (date === viewDate) return
+    loadDay(date, true)
+  }
+
   const dateLabel = new Date(viewDate + 'T12:00:00').toLocaleDateString(
     'zh-CN',
     { month: 'long', day: 'numeric', weekday: 'short' },
@@ -137,23 +171,36 @@ export function CommunityUserPage() {
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div
-          className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-bold ${
-            isSelf
-              ? 'bg-violet-500/30 text-violet-200 ring-1 ring-violet-400/50'
-              : 'bg-slate-700 text-slate-100 ring-1 ring-slate-600'
-          }`}
-        >
-          {nickname.slice(0, 1).toUpperCase()}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${
+              isSelf
+                ? 'bg-violet-500/30 text-violet-200 ring-1 ring-violet-400/50'
+                : 'bg-slate-700 text-slate-100 ring-1 ring-slate-600'
+            }`}
+          >
+            {nickname.slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold">{nickname}</h1>
+            <p className="text-sm text-muted">
+              {isSelf ? '这是你的公开主页' : '公开打卡动态'}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold">{nickname}</h1>
-          <p className="text-sm text-muted">
-            {isSelf ? '这是你的公开主页' : '公开打卡动态'}
-          </p>
-        </div>
+        {!isSelf && (
+          <FollowButton
+            userId={userId!}
+            isFollowing={isFollowing}
+            onChange={setIsFollowing}
+          />
+        )}
       </div>
+
+      {dayLoading && (
+        <p className="text-center text-xs text-muted">加载该日记录…</p>
+      )}
 
       <CommunityDaySummary
         snapshot={snapshot}
@@ -163,10 +210,33 @@ export function CommunityUserPage() {
         isSelf={isSelf}
       />
 
+      <div className="rounded-2xl bg-card/60 px-4 py-3 ring-1 ring-slate-700/40">
+        <DayLikeButton
+          key={`${userId}-${viewDate}-like`}
+          userId={userId!}
+          date={viewDate}
+          likeCount={likeCount}
+          viewerLiked={viewerLiked}
+          disabled={isSelf}
+          onChange={(stats) => {
+            setLikeCount(stats.likeCount)
+            setViewerLiked(stats.viewerLiked)
+          }}
+        />
+      </div>
+
       <section>
         <h2 className="mb-2 text-sm font-medium text-slate-200">当日记录</h2>
         <ReadOnlyLogList exercises={exercises} meals={meals} />
       </section>
+
+      <DayCommentSection
+        key={`${userId}-${viewDate}-comments`}
+        userId={userId!}
+        date={viewDate}
+        comments={comments}
+        onCommentsChange={setComments}
+      />
 
       <section className="rounded-2xl bg-card p-4 ring-1 ring-slate-700/50">
         <div className="mb-4 flex items-center justify-between gap-2">
@@ -198,9 +268,11 @@ export function CommunityUserPage() {
           dayMap={dayMap}
           todayKey={todayKey}
           accountStartKey={accountStartKey}
+          selectedDateKey={viewDate}
+          onDayClick={handleDayClick}
         />
         <p className="mt-3 text-center text-xs text-muted">
-          {/* 只读查看，无法修改他人数据 */}
+          点击日期查看该日记录与评论
         </p>
       </section>
 

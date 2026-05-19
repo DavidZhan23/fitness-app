@@ -22,23 +22,26 @@ export function CommunityShareToggle({ compact = false }: CommunityShareTogglePr
   }
 
   if (compact) {
+    const label = saving ? '…' : visible ? '已公开' : '未公开'
     return (
       <button
         type="button"
         role="switch"
         aria-checked={visible}
+        aria-label={visible ? '社区已公开，点击关闭' : '社区未公开，点击开启'}
         disabled={saving}
         onClick={toggle}
-        className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] leading-none font-medium whitespace-nowrap transition ${
           visible
             ? 'bg-violet-500/25 text-violet-200 ring-1 ring-violet-400/40'
             : 'bg-slate-800 text-muted ring-1 ring-slate-600'
         } disabled:opacity-50`}
       >
         <span
-          className={`h-2 w-2 rounded-full ${visible ? 'bg-violet-400' : 'bg-slate-500'}`}
+          aria-hidden
+          className={`h-1.5 w-1.5 shrink-0 rounded-full ${visible ? 'bg-violet-400' : 'bg-slate-500'}`}
         />
-        {saving ? '…' : visible ? '已公开' : '未公开'}
+        <span className="shrink-0">{label}</span>
       </button>
     )
   }
@@ -49,7 +52,7 @@ export function CommunityShareToggle({ compact = false }: CommunityShareTogglePr
         <div>
           <h2 className="font-semibold text-slate-100">社区公开</h2>
           <p className="mt-1 text-sm text-muted leading-relaxed">
-            开启后，其他用户可在社区看到你的<strong className="font-normal text-slate-300">今日缺口、运动与饮食记录</strong>及<strong className="font-normal text-slate-300">打卡墙</strong>。体重等私密资料不会展示。
+            开启后，其他用户可在社区看到你的<strong className="font-normal text-slate-300">今日缺口、运动与饮食记录</strong>、<strong className="font-normal text-slate-300">打卡墙</strong>，并可对你的每日打卡<strong className="font-normal text-slate-300">点赞与留言</strong>。体重等私密资料不会展示。
           </p>
         </div>
         <button

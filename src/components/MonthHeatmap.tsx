@@ -15,6 +15,7 @@ interface MonthHeatmapProps {
   dayMap: Map<string, MonthDayCell>
   todayKey: string
   accountStartKey?: string | null
+  selectedDateKey?: string | null
   onDayClick?: (date: string) => void
 }
 
@@ -24,6 +25,7 @@ export function MonthHeatmap({
   dayMap,
   todayKey,
   accountStartKey = null,
+  selectedDateKey = null,
   onDayClick,
 }: MonthHeatmapProps) {
   const { weeks } = getMonthGrid(year, month)
@@ -37,6 +39,7 @@ export function MonthHeatmap({
         todayKey={todayKey}
         accountStartKey={accountStartKey}
         type="exercise"
+        selectedDateKey={selectedDateKey}
         onDayClick={onDayClick}
       />
       <MonthGrid
@@ -46,6 +49,7 @@ export function MonthHeatmap({
         todayKey={todayKey}
         accountStartKey={accountStartKey}
         type="deficit"
+        selectedDateKey={selectedDateKey}
         onDayClick={onDayClick}
       />
     </div>
@@ -58,6 +62,7 @@ function MonthGrid({
   dayMap,
   todayKey,
   accountStartKey,
+  selectedDateKey,
   type,
   onDayClick,
 }: {
@@ -66,6 +71,7 @@ function MonthGrid({
   dayMap: Map<string, MonthDayCell>
   todayKey: string
   accountStartKey: string | null
+  selectedDateKey?: string | null
   type: 'exercise' | 'deficit'
   onDayClick?: (date: string) => void
 }) {
@@ -94,6 +100,10 @@ function MonthGrid({
               : (cell?.deficitLevel ?? 0)
           const dayNum = parseInt(dateKey.slice(-2), 10)
           const isToday = dateKey === todayKey
+          const isSelected =
+            selectedDateKey != null &&
+            dateKey === selectedDateKey &&
+            !isToday
           const isFuture = dateKey > todayKey
 
           const cellClass =
@@ -121,8 +131,10 @@ function MonthGrid({
               className={`relative flex aspect-square items-center justify-center rounded-md text-[11px] font-medium tabular-nums transition-transform active:scale-95 ${cellClass} ${
                 isFuture ? 'cursor-not-allowed opacity-30' : ''
               } ${isToday ? 'ring-2 ring-brand ring-offset-1 ring-offset-card' : ''} ${
-                !isFuture && onDayClick ? 'hover:brightness-110' : ''
-              }`}
+                isSelected
+                  ? 'ring-2 ring-violet-400 ring-offset-1 ring-offset-card'
+                  : ''
+              } ${!isFuture && onDayClick ? 'hover:brightness-110' : ''}`}
             >
               {dayNum}
             </button>

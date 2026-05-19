@@ -24,7 +24,7 @@ function accountStartKey(createdAt) {
   return formatDateKey(d)
 }
 
-async function loadProfile(userId) {
+export async function loadProfile(userId) {
   const { rows } = await query(`select * from profiles where id = $1`, [userId])
   return rows[0] ?? null
 }
@@ -105,7 +105,7 @@ export async function computeDaySnapshot(profile, logDate, now = new Date()) {
   }
 }
 
-export async function listCommunityMembers(viewerId, clientToday) {
+export async function listCommunityMembers(viewerId, clientToday, filter = 'all') {
   const today = resolveClientToday(clientToday)
   const { rows } = await query(
     `select * from profiles
@@ -114,15 +114,27 @@ export async function listCommunityMembers(viewerId, clientToday) {
      limit 80`,
   )
 
+  let profiles = rows
+  if (filter === 'following') {
+    const { rows: followRows } = await query(
+      `select followee_id from follows where follower_id = $1`,
+      [viewerId],
+    )
+    const followingSet = new Set(followRows.map((r) => r.followee_id))
+    profiles = rows.filter(
+      (p) => p.id === viewerId || followingSet.has(p.id),
+    )
+  }
+
   const members = []
-  for (const profile of rows) {
+  for (const profile of profiles) {
     const todaySnap = await computeDaySnapshot(profile, today)
     members.push({
       ...toPublicMember(profile, viewerId),
       today: todaySnap,
     })
   }
-  return { members, today }
+  return { members, today, filter }
 }
 
 export async function getCommunityUser(viewerId, targetUserId, logDate) {

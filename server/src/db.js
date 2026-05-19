@@ -39,6 +39,36 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  try {
+    await pool.query(`
+      create table if not exists public.follows (
+        follower_id uuid not null references public.users (id) on delete cascade,
+        followee_id uuid not null references public.users (id) on delete cascade,
+        created_at timestamptz not null default now(),
+        primary key (follower_id, followee_id),
+        check (follower_id <> followee_id)
+      )`)
+    await pool.query(`
+      create table if not exists public.day_likes (
+        id uuid primary key default gen_random_uuid(),
+        liker_id uuid not null references public.users (id) on delete cascade,
+        target_user_id uuid not null references public.users (id) on delete cascade,
+        like_date date not null,
+        created_at timestamptz not null default now(),
+        unique (liker_id, target_user_id, like_date)
+      )`)
+    await pool.query(`
+      create table if not exists public.day_comments (
+        id uuid primary key default gen_random_uuid(),
+        author_id uuid not null references public.users (id) on delete cascade,
+        target_user_id uuid not null references public.users (id) on delete cascade,
+        log_date date not null,
+        body text not null,
+        created_at timestamptz not null default now()
+      )`)
+  } catch {
+    /* 表未建等 */
+  }
 }
 
 export async function waitForDb(maxAttempts = 30, delayMs = 1000) {

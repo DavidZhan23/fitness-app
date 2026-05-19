@@ -80,7 +80,7 @@ body {
   flex: 0 0 auto;
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: -1cm;
+  margin-bottom: -0.5cm;
   border-top: 1px solid rgb(51 65 85 / 0.65);
   background-color: var(--color-tabbar);
   /* 负边距下压贴底后，用 padding 保住 Home 条区域可点 */

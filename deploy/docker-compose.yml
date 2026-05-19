@@ -12,6 +12,9 @@ services:
       - ../server/migrations/002_widen_activity_factor.sql:/docker-entrypoint-initdb.d/002_widen_activity_factor.sql:ro
       - ../server/migrations/003_add_nickname.sql:/docker-entrypoint-initdb.d/003_add_nickname.sql:ro
       - ../server/migrations/004_community_visible.sql:/docker-entrypoint-initdb.d/004_community_visible.sql:ro
+      - ../server/migrations/005_social.sql:/docker-entrypoint-initdb.d/005_social.sql:ro
+    ports:
+      - '5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U fitness -d fitness']
       interval: 5s
@@ -31,6 +34,8 @@ services:
       DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-Asia/Shanghai}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    ports:
+      - '3001:3001'
     expose:
       - '3001'
     healthcheck:

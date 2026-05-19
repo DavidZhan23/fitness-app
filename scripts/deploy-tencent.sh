@@ -59,8 +59,12 @@ echo "   访问: http://${SERVER_IP}"
 # 3. 可选：上传并重建后端
 if [ "$WITH_API" = true ]; then
   echo ""
-  echo "📤 上传 server/ ..."
-  scp -r "$ROOT/server" "${SSH_TARGET}:${REMOTE_DIR}/"
+  echo "📤 上传 server/（不含 node_modules，镜像内会 npm install）..."
+  rsync -az --delete \
+    --exclude 'node_modules/' \
+    --exclude '.env' \
+    --exclude '.DS_Store' \
+    "$ROOT/server/" "${SSH_TARGET}:${REMOTE_DIR}/server/"
 
   echo ""
   echo "🔨 重建 api 容器 ..."

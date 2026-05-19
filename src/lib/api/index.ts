@@ -3,10 +3,9 @@ import {
   DEFAULT_MEAL_TEMPLATES,
 } from '../defaultTemplates'
 import type {
-  CommunityDaySnapshot,
   CommunityMember,
-  CommunityPublicExercise,
-  CommunityPublicMeal,
+  CommunityUserDetail,
+  DayComment,
   DayLog,
   Exercise,
   Meal,
@@ -176,27 +175,68 @@ export const httpData = {
     })
   },
 
-  async listCommunityMembers(clientToday: string): Promise<{
+  async listCommunityMembers(
+    clientToday: string,
+    filter: 'all' | 'following' = 'all',
+  ): Promise<{
     members: CommunityMember[]
     today: string
+    filter: string
   }> {
     return apiFetch(
-      `/community/members?today=${encodeURIComponent(clientToday)}`,
+      `/community/members?today=${encodeURIComponent(clientToday)}&filter=${filter}`,
     )
   },
 
   async getCommunityUser(
     userId: string,
     date?: string,
-  ): Promise<{
-    member: { id: string; nickname: string; isSelf: boolean }
-    date: string
-    snapshot: CommunityDaySnapshot
-    exercises: CommunityPublicExercise[]
-    meals: CommunityPublicMeal[]
-  }> {
+  ): Promise<CommunityUserDetail> {
     const q = date ? `?date=${encodeURIComponent(date)}` : ''
     return apiFetch(`/community/users/${userId}${q}`)
+  },
+
+  async followCommunityUser(userId: string): Promise<{ following: boolean }> {
+    return apiFetch(`/community/users/${userId}/follow`, { method: 'POST' })
+  },
+
+  async unfollowCommunityUser(userId: string): Promise<{ following: boolean }> {
+    return apiFetch(`/community/users/${userId}/follow`, { method: 'DELETE' })
+  },
+
+  async likeCommunityDay(
+    userId: string,
+    date: string,
+  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+    return apiFetch(`/community/users/${userId}/likes`, {
+      method: 'POST',
+      body: JSON.stringify({ date }),
+    })
+  },
+
+  async unlikeCommunityDay(
+    userId: string,
+    date: string,
+  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+    return apiFetch(
+      `/community/users/${userId}/likes?date=${encodeURIComponent(date)}`,
+      { method: 'DELETE' },
+    )
+  },
+
+  async postCommunityComment(
+    userId: string,
+    date: string,
+    body: string,
+  ): Promise<DayComment> {
+    return apiFetch(`/community/users/${userId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ date, body }),
+    })
+  },
+
+  async deleteCommunityComment(commentId: string): Promise<void> {
+    await apiFetch(`/community/comments/${commentId}`, { method: 'DELETE' })
   },
 
   async getCommunityUserMonth(

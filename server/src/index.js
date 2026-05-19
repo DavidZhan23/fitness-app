@@ -10,6 +10,18 @@ import {
   getCommunityUserMonth,
   listCommunityMembers,
 } from './community.js'
+import {
+  addDayComment,
+  deleteDayComment,
+  enrichMembersSocial,
+  followUser,
+  getDayLikeStats,
+  isFollowing,
+  likeDay,
+  listDayComments,
+  unfollowUser,
+  unlikeDay,
+} from './social.js'
 import { query, waitForDb } from './db.js'
 
 const app = express()
@@ -266,7 +278,14 @@ app.get(
   asyncHandler(async (req, res) => {
     const clientToday =
       typeof req.query.today === 'string' ? req.query.today : undefined
-    const data = await listCommunityMembers(req.userId, clientToday)
+    const filter =
+      req.query.filter === 'following' ? 'following' : 'all'
+    const data = await listCommunityMembers(req.userId, clientToday, filter)
+    data.members = await enrichMembersSocial(
+      data.members,
+      req.userId,
+      data.today,
+    )
     res.json(data)
   }),
 )
@@ -281,7 +300,109 @@ app.get(
       req.params.userId,
       typeof date === 'string' ? date : undefined,
     )
+    const logDate = data.date
+    const [following, likes, comments] = await Promise.all([
+      data.member.isSelf
+        ? Promise.resolve(false)
+        : isFollowing(req.userId, req.params.userId),
+      getDayLikeStats(req.params.userId, logDate, req.userId),
+      listDayComments(req.params.userId, logDate, req.userId),
+    ])
+    res.json({
+      ...data,
+      isFollowing: following,
+      likeCount: likes.likeCount,
+      viewerLiked: likes.viewerLiked,
+      comments,
+    })
+  }),
+)
+
+app.post(
+  '/community/users/:userId/follow',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await followUser(req.userId, req.params.userId)
     res.json(data)
+  }),
+)
+
+app.delete(
+  '/community/users/:userId/follow',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await unfollowUser(req.userId, req.params.userId)
+    res.json(data)
+  }),
+)
+
+app.post(
+  '/community/users/:userId/likes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { date } = req.body
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: '请提供 date' })
+    }
+    const data = await likeDay(req.userId, req.params.userId, date)
+    res.json(data)
+  }),
+)
+
+app.delete(
+  '/community/users/:userId/likes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const date = req.query.date
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: '请提供 date' })
+    }
+    const data = await unlikeDay(req.userId, req.params.userId, date)
+    res.json(data)
+  }),
+)
+
+app.get(
+  '/community/users/:userId/comments',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const date = req.query.date
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: '请提供 date' })
+    }
+    const comments = await listDayComments(
+      req.params.userId,
+      date,
+      req.userId,
+    )
+    res.json({ comments })
+  }),
+)
+
+app.post(
+  '/community/users/:userId/comments',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { date, body } = req.body
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: '请提供 date' })
+    }
+    const comment = await addDayComment(
+      req.userId,
+      req.params.userId,
+      date,
+      body,
+    )
+    res.json(comment)
+  }),
+)
+
+app.delete(
+  '/community/comments/:commentId',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    await deleteDayComment(req.userId, req.params.commentId)
+    res.json({ ok: true })
   }),
 )
 

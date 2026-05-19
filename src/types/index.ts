@@ -25,6 +25,30 @@ export interface CommunityMember {
   nickname: string
   isSelf: boolean
   today: CommunityDaySnapshot
+  isFollowing: boolean
+  todayLikeCount: number
+  viewerLikedToday: boolean
+}
+
+export interface DayComment {
+  id: string
+  authorId: string
+  authorNickname: string
+  body: string
+  createdAt: string
+  isOwn: boolean
+}
+
+export interface CommunityUserDetail {
+  member: { id: string; nickname: string; isSelf: boolean }
+  date: string
+  snapshot: CommunityDaySnapshot
+  exercises: CommunityPublicExercise[]
+  meals: CommunityPublicMeal[]
+  isFollowing: boolean
+  likeCount: number
+  viewerLiked: boolean
+  comments: DayComment[]
 }
 
 export interface CommunityDaySnapshot {
