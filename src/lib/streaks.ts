@@ -5,10 +5,17 @@ export function computeStreak(
   type: 'exercise' | 'deficit',
 ): number {
   const sorted = [...days].sort((a, b) => b.date.localeCompare(a.date))
+  const isOk = (day: HeatmapDay) =>
+    type === 'exercise' ? day.exerciseCheck : day.deficitCheck
+
+  // 从今天往回找；今天尚未打卡时，从最近一次达标日开始计连续天数
+  let i = 0
+  while (i < sorted.length && !isOk(sorted[i])) i++
+  if (i >= sorted.length) return 0
+
   let streak = 0
-  for (const day of sorted) {
-    const ok = type === 'exercise' ? day.exerciseCheck : day.deficitCheck
-    if (ok) streak++
+  for (; i < sorted.length; i++) {
+    if (isOk(sorted[i])) streak++
     else break
   }
   return streak
