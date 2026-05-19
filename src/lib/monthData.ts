@@ -1,9 +1,10 @@
 import type { IntensityLevel } from './monthCalendar'
 import {
-  getDeficitIntensityLevel,
+  getDeficitHeatmapCell,
   getExerciseIntensityLevel,
   toKcal,
 } from './calories'
+import type { DeficitHeatmapTone } from './calories'
 import { calculateSpreadDeficit } from './metabolism'
 import { isBeforeAccountStart, normalizeDateKey } from './streaks'
 import type { DayLog } from '../types'
@@ -12,6 +13,7 @@ export interface MonthDayCell {
   date: string
   exerciseLevel: IntensityLevel
   deficitLevel: IntensityLevel
+  deficitTone: DeficitHeatmapTone
   exerciseKcal: number
   deficit: number
   /** 注册日之前，代谢缺口不计入 */
@@ -46,16 +48,17 @@ export function buildMonthDayMap(
             endOfDay,
           )
 
-    let deficitLevel: IntensityLevel = beforeAccount
-      ? 0
-      : getDeficitIntensityLevel(deficit, threshold)
+    const heatmap = beforeAccount
+      ? { level: 0 as IntensityLevel, tone: 'neutral' as DeficitHeatmapTone }
+      : getDeficitHeatmapCell(deficit, threshold)
 
     map.set(dateKey, {
       date: dateKey,
       exerciseKcal,
       deficit,
       exerciseLevel: getExerciseIntensityLevel(exerciseKcal),
-      deficitLevel,
+      deficitLevel: heatmap.level,
+      deficitTone: heatmap.tone,
       beforeAccount,
     })
   }

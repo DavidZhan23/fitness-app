@@ -9,6 +9,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [registrationKey, setRegistrationKey] = useState('')
   const [isRegister, setIsRegister] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,7 +28,11 @@ export function LoginPage() {
     setLoading(true)
     try {
       if (isRegister) {
-        const { needsEmailConfirmation } = await signUp(email, password)
+        const { needsEmailConfirmation } = await signUp(
+          email,
+          password,
+          registrationKey,
+        )
         if (needsEmailConfirmation) {
           setError(
             '注册成功！请先到邮箱点击确认链接，再回来登录。本地测试可在 Supabase 关闭 Confirm email 后重新注册。',
@@ -78,6 +83,20 @@ export function LoginPage() {
               placeholder="至少 6 位"
             />
           </label>
+          {isRegister && (
+            <label className="block">
+              <span className="text-sm text-muted">注册密钥</span>
+              <input
+                type="password"
+                required
+                value={registrationKey}
+                onChange={(e) => setRegistrationKey(e.target.value)}
+                className="mt-1 w-full rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 focus:ring-brand outline-none"
+                placeholder="请输入邀请密钥"
+                autoComplete="off"
+              />
+            </label>
+          )}
 
           {error && <p className="text-sm text-amber-400">{error}</p>}
 
@@ -92,7 +111,10 @@ export function LoginPage() {
 
         <button
           type="button"
-          onClick={() => setIsRegister(!isRegister)}
+          onClick={() => {
+            setIsRegister(!isRegister)
+            if (isRegister) setRegistrationKey('')
+          }}
           className="mt-4 w-full text-center text-sm text-brand"
         >
           {isRegister ? '已有账号？登录' : '没有账号？注册'}

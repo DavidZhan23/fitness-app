@@ -4,6 +4,7 @@ import express from 'express'
 import { asyncHandler } from './asyncHandler.js'
 import { buildProfileUpdate } from './profilePatch.js'
 import { authMiddleware, loginUser, registerUser, signToken } from './auth.js'
+import { assertRegistrationKey } from './registrationKey.js'
 import { query, waitForDb } from './db.js'
 
 const app = express()
@@ -24,10 +25,11 @@ app.get(
 app.post(
   '/auth/register',
   asyncHandler(async (req, res) => {
-    const { email, password } = req.body
+    const { email, password, registration_key } = req.body
     if (!email || !password || password.length < 6) {
       return res.status(400).json({ error: '邮箱与密码（至少6位）必填' })
     }
+    assertRegistrationKey(registration_key)
     const user = await registerUser(email, password)
     const token = signToken(user)
     res.json({
@@ -298,6 +300,7 @@ app.use((err, req, res, _next) => {
     if (err.code === '23514') message = '资料数值不合法，请检查体重、身高等'
     else if (err.code === '22P02') message = '资料格式错误，请检查输入'
     else if (err.code === '22003') message = '数值超出范围，请检查活动系数等'
+    else if (err.code === '42703') message = '数据库需要升级，请重启 API 服务或联系管理员执行迁移'
     else message = '服务器繁忙，请稍后重试'
     console.error('[api]', req.method, req.path, err.code, err.detail || err.message)
   }

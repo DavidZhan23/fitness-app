@@ -10,6 +10,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ../server/migrations/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
       - ../server/migrations/002_widen_activity_factor.sql:/docker-entrypoint-initdb.d/002_widen_activity_factor.sql:ro
+      - ../server/migrations/003_add_nickname.sql:/docker-entrypoint-initdb.d/003_add_nickname.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U fitness -d fitness']
       interval: 5s
@@ -25,6 +26,7 @@ services:
     environment:
       DATABASE_URL: postgres://fitness:${POSTGRES_PASSWORD:-change_me_strong_password}@postgres:5432/fitness
       JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret_min_32_chars}
+      REGISTRATION_KEY: ${REGISTRATION_KEY:-454676}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     expose:

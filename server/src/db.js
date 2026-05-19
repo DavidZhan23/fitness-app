@@ -25,6 +25,13 @@ export async function runMigrations() {
   } catch {
     /* 列已迁移或表未建 */
   }
+  try {
+    await pool.query(
+      `alter table public.profiles add column if not exists nickname text`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
 }
 
 export async function waitForDb(maxAttempts = 30, delayMs = 1000) {

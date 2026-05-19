@@ -17,6 +17,7 @@ import {
 import { buildProfilePatchBody, mergeProfileForCalc } from '../lib/profilePayload'
 import { seedDefaultTemplates } from '../lib/dayLogService'
 import { isBackendConfigured, isSelfHosted } from '../lib/config'
+import { assertRegistrationKey } from '../lib/registrationKey'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Profile, Sex } from '../types'
 
@@ -35,6 +36,7 @@ interface AuthContextValue {
   signUp: (
     email: string,
     password: string,
+    registrationKey: string,
   ) => Promise<{ needsEmailConfirmation: boolean }>
   signOut: () => Promise<void>
   updateProfile: (data: Partial<Profile>) => Promise<void>
@@ -153,13 +155,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    registrationKey: string,
+  ) => {
     if (isSelfHosted) {
-      await httpAuth.signUp(email, password)
+      await httpAuth.signUp(email, password, registrationKey)
       const { user: u } = await httpAuth.getSession()
       setUser(u)
       return { needsEmailConfirmation: false }
     }
+    assertRegistrationKey(registrationKey)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

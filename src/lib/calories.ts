@@ -100,19 +100,45 @@ export function getExerciseIntensityLevel(kcal: number): 0 | 1 | 2 | 3 | 4 {
   return 4
 }
 
-/** 代谢缺口强度 0–4 */
+export type DeficitHeatmapTone = 'neutral' | 'deficit' | 'surplus'
+
+/** 超出阈值部分的强度 1–4（与缺口/盈余色阶对称） */
+function deficitMagnitudeToLevel(magnitude: number): 0 | 1 | 2 | 3 | 4 {
+  if (magnitude <= 0) return 0
+  if (magnitude < 100) return 1
+  if (magnitude < 300) return 2
+  if (magnitude < 500) return 3
+  return 4
+}
+
+/** 打卡格：绿=缺口、红=盈余，色阶与阈值对称 */
+export function getDeficitHeatmapCell(
+  deficit: number,
+  threshold: number,
+): { level: 0 | 1 | 2 | 3 | 4; tone: DeficitHeatmapTone } {
+  deficit = toKcal(deficit)
+  threshold = toKcal(threshold)
+  if (deficit > threshold) {
+    return {
+      level: deficitMagnitudeToLevel(deficit - threshold),
+      tone: 'deficit',
+    }
+  }
+  if (deficit < -threshold) {
+    return {
+      level: deficitMagnitudeToLevel(-threshold - deficit),
+      tone: 'surplus',
+    }
+  }
+  return { level: 0, tone: 'neutral' }
+}
+
+/** @deprecated 请用 getDeficitHeatmapCell */
 export function getDeficitIntensityLevel(
   deficit: number,
   threshold: number,
 ): 0 | 1 | 2 | 3 | 4 {
-  deficit = toKcal(deficit)
-  threshold = toKcal(threshold)
-  if (deficit <= threshold) return 0
-  const excess = deficit - threshold
-  if (excess < 100) return 1
-  if (excess < 300) return 2
-  if (excess < 500) return 3
-  return 4
+  return getDeficitHeatmapCell(deficit, threshold).level
 }
 
 export const EXERCISE_LEVEL_CLASSES = [
@@ -123,6 +149,7 @@ export const EXERCISE_LEVEL_CLASSES = [
   'bg-teal-300',
 ] as const
 
+/** 代谢缺口（绿，越深缺口越大） */
 export const DEFICIT_LEVEL_CLASSES = [
   'bg-slate-700/60',
   'bg-emerald-900/80',
@@ -130,3 +157,21 @@ export const DEFICIT_LEVEL_CLASSES = [
   'bg-emerald-500',
   'bg-emerald-300',
 ] as const
+
+/** 热量盈余（红：level 1 浅 → level 4 深，盈余越大越深红） */
+export const DEFICIT_SURPLUS_LEVEL_CLASSES = [
+  'bg-slate-700/60',
+  'bg-red-300',
+  'bg-red-500',
+  'bg-red-700',
+  'bg-red-900/80',
+] as const
+
+export function getDeficitHeatmapClass(
+  level: 0 | 1 | 2 | 3 | 4,
+  tone: DeficitHeatmapTone,
+): string {
+  const palette =
+    tone === 'surplus' ? DEFICIT_SURPLUS_LEVEL_CLASSES : DEFICIT_LEVEL_CLASSES
+  return palette[level]
+}

@@ -30,14 +30,18 @@ export const httpAuth = {
     return { user: data.user, needsEmailConfirmation: false }
   },
 
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, registrationKey: string) {
     const data = await apiFetch<{
       token: string
       user: { id: string; email: string }
       needsEmailConfirmation: boolean
     }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+        registration_key: registrationKey,
+      }),
     })
     setStoredToken(data.token)
     return { user: data.user, needsEmailConfirmation: false }
