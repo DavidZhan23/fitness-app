@@ -1,12 +1,14 @@
 import { resolveProfileBmr, toKcal } from './calories.js'
 import { calculateSpreadDeficit } from './metabolism.js'
+import { formatDateKeyInTz, isValidDateKey } from './dateKey.js'
 import { query } from './db.js'
 
 function formatDateKey(d = new Date()) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return formatDateKeyInTz(d)
+}
+
+function resolveClientToday(clientToday) {
+  return isValidDateKey(clientToday) ? clientToday : formatDateKeyInTz()
 }
 
 function publicNickname(profile) {
@@ -103,8 +105,8 @@ export async function computeDaySnapshot(profile, logDate, now = new Date()) {
   }
 }
 
-export async function listCommunityMembers(viewerId) {
-  const today = formatDateKey()
+export async function listCommunityMembers(viewerId, clientToday) {
+  const today = resolveClientToday(clientToday)
   const { rows } = await query(
     `select * from profiles
      where community_visible = true and onboarding_complete = true

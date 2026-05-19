@@ -20,7 +20,7 @@ export function CommunityPage() {
     setLoading(true)
     setError('')
     try {
-      const data = await httpData.listCommunityMembers()
+      const data = await httpData.listCommunityMembers(todayKey)
       const sorted = [...data.members].sort((a, b) => {
         if (a.isSelf) return -1
         if (b.isSelf) return 1
@@ -32,7 +32,7 @@ export function CommunityPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [todayKey])
 
   useEffect(() => {
     load()
@@ -107,7 +107,11 @@ export function CommunityPage() {
           <ul className="space-y-3">
             {members.map((m) => (
               <li key={m.id}>
-                <CommunityMemberCard member={m} todayKey={todayKey} />
+                <CommunityMemberCard
+                  member={m}
+                  todayKey={todayKey}
+                  viewerProfile={profile}
+                />
               </li>
             ))}
           </ul>

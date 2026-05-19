@@ -1,14 +1,23 @@
 import { Link } from 'react-router-dom'
-import type { CommunityMember } from '../types'
+import { computeCommunityDeficit } from '../lib/communityDeficit'
+import type { CommunityMember, Profile } from '../types'
 
 interface CommunityMemberCardProps {
   member: CommunityMember
   todayKey: string
+  viewerProfile?: Profile | null
 }
 
-export function CommunityMemberCard({ member, todayKey }: CommunityMemberCardProps) {
-  const { deficit, exerciseKcal, mealKcal, exerciseCount, mealCount } =
-    member.today
+export function CommunityMemberCard({
+  member,
+  todayKey,
+  viewerProfile,
+}: CommunityMemberCardProps) {
+  const { exerciseKcal, mealKcal, exerciseCount, mealCount } = member.today
+  const deficit = computeCommunityDeficit(member.today, {
+    viewerProfile,
+    isSelf: member.isSelf,
+  })
   const isToday = member.today.date === todayKey
   const surplus = deficit < 0
 

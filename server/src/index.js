@@ -264,7 +264,9 @@ app.get(
   '/community/members',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const data = await listCommunityMembers(req.userId)
+    const clientToday =
+      typeof req.query.today === 'string' ? req.query.today : undefined
+    const data = await listCommunityMembers(req.userId, clientToday)
     res.json(data)
   }),
 )

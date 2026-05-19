@@ -176,11 +176,13 @@ export const httpData = {
     })
   },
 
-  async listCommunityMembers(): Promise<{
+  async listCommunityMembers(clientToday: string): Promise<{
     members: CommunityMember[]
     today: string
   }> {
-    return apiFetch('/community/members')
+    return apiFetch(
+      `/community/members?today=${encodeURIComponent(clientToday)}`,
+    )
   },
 
   async getCommunityUser(

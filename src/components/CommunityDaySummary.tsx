@@ -1,36 +1,37 @@
 import { hasDeficitCheck } from '../lib/calories'
 import {
-  getAccumulatedMetabolism,
-  getMetabolismStatLabel,
-} from '../lib/metabolism'
-import type { CommunityDaySnapshot } from '../types'
+  computeCommunityDeficit,
+  computeCommunityMetabolism,
+} from '../lib/communityDeficit'
+import { getMetabolismStatLabel } from '../lib/metabolism'
+import type { CommunityDaySnapshot, Profile } from '../types'
 
 interface CommunityDaySummaryProps {
   snapshot: CommunityDaySnapshot
   dateLabel: string
   todayKey: string
+  viewerProfile?: Profile | null
+  isSelf?: boolean
 }
 
 export function CommunityDaySummary({
   snapshot,
   dateLabel,
   todayKey,
+  viewerProfile,
+  isSelf,
 }: CommunityDaySummaryProps) {
   const {
-    deficit,
     exerciseKcal,
     mealKcal,
-    dailyBmr,
     threshold,
     date,
     exerciseCount,
     mealCount,
   } = snapshot
-  const metabolismKcal = getAccumulatedMetabolism(
-    dailyBmr,
-    date,
-    date === todayKey ? new Date() : new Date(`${date}T23:59:59`),
-  )
+  const opts = { viewerProfile, isSelf }
+  const deficit = computeCommunityDeficit(snapshot, opts)
+  const metabolismKcal = computeCommunityMetabolism(snapshot, opts)
   const positive = hasDeficitCheck(deficit, threshold)
   const surplus = deficit < -threshold
 

@@ -28,6 +28,7 @@ services:
       DATABASE_URL: postgres://fitness:${POSTGRES_PASSWORD:-change_me_strong_password}@postgres:5432/fitness
       JWT_SECRET: ${JWT_SECRET:-change_me_jwt_secret_min_32_chars}
       REGISTRATION_KEY: ${REGISTRATION_KEY:-454676}
+      DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-Asia/Shanghai}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     expose:

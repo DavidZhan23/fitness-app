@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { MonthHeatmap } from '../components/MonthHeatmap'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
+import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import { isSelfHosted } from '../lib/config'
 import { buildMonthDayMap } from '../lib/monthData'
@@ -20,6 +21,7 @@ import type {
 } from '../types'
 
 export function CommunityUserPage() {
+  const { profile } = useAuth()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
@@ -164,6 +166,8 @@ export function CommunityUserPage() {
         snapshot={snapshot}
         dateLabel={dateLabel}
         todayKey={todayKey}
+        viewerProfile={profile}
+        isSelf={isSelf}
       />
 
       <section>
