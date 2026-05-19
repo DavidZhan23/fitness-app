@@ -42,7 +42,7 @@ export function DeficitCard({
         {positive ? '已达成代谢缺口' : '摄入偏多，继续加油'}
         {fullDayBmr != null && fullDayBmr > 0 && (
           <span className="block mt-0.5">
-            基础代谢 BMR 按分钟累计（全日约 {Math.round(fullDayBmr)} kcal）
+            {/* 基础代谢 BMR 按分钟累计（全日约 {Math.round(fullDayBmr)} kcal） */}
           </span>
         )}
       </p>
