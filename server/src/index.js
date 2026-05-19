@@ -5,6 +5,11 @@ import { asyncHandler } from './asyncHandler.js'
 import { buildProfileUpdate } from './profilePatch.js'
 import { authMiddleware, loginUser, registerUser, signToken } from './auth.js'
 import { assertRegistrationKey } from './registrationKey.js'
+import {
+  getCommunityUser,
+  getCommunityUserMonth,
+  listCommunityMembers,
+} from './community.js'
 import { query, waitForDb } from './db.js'
 
 const app = express()
@@ -252,6 +257,47 @@ app.delete(
       req.userId,
     ])
     res.json({ ok: true })
+  }),
+)
+
+app.get(
+  '/community/members',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await listCommunityMembers(req.userId)
+    res.json(data)
+  }),
+)
+
+app.get(
+  '/community/users/:userId',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { date } = req.query
+    const data = await getCommunityUser(
+      req.userId,
+      req.params.userId,
+      typeof date === 'string' ? date : undefined,
+    )
+    res.json(data)
+  }),
+)
+
+app.get(
+  '/community/users/:userId/month',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { year, month } = req.query
+    if (!year || !month) {
+      return res.status(400).json({ error: '请提供 year 与 month' })
+    }
+    const data = await getCommunityUserMonth(
+      req.userId,
+      req.params.userId,
+      year,
+      month,
+    )
+    res.json(data)
   }),
 )
 

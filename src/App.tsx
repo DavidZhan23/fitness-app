@@ -9,6 +9,8 @@ import { OnboardingPage } from './pages/OnboardingPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { SetupPage } from './pages/SetupPage'
 import { TemplatesPage } from './pages/TemplatesPage'
+import { CommunityPage } from './pages/CommunityPage'
+import { CommunityUserPage } from './pages/CommunityUserPage'
 import { TodayPage } from './pages/TodayPage'
 
 export default function App() {
@@ -35,6 +37,8 @@ export default function App() {
           >
             <Route index element={<TodayPage />} />
             <Route path="calendar" element={<CalendarPage />} />
+            <Route path="community" element={<CommunityPage />} />
+            <Route path="community/:userId" element={<CommunityUserPage />} />
             <Route path="templates" element={<TemplatesPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

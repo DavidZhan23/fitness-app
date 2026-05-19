@@ -2,7 +2,16 @@ import {
   DEFAULT_EXERCISE_TEMPLATES,
   DEFAULT_MEAL_TEMPLATES,
 } from '../defaultTemplates'
-import type { DayLog, Exercise, Meal, Profile } from '../../types'
+import type {
+  CommunityDaySnapshot,
+  CommunityMember,
+  CommunityPublicExercise,
+  CommunityPublicMeal,
+  DayLog,
+  Exercise,
+  Meal,
+  Profile,
+} from '../../types'
 import { apiFetch, getStoredToken, setStoredToken } from './http'
 
 export const httpAuth = {
@@ -165,5 +174,44 @@ export const httpData = {
         mealTemplates: DEFAULT_MEAL_TEMPLATES,
       }),
     })
+  },
+
+  async listCommunityMembers(): Promise<{
+    members: CommunityMember[]
+    today: string
+  }> {
+    return apiFetch('/community/members')
+  },
+
+  async getCommunityUser(
+    userId: string,
+    date?: string,
+  ): Promise<{
+    member: { id: string; nickname: string; isSelf: boolean }
+    date: string
+    snapshot: CommunityDaySnapshot
+    exercises: CommunityPublicExercise[]
+    meals: CommunityPublicMeal[]
+  }> {
+    const q = date ? `?date=${encodeURIComponent(date)}` : ''
+    return apiFetch(`/community/users/${userId}${q}`)
+  },
+
+  async getCommunityUserMonth(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<{
+    member: { id: string; nickname: string; isSelf: boolean }
+    year: number
+    month: number
+    logs: DayLog[]
+    dailyBmr: number
+    threshold: number
+    accountStartKey: string | null
+  }> {
+    return apiFetch(
+      `/community/users/${userId}/month?year=${year}&month=${month}`,
+    )
   },
 }

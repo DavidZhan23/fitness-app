@@ -15,3 +15,13 @@ export function displayName(
   }
   return '用户'
 }
+
+/** 社区公开昵称 */
+export function communityDisplayName(
+  nickname: string | null | undefined,
+  userId: string,
+): string {
+  const nick = nickname?.trim()
+  if (nick) return nick
+  return `健身者${userId.slice(0, 6)}`
+}

@@ -16,6 +16,41 @@ export interface Profile {
   tdee: number | null
   deficit_threshold: number
   onboarding_complete: boolean
+  /** 是否在社区公开今日动态与打卡墙 */
+  community_visible?: boolean
+}
+
+export interface CommunityMember {
+  id: string
+  nickname: string
+  isSelf: boolean
+  today: CommunityDaySnapshot
+}
+
+export interface CommunityDaySnapshot {
+  date: string
+  deficit: number
+  exerciseKcal: number
+  mealKcal: number
+  exerciseCount: number
+  mealCount: number
+  dailyBmr: number
+  threshold: number
+  accountStartKey: string | null
+}
+
+export interface CommunityPublicExercise {
+  id: string
+  name: string
+  kcal: number
+  created_at: string
+}
+
+export interface CommunityPublicMeal {
+  id: string
+  name: string
+  kcal: number
+  created_at: string
 }
 
 export interface DayLog {

@@ -41,6 +41,10 @@ export function buildProfilePatchBody(
     body.onboarding_complete = Boolean(data.onboarding_complete)
   }
 
+  if (data.community_visible !== undefined) {
+    body.community_visible = Boolean(data.community_visible)
+  }
+
   if (bmr != null && bmr > 0) body.bmr = Math.round(bmr)
   if (tdee != null && tdee > 0) body.tdee = Math.round(tdee)
 

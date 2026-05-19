@@ -2,6 +2,7 @@
 
 const ALLOWED = [
   'nickname',
+  'community_visible',
   'weight_kg',
   'height_cm',
   'age',
@@ -65,6 +66,9 @@ export function buildProfileUpdate(body) {
   }
   if (body.onboarding_complete !== undefined) {
     push('onboarding_complete', Boolean(body.onboarding_complete))
+  }
+  if (body.community_visible !== undefined) {
+    push('community_visible', Boolean(body.community_visible))
   }
 
   return { updates, values, allowed: ALLOWED }
