@@ -131,7 +131,7 @@ export function CalendarPage() {
       <div>
         <h1 className="text-xl font-bold">打卡墙</h1>
         <p className="mt-1 text-sm text-muted">
-          每月一图，运动与缺口/盈余颜色越深表示幅度越大（绿=缺口，红=盈余）；代谢缺口自注册日起计算
+          {/* 每月一图，运动与缺口/盈余颜色越深表示幅度越大（绿=缺口，红=盈余）； */}
         </p>
       </div>
 
