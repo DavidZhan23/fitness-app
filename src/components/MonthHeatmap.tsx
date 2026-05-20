@@ -7,6 +7,10 @@ import {
 import { getMonthGrid, WEEKDAY_LABELS } from '../lib/monthCalendar'
 import { isBeforeAccountStart } from '../lib/streaks'
 
+import {
+  heatmapBadgeEmoji,
+  heatmapBadgeLabel,
+} from '../lib/communityBadges'
 import type { MonthDayCell } from '../lib/monthData'
 
 interface MonthHeatmapProps {
@@ -111,12 +115,17 @@ function MonthGrid({
               ? EXERCISE_LEVEL_CLASSES[level]
               : getDeficitHeatmapClass(level, cell?.deficitTone ?? 'neutral')
 
+          const badgeLabel =
+            type === 'deficit' && cell?.dayBadge
+              ? heatmapBadgeLabel(cell.dayBadge)
+              : null
+
           const titleText = beforeAccount
             ? `${dateKey} 注册前，代谢缺口不计入`
             : cell
               ? type === 'exercise'
                 ? `${dateKey} 运动 ${Math.round(cell.exerciseKcal)} kcal`
-                : formatDeficitTooltip(dateKey, cell.deficit)
+                : `${formatDeficitTooltip(dateKey, cell.deficit)}${badgeLabel ? ` · ${badgeLabel}` : ''}`
               : type === 'deficit' && accountStartKey && dateKey >= accountStartKey
                 ? `${dateKey} 缺口 0 kcal`
                 : `${dateKey} 无记录`
@@ -137,6 +146,14 @@ function MonthGrid({
               } ${!isFuture && onDayClick ? 'hover:brightness-110' : ''}`}
             >
               {dayNum}
+              {type === 'deficit' && cell?.dayBadge && (
+                <span
+                  className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-bl-md rounded-tr-md bg-slate-950/75 text-[8px] leading-none"
+                  aria-hidden
+                >
+                  {heatmapBadgeEmoji(cell.dayBadge)}
+                </span>
+              )}
             </button>
           )
         })}
@@ -144,7 +161,10 @@ function MonthGrid({
       {type === 'exercise' ? (
         <Legend levelClasses={EXERCISE_LEVEL_CLASSES} />
       ) : (
-        <DeficitLegend />
+        <>
+          <DeficitLegend />
+          <BadgeLegend />
+        </>
       )}
     </div>
   )
@@ -165,6 +185,17 @@ function Legend({ levelClasses }: { levelClasses: readonly string[] }) {
         <div key={i} className={`h-3 w-3 rounded-sm ${cls}`} />
       ))}
       <span>多</span>
+    </div>
+  )
+}
+
+function BadgeLegend() {
+  return (
+    <div className="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[10px] text-muted">
+      <span className="text-slate-500">成就</span>
+      <span>👑 运动大王</span>
+      <span>🔥 缺口先锋</span>
+      <span>🍽️ 记得记饮食</span>
     </div>
   )
 }

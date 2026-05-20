@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
+import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
 import { ACTIVITY_LEVELS } from '../lib/calories'
 import type { Sex } from '../types'
@@ -62,6 +63,8 @@ export function SettingsPage() {
       {profile && <MetabolismSummary profile={profile} />}
 
       <CommunityShareToggle />
+
+      <InstallGuide />
 
       <form onSubmit={handleSave} className="space-y-4">
         <label className="block">

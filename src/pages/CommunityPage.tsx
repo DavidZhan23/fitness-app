@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CommunityMemberCard } from '../components/CommunityMemberCard'
+import { CommunityMemberList } from '../components/CommunityMemberList'
 import {
   CommunitySegment,
   type CommunityFilter,
@@ -25,15 +25,10 @@ export function CommunityPage() {
     setError('')
     try {
       const data = await httpData.listCommunityMembers(todayKey, filter)
-      const sorted = [...data.members].sort((a, b) => {
-        if (a.isSelf) return -1
-        if (b.isSelf) return 1
-        return a.nickname.localeCompare(b.nickname, 'zh-CN')
-      })
-      setMembers(sorted)
+      setMembers(data.members)
       if (filter === 'all') {
         setFollowingCount(
-          sorted.filter((m) => m.isFollowing && !m.isSelf).length,
+          data.members.filter((m) => m.isFollowing && !m.isSelf).length,
         )
       }
     } catch (err) {
@@ -84,20 +79,49 @@ export function CommunityPage() {
     <div className="space-y-5 pb-2">
       <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600/20 via-slate-800 to-slate-900 px-4 py-5 ring-1 ring-violet-500/25">
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-2xl" />
-        <div className="flex flex-nowrap items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold tracking-tight text-slate-50">社区</h1>
-            <p className="mt-1 text-sm text-muted leading-snug">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-bold tracking-tight text-violet-200/85">社区</h1>
+          <CommunityShareToggle compact />
+        </div>
+        <div className="mt-3 space-y-2 text-sm leading-relaxed">
+          <div className="space-y-0.5 leading-snug">
+            <p className="text-violet-200/85">
               关注健友、每日点赞，在打卡下留言鼓励
             </p>
+            <p className="text-violet-200/85">
+              按住左侧 ⋮⋮ 可拖动排序；点击名片查看详情
+            </p>
           </div>
-          <CommunityShareToggle compact />
+          <p className="flex flex-nowrap items-center gap-2">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-600/30 to-cyan-600/20 px-2 py-0.5 font-semibold text-violet-100 ring-1 ring-violet-400/35">
+              <span aria-hidden>🔥</span>
+              缺口先锋
+            </span>
+            <span
+              className="min-w-0 flex-1 truncate text-slate-400"
+              title="当日热量缺口≥500kcal，且已记录饮食"
+            >
+              热量缺口≥500kcal
+            </span>
+          </p>
+          <p className="flex flex-nowrap items-center gap-2">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-amber-600/35 to-orange-600/25 px-2 py-0.5 font-semibold text-amber-100 ring-1 ring-amber-400/40">
+              <span aria-hidden>👑</span>
+              运动大王
+            </span>
+            <span
+              className="min-w-0 flex-1 truncate text-slate-400"
+              title="缺口≥800、运动≥500"
+            >
+              缺口≥800、运动≥600、饮食≥1k(kcal)
+            </span>
+          </p>
         </div>
       </header>
 
       {!visible && (
         <p className="rounded-xl border border-dashed border-violet-500/30 bg-violet-950/20 px-3 py-2.5 text-sm text-violet-200/90">
-          你尚未公开动态。打开右上角「未公开」开关后，其他用户才能看到你，你也能留在社区列表中。
+          你尚未公开动态。打开标题旁「未公开」开关后，其他用户才能看到你，你也能留在社区列表中。
         </p>
       )}
 
@@ -146,26 +170,22 @@ export function CommunityPage() {
 
       {!loading && !error && members.length > 0 && (
         <>
-          <p className="text-xs text-muted">
-            {filter === 'following'
-              ? `关注 ${othersCount} 位健友`
-              : othersCount > 0
-                ? `${othersCount} 位健友已公开 · 点击卡片查看详情`
+          {filter === 'following' && (
+            <p className="text-xs text-muted">
+              {othersCount > 0
+                ? `关注 ${othersCount} 位健友`
                 : '目前只有你已公开'}
-          </p>
-          <ul className="space-y-3">
-            {members.map((m) => (
-              <li key={m.id}>
-                <CommunityMemberCard
-                  member={m}
-                  todayKey={todayKey}
-                  viewerProfile={profile}
-                  onFollowChange={handleFollowChange}
-                  onLikeChange={handleLikeChange}
-                />
-              </li>
-            ))}
-          </ul>
+            </p>
+          )}
+          <CommunityMemberList
+            members={members}
+            todayKey={todayKey}
+            viewerProfile={profile}
+            sortable={filter === 'all'}
+            onMembersChange={setMembers}
+            onFollowChange={handleFollowChange}
+            onLikeChange={handleLikeChange}
+          />
         </>
       )}
 

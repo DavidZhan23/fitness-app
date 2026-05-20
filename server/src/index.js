@@ -10,6 +10,8 @@ import {
   getCommunityUserMonth,
   listCommunityMembers,
 } from './community.js'
+import { saveCommunityMemberOrder } from './communityOrder.js'
+import { setLogItemReaction } from './logItemReactions.js'
 import {
   addDayComment,
   deleteDayComment,
@@ -290,6 +292,16 @@ app.get(
   }),
 )
 
+app.put(
+  '/community/member-order',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { memberIds } = req.body
+    const data = await saveCommunityMemberOrder(req.userId, memberIds)
+    res.json(data)
+  }),
+)
+
 app.get(
   '/community/users/:userId',
   authMiddleware,
@@ -315,6 +327,23 @@ app.get(
       viewerLiked: likes.viewerLiked,
       comments,
     })
+  }),
+)
+
+app.put(
+  '/community/users/:userId/log-items/:itemType/:itemId/reaction',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { itemType, itemId } = req.params
+    const { reaction } = req.body
+    const data = await setLogItemReaction(
+      req.userId,
+      req.params.userId,
+      itemType,
+      itemId,
+      reaction ?? null,
+    )
+    res.json(data)
   }),
 )
 

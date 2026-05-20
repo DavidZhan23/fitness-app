@@ -63,14 +63,22 @@ export interface CommunityDaySnapshot {
   accountStartKey: string | null
 }
 
-export interface CommunityPublicExercise {
+export type LogItemViewerReaction = 'up' | 'down' | null
+
+export interface CommunityLogItemSocial {
+  thumbsUp: number
+  thumbsDown: number
+  viewerReaction: LogItemViewerReaction
+}
+
+export interface CommunityPublicExercise extends CommunityLogItemSocial {
   id: string
   name: string
   kcal: number
   created_at: string
 }
 
-export interface CommunityPublicMeal {
+export interface CommunityPublicMeal extends CommunityLogItemSocial {
   id: string
   name: string
   kcal: number

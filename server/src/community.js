@@ -1,6 +1,8 @@
 import { resolveProfileBmr, toKcal } from './calories.js'
 import { calculateSpreadDeficit } from './metabolism.js'
 import { formatDateKeyInTz, isValidDateKey } from './dateKey.js'
+import { loadMemberOrderMap, sortMembersByCustomOrder } from './communityOrder.js'
+import { enrichLogItemsWithReactions } from './logItemReactions.js'
 import { query } from './db.js'
 
 function formatDateKey(d = new Date()) {
@@ -134,7 +136,11 @@ export async function listCommunityMembers(viewerId, clientToday, filter = 'all'
       today: todaySnap,
     })
   }
-  return { members, today, filter }
+
+  const orderMap = await loadMemberOrderMap(viewerId)
+  const sorted = sortMembersByCustomOrder(members, orderMap)
+
+  return { members: sorted, today, filter }
 }
 
 export async function getCommunityUser(viewerId, targetUserId, logDate) {
@@ -162,8 +168,14 @@ export async function getCommunityUser(viewerId, targetUserId, logDate) {
         [dayLog.id],
       ),
     ])
-    exercises = ex.rows
-    meals = ml.rows
+    const enriched = await enrichLogItemsWithReactions(
+      viewerId,
+      targetUserId,
+      ex.rows,
+      ml.rows,
+    )
+    exercises = enriched.exercises
+    meals = enriched.meals
   }
 
   return {

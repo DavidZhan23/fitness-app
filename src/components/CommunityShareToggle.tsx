@@ -31,7 +31,7 @@ export function CommunityShareToggle({ compact = false }: CommunityShareTogglePr
         aria-label={visible ? '社区已公开，点击关闭' : '社区未公开，点击开启'}
         disabled={saving}
         onClick={toggle}
-        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] leading-none font-medium whitespace-nowrap transition ${
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition ${
           visible
             ? 'bg-violet-500/25 text-violet-200 ring-1 ring-violet-400/40'
             : 'bg-slate-800 text-muted ring-1 ring-slate-600'
@@ -39,7 +39,7 @@ export function CommunityShareToggle({ compact = false }: CommunityShareTogglePr
       >
         <span
           aria-hidden
-          className={`h-1.5 w-1.5 shrink-0 rounded-full ${visible ? 'bg-violet-400' : 'bg-slate-500'}`}
+          className={`h-2 w-2 shrink-0 rounded-full ${visible ? 'bg-violet-400' : 'bg-slate-500'}`}
         />
         <span className="shrink-0">{label}</span>
       </button>

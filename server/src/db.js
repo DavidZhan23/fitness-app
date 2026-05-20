@@ -66,6 +66,24 @@ export async function runMigrations() {
         body text not null,
         created_at timestamptz not null default now()
       )`)
+    await pool.query(`
+      create table if not exists public.community_member_order (
+        viewer_id uuid not null references public.users (id) on delete cascade,
+        member_id uuid not null references public.users (id) on delete cascade,
+        sort_index integer not null,
+        primary key (viewer_id, member_id),
+        check (viewer_id <> member_id)
+      )`)
+    await pool.query(`
+      create table if not exists public.log_item_reactions (
+        voter_id uuid not null references public.users (id) on delete cascade,
+        owner_user_id uuid not null references public.users (id) on delete cascade,
+        item_type text not null check (item_type in ('exercise', 'meal')),
+        item_id uuid not null,
+        reaction smallint not null check (reaction in (1, -1)),
+        created_at timestamptz not null default now(),
+        primary key (voter_id, item_type, item_id)
+      )`)
   } catch {
     /* 表未建等 */
   }

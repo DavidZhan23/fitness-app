@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
+import { CommunityDayStatus } from '../components/CommunityDayStatus'
 import { DayCommentSection } from '../components/DayCommentSection'
 import { DayLikeButton } from '../components/DayLikeButton'
 import { FollowButton } from '../components/FollowButton'
@@ -210,6 +211,13 @@ export function CommunityUserPage() {
         isSelf={isSelf}
       />
 
+      <CommunityDayStatus
+        snapshot={snapshot}
+        viewerProfile={profile}
+        isSelf={isSelf}
+        variant="full"
+      />
+
       <div className="rounded-2xl bg-card/60 px-4 py-3 ring-1 ring-slate-700/40">
         <DayLikeButton
           key={`${userId}-${viewDate}-like`}
@@ -227,7 +235,33 @@ export function CommunityUserPage() {
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-slate-200">当日记录</h2>
-        <ReadOnlyLogList exercises={exercises} meals={meals} />
+        {!isSelf && (exercises.length > 0 || meals.length > 0) && (
+          <p className="mb-2 text-xs text-muted">
+            {/* 每条记录右侧可 👍 👎 表态（再次点击取消） */}
+          </p>
+        )}
+        {isSelf && (exercises.length > 0 || meals.length > 0) && (
+          <p className="mb-2 text-xs text-muted">
+            {/* 右侧为健友对你每条记录的 👍 👎 人数 */}
+          </p>
+        )}
+        <ReadOnlyLogList
+          exercises={exercises}
+          meals={meals}
+          targetUserId={userId}
+          canReact={!isSelf}
+          showReactionStats={isSelf}
+          onExerciseReactionChange={(id, stats) =>
+            setExercises((prev) =>
+              prev.map((e) => (e.id === id ? { ...e, ...stats } : e)),
+            )
+          }
+          onMealReactionChange={(id, stats) =>
+            setMeals((prev) =>
+              prev.map((m) => (m.id === id ? { ...m, ...stats } : m)),
+            )
+          }
+        />
       </section>
 
       <DayCommentSection

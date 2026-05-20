@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { MonthHeatmap } from '../components/MonthHeatmap'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
@@ -229,6 +230,35 @@ export function CalendarPage() {
           <p className="mt-2 text-xs text-muted">
             基础代谢按分钟均匀累计，非一次性计入全天
           </p>
+          {!isBeforeAccountStart(
+            normalizeDateKey(String(selected.log_date)),
+            accountStartKey,
+          ) && (
+            <div className="mt-4">
+              <PersonalDayStatus
+                deficit={
+                  normalizeDateKey(String(selected.log_date)) === todayKey
+                    ? calculateSpreadDeficit(
+                        profileBmr,
+                        toKcal(selected.exercise_kcal),
+                        toKcal(selected.meal_kcal),
+                        todayKey,
+                      )
+                    : calculateSpreadDeficit(
+                        profileBmr,
+                        toKcal(selected.exercise_kcal),
+                        toKcal(selected.meal_kcal),
+                        normalizeDateKey(String(selected.log_date)),
+                        new Date(
+                          `${normalizeDateKey(String(selected.log_date))}T23:59:59`,
+                        ),
+                      )
+                }
+                exerciseKcal={toKcal(selected.exercise_kcal)}
+                mealKcal={toKcal(selected.meal_kcal)}
+              />
+            </div>
+          )}
         </section>
       )}
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { DeficitCard } from '../components/DeficitCard'
 import { LogList } from '../components/LogList'
 import { useAuth } from '../context/AuthContext'
@@ -112,6 +113,12 @@ export function TodayPage() {
         mealKcal={mealKcal}
         threshold={threshold}
         fullDayBmr={fullDayBmr}
+      />
+
+      <PersonalDayStatus
+        deficit={deficit}
+        exerciseKcal={exerciseKcal}
+        mealKcal={mealKcal}
       />
 
       <div className="grid grid-cols-2 gap-3">

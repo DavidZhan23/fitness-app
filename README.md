@@ -56,7 +56,9 @@ npm run deploy:tencent:api           # 前端 + 后端
 
 **iPhone（Safari）**：分享 → **添加到主屏幕**
 
-**Android（Chrome）**：菜单 → **安装应用** 或 **添加到主屏幕**
+**Android（推荐 Chrome）**：菜单 ⋮ → **安装应用** 或 **添加到主屏幕**
+
+小米 / 华为自带浏览器可能只有「网页快捷方式」、无图标或仍带地址栏，详见 [docs/安卓安装与PWA说明.md](docs/安卓安装与PWA说明.md)。
 
 ## 热量公式
 

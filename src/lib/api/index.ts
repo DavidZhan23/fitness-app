@@ -188,12 +188,38 @@ export const httpData = {
     )
   },
 
+  async saveCommunityMemberOrder(memberIds: string[]): Promise<{ ok: boolean }> {
+    return apiFetch('/community/member-order', {
+      method: 'PUT',
+      body: JSON.stringify({ memberIds }),
+    })
+  },
+
   async getCommunityUser(
     userId: string,
     date?: string,
   ): Promise<CommunityUserDetail> {
     const q = date ? `?date=${encodeURIComponent(date)}` : ''
     return apiFetch(`/community/users/${userId}${q}`)
+  },
+
+  async setCommunityLogItemReaction(
+    userId: string,
+    itemType: 'exercise' | 'meal',
+    itemId: string,
+    reaction: 'up' | 'down' | null,
+  ): Promise<{
+    thumbsUp: number
+    thumbsDown: number
+    viewerReaction: 'up' | 'down' | null
+  }> {
+    return apiFetch(
+      `/community/users/${userId}/log-items/${itemType}/${itemId}/reaction`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ reaction }),
+      },
+    )
   },
 
   async followCommunityUser(userId: string): Promise<{ following: boolean }> {

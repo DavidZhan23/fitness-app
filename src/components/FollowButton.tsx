@@ -48,13 +48,13 @@ export function FollowButton({
         type="button"
         disabled={busy}
         onClick={toggle}
-        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition active:scale-95 disabled:opacity-50 ${
+        className={`shrink-0 rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:opacity-50 ${
           following
             ? 'bg-violet-950/50 text-violet-200 ring-1 ring-violet-500/40'
             : 'bg-violet-600/80 text-white hover:bg-violet-500'
         }`}
       >
-        {busy ? '…' : following ? '已关注' : '+ 关注'}
+        {busy ? '…' : following ? '已关注' : '关注'}
       </button>
     )
   }

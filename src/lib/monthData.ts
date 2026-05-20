@@ -1,3 +1,4 @@
+import { resolveHeatmapDayBadge, type HeatmapDayBadge } from './communityBadges'
 import type { IntensityLevel } from './monthCalendar'
 import {
   getDeficitHeatmapCell,
@@ -15,9 +16,11 @@ export interface MonthDayCell {
   deficitLevel: IntensityLevel
   deficitTone: DeficitHeatmapTone
   exerciseKcal: number
+  mealKcal: number
   deficit: number
   /** 注册日之前，代谢缺口不计入 */
   beforeAccount?: boolean
+  dayBadge?: HeatmapDayBadge | null
 }
 
 export function buildMonthDayMap(
@@ -52,14 +55,20 @@ export function buildMonthDayMap(
       ? { level: 0 as IntensityLevel, tone: 'neutral' as DeficitHeatmapTone }
       : getDeficitHeatmapCell(deficit, threshold)
 
+    const dayBadge = beforeAccount
+      ? null
+      : resolveHeatmapDayBadge({ deficit, exerciseKcal, mealKcal })
+
     map.set(dateKey, {
       date: dateKey,
       exerciseKcal,
+      mealKcal,
       deficit,
       exerciseLevel: getExerciseIntensityLevel(exerciseKcal),
       deficitLevel: heatmap.level,
       deficitTone: heatmap.tone,
       beforeAccount,
+      dayBadge,
     })
   }
 
