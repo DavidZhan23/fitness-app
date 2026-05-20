@@ -8,6 +8,8 @@ import {
   deleteExercise,
   deleteMeal,
   fetchDayLogWithItems,
+  updateExercise,
+  updateMeal,
 } from '../lib/dayLogService'
 import { resolveProfileMetabolism, toKcal } from '../lib/calories'
 import {
@@ -61,6 +63,20 @@ export function TodayPage() {
 
   const handleDeleteMeal = async (id: string) => {
     await deleteMeal(id)
+    await load()
+  }
+
+  const handleUpdateExercise = async (
+    id: string,
+    name: string,
+    kcal: number,
+  ) => {
+    await updateExercise(id, name, kcal)
+    await load()
+  }
+
+  const handleUpdateMeal = async (id: string, name: string, kcal: number) => {
+    await updateMeal(id, name, kcal)
     await load()
   }
 
@@ -141,6 +157,8 @@ export function TodayPage() {
         meals={meals}
         onDeleteExercise={handleDeleteExercise}
         onDeleteMeal={handleDeleteMeal}
+        onUpdateExercise={handleUpdateExercise}
+        onUpdateMeal={handleUpdateMeal}
       />
     </div>
   )

@@ -13,16 +13,16 @@
 
 ## 本地开发
 
-**开启 / 关闭前端、后端、数据库：** 见 [docs/本地开发-启停服务.md](docs/本地开发-启停服务.md)。
+**本地数据库启停：** 见 [docs/本地数据库启停.md](docs/本地数据库启停.md)。
 
 ### 1. 启动数据库与 API
 
 ```bash
-cd deploy && docker compose up -d   # 或连接已有 PostgreSQL
-cd ../server && npm install && npm run dev
+brew services start postgresql@16   # 见 docs/本地数据库启停.md
+cd server && npm install && npm run dev
 ```
 
-`server` 需配置 `DATABASE_URL` 等，见 `deploy/.env.example`。
+`server` 需配置 `DATABASE_URL` 等，见 `server/.env.example`。
 
 ### 2. 配置前端
 

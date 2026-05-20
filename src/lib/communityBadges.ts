@@ -47,6 +47,15 @@ export function evaluateCommunityDayStatus(input: {
   return { needsMealLog, badge }
 }
 
+/** 社区列表名片特效：仅当日，运动大王优先于缺口先锋 */
+export function getTodayMemberCardBadge(
+  isToday: boolean,
+  input: { deficit: number; exerciseKcal: number; mealKcal: number },
+): CommunityDayBadge | null {
+  if (!isToday) return null
+  return evaluateCommunityDayStatus(input).badge
+}
+
 /** 打卡墙格子上显示的成就类型 */
 export type HeatmapDayBadge = 'champion' | 'elite' | 'meal'
 

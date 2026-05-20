@@ -112,6 +112,24 @@ export const httpData = {
     })
   },
 
+  async updateExercise(
+    id: string,
+    name: string,
+    kcal: number,
+  ): Promise<Exercise> {
+    return apiFetch<Exercise>(`/exercises/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name, kcal }),
+    })
+  },
+
+  async updateMeal(id: string, name: string, kcal: number): Promise<Meal> {
+    return apiFetch<Meal>(`/meals/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name, kcal }),
+    })
+  },
+
   async deleteExercise(id: string): Promise<void> {
     await apiFetch(`/exercises/${id}`, { method: 'DELETE' })
   },

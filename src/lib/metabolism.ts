@@ -51,5 +51,5 @@ export function calculateSpreadDeficit(
 
 /** 展示用：今日 vs 历史日 */
 export function getMetabolismStatLabel(dateKey: string, todayKey: string): string {
-  return dateKey === todayKey ? '至今基础消耗' : '基础消耗'
+  return dateKey === todayKey ? '基础消耗' : '基础消耗'
 }

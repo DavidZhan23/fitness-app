@@ -165,7 +165,7 @@ export function CommunityUserPage() {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => navigate('/community')}
+          onClick={() => navigate(-1)}
           className="text-sm text-muted hover:text-slate-200"
         >
           ← 社区

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { getTodayMemberCardBadge } from '../lib/communityBadges'
 import { computeCommunityDeficit } from '../lib/communityDeficit'
 import type { CommunityMember, Profile } from '../types'
 import { CommunityDayStatus } from './CommunityDayStatus'
@@ -17,6 +18,7 @@ interface CommunityMemberCardProps {
   isDragging?: boolean
   sortLocked?: boolean
   roundedLeft?: boolean
+  onBeforeNavigate?: () => void
 }
 
 export function CommunityMemberCard({
@@ -28,6 +30,7 @@ export function CommunityMemberCard({
   isDragging,
   sortLocked,
   roundedLeft = true,
+  onBeforeNavigate,
 }: CommunityMemberCardProps) {
   const { exerciseKcal, mealKcal, exerciseCount, mealCount } = member.today
   const deficit = computeCommunityDeficit(member.today, {
@@ -37,16 +40,71 @@ export function CommunityMemberCard({
   const isToday = member.today.date === todayKey
   const surplus = deficit < 0
   const initials = member.nickname.slice(0, 1).toUpperCase()
+  const todayBadge = getTodayMemberCardBadge(isToday, {
+    deficit,
+    exerciseKcal,
+    mealKcal,
+  })
+  const isChampion = todayBadge === 'champion'
+  const isElite = todayBadge === 'elite'
 
   const roundClass = roundedLeft ? 'rounded-2xl' : 'rounded-r-2xl rounded-l-none'
+  const fxClass = isChampion
+    ? 'community-card-champion'
+    : isElite
+      ? 'community-card-elite'
+      : ''
 
   return (
     <article
-      className={`group bg-card/80 ring-1 ring-slate-700/50 transition hover:ring-violet-500/40 hover:bg-slate-800/90 ${roundClass} ${isDragging ? 'opacity-95' : ''}`}
+      className={`group relative overflow-hidden bg-card/80 ring-1 ring-slate-700/50 transition hover:ring-violet-500/40 hover:bg-slate-800/90 ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? 'hover:ring-inherit' : ''}`}
     >
+      {isElite && (
+        <>
+          <span className="community-card-elite__ember community-card-elite__ember--l" aria-hidden>
+            🔥
+          </span>
+          <span className="community-card-elite__ember community-card-elite__ember--c" aria-hidden>
+            🔥
+          </span>
+          <span className="community-card-elite__ember community-card-elite__ember--r" aria-hidden>
+            🔥
+          </span>
+          <span className="community-card-fx-ribbon community-card-fx-ribbon--elite">
+            🔥 ON FIRE
+          </span>
+        </>
+      )}
+      {isChampion && (
+        <>
+          <span
+            className="community-card-champion__sparkle community-card-champion__sparkle--tl"
+            aria-hidden
+          >
+            ✦
+          </span>
+          <span
+            className="community-card-champion__sparkle community-card-champion__sparkle--tr"
+            aria-hidden
+          >
+            ✦
+          </span>
+          <span
+            className="community-card-champion__sparkle community-card-champion__sparkle--br"
+            aria-hidden
+          >
+            ✦
+          </span>
+          <span className="community-card-fx-ribbon community-card-fx-ribbon--champion">
+            👑 运动大王
+          </span>
+        </>
+      )}
+      <div className="community-card-fx-inner">
       <Link
         to={`/community/${member.id}`}
         className={`block px-3 pt-3 pb-1.5 active:scale-[0.99] ${sortLocked ? 'pointer-events-none' : ''}`}
+        onClick={() => onBeforeNavigate?.()}
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -72,7 +130,9 @@ export function CommunityMemberCard({
               {isToday ? '今日动态' : member.today.date}
             </p>
           </div>
-          <div className="shrink-0 text-right">
+          <div
+            className={`shrink-0 text-right ${todayBadge ? 'mt-[0.2cm]' : ''}`}
+          >
             <p
               className={`text-base font-bold tabular-nums leading-tight ${
                 surplus
@@ -135,6 +195,7 @@ export function CommunityMemberCard({
             onChange={(following) => onFollowChange?.(member.id, following)}
           />
         )}
+      </div>
       </div>
     </article>
   )

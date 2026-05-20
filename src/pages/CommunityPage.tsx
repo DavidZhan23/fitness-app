@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CommunityMemberList } from '../components/CommunityMemberList'
 import {
@@ -8,39 +8,141 @@ import {
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
+import {
+  loadCommunityListCache,
+  getCommunityMainElement,
+  restoreCommunityMainScroll,
+  saveCommunityListCache,
+} from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
 import type { CommunityMember } from '../types'
+
+function readInitialCommunityState() {
+  const cached = loadCommunityListCache()
+  if (!cached) {
+    return {
+      fromCache: false as const,
+      filter: 'all' as CommunityFilter,
+      members: [] as CommunityMember[],
+      followingCount: 0,
+      scrollY: 0,
+    }
+  }
+  return {
+    fromCache: true as const,
+    filter: cached.filter,
+    members: cached.members,
+    followingCount: cached.followingCount,
+    scrollY: cached.scrollY,
+  }
+}
 
 export function CommunityPage() {
   const { profile } = useAuth()
   const todayKey = formatDateKey()
-  const [filter, setFilter] = useState<CommunityFilter>('all')
-  const [members, setMembers] = useState<CommunityMember[]>([])
-  const [followingCount, setFollowingCount] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const initial = useRef(readInitialCommunityState()).current
+  const initialFilter = useRef(initial.filter)
+  const scrollYRef = useRef(initial.scrollY)
+  const pendingScrollRestore = useRef<number | null>(
+    initial.fromCache ? initial.scrollY : null,
+  )
+  const [filter, setFilter] = useState<CommunityFilter>(initial.filter)
+  const [members, setMembers] = useState<CommunityMember[]>(initial.members)
+  const [followingCount, setFollowingCount] = useState(initial.followingCount)
+  const [loading, setLoading] = useState(!initial.fromCache)
   const [error, setError] = useState('')
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const data = await httpData.listCommunityMembers(todayKey, filter)
-      setMembers(data.members)
-      if (filter === 'all') {
-        setFollowingCount(
-          data.members.filter((m) => m.isFollowing && !m.isSelf).length,
-        )
+  const listStateRef = useRef({ filter, members, followingCount })
+  listStateRef.current = { filter, members, followingCount }
+
+  const persistListCache = useCallback(() => {
+    saveCommunityListCache({
+      ...listStateRef.current,
+      scrollY: scrollYRef.current,
+    })
+  }, [])
+
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!opts?.silent) {
+        setLoading(true)
+        setError('')
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败')
-    } finally {
-      setLoading(false)
+      try {
+        const data = await httpData.listCommunityMembers(todayKey, filter)
+        setMembers(data.members)
+        let nextFollowing = listStateRef.current.followingCount
+        if (filter === 'all') {
+          nextFollowing = data.members.filter(
+            (m) => m.isFollowing && !m.isSelf,
+          ).length
+          setFollowingCount(nextFollowing)
+        }
+        saveCommunityListCache({
+          filter,
+          members: data.members,
+          followingCount: nextFollowing,
+          scrollY: scrollYRef.current,
+        })
+      } catch (err) {
+        if (!opts?.silent) {
+          setError(err instanceof Error ? err.message : '加载失败')
+        }
+      } finally {
+        if (!opts?.silent) setLoading(false)
+      }
+    },
+    [todayKey, filter],
+  )
+
+  /* 滚动时持续记录位置（离开页面前 .app-main 往往已被重置为 0） */
+  useEffect(() => {
+    const main = getCommunityMainElement()
+    if (!main) return
+    const onScroll = () => {
+      scrollYRef.current = main.scrollTop
     }
-  }, [todayKey, filter])
+    onScroll()
+    main.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      main.removeEventListener('scroll', onScroll)
+      saveCommunityListCache({
+        ...listStateRef.current,
+        scrollY: scrollYRef.current,
+      })
+    }
+  }, [])
+
+  const didInitialLoad = useRef(false)
+  /* 有缓存时先展示列表并恢复滚动，再静默拉取最新今日数据（成就特效） */
+  useEffect(() => {
+    if (didInitialLoad.current) return
+    didInitialLoad.current = true
+    if (initial.fromCache) {
+      void load({ silent: true })
+    } else {
+      void load()
+    }
+  }, [load, initial.fromCache])
 
   useEffect(() => {
-    load()
-  }, [load, profile?.community_visible])
+    if (filter === initialFilter.current) return
+    void load()
+  }, [filter, load])
+
+  const prevVisible = useRef(profile?.community_visible)
+  useEffect(() => {
+    if (prevVisible.current === profile?.community_visible) return
+    prevVisible.current = profile?.community_visible
+    void load()
+  }, [profile?.community_visible, load])
+
+  useLayoutEffect(() => {
+    if (pendingScrollRestore.current == null || loading) return
+    const y = pendingScrollRestore.current
+    pendingScrollRestore.current = null
+    restoreCommunityMainScroll(y)
+  }, [loading, members.length])
 
   const handleFollowChange = (userId: string, following: boolean) => {
     setMembers((prev) => {
@@ -140,7 +242,7 @@ export function CommunityPage() {
           {error}
           <button
             type="button"
-            onClick={load}
+            onClick={() => void load()}
             className="ml-2 text-brand underline"
           >
             重试
@@ -185,6 +287,7 @@ export function CommunityPage() {
             onMembersChange={setMembers}
             onFollowChange={handleFollowChange}
             onLikeChange={handleLikeChange}
+            onBeforeOpenMember={persistListCache}
           />
         </>
       )}

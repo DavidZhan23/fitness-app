@@ -19,6 +19,8 @@ interface CommunityMemberListProps {
     userId: string,
     stats: { likeCount: number; viewerLiked: boolean },
   ) => void
+  /** 点开名片前保存列表滚动位置 */
+  onBeforeOpenMember?: () => void
 }
 
 export function CommunityMemberList({
@@ -29,6 +31,7 @@ export function CommunityMemberList({
   onMembersChange,
   onFollowChange,
   onLikeChange,
+  onBeforeOpenMember,
 }: CommunityMemberListProps) {
   const [localMembers, setLocalMembers] = useState(members)
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -150,6 +153,7 @@ export function CommunityMemberList({
                   isDragging={dragging}
                   sortLocked={draggingId !== null}
                   roundedLeft={!showHandles}
+                  onBeforeNavigate={onBeforeOpenMember}
                 />
               </div>
             </li>

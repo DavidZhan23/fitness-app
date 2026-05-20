@@ -191,6 +191,25 @@ app.post(
   }),
 )
 
+app.patch(
+  '/exercises/:id',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { name, kcal } = req.body
+    if (!name?.trim() || kcal == null || Number(kcal) <= 0) {
+      return res.status(400).json({ error: '请填写名称和有效热量' })
+    }
+    const { rows } = await query(
+      `update exercises set name = $1, kcal = $2
+       where id = $3 and user_id = $4
+       returning *`,
+      [name.trim(), kcal, req.params.id, req.userId],
+    )
+    if (!rows[0]) return res.status(404).json({ error: '记录不存在' })
+    res.json(rows[0])
+  }),
+)
+
 app.delete(
   '/exercises/:id',
   authMiddleware,
@@ -215,6 +234,25 @@ app.post(
     const { rows } = await query(`select * from day_logs where id = $1`, [
       day_log_id,
     ])
+    res.json(rows[0])
+  }),
+)
+
+app.patch(
+  '/meals/:id',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { name, kcal } = req.body
+    if (!name?.trim() || kcal == null || Number(kcal) <= 0) {
+      return res.status(400).json({ error: '请填写名称和有效热量' })
+    }
+    const { rows } = await query(
+      `update meals set name = $1, kcal = $2
+       where id = $3 and user_id = $4
+       returning *`,
+      [name.trim(), kcal, req.params.id, req.userId],
+    )
+    if (!rows[0]) return res.status(404).json({ error: '记录不存在' })
     res.json(rows[0])
   }),
 )
