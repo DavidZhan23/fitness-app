@@ -194,7 +194,7 @@ function BadgeLegend() {
     <div className="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[10px] text-muted">
       <span className="text-slate-500">成就</span>
       <span>👑 运动大王</span>
-      <span>🔥 缺口先锋</span>
+      <span>🔥 减脂先锋</span>
       <span>🍽️ 记得记饮食</span>
     </div>
   )

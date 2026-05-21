@@ -197,7 +197,7 @@ export function CommunityPage() {
           <p className="flex flex-nowrap items-center gap-2">
             <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-600/30 to-cyan-600/20 px-2 py-0.5 font-semibold text-violet-100 ring-1 ring-violet-400/35">
               <span aria-hidden>🔥</span>
-              缺口先锋
+              减脂先锋
             </span>
             <span
               className="min-w-0 flex-1 truncate text-slate-400"

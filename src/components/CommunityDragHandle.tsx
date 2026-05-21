@@ -23,6 +23,14 @@ function GripIcon() {
   )
 }
 
+/** 与拖动手柄同宽同色的左栏，用于置顶「我」的对齐占位 */
+export const communityDragColumnClass =
+  'flex w-9 shrink-0 items-center justify-center self-stretch rounded-l-2xl bg-slate-800/70 ring-1 ring-slate-700/60'
+
+export function CommunityDragHandlePlaceholder() {
+  return <div className={communityDragColumnClass} aria-hidden />
+}
+
 export function CommunityDragHandle({
   onPointerDown,
   disabled,
@@ -33,7 +41,7 @@ export function CommunityDragHandle({
       aria-label="拖动排序"
       disabled={disabled}
       onPointerDown={onPointerDown}
-      className="flex w-9 shrink-0 touch-none select-none items-center justify-center self-stretch rounded-l-2xl bg-slate-800/70 text-slate-400 ring-1 ring-slate-700/60 transition hover:bg-slate-700/80 hover:text-slate-300 active:cursor-grabbing active:bg-violet-900/40 active:text-violet-300 disabled:opacity-40"
+      className={`${communityDragColumnClass} touch-none select-none text-slate-400 transition hover:bg-slate-700/80 hover:text-slate-300 active:cursor-grabbing active:bg-violet-900/40 active:text-violet-300 disabled:opacity-40`}
       style={{ touchAction: 'none' }}
     >
       <GripIcon />

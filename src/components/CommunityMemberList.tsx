@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { CommunityDragHandle } from './CommunityDragHandle'
+import {
+  CommunityDragHandle,
+  CommunityDragHandlePlaceholder,
+} from './CommunityDragHandle'
 import { CommunityMemberCard } from './CommunityMemberCard'
 import { httpData } from '../lib/api'
 import {
@@ -135,12 +138,7 @@ export function CommunityMemberList({
                   onPointerDown={(e) => startDrag(e, m.id)}
                 />
               )}
-              {showHandles && m.isSelf && (
-                <div
-                  className="w-9 shrink-0 rounded-l-2xl bg-transparent"
-                  aria-hidden
-                />
-              )}
+              {showHandles && m.isSelf && <CommunityDragHandlePlaceholder />}
               <div
                 className={`min-w-0 flex-1 ${showHandles ? 'rounded-r-2xl' : ''} ${dragging ? 'shadow-lg shadow-violet-500/10 ring-2 ring-violet-500/40' : ''}`}
               >

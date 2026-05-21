@@ -47,7 +47,7 @@ export function evaluateCommunityDayStatus(input: {
   return { needsMealLog, badge }
 }
 
-/** 社区列表名片特效：仅当日，运动大王优先于缺口先锋 */
+/** 社区列表名片特效：仅当日，运动大王优先于减脂先锋 */
 export function getTodayMemberCardBadge(
   isToday: boolean,
   input: { deficit: number; exerciseKcal: number; mealKcal: number },
@@ -76,7 +76,7 @@ export function heatmapBadgeLabel(badge: HeatmapDayBadge): string {
     case 'champion':
       return '运动大王'
     case 'elite':
-      return '缺口先锋'
+      return '减脂先锋'
     case 'meal':
       return '记得记饮食'
   }

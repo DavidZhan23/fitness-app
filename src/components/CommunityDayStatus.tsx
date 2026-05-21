@@ -40,7 +40,7 @@ export function CommunityDayStatus({
           <CompactPill kind="champion" label="运动大王" />
         )}
         {status.badge === 'elite' && (
-          <CompactPill kind="elite" label="缺口先锋" />
+          <CompactPill kind="elite" label="减脂先锋" />
         )}
         {status.needsMealLog && (
           <CompactPill kind="meal" label="记得记饮食" />
@@ -184,7 +184,7 @@ function BadgeBanner({
           <span className="text-base" aria-hidden>
             {isChampion ? '👑' : '🔥'}
           </span>
-          {isChampion ? '运动大王' : '缺口先锋'}
+          {isChampion ? '运动大王' : '减脂先锋'}
           <span className="ml-auto tabular-nums text-[10px] font-normal text-slate-400">
             缺口 +{Math.round(deficit)}
           </span>
@@ -222,7 +222,7 @@ function BadgeBanner({
               isChampion ? 'text-amber-100' : 'text-violet-100'
             }`}
           >
-            {isChampion ? '运动大王' : '缺口先锋'}
+            {isChampion ? '运动大王' : '减脂先锋'}
           </p>
           <p className="mt-0.5 text-sm text-slate-300/90">
             {isChampion

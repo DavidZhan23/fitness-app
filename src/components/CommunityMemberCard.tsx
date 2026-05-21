@@ -77,6 +77,10 @@ export function CommunityMemberCard({
       )}
       {isChampion && (
         <>
+          <span className="community-card-champion__aura" aria-hidden />
+          <span className="community-card-champion__edge" aria-hidden />
+          <span className="community-card-champion__orb community-card-champion__orb--1" aria-hidden />
+          <span className="community-card-champion__orb community-card-champion__orb--2" aria-hidden />
           <span
             className="community-card-champion__sparkle community-card-champion__sparkle--tl"
             aria-hidden
@@ -96,6 +100,7 @@ export function CommunityMemberCard({
             ✦
           </span>
           <span className="community-card-fx-ribbon community-card-fx-ribbon--champion">
+            <span className="community-card-fx-ribbon__glint" aria-hidden />
             👑 运动大王
           </span>
         </>
@@ -131,7 +136,7 @@ export function CommunityMemberCard({
             </p>
           </div>
           <div
-            className={`shrink-0 text-right ${todayBadge ? 'mt-[0.2cm]' : ''}`}
+            className={`shrink-0 text-right ${todayBadge ? 'mt-[calc(0.2cm+2mm)]' : ''}`}
           >
             <p
               className={`text-base font-bold tabular-nums leading-tight ${

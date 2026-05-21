@@ -22,7 +22,7 @@ export default defineConfig({
         lang: 'zh-CN',
         dir: 'ltr',
         theme_color: '#0f766e',
-        background_color: '#0f172a',
+        background_color: '#1e293b',
         display: 'standalone',
         display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',

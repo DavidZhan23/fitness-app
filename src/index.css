@@ -9,26 +9,58 @@
   --color-tabbar: #1e293b;
 }
 
-/* 安全区（PWA / 刘海屏） */
+/* 安全区（PWA / 刘海屏）；constant() 兼容旧版 iOS Safari */
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --tabbar-row-h: 3.25rem;
+  /* Android：无安全区时给汉字留出手势条间距 */
+  --tabbar-bottom-pad: max(
+    0.5rem,
+    env(safe-area-inset-bottom, 0px),
+    constant(safe-area-inset-bottom, 0px)
+  );
+  --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
+}
+
+/* iPhone / iOS：仅系统 Home 条高度；主屏幕 PWA 若 env 为 0 则用 ~34px 兜底 */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --tabbar-bottom-pad: max(
+      env(safe-area-inset-bottom, 0px),
+      constant(safe-area-inset-bottom, 0px)
+    );
+    --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
+  }
+
+  @media (display-mode: standalone) {
+    :root {
+      --tabbar-bottom-pad: max(
+        env(safe-area-inset-bottom, 0px),
+        constant(safe-area-inset-bottom, 0px),
+        2.125rem
+      );
+      --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
+    }
+  }
 }
 
 html {
   height: 100%;
-  background-color: var(--color-surface);
+  height: 100dvh;
+  background-color: var(--color-tabbar);
 }
 
 body {
   @apply text-slate-100 antialiased;
   margin: 0;
-  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   overflow: hidden;
-  background-color: var(--color-surface);
+  background-color: var(--color-tabbar);
   font-family:
     system-ui,
     -apple-system,
@@ -39,52 +71,58 @@ body {
 }
 
 #root {
-  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
 }
 
 /*
- * 整页 flex 列：主内容在上可滚动，底栏为最后一项自然贴底（不用 fixed，避免留白）。
+ * 主内容全屏滚动；底栏 fixed 贴物理底边，背景铺满 Home 条区域（消除 iPhone 底缝）。
  */
 .app-shell {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
+  height: 100dvh;
   overflow: hidden;
   background-color: var(--color-surface);
-  padding-left: var(--safe-left);
-  padding-right: var(--safe-right);
 }
 
 .app-main {
-  flex: 1 1 auto;
-  min-height: 0;
+  box-sizing: border-box;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  /* 避开状态栏/刘海，标题不会顶到屏幕最上沿 */
   padding-top: max(0.75rem, var(--safe-top));
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+  padding-bottom: calc(var(--tabbar-total-h) + 0.75rem);
 }
 
 .app-main__inner {
   margin: 0 auto;
   width: 100%;
   max-width: 32rem;
-  padding: 0 1rem 1rem;
+  padding: 0 0 1rem;
 }
 
 .app-tabbar {
-  flex: 0 0 auto;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
   box-sizing: border-box;
-  width: 100%;
-  margin-bottom: -0.5cm;
+  margin: 0;
+  padding-left: max(0.5rem, var(--safe-left));
+  padding-right: max(0.5rem, var(--safe-right));
+  padding-bottom: var(--tabbar-bottom-pad);
   border-top: 1px solid rgb(51 65 85 / 0.65);
   background-color: var(--color-tabbar);
-  /* 负边距下压贴底后，用 padding 保住 Home 条区域可点 */
-  padding-bottom: calc(var(--safe-bottom) + 0.5cm);
 }
 
 .app-tabbar__row {
@@ -156,7 +194,7 @@ button {
   @apply w-full rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 outline-none focus:ring-2 focus:ring-brand;
 }
 
-/* 社区名片：当日缺口先锋 · on fire */
+/* 社区名片：当日减脂先锋 · on fire */
 @keyframes community-card-fire-glow {
   0%,
   100% {
@@ -249,72 +287,219 @@ button {
   animation-delay: 1.5s;
 }
 
-/* 社区名片：当日运动大王 · 金光 */
-@keyframes community-card-gold-glow {
+/* 社区名片：当日运动大王 · 臻金质感 */
+@keyframes community-card-champion-glow {
   0%,
   100% {
     box-shadow:
-      0 0 18px rgb(251 191 36 / 0.35),
-      0 0 36px rgb(245 158 11 / 0.18),
-      inset 0 1px 0 rgb(253 224 71 / 0.15);
+      0 0 0 1px rgb(252 211 77 / 0.42),
+      0 0 22px rgb(251 191 36 / 0.38),
+      0 0 48px rgb(234 179 8 / 0.22),
+      inset 0 1px 0 rgb(253 224 71 / 0.22),
+      inset 0 -14px 28px rgb(161 98 7 / 0.14);
   }
   50% {
     box-shadow:
-      0 0 28px rgb(252 211 77 / 0.55),
-      0 0 52px rgb(217 119 6 / 0.3),
-      inset 0 1px 0 rgb(254 240 138 / 0.25);
+      0 0 0 1px rgb(254 240 138 / 0.58),
+      0 0 32px rgb(252 211 77 / 0.48),
+      0 0 60px rgb(245 158 11 / 0.28),
+      inset 0 1px 0 rgb(255 251 235 / 0.28),
+      inset 0 -14px 32px rgb(180 83 9 / 0.18);
   }
 }
 
-@keyframes community-card-gold-sweep {
+@keyframes community-card-champion-sweep {
   0% {
-    transform: translateX(-55%) rotate(22deg);
+    transform: translateX(-62%) skewX(-8deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
   }
   100% {
-    transform: translateX(55%) rotate(22deg);
+    transform: translateX(62%) skewX(-8deg);
+    opacity: 0;
   }
 }
 
-@keyframes community-card-gold-sparkle {
+@keyframes community-card-champion-aura {
   0%,
   100% {
-    opacity: 0.35;
-    transform: scale(0.85);
+    opacity: 0.55;
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06) translate(-2%, 1%);
+  }
+}
+
+@keyframes community-card-champion-sparkle {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9) translateY(0);
   }
   50% {
     opacity: 1;
-    transform: scale(1.15);
+    transform: scale(1.1) translateY(-2px);
+  }
+}
+
+@keyframes community-card-champion-orb-drift {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(4px, -6px) scale(1.15);
+  }
+}
+
+@keyframes community-card-champion-ribbon-bg {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes community-card-champion-ribbon-glint {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(220%) skewX(-12deg);
+    opacity: 0;
   }
 }
 
 .community-card-champion {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   background: linear-gradient(
-    135deg,
-    rgb(69 26 3 / 0.55) 0%,
-    rgb(30 41 59 / 0.92) 38%,
-    rgb(120 53 15 / 0.45) 100%
+    148deg,
+    rgb(92 45 6 / 0.78) 0%,
+    rgb(55 32 6 / 0.92) 38%,
+    rgb(68 38 4 / 0.72) 68%,
+    rgb(146 64 14 / 0.55) 100%
   );
-  border-color: rgb(251 191 36 / 0.55);
-  animation: community-card-gold-glow 2.4s ease-in-out infinite;
+  border-color: rgb(252 211 77 / 0.65);
+  animation: community-card-champion-glow 3.2s ease-in-out infinite;
 }
 
 .community-card-champion::before {
   pointer-events: none;
   content: '';
   position: absolute;
-  inset: -40%;
+  inset: -50%;
   z-index: 0;
   background: linear-gradient(
     105deg,
-    transparent 38%,
-    rgb(255 215 0 / 0.08) 44%,
-    rgb(255 255 255 / 0.22) 50%,
-    rgb(255 215 0 / 0.1) 56%,
+    transparent 34%,
+    rgb(255 215 0 / 0.1) 42%,
+    rgb(255 248 220 / 0.22) 50%,
+    rgb(252 211 77 / 0.12) 58%,
+    transparent 66%
+  );
+  animation: community-card-champion-sweep 4.8s ease-in-out infinite;
+}
+
+.community-card-champion::after {
+  pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 90% 55% at 88% 8%,
+    rgb(254 240 138 / 0.28),
+    rgb(251 191 36 / 0.08) 45%,
     transparent 62%
   );
-  animation: community-card-gold-sweep 3.2s ease-in-out infinite;
+}
+
+.community-card-champion__aura {
+  pointer-events: none;
+  position: absolute;
+  top: -28%;
+  right: -18%;
+  z-index: 0;
+  width: 72%;
+  height: 75%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(252 211 77 / 0.38) 0%,
+    rgb(251 191 36 / 0.18) 38%,
+    rgb(245 158 11 / 0.06) 55%,
+    transparent 68%
+  );
+  filter: blur(10px);
+  animation: community-card-champion-aura 4.5s ease-in-out infinite;
+}
+
+.community-card-champion__edge {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(253 224 71 / 0.25) 18%,
+    rgb(255 251 235 / 0.75) 50%,
+    rgb(253 224 71 / 0.25) 82%,
+    transparent 100%
+  );
+  opacity: 0.85;
+}
+
+.community-card-champion__orb {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(254 240 138 / 0.95) 0%,
+    rgb(251 191 36 / 0.5) 35%,
+    transparent 70%
+  );
+  filter: blur(0.5px);
+  animation: community-card-champion-orb-drift 3.6s ease-in-out infinite;
+}
+
+.community-card-champion__orb--1 {
+  top: 2.25rem;
+  left: 1.1rem;
+  width: 4px;
+  height: 4px;
+  animation-delay: 0s;
+}
+
+.community-card-champion__orb--2 {
+  right: 2.5rem;
+  bottom: 3.25rem;
+  width: 3px;
+  height: 3px;
+  animation-delay: 1.4s;
 }
 
 .community-card-champion__sparkle {
@@ -323,8 +508,11 @@ button {
   z-index: 0;
   font-size: 0.65rem;
   line-height: 1;
-  text-shadow: 0 0 8px rgb(251 191 36 / 0.9);
-  animation: community-card-gold-sparkle 1.8s ease-in-out infinite;
+  color: rgb(254 240 138 / 0.95);
+  text-shadow:
+    0 0 6px rgb(251 191 36 / 0.85),
+    0 0 14px rgb(245 158 11 / 0.45);
+  animation: community-card-champion-sparkle 2.4s ease-in-out infinite;
 }
 
 .community-card-champion__sparkle--tl {
@@ -336,13 +524,13 @@ button {
 .community-card-champion__sparkle--tr {
   top: 0.45rem;
   right: 0.5rem;
-  animation-delay: 0.6s;
+  animation-delay: 0.75s;
 }
 
 .community-card-champion__sparkle--br {
   right: 1.25rem;
   bottom: 2.5rem;
-  animation-delay: 1.1s;
+  animation-delay: 1.35s;
 }
 
 .community-card-fx-inner {
@@ -365,13 +553,56 @@ button {
 }
 
 .community-card-fx-ribbon--champion {
-  color: rgb(254 243 199);
+  overflow: hidden;
+  color: rgb(255 251 235);
+  text-shadow: 0 1px 2px rgb(120 53 15 / 0.45);
   background: linear-gradient(
-    135deg,
-    rgb(217 119 6 / 0.95),
-    rgb(251 191 36 / 0.9)
+    120deg,
+    rgb(161 98 7) 0%,
+    rgb(234 179 8) 22%,
+    rgb(253 224 71) 48%,
+    rgb(250 204 21) 52%,
+    rgb(234 179 8) 78%,
+    rgb(180 83 9) 100%
   );
-  box-shadow: 0 0 12px rgb(251 191 36 / 0.5);
+  background-size: 220% 220%;
+  border: 1px solid rgb(254 240 138 / 0.55);
+  box-shadow:
+    0 0 16px rgb(252 211 77 / 0.6),
+    0 2px 8px rgb(0 0 0 / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
+  animation: community-card-champion-ribbon-bg 5s ease-in-out infinite;
+}
+
+.community-card-fx-ribbon--champion .community-card-fx-ribbon__glint {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.45) 50%,
+    transparent 65%
+  );
+  animation: community-card-champion-ribbon-glint 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .community-card-champion,
+  .community-card-champion::before,
+  .community-card-champion__aura,
+  .community-card-champion__orb,
+  .community-card-champion__sparkle,
+  .community-card-fx-ribbon--champion,
+  .community-card-fx-ribbon--champion .community-card-fx-ribbon__glint {
+    animation: none;
+  }
+
+  .community-card-champion {
+    box-shadow:
+      0 0 0 1px rgb(252 211 77 / 0.5),
+      0 0 24px rgb(251 191 36 / 0.35);
+  }
 }
 
 .community-card-fx-ribbon--elite {
