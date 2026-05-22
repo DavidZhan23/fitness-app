@@ -4,7 +4,7 @@
 
 | Slug | Status | Branch |
 |------|--------|--------|
-| [ai-workflow](M-2026-05-ai-workflow.md) | active | `feat/ci-cd-workflow` (when implementing) |
+| [ai-workflow](M-2026-05-ai-workflow.md) | done | `feat/ci-cd-workflow` → PR #1 |
 
 **Status:** `active` | `done` | `cancelled`
 

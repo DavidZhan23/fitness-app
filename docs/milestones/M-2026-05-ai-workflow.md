@@ -1,6 +1,6 @@
 # Milestone: CI/CD and contributor workflow
 
-**Status:** active  
+**Status:** done  
 **Branch:** `feat/ci-cd-workflow`  
 **Started:** 2026-05-22
 
