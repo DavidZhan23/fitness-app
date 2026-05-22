@@ -74,6 +74,9 @@ export async function runMigrations() {
         primary key (viewer_id, member_id),
         check (viewer_id <> member_id)
       )`)
+    await pool.query(
+      `alter table public.profiles add column if not exists community_notify_seen_at timestamptz`,
+    )
     await pool.query(`
       create table if not exists public.log_item_reactions (
         voter_id uuid not null references public.users (id) on delete cascade,

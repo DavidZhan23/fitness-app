@@ -138,6 +138,26 @@ export const httpData = {
     await apiFetch(`/meals/${id}`, { method: 'DELETE' })
   },
 
+  async getCommunityInboxUnread(): Promise<{ count: number }> {
+    return apiFetch('/community/inbox/unread')
+  },
+
+  async markCommunityInboxRead(): Promise<{ ok: boolean; count: number }> {
+    return apiFetch('/community/inbox/mark-read', { method: 'POST' })
+  },
+
+  async estimateKcal(
+    type: 'exercise' | 'meal',
+    description: string,
+    init?: { signal?: AbortSignal },
+  ): Promise<{ kcal: number }> {
+    return apiFetch('/ai/estimate-kcal', {
+      method: 'POST',
+      body: JSON.stringify({ type, description }),
+      signal: init?.signal,
+    })
+  },
+
   async getOrCreateDayLog(
     _userId: string,
     logDate: string,

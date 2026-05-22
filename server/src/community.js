@@ -1,6 +1,10 @@
 import { resolveProfileBmr, toKcal } from './calories.js'
 import { calculateSpreadDeficit } from './metabolism.js'
 import { formatDateKeyInTz, isValidDateKey } from './dateKey.js'
+import {
+  applyYesterdayVisibilityRules,
+  hideCommunityIfYesterdayEmpty,
+} from './communityVisibility.js'
 import { loadMemberOrderMap, sortMembersByCustomOrder } from './communityOrder.js'
 import { enrichLogItemsWithReactions } from './logItemReactions.js'
 import { query } from './db.js'
@@ -109,6 +113,7 @@ export async function computeDaySnapshot(profile, logDate, now = new Date()) {
 
 export async function listCommunityMembers(viewerId, clientToday, filter = 'all') {
   const today = resolveClientToday(clientToday)
+  await hideCommunityIfYesterdayEmpty(viewerId, today)
   const { rows } = await query(
     `select * from profiles
      where community_visible = true and onboarding_complete = true
@@ -129,8 +134,12 @@ export async function listCommunityMembers(viewerId, clientToday, filter = 'all'
   }
 
   const members = []
-  for (const profile of profiles) {
-    const todaySnap = await computeDaySnapshot(profile, today)
+  const withVisibility = await applyYesterdayVisibilityRules(
+    profiles,
+    viewerId,
+    today,
+  )
+  for (const { todaySnap, ...profile } of withVisibility) {
     members.push({
       ...toPublicMember(profile, viewerId),
       today: todaySnap,

@@ -25,6 +25,19 @@ import {
   unlikeDay,
 } from './social.js'
 import { query, waitForDb } from './db.js'
+import {
+  getCommunityInboxUnread,
+  markCommunityInboxRead,
+} from './communityInbox.js'
+import {
+  afterDayLogChanged,
+  afterDayLogIdChanged,
+  afterExerciseOrMealChanged,
+} from './dayLogMutation.js'
+import {
+  estimateKcalFromDescription,
+  getDeepSeekApiKey,
+} from './deepseekKcal.js'
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -37,7 +50,7 @@ app.get(
   '/health',
   asyncHandler(async (_req, res) => {
     await query('select 1')
-    res.json({ ok: true })
+    res.json({ ok: true, aiConfigured: Boolean(getDeepSeekApiKey()) })
   }),
 )
 
@@ -108,6 +121,27 @@ app.patch(
   }),
 )
 
+app.post(
+  '/ai/estimate-kcal',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { type, description } = req.body
+    if (type !== 'exercise' && type !== 'meal') {
+      return res.status(400).json({ error: 'type 须为 exercise 或 meal' })
+    }
+    const { rows } = await query(
+      `select weight_kg from profiles where id = $1`,
+      [req.userId],
+    )
+    const result = await estimateKcalFromDescription({
+      type,
+      description,
+      profile: rows[0] || {},
+    })
+    res.json(result)
+  }),
+)
+
 app.get(
   '/day-logs/range',
   authMiddleware,
@@ -152,7 +186,13 @@ app.get(
         dayLog.id,
       ]),
     ])
-    res.json({ dayLog, exercises: ex.rows, meals: meals.rows })
+    const visibility = await afterDayLogChanged(req.userId, date)
+    res.json({
+      dayLog,
+      exercises: ex.rows,
+      meals: meals.rows,
+      community_visible: visibility?.community_visible,
+    })
   }),
 )
 
@@ -187,7 +227,8 @@ app.post(
     const { rows } = await query(`select * from day_logs where id = $1`, [
       day_log_id,
     ])
-    res.json(rows[0])
+    const visibility = await afterDayLogIdChanged(req.userId, day_log_id)
+    res.json({ ...rows[0], community_visible: visibility?.community_visible })
   }),
 )
 
@@ -206,7 +247,12 @@ app.patch(
       [name.trim(), kcal, req.params.id, req.userId],
     )
     if (!rows[0]) return res.status(404).json({ error: '记录不存在' })
-    res.json(rows[0])
+    const visibility = await afterExerciseOrMealChanged(
+      req.userId,
+      req.params.id,
+      'exercises',
+    )
+    res.json({ ...rows[0], community_visible: visibility?.community_visible })
   }),
 )
 
@@ -214,11 +260,16 @@ app.delete(
   '/exercises/:id',
   authMiddleware,
   asyncHandler(async (req, res) => {
+    const visibility = await afterExerciseOrMealChanged(
+      req.userId,
+      req.params.id,
+      'exercises',
+    )
     await query(`delete from exercises where id = $1 and user_id = $2`, [
       req.params.id,
       req.userId,
     ])
-    res.json({ ok: true })
+    res.json({ ok: true, community_visible: visibility?.community_visible })
   }),
 )
 
@@ -234,7 +285,8 @@ app.post(
     const { rows } = await query(`select * from day_logs where id = $1`, [
       day_log_id,
     ])
-    res.json(rows[0])
+    const visibility = await afterDayLogIdChanged(req.userId, day_log_id)
+    res.json({ ...rows[0], community_visible: visibility?.community_visible })
   }),
 )
 
@@ -253,7 +305,12 @@ app.patch(
       [name.trim(), kcal, req.params.id, req.userId],
     )
     if (!rows[0]) return res.status(404).json({ error: '记录不存在' })
-    res.json(rows[0])
+    const visibility = await afterExerciseOrMealChanged(
+      req.userId,
+      req.params.id,
+      'meals',
+    )
+    res.json({ ...rows[0], community_visible: visibility?.community_visible })
   }),
 )
 
@@ -261,11 +318,16 @@ app.delete(
   '/meals/:id',
   authMiddleware,
   asyncHandler(async (req, res) => {
+    const visibility = await afterExerciseOrMealChanged(
+      req.userId,
+      req.params.id,
+      'meals',
+    )
     await query(`delete from meals where id = $1 and user_id = $2`, [
       req.params.id,
       req.userId,
     ])
-    res.json({ ok: true })
+    res.json({ ok: true, community_visible: visibility?.community_visible })
   }),
 )
 
@@ -309,6 +371,24 @@ app.delete(
       req.userId,
     ])
     res.json({ ok: true })
+  }),
+)
+
+app.get(
+  '/community/inbox/unread',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await getCommunityInboxUnread(req.userId)
+    res.json(data)
+  }),
+)
+
+app.post(
+  '/community/inbox/mark-read',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await markCommunityInboxRead(req.userId)
+    res.json(data)
   }),
 )
 
@@ -533,11 +613,16 @@ app.use((err, req, res, _next) => {
   }
   let message = err.message || '请求失败'
   if (status >= 500) {
-    if (err.code === '23514') message = '资料数值不合法，请检查体重、身高等'
-    else if (err.code === '22P02') message = '资料格式错误，请检查输入'
-    else if (err.code === '22003') message = '数值超出范围，请检查活动系数等'
-    else if (err.code === '42703') message = '数据库需要升级，请重启 API 服务或联系管理员执行迁移'
-    else message = '服务器繁忙，请稍后重试'
+    const keepClientMessage =
+      status === 502 || status === 503 || status === 504
+    if (!keepClientMessage) {
+      if (err.code === '23514') message = '资料数值不合法，请检查体重、身高等'
+      else if (err.code === '22P02') message = '资料格式错误，请检查输入'
+      else if (err.code === '22003') message = '数值超出范围，请检查活动系数等'
+      else if (err.code === '42703') {
+        message = '数据库需要升级，请重启 API 服务或联系管理员执行迁移'
+      } else message = '服务器繁忙，请稍后重试'
+    }
     console.error('[api]', req.method, req.path, err.code, err.detail || err.message)
   }
   res.status(status).json({ error: message })

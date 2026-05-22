@@ -7,6 +7,7 @@ import {
 } from '../components/CommunitySegment'
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { useAuth } from '../context/AuthContext'
+import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
 import {
   loadCommunityListCache,
@@ -38,7 +39,8 @@ function readInitialCommunityState() {
 }
 
 export function CommunityPage() {
-  const { profile } = useAuth()
+  const { profile, refreshProfile } = useAuth()
+  const { markRead } = useCommunityInbox()
   const todayKey = formatDateKey()
   const initial = useRef(readInitialCommunityState()).current
   const initialFilter = useRef(initial.filter)
@@ -112,6 +114,11 @@ export function CommunityPage() {
       })
     }
   }, [])
+
+  useEffect(() => {
+    void markRead()
+    void refreshProfile()
+  }, [markRead, refreshProfile])
 
   const didInitialLoad = useRef(false)
   /* 有缓存时先展示列表并恢复滚动，再静默拉取最新今日数据（成就特效） */
@@ -222,8 +229,8 @@ export function CommunityPage() {
       </header>
 
       {!visible && (
-        <p className="rounded-xl border border-dashed border-violet-500/30 bg-violet-950/20 px-3 py-2.5 text-sm text-violet-200/90">
-          你尚未公开动态。打开标题旁「未公开」开关后，其他用户才能看到你，你也能留在社区列表中。
+        <p className="rounded-xl border border-dashed border-violet-500/30 bg-violet-950/20 px-3 py-2.5 text-sm leading-relaxed text-violet-200/90">
+          若昨日未记录任何运动或饮食，系统会在今日自动设为未公开；今日仍可正常打卡，记课后可在标题旁重新打开「已公开」。
         </p>
       )}
 

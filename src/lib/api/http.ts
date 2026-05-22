@@ -25,15 +25,25 @@ export async function apiFetch<T>(
   let res: Response
   try {
     res = await fetch(`${apiBaseUrl}${path}`, { ...options, headers })
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err
+    }
     throw new Error('无法连接服务器，请检查网络后重试')
   }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    if (res.status === 502 || res.status === 503) {
-      throw new Error('服务暂时不可用，请稍后重试（若持续出现请重启服务器 API）')
+    const serverMsg =
+      typeof data.error === 'string' && data.error.trim()
+        ? data.error.trim()
+        : ''
+    if (res.status === 502 || res.status === 503 || res.status === 504) {
+      throw new Error(
+        serverMsg ||
+          '服务暂时不可用，请稍后重试（若持续出现请重启服务器 API）',
+      )
     }
-    throw new Error(data.error || res.statusText || '请求失败')
+    throw new Error(serverMsg || res.statusText || '请求失败')
   }
   return data as T
 }

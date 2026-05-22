@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { AiKcalEstimate } from '../components/AiKcalEstimate'
 import { TemplatePicker } from '../components/TemplatePicker'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -120,7 +121,7 @@ export function LogPage() {
 
       <TemplatePicker templates={templates} onSelect={handleTemplate} />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 pb-8">
         <label className="block">
           <span className="text-sm text-muted">名称</span>
           <input
@@ -131,6 +132,17 @@ export function LogPage() {
             required
           />
         </label>
+
+        <AiKcalEstimate
+          kind={isExercise ? 'exercise' : 'meal'}
+          name={name}
+          disabled={loading}
+          onEstimated={(value) => {
+            setKcal(String(value))
+            if (!isExercise) setMealInputMode('kcal')
+            setError('')
+          }}
+        />
 
         {!isExercise && (
           <div

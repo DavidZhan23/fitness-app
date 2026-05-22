@@ -165,17 +165,50 @@ body {
   background-color: rgb(20 184 166 / 0.12);
 }
 
+.app-tabbar__icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .app-tabbar__icon {
   font-size: 1.25rem;
   line-height: 1;
 }
 
-/* 无底栏的全屏页（登录、引导） */
+.app-tabbar__link--notify .app-tabbar__notify-dot {
+  position: absolute;
+  top: -0.1rem;
+  right: -0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(145deg, #fb7185, #f43f5e);
+  box-shadow:
+    0 0 0 2px var(--color-tabbar),
+    0 0 8px rgb(244 63 94 / 0.65);
+  pointer-events: none;
+}
+
+.app-tabbar__link--active .app-tabbar__notify-dot {
+  box-shadow:
+    0 0 0 2px rgb(20 184 166 / 0.35),
+    0 0 8px rgb(244 63 94 / 0.55);
+}
+
+/* 无底栏的全屏页（登录、记运动/饮食、引导）— 固定视口高度内滚动 */
 .page-standalone {
+  position: fixed;
+  inset: 0;
   box-sizing: border-box;
-  min-height: 100%;
-  min-height: 100dvh;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   padding:
     max(1rem, var(--safe-top))
     max(1rem, var(--safe-right))

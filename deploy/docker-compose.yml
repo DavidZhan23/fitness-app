@@ -13,6 +13,7 @@ services:
       - ../server/migrations/003_add_nickname.sql:/docker-entrypoint-initdb.d/003_add_nickname.sql:ro
       - ../server/migrations/004_community_visible.sql:/docker-entrypoint-initdb.d/004_community_visible.sql:ro
       - ../server/migrations/005_social.sql:/docker-entrypoint-initdb.d/005_social.sql:ro
+      - ../server/migrations/008_community_notify_seen.sql:/docker-entrypoint-initdb.d/008_community_notify_seen.sql:ro
     ports:
       - '5432:5432'
     healthcheck:
@@ -34,6 +35,8 @@ services:
       DISPLAY_TIMEZONE: ${DISPLAY_TIMEZONE:-Asia/Shanghai}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
     ports:
       - '3001:3001'
     expose:

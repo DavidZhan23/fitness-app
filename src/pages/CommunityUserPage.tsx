@@ -8,6 +8,7 @@ import { FollowButton } from '../components/FollowButton'
 import { MonthHeatmap } from '../components/MonthHeatmap'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
+import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
@@ -26,6 +27,7 @@ import type {
 
 export function CommunityUserPage() {
   const { profile } = useAuth()
+  const { markRead } = useCommunityInbox()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
@@ -121,6 +123,10 @@ export function CommunityUserPage() {
   useEffect(() => {
     if (!loading && !error) loadMonth()
   }, [year, month, loading, error, loadMonth])
+
+  useEffect(() => {
+    if (isSelf) void markRead()
+  }, [isSelf, markRead])
 
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))
   const goNext = () => {

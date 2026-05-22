@@ -67,7 +67,12 @@ if [ "$WITH_API" = true ]; then
     "$ROOT/server/" "${SSH_TARGET}:${REMOTE_DIR}/server/"
 
   echo ""
-  echo "🔨 重建 api 容器 ..."
+  echo "📤 上传 deploy/docker-compose.yml、nginx.conf（不含 .env）..."
+  scp "$ROOT/deploy/docker-compose.yml" "${SSH_TARGET}:${REMOTE_DIR}/deploy/docker-compose.yml"
+  scp "$ROOT/deploy/nginx.conf" "${SSH_TARGET}:${REMOTE_DIR}/deploy/nginx.conf"
+
+  echo ""
+  echo "🔨 重建 api 容器（读取服务器 deploy/.env 注入环境变量）..."
   ssh "${SSH_TARGET}" "cd ${REMOTE_DIR}/deploy && docker compose up -d --build api"
 
   echo "✅ 后端已更新"

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { DeficitCard } from '../components/DeficitCard'
@@ -23,6 +23,9 @@ import type { DayLog, Exercise, Meal } from '../types'
 
 export function TodayPage() {
   const { user, profile } = useAuth()
+  const profileRef = useRef(profile)
+  profileRef.current = profile
+  const onboardingComplete = profile?.onboarding_complete
   const today = formatDateKey()
   const [dayLog, setDayLog] = useState<DayLog | null>(null)
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -37,11 +40,12 @@ export function TodayPage() {
   }, [])
 
   const load = useCallback(async () => {
-    if (!user || !profile?.onboarding_complete) return
+    const p = profileRef.current
+    if (!user || !p || !onboardingComplete) return
     setLoading(true)
     setError('')
     try {
-      const data = await fetchDayLogWithItems(user.id, today, profile)
+      const data = await fetchDayLogWithItems(user.id, today, p)
       setDayLog(data.dayLog)
       setExercises(data.exercises)
       setMeals(data.meals)
@@ -50,7 +54,7 @@ export function TodayPage() {
     } finally {
       setLoading(false)
     }
-  }, [user, profile, today])
+  }, [user, onboardingComplete, today])
 
   useEffect(() => {
     load()

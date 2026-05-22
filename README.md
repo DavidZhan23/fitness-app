@@ -42,7 +42,8 @@ npm run dev
 
 ## 部署到腾讯云
 
-**一步步指南：** [docs/腾讯云部署-一步步做.md](docs/腾讯云部署-一步步做.md)
+**一步步指南：** [docs/腾讯云部署-一步步做.md](docs/腾讯云部署-一步步做.md)  
+**服务器配置 DeepSeek Key：** [docs/服务器配置-DeepSeek与API密钥.md](docs/服务器配置-DeepSeek与API密钥.md)
 
 ```bash
 cp .env.deploy.example .env.deploy   # 填写 SERVER_IP
