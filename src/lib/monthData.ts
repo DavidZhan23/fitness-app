@@ -39,7 +39,7 @@ export function buildMonthDayMap(
     const beforeAccount = isBeforeAccountStart(dateKey, accountStartKey)
 
     const endOfDay = new Date(`${dateKey}T23:59:59`)
-    let deficit = beforeAccount
+    const deficit = beforeAccount
       ? 0
       : dateKey === todayKey
         ? calculateSpreadDeficit(dailyBmr, exerciseKcal, mealKcal, dateKey)
