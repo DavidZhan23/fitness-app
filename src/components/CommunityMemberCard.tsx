@@ -44,6 +44,7 @@ export function CommunityMemberCard({
     deficit,
     exerciseKcal,
     mealKcal,
+    dailyBmr: member.today.dailyBmr,
   })
   const isChampion = todayBadge === 'champion'
   const isElite = todayBadge === 'elite'

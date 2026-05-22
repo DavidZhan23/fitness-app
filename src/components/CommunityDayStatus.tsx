@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import {
+  BADGE_THRESHOLDS,
   evaluateCommunityDayStatus,
   heatmapBadgeEmoji,
   type CommunityDayBadge,
@@ -29,18 +30,22 @@ export function CommunityDayStatus({
     deficit,
     exerciseKcal: snapshot.exerciseKcal,
     mealKcal: snapshot.mealKcal,
+    dailyBmr: snapshot.dailyBmr,
   })
 
-  if (!status.needsMealLog && !status.badge) return null
+  if (!status.needsMealLog && !status.badge && !status.foodKing) return null
 
   if (variant === 'compact') {
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {status.badge === 'champion' && (
           <CompactPill kind="champion" label="运动大王" />
         )}
         {status.badge === 'elite' && (
           <CompactPill kind="elite" label="减脂先锋" />
+        )}
+        {status.foodKing && (
+          <CompactPill kind="foodKing" label="美食大王" />
         )}
         {status.needsMealLog && (
           <CompactPill kind="meal" label="记得记饮食" />
@@ -58,6 +63,13 @@ export function CommunityDayStatus({
             deficit={deficit}
             exerciseKcal={snapshot.exerciseKcal}
             mealKcal={snapshot.mealKcal}
+            compact
+          />
+        )}
+        {status.foodKing && (
+          <FoodKingBanner
+            mealKcal={snapshot.mealKcal}
+            dailyBmr={snapshot.dailyBmr}
             compact
           />
         )}
@@ -86,6 +98,12 @@ export function CommunityDayStatus({
           mealKcal={snapshot.mealKcal}
         />
       )}
+      {status.foodKing && (
+        <FoodKingBanner
+          mealKcal={snapshot.mealKcal}
+          dailyBmr={snapshot.dailyBmr}
+        />
+      )}
       {status.needsMealLog && <MealReminderCard isSelf={isSelf} />}
     </div>
   )
@@ -96,17 +114,20 @@ export function PersonalDayStatus({
   deficit,
   exerciseKcal,
   mealKcal,
+  dailyBmr,
 }: {
   deficit: number
   exerciseKcal: number
   mealKcal: number
+  dailyBmr: number
 }) {
   const status = evaluateCommunityDayStatus({
     deficit,
     exerciseKcal,
     mealKcal,
+    dailyBmr,
   })
-  if (!status.needsMealLog && !status.badge) return null
+  if (!status.needsMealLog && !status.badge && !status.foodKing) return null
 
   return (
     <div className="space-y-3">
@@ -126,8 +147,71 @@ export function PersonalDayStatus({
           mealKcal={mealKcal}
         />
       )}
+      {status.foodKing && (
+        <FoodKingBanner mealKcal={mealKcal} dailyBmr={dailyBmr} />
+      )}
       {status.needsMealLog && <MealReminderCard isSelf />}
     </div>
+  )
+}
+
+function FoodKingBanner({
+  mealKcal,
+  dailyBmr,
+  compact = false,
+}: {
+  mealKcal: number
+  dailyBmr: number
+  compact?: boolean
+}) {
+  const threshold = Math.round(
+    dailyBmr * BADGE_THRESHOLDS.foodKingMealBmrRatio,
+  )
+
+  if (compact) {
+    return (
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-rose-950/80 via-orange-950/55 to-rose-900/45 px-3 py-2 ring-1 ring-rose-500/35">
+        <p className="flex items-center gap-2 text-xs font-semibold text-rose-100">
+          <span className="text-base" aria-hidden>
+            🥘
+          </span>
+          美食大王
+          <span className="ml-auto tabular-nums text-[10px] font-normal text-rose-200/70">
+            饮食 {Math.round(mealKcal)} kcal
+          </span>
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-600/22 via-orange-700/18 to-rose-950/55 p-4 ring-1 ring-rose-400/40 shadow-lg shadow-rose-900/20">
+      <div
+        className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl"
+        aria-hidden
+      />
+      <div className="relative flex items-start gap-3">
+        <span
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500/30 text-2xl ring-1 ring-rose-400/50"
+          aria-hidden
+        >
+          🥘
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-lg font-bold tracking-tight text-rose-100">
+            美食大王
+          </p>
+          <p className="mt-0.5 text-sm text-slate-300/90">
+            今日饮食热量达到基础代谢的 1.2 倍，吃货实力认证！
+          </p>
+          <dl className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <StatChip label="饮食" value={`${Math.round(mealKcal)}`} />
+            <StatChip label="达标线" value={`≥${threshold}`} />
+            <StatChip label="基础代谢" value={`${Math.round(dailyBmr)}`} />
+          </dl>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -135,7 +219,7 @@ function CompactPill({
   kind,
   label,
 }: {
-  kind: 'champion' | 'elite' | 'meal'
+  kind: 'champion' | 'elite' | 'meal' | 'foodKing'
   label: string
 }) {
   const styles = {
@@ -143,14 +227,19 @@ function CompactPill({
       'bg-gradient-to-r from-amber-500/25 to-orange-600/20 text-amber-200 ring-amber-400/40',
     elite:
       'bg-gradient-to-r from-violet-500/25 to-cyan-500/20 text-violet-200 ring-violet-400/40',
+    foodKing:
+      'bg-gradient-to-r from-rose-500/20 to-orange-500/15 text-rose-100 ring-rose-400/35',
     meal: 'bg-amber-900/35 text-amber-200/95 ring-amber-500/35',
   } as const
+
+  const emoji =
+    kind === 'foodKing' ? '🥘' : heatmapBadgeEmoji(kind)
 
   return (
     <span
       className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[9px] font-semibold ring-1 ${styles[kind]}`}
     >
-      <span aria-hidden>{heatmapBadgeEmoji(kind)}</span>
+      <span aria-hidden>{emoji}</span>
       {label}
     </span>
   )

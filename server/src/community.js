@@ -3,7 +3,7 @@ import { calculateSpreadDeficit } from './metabolism.js'
 import { formatDateKeyInTz, isValidDateKey } from './dateKey.js'
 import {
   applyYesterdayVisibilityRules,
-  hideCommunityIfYesterdayEmpty,
+  syncCommunityVisibility,
 } from './communityVisibility.js'
 import { loadMemberOrderMap, sortMembersByCustomOrder } from './communityOrder.js'
 import { enrichLogItemsWithReactions } from './logItemReactions.js'
@@ -113,7 +113,10 @@ export async function computeDaySnapshot(profile, logDate, now = new Date()) {
 
 export async function listCommunityMembers(viewerId, clientToday, filter = 'all') {
   const today = resolveClientToday(clientToday)
-  await hideCommunityIfYesterdayEmpty(viewerId, today)
+  await syncCommunityVisibility(viewerId, today)
+
+  const viewerProfile = await loadProfile(viewerId)
+
   const { rows } = await query(
     `select * from profiles
      where community_visible = true and onboarding_complete = true
@@ -122,15 +125,28 @@ export async function listCommunityMembers(viewerId, clientToday, filter = 'all'
   )
 
   let profiles = rows
+  if (
+    viewerProfile?.onboarding_complete &&
+    !profiles.some((p) => p.id === viewerId)
+  ) {
+    profiles = [viewerProfile, ...profiles]
+  }
+
   if (filter === 'following') {
     const { rows: followRows } = await query(
       `select followee_id from follows where follower_id = $1`,
       [viewerId],
     )
     const followingSet = new Set(followRows.map((r) => r.followee_id))
-    profiles = rows.filter(
+    profiles = profiles.filter(
       (p) => p.id === viewerId || followingSet.has(p.id),
     )
+    if (
+      viewerProfile?.onboarding_complete &&
+      !profiles.some((p) => p.id === viewerId)
+    ) {
+      profiles = [viewerProfile, ...profiles]
+    }
   }
 
   const members = []

@@ -78,6 +78,12 @@ export async function runMigrations() {
       `alter table public.profiles add column if not exists community_notify_seen_at timestamptz`,
     )
     await pool.query(`
+      alter table public.day_comments
+        add column if not exists parent_comment_id uuid references public.day_comments (id) on delete cascade`)
+    await pool.query(`
+      alter table public.day_comments
+        add column if not exists reply_to_user_id uuid references public.users (id) on delete set null`)
+    await pool.query(`
       create table if not exists public.log_item_reactions (
         voter_id uuid not null references public.users (id) on delete cascade,
         owner_user_id uuid not null references public.users (id) on delete cascade,

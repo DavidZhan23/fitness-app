@@ -3,29 +3,34 @@ import { httpData } from '../lib/api'
 
 interface AiKcalEstimateProps {
   kind: 'exercise' | 'meal'
-  /** 名称栏已填时可作为补充上下文 */
   name: string
+  onNameChange: (value: string) => void
   onEstimated: (kcal: number) => void
   disabled?: boolean
+  placeholder?: string
 }
 
 export function AiKcalEstimate({
   kind,
   name,
+  onNameChange,
   onEstimated,
   disabled,
+  placeholder,
 }: AiKcalEstimateProps) {
-  const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lastKcal, setLastKcal] = useState<number | null>(null)
 
   const isExercise = kind === 'exercise'
+  const defaultPlaceholder = isExercise
+    ? '例如：慢跑 40 分钟'
+    : '例如：鸡胸肉 150g、一碗牛肉面'
 
   const handleEstimate = async () => {
-    const desc = description.trim() || name.trim()
+    const desc = name.trim()
     if (desc.length < 2) {
-      setError('请先填写描述，或填写上方的名称')
+      setError('请先填写名称（可含时长、分量，估算更准）')
       return
     }
     setLoading(true)
@@ -54,46 +59,42 @@ export function AiKcalEstimate({
   }
 
   return (
-    <section className="rounded-xl border border-violet-500/25 bg-violet-950/25 px-3 py-3 ring-1 ring-violet-500/15">
-      <p className="text-sm font-medium text-violet-200/95">AI 估算热量</p>
-      <p className="mt-1 text-xs leading-relaxed text-muted">
-        {isExercise
-          ? '描述运动内容、时长、强度，例如：慢跑 40 分钟'
-          : '描述吃了什么、大概分量，例如：一碗牛肉面、中份'}
-      </p>
-      <label className="mt-2 block">
-        <span className="sr-only">AI 描述</span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+    <div className="rounded-xl border border-violet-500/25 bg-violet-950/20 px-4 py-4 ring-1 ring-violet-500/15">
+      <label className="block">
+        <span className="text-sm text-muted">名称</span>
+        <input
+          value={name}
+          onChange={(e) => {
+            onNameChange(e.target.value)
+            setError('')
+          }}
           disabled={disabled || loading}
-          rows={2}
-          className="input mt-0 resize-none py-2 text-sm"
-          placeholder={
-            isExercise
-              ? '跑步半小时，配速约 6 分/公里'
-              : '午餐：黄焖鸡米饭一份，少汤'
-          }
+          className="input mt-1 w-full"
+          placeholder={placeholder ?? defaultPlaceholder}
+          required
         />
       </label>
       <button
         type="button"
         disabled={disabled || loading}
         onClick={() => void handleEstimate()}
-        className="mt-2 w-full rounded-lg bg-violet-700/80 py-2 text-sm font-medium text-violet-50 transition hover:bg-violet-600/90 disabled:opacity-50"
+        className="mt-3 w-full rounded-xl bg-violet-700/85 py-3 text-sm font-medium text-violet-50 transition hover:bg-violet-600/90 disabled:opacity-50"
       >
         {loading ? '估算中…' : 'AI 估算 kcal'}
       </button>
+      <p className="mt-2 text-xs leading-relaxed text-muted">
+        {isExercise
+          ? '填写运动名称后可直接保存；需要辅助时点「AI 估算」自动填入热量。'
+          : '填写食物名称后可直接保存；需要辅助时点「AI 估算」自动填入热量。'}
+      </p>
       {lastKcal != null && !error && (
-        <p className="mt-2 text-center text-sm text-emerald-300/95">
-          估算结果：
-          <span className="ml-1 text-lg font-bold tabular-nums text-emerald-300">
-            {lastKcal}
-          </span>{' '}
-          kcal（已填入下方，可再改）
+        <p className="mt-2 text-sm text-emerald-300/95">
+          估算约{' '}
+          <span className="font-bold tabular-nums text-emerald-300">{lastKcal}</span>{' '}
+          kcal，已填入下方（可再改）
         </p>
       )}
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-    </section>
+    </div>
   )
 }

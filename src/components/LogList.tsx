@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
+import { ConfirmDialog } from './ConfirmDialog'
 import type { Exercise, Meal } from '../types'
+
+type PendingDelete = {
+  kind: 'exercise' | 'meal'
+  id: string
+  name: string
+}
 
 type EditingKey = { kind: 'exercise' | 'meal'; id: string }
 
@@ -21,6 +28,23 @@ export function LogList({
   onUpdateMeal,
 }: LogListProps) {
   const [editing, setEditing] = useState<EditingKey | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || deleting) return
+    setDeleting(true)
+    try {
+      if (pendingDelete.kind === 'exercise') {
+        await onDeleteExercise(pendingDelete.id)
+      } else {
+        await onDeleteMeal(pendingDelete.id)
+      }
+      setPendingDelete(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   if (exercises.length === 0 && meals.length === 0) {
     return (
@@ -32,6 +56,20 @@ export function LogList({
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={pendingDelete != null}
+        title="永久删除这条记录？"
+        message={
+          pendingDelete
+            ? `「${pendingDelete.name}」删除后无法恢复，确定要继续吗？`
+            : ''
+        }
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null)
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
       {exercises.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-medium text-brand">运动</h3>
@@ -46,7 +84,13 @@ export function LogList({
                 }
                 onStartEdit={() => setEditing({ kind: 'exercise', id: ex.id })}
                 onCancelEdit={() => setEditing(null)}
-                onDelete={() => onDeleteExercise(ex.id)}
+                onDelete={() =>
+                  setPendingDelete({
+                    kind: 'exercise',
+                    id: ex.id,
+                    name: ex.name,
+                  })
+                }
                 onSave={(name, kcal) => onUpdateExercise(ex.id, name, kcal)}
               />
             ))}
@@ -65,7 +109,13 @@ export function LogList({
                 isEditing={editing?.kind === 'meal' && editing.id === m.id}
                 onStartEdit={() => setEditing({ kind: 'meal', id: m.id })}
                 onCancelEdit={() => setEditing(null)}
-                onDelete={() => onDeleteMeal(m.id)}
+                onDelete={() =>
+                  setPendingDelete({
+                    kind: 'meal',
+                    id: m.id,
+                    name: m.name,
+                  })
+                }
                 onSave={(name, kcal) => onUpdateMeal(m.id, name, kcal)}
               />
             ))}

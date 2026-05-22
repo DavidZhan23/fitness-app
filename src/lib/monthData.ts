@@ -57,7 +57,12 @@ export function buildMonthDayMap(
 
     const dayBadge = beforeAccount
       ? null
-      : resolveHeatmapDayBadge({ deficit, exerciseKcal, mealKcal })
+      : resolveHeatmapDayBadge({
+          deficit,
+          exerciseKcal,
+          mealKcal,
+          dailyBmr,
+        })
 
     map.set(dateKey, {
       date: dateKey,

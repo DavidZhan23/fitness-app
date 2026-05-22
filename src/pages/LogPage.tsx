@@ -122,20 +122,10 @@ export function LogPage() {
       <TemplatePicker templates={templates} onSelect={handleTemplate} />
 
       <form onSubmit={handleSubmit} className="space-y-4 pb-8">
-        <label className="block">
-          <span className="text-sm text-muted">名称</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="input mt-1"
-            placeholder={isExercise ? '例如：跑步' : '例如：鸡胸肉'}
-            required
-          />
-        </label>
-
         <AiKcalEstimate
           kind={isExercise ? 'exercise' : 'meal'}
           name={name}
+          onNameChange={setName}
           disabled={loading}
           onEstimated={(value) => {
             setKcal(String(value))

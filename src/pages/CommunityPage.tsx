@@ -5,6 +5,7 @@ import {
   CommunitySegment,
   type CommunityFilter,
 } from '../components/CommunitySegment'
+import { CommunityInboxHint } from '../components/CommunityInboxHint'
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
@@ -16,7 +17,7 @@ import {
   saveCommunityListCache,
 } from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
-import type { CommunityMember } from '../types'
+import type { CommunityInboxSummary, CommunityMember } from '../types'
 
 function readInitialCommunityState() {
   const cached = loadCommunityListCache()
@@ -39,8 +40,10 @@ function readInitialCommunityState() {
 }
 
 export function CommunityPage() {
-  const { profile, refreshProfile } = useAuth()
-  const { markRead } = useCommunityInbox()
+  const { user, profile, refreshProfile } = useAuth()
+  const { markRead, refresh: refreshInbox } = useCommunityInbox()
+  const [inboxHint, setInboxHint] = useState<CommunityInboxSummary | null>(null)
+  const [inboxHintDismissed, setInboxHintDismissed] = useState(false)
   const todayKey = formatDateKey()
   const initial = useRef(readInitialCommunityState()).current
   const initialFilter = useRef(initial.filter)
@@ -116,9 +119,33 @@ export function CommunityPage() {
   }, [])
 
   useEffect(() => {
-    void markRead()
-    void refreshProfile()
-  }, [markRead, refreshProfile])
+    let cancelled = false
+    ;(async () => {
+      try {
+        const summary = await httpData.getCommunityInboxUnread()
+        if (!cancelled && summary.count > 0) {
+          setInboxHint(summary)
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        if (!cancelled) {
+          await markRead()
+          void refreshProfile()
+          void refreshInbox()
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [markRead, refreshProfile, refreshInbox])
+
+  const scrollToSelfCard = useCallback(() => {
+    document
+      .getElementById('community-member-self')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [])
 
   const didInitialLoad = useRef(false)
   /* 有缓存时先展示列表并恢复滚动，再静默拉取最新今日数据（成就特效） */
@@ -225,12 +252,36 @@ export function CommunityPage() {
               缺口≥800、运动≥600、饮食≥1k(kcal)
             </span>
           </p>
+          <p className="flex flex-nowrap items-center gap-2">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-rose-600/30 to-orange-600/20 px-2 py-0.5 font-semibold text-rose-100 ring-1 ring-rose-400/35">
+              <span aria-hidden>🥘</span>
+              美食大王
+            </span>
+            <span
+              className="min-w-0 flex-1 truncate text-slate-400"
+              title="当日饮食热量 ≥ 基础代谢 × 1.2"
+            >
+              饮食 ≥ 基础代谢 × 1.2
+            </span>
+          </p>
         </div>
       </header>
 
+      {inboxHint &&
+        !inboxHintDismissed &&
+        user &&
+        inboxHint.count > 0 && (
+          <CommunityInboxHint
+            summary={inboxHint}
+            selfUserId={user.id}
+            onDismiss={() => setInboxHintDismissed(true)}
+            onGoToSelfCard={scrollToSelfCard}
+          />
+        )}
+
       {!visible && (
         <p className="rounded-xl border border-dashed border-violet-500/30 bg-violet-950/20 px-3 py-2.5 text-sm leading-relaxed text-violet-200/90">
-          若昨日未记录任何运动或饮食，系统会在今日自动设为未公开；今日仍可正常打卡，记课后可在标题旁重新打开「已公开」。
+          昨日与今日均未记录运动或饮食时会自动未公开；任一日有记录即可留在社区（今日记一笔后会自动恢复公开）。
         </p>
       )}
 

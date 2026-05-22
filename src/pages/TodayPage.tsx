@@ -139,6 +139,7 @@ export function TodayPage() {
         deficit={deficit}
         exerciseKcal={exerciseKcal}
         mealKcal={mealKcal}
+        dailyBmr={fullDayBmr}
       />
 
       <div className="grid grid-cols-2 gap-3">

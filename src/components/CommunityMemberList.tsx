@@ -128,6 +128,7 @@ export function CommunityMemberList({
           return (
             <li
               key={m.id}
+              id={m.isSelf ? 'community-member-self' : undefined}
               data-member-row
               data-member-id={m.id}
               className={`flex items-stretch ${dragging ? 'relative z-10' : ''}`}

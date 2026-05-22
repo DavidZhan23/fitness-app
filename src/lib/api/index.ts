@@ -3,6 +3,7 @@ import {
   DEFAULT_MEAL_TEMPLATES,
 } from '../defaultTemplates'
 import type {
+  CommunityInboxSummary,
   CommunityMember,
   CommunityUserDetail,
   DayComment,
@@ -138,7 +139,7 @@ export const httpData = {
     await apiFetch(`/meals/${id}`, { method: 'DELETE' })
   },
 
-  async getCommunityInboxUnread(): Promise<{ count: number }> {
+  async getCommunityInboxUnread(): Promise<CommunityInboxSummary> {
     return apiFetch('/community/inbox/unread')
   },
 
@@ -292,10 +293,11 @@ export const httpData = {
     userId: string,
     date: string,
     body: string,
+    parentCommentId?: string | null,
   ): Promise<DayComment> {
     return apiFetch(`/community/users/${userId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ date, body }),
+      body: JSON.stringify({ date, body, parentCommentId: parentCommentId ?? null }),
     })
   },
 

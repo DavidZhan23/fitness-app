@@ -530,7 +530,7 @@ app.post(
   '/community/users/:userId/comments',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const { date, body } = req.body
+    const { date, body, parentCommentId } = req.body
     if (!date || typeof date !== 'string') {
       return res.status(400).json({ error: '请提供 date' })
     }
@@ -539,6 +539,7 @@ app.post(
       req.params.userId,
       date,
       body,
+      parentCommentId ?? null,
     )
     res.json(comment)
   }),

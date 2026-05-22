@@ -30,6 +30,23 @@ export interface CommunityMember {
   viewerLikedToday: boolean
 }
 
+export type CommunityInboxItemKind = 'like' | 'comment_on_card' | 'reply'
+
+export interface CommunityInboxSummary {
+  count: number
+  likesOnMyCard: number
+  commentsOnMyCard: number
+  repliesToMe: number
+  items: {
+    kind: CommunityInboxItemKind
+    actorNickname: string
+    logDate: string
+    targetUserId: string
+    bodyPreview: string | null
+    createdAt: string
+  }[]
+}
+
 export interface DayComment {
   id: string
   authorId: string
@@ -37,6 +54,10 @@ export interface DayComment {
   body: string
   createdAt: string
   isOwn: boolean
+  /** 回复时挂在的顶层评论 id */
+  parentCommentId?: string | null
+  replyToUserId?: string | null
+  replyToNickname?: string | null
 }
 
 export interface CommunityUserDetail {

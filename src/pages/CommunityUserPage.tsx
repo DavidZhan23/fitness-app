@@ -128,6 +128,17 @@ export function CommunityUserPage() {
     if (isSelf) void markRead()
   }, [isSelf, markRead])
 
+  useEffect(() => {
+    if (loading || error) return
+    if (window.location.hash !== '#day-comments') return
+    const id = window.setTimeout(() => {
+      document
+        .getElementById('day-comments')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+    return () => window.clearTimeout(id)
+  }, [loading, error, viewDate])
+
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))
   const goNext = () => {
     const next = shiftMonth(year, month, 1)
@@ -270,13 +281,15 @@ export function CommunityUserPage() {
         />
       </section>
 
-      <DayCommentSection
-        key={`${userId}-${viewDate}-comments`}
-        userId={userId!}
-        date={viewDate}
-        comments={comments}
-        onCommentsChange={setComments}
-      />
+      <div id="day-comments" className="scroll-mt-4">
+        <DayCommentSection
+          key={`${userId}-${viewDate}-comments`}
+          userId={userId!}
+          date={viewDate}
+          comments={comments}
+          onCommentsChange={setComments}
+        />
+      </div>
 
       <section className="rounded-2xl bg-card p-4 ring-1 ring-slate-700/50">
         <div className="mb-4 flex items-center justify-between gap-2">

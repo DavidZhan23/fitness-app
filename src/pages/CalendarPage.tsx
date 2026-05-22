@@ -256,6 +256,7 @@ export function CalendarPage() {
                 }
                 exerciseKcal={toKcal(selected.exercise_kcal)}
                 mealKcal={toKcal(selected.meal_kcal)}
+                dailyBmr={profileBmr}
               />
             </div>
           )}

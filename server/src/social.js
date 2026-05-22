@@ -136,27 +136,79 @@ export async function isFollowing(viewerId, targetUserId) {
   return rows.length > 0
 }
 
-export async function listDayComments(targetUserId, logDate, viewerId) {
-  await assertCanInteract(viewerId, targetUserId)
-  const { rows } = await query(
-    `select c.id, c.author_id, c.body, c.created_at, p.nickname
-     from day_comments c
-     join profiles p on p.id = c.author_id
-     where c.target_user_id = $1 and c.log_date = $2::date
-     order by c.created_at asc`,
-    [targetUserId, logDate],
-  )
-  return rows.map((r) => ({
+function mapDayCommentRow(r, viewerId) {
+  return {
     id: r.id,
     authorId: r.author_id,
-    authorNickname: publicNickname({ id: r.author_id, nickname: r.nickname }),
+    authorNickname: publicNickname({
+      id: r.author_id,
+      nickname: r.author_nickname,
+    }),
     body: r.body,
     createdAt: r.created_at,
     isOwn: r.author_id === viewerId,
-  }))
+    parentCommentId: r.parent_comment_id ?? null,
+    replyToUserId: r.reply_to_user_id ?? null,
+    replyToNickname: r.reply_to_user_id
+      ? publicNickname({
+          id: r.reply_to_user_id,
+          nickname: r.reply_to_nickname,
+        })
+      : null,
+  }
 }
 
-export async function addDayComment(authorId, targetUserId, logDate, body) {
+async function loadParentForReply(parentCommentId, targetUserId, logDate) {
+  const { rows } = await query(
+    `select id, author_id, parent_comment_id, target_user_id, log_date::text as log_date
+     from day_comments where id = $1`,
+    [parentCommentId],
+  )
+  const parent = rows[0]
+  if (!parent) {
+    const err = new Error('原评论不存在')
+    err.status = 404
+    throw err
+  }
+  if (
+    parent.target_user_id !== targetUserId ||
+    parent.log_date !== logDate
+  ) {
+    const err = new Error('无法在该打卡下回复此评论')
+    err.status = 400
+    throw err
+  }
+  const threadRootId = parent.parent_comment_id ?? parent.id
+  return {
+    threadRootId,
+    replyToUserId: parent.author_id,
+  }
+}
+
+export async function listDayComments(targetUserId, logDate, viewerId) {
+  await assertCanInteract(viewerId, targetUserId)
+  const { rows } = await query(
+    `select c.id, c.author_id, c.body, c.created_at, c.parent_comment_id, c.reply_to_user_id,
+            p.nickname as author_nickname, rp.nickname as reply_to_nickname
+     from day_comments c
+     join profiles p on p.id = c.author_id
+     left join profiles rp on rp.id = c.reply_to_user_id
+     where c.target_user_id = $1 and c.log_date = $2::date
+     order by coalesce(c.parent_comment_id, c.id),
+              case when c.parent_comment_id is null then 0 else 1 end,
+              c.created_at asc`,
+    [targetUserId, logDate],
+  )
+  return rows.map((r) => mapDayCommentRow(r, viewerId))
+}
+
+export async function addDayComment(
+  authorId,
+  targetUserId,
+  logDate,
+  body,
+  parentCommentId = null,
+) {
   const trimmed = String(body ?? '').trim()
   if (trimmed.length < 1 || trimmed.length > 280) {
     const err = new Error('评论长度为 1–280 字')
@@ -164,13 +216,40 @@ export async function addDayComment(authorId, targetUserId, logDate, body) {
     throw err
   }
   await assertCanInteract(authorId, targetUserId)
+
+  let threadRootId = null
+  let replyToUserId = null
+  if (parentCommentId) {
+    const parent = await loadParentForReply(
+      parentCommentId,
+      targetUserId,
+      logDate,
+    )
+    threadRootId = parent.threadRootId
+    replyToUserId = parent.replyToUserId
+  }
+
   const { rows } = await query(
-    `insert into day_comments (author_id, target_user_id, log_date, body)
-     values ($1, $2, $3::date, $4)
-     returning id, author_id, body, created_at`,
-    [authorId, targetUserId, logDate, trimmed],
+    `insert into day_comments (
+       author_id, target_user_id, log_date, body, parent_comment_id, reply_to_user_id
+     )
+     values ($1, $2, $3::date, $4, $5, $6)
+     returning id, author_id, body, created_at, parent_comment_id, reply_to_user_id`,
+    [
+      authorId,
+      targetUserId,
+      logDate,
+      trimmed,
+      threadRootId,
+      replyToUserId,
+    ],
   )
   const profile = await loadProfile(authorId)
+  let replyToNickname = null
+  if (replyToUserId) {
+    const replyProfile = await loadProfile(replyToUserId)
+    replyToNickname = publicNickname(replyProfile)
+  }
   const row = rows[0]
   return {
     id: row.id,
@@ -179,6 +258,9 @@ export async function addDayComment(authorId, targetUserId, logDate, body) {
     body: row.body,
     createdAt: row.created_at,
     isOwn: true,
+    parentCommentId: row.parent_comment_id ?? null,
+    replyToUserId: row.reply_to_user_id ?? null,
+    replyToNickname,
   }
 }
 

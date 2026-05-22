@@ -197,6 +197,22 @@ body {
     0 0 8px rgb(244 63 94 / 0.55);
 }
 
+@keyframes community-inbox-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.15);
+  }
+}
+
+.community-inbox-hint__pulse {
+  animation: community-inbox-pulse 1.4s ease-in-out infinite;
+}
+
 /* 无底栏的全屏页（登录、记运动/饮食、引导）— 固定视口高度内滚动 */
 .page-standalone {
   position: fixed;

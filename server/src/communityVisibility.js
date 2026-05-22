@@ -17,7 +17,7 @@ function accountStartKey(createdAt) {
   return formatDateKeyInTz(d)
 }
 
-/** 仅当「昨日」在账号开通日及之后才执行未打卡隐藏 */
+/** 昨日在账号开通日及之后才纳入「昨日是否打卡」判断 */
 function shouldEnforceYesterday(yesterdayKey, profile) {
   const start = accountStartKey(profile?.created_at)
   if (!start) return true
@@ -28,22 +28,37 @@ function resolveToday(clientToday) {
   return isValidDateKey(clientToday) ? clientToday : formatDateKeyInTz()
 }
 
-/**
- * 次日规则：若昨日既无运动也无饮食，则将 community_visible 设为 false。
- * 当日无记录不影响公开状态。
- */
-export async function hideCommunityIfYesterdayEmpty(userId, clientToday) {
-  const today = resolveToday(clientToday)
+/** 昨日或今日任一有运动/饮食记录 */
+export async function recentDaysHaveLog(profile, today) {
   const yesterday = yesterdayDateKey(today)
+  const todaySnap = await computeDaySnapshot(profile, today)
+  if (snapshotHasLogData(todaySnap)) return true
+
+  if (!shouldEnforceYesterday(yesterday, profile)) return false
+
+  const yesterdaySnap = await computeDaySnapshot(profile, yesterday)
+  return snapshotHasLogData(yesterdaySnap)
+}
+
+/**
+ * 同步社区公开状态：昨日与今日均无记录 → 自动未公开；
+ * 任一日有记录 → 自动恢复/保持已公开。
+ */
+export async function syncCommunityVisibility(userId, clientToday) {
+  const today = resolveToday(clientToday)
   const profile = await loadProfile(userId)
   if (!profile) return { community_visible: false, changed: false }
 
-  if (!shouldEnforceYesterday(yesterday, profile)) {
-    return { community_visible: Boolean(profile.community_visible), changed: false }
-  }
+  const hasLog = await recentDaysHaveLog(profile, today)
 
-  const snap = await computeDaySnapshot(profile, yesterday)
-  if (snapshotHasLogData(snap)) {
+  if (hasLog) {
+    if (!profile.community_visible) {
+      await query(
+        `update profiles set community_visible = true, updated_at = now() where id = $1`,
+        [userId],
+      )
+      return { community_visible: true, changed: true }
+    }
     return { community_visible: Boolean(profile.community_visible), changed: false }
   }
 
@@ -59,34 +74,44 @@ export async function hideCommunityIfYesterdayEmpty(userId, clientToday) {
 }
 
 export async function syncCommunityVisibilityAfterLogChange(userId, clientToday) {
-  return hideCommunityIfYesterdayEmpty(userId, clientToday)
+  return syncCommunityVisibility(userId, clientToday)
 }
 
-/** 社区列表：对每位成员检查昨日是否空档，并构建今日快照 */
+/** @deprecated 别名，便于旧引用 */
+export const hideCommunityIfYesterdayEmpty = syncCommunityVisibility
+
+/** 社区列表：无近日记录则未公开；当前用户始终保留在列表中 */
 export async function applyYesterdayVisibilityRules(profiles, viewerId, today) {
-  const yesterday = yesterdayDateKey(today)
   const members = []
+  const seen = new Set()
 
   for (const profile of profiles) {
-    if (!shouldEnforceYesterday(yesterday, profile)) {
-      const todaySnap = await computeDaySnapshot(profile, today)
-      members.push({ ...profile, todaySnap })
-      continue
-    }
-
-    const yesterdaySnap = await computeDaySnapshot(profile, yesterday)
-    if (!snapshotHasLogData(yesterdaySnap)) {
-      if (profile.community_visible) {
-        await query(
-          `update profiles set community_visible = false, updated_at = now() where id = $1`,
-          [profile.id],
-        )
-        profile.community_visible = false
-      }
-      continue
-    }
+    if (seen.has(profile.id)) continue
+    seen.add(profile.id)
 
     const todaySnap = await computeDaySnapshot(profile, today)
+    const hasLog = await recentDaysHaveLog(profile, today)
+
+    if (hasLog) {
+      if (!profile.community_visible) {
+        await query(
+          `update profiles set community_visible = true, updated_at = now() where id = $1`,
+          [profile.id],
+        )
+        profile.community_visible = true
+      }
+    } else if (profile.community_visible) {
+      await query(
+        `update profiles set community_visible = false, updated_at = now() where id = $1`,
+        [profile.id],
+      )
+      profile.community_visible = false
+    }
+
+    if (!hasLog && profile.id !== viewerId) {
+      continue
+    }
+
     members.push({ ...profile, todaySnap })
   }
 

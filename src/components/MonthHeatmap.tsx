@@ -195,6 +195,7 @@ function BadgeLegend() {
       <span className="text-slate-500">成就</span>
       <span>👑 运动大王</span>
       <span>🔥 减脂先锋</span>
+      <span>🥘 美食大王</span>
       <span>🍽️ 记得记饮食</span>
     </div>
   )
