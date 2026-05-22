@@ -1,0 +1,54 @@
+---
+description: Owner-only — guide setup of GitHub Actions deploy to Tencent Cloud (secrets, deploy.yml)
+globs:
+  - deploy/**
+  - .github/workflows/**
+  - docs/architecture/owner-setup-guide.md
+alwaysApply: false
+---
+
+# Owner CD setup assistant
+
+For **repository admin (DavidZhan23)** enabling automated deploy on merge to `main`.
+
+## Principles
+
+- **Never** paste or commit private keys, `deploy/.env`, or `server/.env` into the repo.
+- **Never** run secret-generating commands without owner confirmation; provide commands for owner to run.
+- Contributor workflow ends at PR merge; CD is owner domain.
+
+## Checklist (guide step by step)
+
+1. **SSH deploy key** (dedicated, not personal laptop key)
+   - Owner runs locally: `ssh-keygen -t ed25519 -f ~/.ssh/fitness-app-deploy -N ""`
+   - Public key → server `~/.ssh/authorized_keys`
+2. **Server prep**
+   - `mkdir -p /opt/fitness-app/releases`
+   - Ensure `/opt/fitness-app/deploy` and docker compose work (see `docs/腾讯云部署-一步步做.md`)
+3. **GitHub Secrets** (repo → Settings → Secrets → Actions)
+   - `TENCENT_SSH_KEY` — private key contents
+   - `TENCENT_HOST` — public IP
+   - `TENCENT_USER` — usually `root`
+   - `TENCENT_REMOTE_DIR` — usually `/opt/fitness-app`
+4. **Activate workflow**
+   - `cp .github/workflows/deploy.yml.template .github/workflows/deploy.yml`
+   - Commit on a branch, PR, merge (or owner commits directly)
+5. **Verify**
+   - Merge a trivial change to `main`
+   - Actions → Deploy → green
+   - `curl http://<HOST>/api/health` → `{"ok":true}`
+
+## Verify commands (owner runs)
+
+```bash
+gh secret list   # should show 4 TENCENT_* secrets
+test -f .github/workflows/deploy.yml && echo "deploy.yml active"
+```
+
+## Rollback
+
+See `docs/architecture/deploy-pipeline.md` — switch `dist` symlink under `/opt/fitness-app/releases/<sha>/`.
+
+## Full guide
+
+`docs/architecture/owner-setup-guide.md` — or tell owner: "帮我配自动部署"

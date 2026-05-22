@@ -1,0 +1,7 @@
+{
+  "workbench.externalUriOpeners": {
+    "https://github.com": "default",
+    "http://github.com": "default"
+  },
+  "simpleBrowser.focusLockIndicator.enabled": true
+}

@@ -1,0 +1,53 @@
+---
+description: Planning mode — clarify fuzzy requirements and boundaries before coding
+globs:
+alwaysApply: false
+---
+
+# Planning — Clarify Before Build
+
+When the user describes a **new feature**, **change**, or **fuzzy requirement**, enter planning mode before writing production code.
+
+## Clarification (max 5 questions per round)
+
+Ask only what is still unknown. Prefer concrete questions:
+
+1. **Who** uses this and **when** (family only / self / future strangers)?
+2. **Success criteria** — what must work for this to be "done"?
+3. **Non-goals** — what is explicitly out of scope?
+4. **Inputs/outputs** — fields, units, UI vs API vs export?
+5. **Edge cases** — empty data, offline, cross-day, cross-user, errors?
+
+## Boundary checklist (must cover in milestone doc)
+
+Document answers for:
+
+- Target user and trigger frequency
+- Non-goals / boundaries
+- Input shape (required vs optional fields)
+- Output shape (screen, API response, file)
+- Failure modes (network, auth, validation, concurrency)
+- DB/API impact (new tables, columns, endpoints, migrations)
+- Performance and privacy constraints
+
+## Four-dimension reflection (before freezing plan)
+
+- **Requirements**: success criteria testable; non-goals clear
+- **Architecture**: complexity matches MVP; tradeoffs stated
+- **Engineering**: scope, deps, deliverables, testability
+- **Risks**: top 3 risks, signals, fallback
+
+## Deliverable
+
+Create or update `docs/milestones/<slug>.md` with:
+
+- Goal, acceptance criteria, non-goals
+- Inputs/outputs and edge cases
+- Files/modules likely touched
+- Risks and rollback
+
+Index in `docs/milestones/README.md` as **active**.
+
+## After planning
+
+Hand off to coding per `02-coding.mdc`. Do not `git commit` until user confirms via `03-commit-and-push.mdc`.
