@@ -1,0 +1,31 @@
+---
+description: When to update architecture docs, API contract, and ADRs
+globs:
+  - src/**/*
+  - server/**/*
+  - server/migrations/**
+alwaysApply: false
+---
+
+# Documentation updates
+
+Update docs in the **same PR** when behavior or contracts change.
+
+## When to update
+
+| Change | Update |
+|--------|--------|
+| New/changed API route | `docs/architecture/api-contract.md` |
+| New tables/columns | `docs/architecture/overview.md` ER section + migration file |
+| Deploy/CI/CD behavior | `docs/architecture/deploy-pipeline.md` |
+| Significant technical choice | New `docs/decisions/ADR-NNNN-*.md` |
+| Feature milestone | `docs/milestones/<slug>.md` + README index status |
+
+## ADR format
+
+Use `docs/decisions/_template.md`. Keep ADRs short: context, decision, consequences.
+
+## Do not
+
+- Put secrets in docs or committed `.env` files
+- Auto-edit `CHANGELOG.md` (release-please handles after M4)

@@ -1,0 +1,43 @@
+---
+description: Fitness tracker PWA — project context, stack, and directory conventions
+alwaysApply: true
+---
+
+# Fitness App — Project Context
+
+## Product
+
+健身打卡 / 热量追踪 PWA：记录运动与饮食，计算 BMR/TDEE 与当日热量缺口，打卡墙与社区动态。主要用户为家庭成员小规模使用。
+
+## Stack
+
+- **Frontend**: Vite 8, React 19, TypeScript, Tailwind 4, vite-plugin-pwa — `src/`
+- **Backend**: Node.js Express (ESM), `server/src/`
+- **DB**: PostgreSQL 16 — local Homebrew; production Docker in `deploy/`
+- **Deploy**: `scripts/deploy-tencent.sh` (manual); GitHub Actions CD optional via `deploy.yml.template`
+
+## Key paths
+
+| Path | Purpose |
+|------|---------|
+| `src/pages/`, `src/components/`, `src/lib/` | React UI and client logic |
+| `server/src/index.js` | API routes |
+| `server/migrations/*.sql` | Schema (run in filename order) |
+| `deploy/` | docker-compose + nginx for production |
+| `docs/` | Ops and architecture docs |
+| `docs/milestones/` | Per-feature milestone specs |
+| `scripts/ai-flow.sh` | Commit + push + draft PR (after user confirms `go`) |
+| `scripts/new-feature.sh` | Start `feat/<slug>` branch + milestone skeleton |
+
+## Local dev
+
+- DB: `brew services start postgresql@16`, database `fitness` — see `docs/本地数据库启停.md`
+- API: `cd server && npm run dev` (port 3001)
+- Web: `npm run dev` (port 5173), `.env.local` with `VITE_API_URL=http://localhost:3001`
+
+## Collaboration
+
+- Repo: `DavidZhan23/fitness-app` (public)
+- Default reviewer / owner: **@DavidZhan23**
+- Contributors use `feat/*` branches; never push `main` directly
+- Merge and production deploy are owner-controlled

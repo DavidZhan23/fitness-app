@@ -1,0 +1,47 @@
+---
+description: Coding mode — implement from milestone doc, local smoke test, two-strike debug
+alwaysApply: true
+---
+
+# Coding
+
+## Before editing
+
+1. Read the active `docs/milestones/<slug>.md` if it exists.
+2. If no milestone doc and the task is non-trivial, follow `01-planning-clarify.mdc` first.
+
+## While implementing
+
+- Match existing patterns in `src/` and `server/src/` (naming, imports, error style).
+- Minimize scope — only files required for the milestone.
+- API changes: note updates needed in `docs/architecture/api-contract.md` (M2+).
+- Schema changes: add numbered SQL under `server/migrations/`, never edit old migrations.
+
+## Local smoke (before asking to commit)
+
+From repo root when touching frontend:
+
+```bash
+npm run lint
+npx tsc -b --noEmit
+```
+
+When touching server:
+
+```bash
+node --check server/src/index.js
+```
+
+If DB-related, remind user DB must be running (`docs/本地数据库启停.md`).
+
+## Stuck rule
+
+If the **same problem fails twice**, stop and summarize: what was tried, hypothesis, proposed split or MVP fallback. Ask the user before a third attempt.
+
+## Requirement changes
+
+Update the milestone doc **before** more code changes. Note what changed and why.
+
+## Handoff to git
+
+When implementation is done and smoke passes, follow `03-commit-and-push.mdc` — show confirm summary and wait for `go`.

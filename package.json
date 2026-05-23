@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
+    "prepare": "husky",
+    "ai-flow": "bash scripts/ai-flow.sh",
+    "new-feature": "bash scripts/new-feature.sh",
     "deploy:tencent": "bash scripts/deploy-tencent.sh",
     "deploy:tencent:api": "bash scripts/deploy-tencent.sh --api"
   },
@@ -17,6 +21,8 @@
     "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.12.3",
@@ -27,6 +33,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "husky": "^9.1.7",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
