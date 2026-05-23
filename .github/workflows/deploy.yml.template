@@ -25,6 +25,9 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Install frontend dependencies
+        run: npm ci
+
       - name: Build frontend
         env:
           SERVER_IP: ${{ secrets.TENCENT_HOST }}
