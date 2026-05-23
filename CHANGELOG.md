@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.1](https://github.com/DavidZhan23/fitness-app/compare/v1.0.0...v1.0.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* align release-please tag resolution for single-package repo ([ba1a03b](https://github.com/DavidZhan23/fitness-app/commit/ba1a03b7e40301c2723d70fefd77f3c9e37a9beb))
+* align release-please tag resolution for single-package repo ([437f7d7](https://github.com/DavidZhan23/fitness-app/commit/437f7d7bdc41c9ac1b4f51d6f053f8ebac5b6ea4))
+* grant issues permission to release-please ([234ec81](https://github.com/DavidZhan23/fitness-app/commit/234ec812b1b3572b5e52daaa857268e704612279))
+* grant issues permission to release-please ([0465ff8](https://github.com/DavidZhan23/fitness-app/commit/0465ff8f10fd90b2ef29e707d669956df5d363b1))
+
 ## 1.0.0 (2026-05-23)
 
 
