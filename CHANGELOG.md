@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/DavidZhan23/fitness-app/compare/v1.1.8...v1.2.0) (2026-05-24)
+
+
+### Features
+
+* expand e2e smoke, add interaction telemetry, and issue triage rule ([95ca2d6](https://github.com/DavidZhan23/fitness-app/commit/95ca2d6367c8505bf6836dc252f33a0c5df3fa6e))
+
 ## [1.1.8](https://github.com/DavidZhan23/fitness-app/compare/v1.1.7...v1.1.8) (2026-05-24)
 
 
