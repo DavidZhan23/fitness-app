@@ -3,34 +3,44 @@ export type CommunityFilter = 'all' | 'following'
 interface CommunitySegmentProps {
   value: CommunityFilter
   followingCount: number
+  refreshing?: boolean
   onChange: (value: CommunityFilter) => void
 }
 
 export function CommunitySegment({
   value,
   followingCount,
+  refreshing = false,
   onChange,
 }: CommunitySegmentProps) {
   return (
-    <div
-      className="flex rounded-xl bg-slate-800/80 p-1 ring-1 ring-slate-700/50"
-      role="tablist"
-      aria-label="社区列表筛选"
-    >
-      <SegmentButton active={value === 'all'} onClick={() => onChange('all')}>
-        全部
-      </SegmentButton>
-      <SegmentButton
-        active={value === 'following'}
-        onClick={() => onChange('following')}
+    <div className="relative">
+      <div
+        className="flex rounded-xl bg-slate-800/80 p-1 ring-1 ring-slate-700/50"
+        role="tablist"
+        aria-label="社区列表筛选"
       >
-        关注
-        {followingCount > 0 && (
-          <span className="ml-1 rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[10px] tabular-nums text-violet-200">
-            {followingCount}
-          </span>
-        )}
-      </SegmentButton>
+        <SegmentButton active={value === 'all'} onClick={() => onChange('all')}>
+          全部
+        </SegmentButton>
+        <SegmentButton
+          active={value === 'following'}
+          onClick={() => onChange('following')}
+        >
+          关注
+          {followingCount > 0 && (
+            <span className="ml-1 rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[10px] tabular-nums text-violet-200">
+              {followingCount}
+            </span>
+          )}
+        </SegmentButton>
+      </div>
+      {refreshing && (
+        <span
+          className="pointer-events-none absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-violet-400"
+          aria-label="更新中"
+        />
+      )}
     </div>
   )
 }
