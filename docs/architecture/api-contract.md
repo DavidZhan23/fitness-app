@@ -66,6 +66,7 @@ Base URL：
 | POST/DELETE | `/community/users/:userId/likes` | 点赞日 |
 | GET/POST | `/community/users/:userId/comments` | 评论 |
 | DELETE | `/community/comments/:commentId` | 删评论 |
+| POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应 |
 | GET | `/community/inbox/unread` | 未读 |
 | POST | `/community/inbox/mark-read` | 标已读 |

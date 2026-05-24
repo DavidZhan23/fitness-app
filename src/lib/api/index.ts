@@ -305,6 +305,18 @@ export const httpData = {
     await apiFetch(`/community/comments/${commentId}`, { method: 'DELETE' })
   },
 
+  async likeCommunityComment(
+    commentId: string,
+  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+    return apiFetch(`/community/comments/${commentId}/likes`, { method: 'POST' })
+  },
+
+  async unlikeCommunityComment(
+    commentId: string,
+  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+    return apiFetch(`/community/comments/${commentId}/likes`, { method: 'DELETE' })
+  },
+
   async getCommunityUserMonth(
     userId: string,
     year: number,

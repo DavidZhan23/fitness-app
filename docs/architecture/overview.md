@@ -53,7 +53,7 @@ erDiagram
   day_logs ||--o{ day_comments : social
 ```
 
-另有：`community_member_order`、`log_item_reactions` 等，见 `server/migrations/`。
+另有：`community_member_order`、`log_item_reactions`、`day_comment_likes` 等，见 `server/migrations/`。
 
 ## 4. 贡献者工作流
 

@@ -155,6 +155,44 @@ function mapDayCommentRow(r, viewerId) {
           nickname: r.reply_to_nickname,
         })
       : null,
+    likeCount: Number(r.like_count ?? 0),
+    viewerLiked: Boolean(r.viewer_liked),
+  }
+}
+
+async function getCommentById(commentId) {
+  const { rows } = await query(
+    `select id, author_id, target_user_id, log_date::text as log_date
+     from day_comments where id = $1`,
+    [commentId],
+  )
+  const comment = rows[0]
+  if (!comment) {
+    const err = new Error('评论不存在')
+    err.status = 404
+    throw err
+  }
+  return comment
+}
+
+export async function getDayCommentLikeStats(commentId, viewerId) {
+  const [counts, viewer] = await Promise.all([
+    query(
+      `select count(*)::int as c from day_comment_likes
+       where comment_id = $1`,
+      [commentId],
+    ),
+    viewerId
+      ? query(
+          `select 1 from day_comment_likes
+           where comment_id = $1 and liker_id = $2`,
+          [commentId, viewerId],
+        )
+      : Promise.resolve({ rows: [] }),
+  ])
+  return {
+    likeCount: counts.rows[0]?.c ?? 0,
+    viewerLiked: viewer.rows.length > 0,
   }
 }
 
@@ -188,16 +226,39 @@ async function loadParentForReply(parentCommentId, targetUserId, logDate) {
 export async function listDayComments(targetUserId, logDate, viewerId) {
   await assertCanInteract(viewerId, targetUserId)
   const { rows } = await query(
-    `select c.id, c.author_id, c.body, c.created_at, c.parent_comment_id, c.reply_to_user_id,
-            p.nickname as author_nickname, rp.nickname as reply_to_nickname
-     from day_comments c
-     join profiles p on p.id = c.author_id
-     left join profiles rp on rp.id = c.reply_to_user_id
-     where c.target_user_id = $1 and c.log_date = $2::date
-     order by coalesce(c.parent_comment_id, c.id),
-              case when c.parent_comment_id is null then 0 else 1 end,
-              c.created_at asc`,
-    [targetUserId, logDate],
+    `with comment_rows as (
+       select c.id, c.author_id, c.body, c.created_at, c.parent_comment_id, c.reply_to_user_id,
+              p.nickname as author_nickname, rp.nickname as reply_to_nickname,
+              coalesce(pc.created_at, c.created_at) as root_created_at
+       from day_comments c
+       join profiles p on p.id = c.author_id
+       left join profiles rp on rp.id = c.reply_to_user_id
+       left join day_comments pc on pc.id = c.parent_comment_id
+       where c.target_user_id = $1 and c.log_date = $2::date
+     ),
+     like_stats as (
+       select l.comment_id, count(*)::int as like_count
+       from day_comment_likes l
+       join comment_rows cr on cr.id = l.comment_id
+       group by l.comment_id
+     ),
+     viewer_like as (
+       select l.comment_id
+       from day_comment_likes l
+       join comment_rows cr on cr.id = l.comment_id
+       where l.liker_id = $3
+     )
+     select cr.*,
+            coalesce(ls.like_count, 0) as like_count,
+            (vl.comment_id is not null) as viewer_liked
+     from comment_rows cr
+     left join like_stats ls on ls.comment_id = cr.id
+     left join viewer_like vl on vl.comment_id = cr.id
+     order by cr.root_created_at asc,
+              case when cr.parent_comment_id is null then 0 else 1 end,
+              cr.created_at asc,
+              cr.id asc`,
+    [targetUserId, logDate, viewerId],
   )
   return rows.map((r) => mapDayCommentRow(r, viewerId))
 }
@@ -258,6 +319,8 @@ export async function addDayComment(
     body: row.body,
     createdAt: row.created_at,
     isOwn: true,
+    likeCount: 0,
+    viewerLiked: false,
     parentCommentId: row.parent_comment_id ?? null,
     replyToUserId: row.reply_to_user_id ?? null,
     replyToNickname,
@@ -275,4 +338,32 @@ export async function deleteDayComment(viewerId, commentId) {
     throw err
   }
   return { ok: true }
+}
+
+export async function likeDayComment(viewerId, commentId) {
+  const comment = await getCommentById(commentId)
+  await assertCanInteract(viewerId, comment.target_user_id)
+  if (viewerId === comment.author_id) {
+    const err = new Error('不能给自己的评论点赞')
+    err.status = 400
+    throw err
+  }
+  await query(
+    `insert into day_comment_likes (comment_id, liker_id)
+     values ($1, $2)
+     on conflict do nothing`,
+    [commentId, viewerId],
+  )
+  return getDayCommentLikeStats(commentId, viewerId)
+}
+
+export async function unlikeDayComment(viewerId, commentId) {
+  const comment = await getCommentById(commentId)
+  await assertCanInteract(viewerId, comment.target_user_id)
+  await query(
+    `delete from day_comment_likes
+     where comment_id = $1 and liker_id = $2`,
+    [commentId, viewerId],
+  )
+  return getDayCommentLikeStats(commentId, viewerId)
 }

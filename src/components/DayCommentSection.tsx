@@ -20,8 +20,14 @@ function formatTime(iso: string) {
   return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 }
 
+function compareByTimeAsc(a: DayComment, b: DayComment) {
+  const delta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  if (delta !== 0) return delta
+  return a.id.localeCompare(b.id)
+}
+
 function buildThreads(comments: DayComment[]): CommentThread[] {
-  const roots = comments.filter((c) => !c.parentCommentId)
+  const roots = comments.filter((c) => !c.parentCommentId).sort(compareByTimeAsc)
   const repliesByRoot = new Map<string, DayComment[]>()
   for (const c of comments) {
     if (!c.parentCommentId) continue
@@ -31,7 +37,7 @@ function buildThreads(comments: DayComment[]): CommentThread[] {
   }
   return roots.map((root) => ({
     root,
-    replies: repliesByRoot.get(root.id) ?? [],
+    replies: (repliesByRoot.get(root.id) ?? []).sort(compareByTimeAsc),
   }))
 }
 
@@ -55,6 +61,7 @@ export function DayCommentSection({
   const [error, setError] = useState('')
   const [pendingDelete, setPendingDelete] = useState<DayComment | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [likingCommentId, setLikingCommentId] = useState<string | null>(null)
 
   const threads = useMemo(() => buildThreads(comments), [comments])
 
@@ -129,6 +136,27 @@ export function DayCommentSection({
     })
   }
 
+  const toggleCommentLike = async (comment: DayComment) => {
+    if (likingCommentId) return
+    setLikingCommentId(comment.id)
+    setError('')
+    try {
+      const stats = comment.viewerLiked
+        ? await httpData.unlikeCommunityComment(comment.id)
+        : await httpData.likeCommunityComment(comment.id)
+      const next = comments.map((x) =>
+        x.id === comment.id
+          ? { ...x, likeCount: stats.likeCount, viewerLiked: stats.viewerLiked }
+          : x,
+      )
+      updateComments(next)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '点赞失败')
+    } finally {
+      setLikingCommentId(null)
+    }
+  }
+
   const renderComment = (c: DayComment, isReply: boolean) => (
     <li
       key={c.id}
@@ -155,6 +183,20 @@ export function DayCommentSection({
           <p className="mt-1 text-sm leading-relaxed text-slate-100">{c.body}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
+          {!c.isOwn && (
+            <button
+              type="button"
+              disabled={likingCommentId === c.id}
+              onClick={() => void toggleCommentLike(c)}
+              className={`text-xs ${
+                c.viewerLiked
+                  ? 'text-amber-300 hover:text-amber-200'
+                  : 'text-muted hover:text-slate-200'
+              } disabled:opacity-40`}
+            >
+              👍 {c.likeCount}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => startReply(c)}
