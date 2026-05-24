@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.6](https://github.com/DavidZhan23/fitness-app/compare/v1.1.5...v1.1.6) (2026-05-24)
+
+
+### Bug Fixes
+
+* **issues:** reorder issue form fields for screenshot and priority ([b235741](https://github.com/DavidZhan23/fitness-app/commit/b2357412afa4604333e9546e7bde6c4f03cefed3))
+* **issues:** reorder issue form fields for screenshot and priority ([2556e77](https://github.com/DavidZhan23/fitness-app/commit/2556e77d242fd0ed8f027415309e182ec5a6ef11))
+
 ## [1.1.5](https://github.com/DavidZhan23/fitness-app/compare/v1.1.4...v1.1.5) (2026-05-24)
 
 
