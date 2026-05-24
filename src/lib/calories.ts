@@ -133,14 +133,6 @@ export function getDeficitHeatmapCell(
   return { level: 0, tone: 'neutral' }
 }
 
-/** @deprecated 请用 getDeficitHeatmapCell */
-export function getDeficitIntensityLevel(
-  deficit: number,
-  threshold: number,
-): 0 | 1 | 2 | 3 | 4 {
-  return getDeficitHeatmapCell(deficit, threshold).level
-}
-
 export const EXERCISE_LEVEL_CLASSES = [
   'bg-slate-700/60',
   'bg-teal-900/80',

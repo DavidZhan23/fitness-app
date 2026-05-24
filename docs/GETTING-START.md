@@ -31,7 +31,7 @@ cp server/.env.example server/.env
 | 文件 | 关键项 |
 |------|--------|
 | `.env.local` | `VITE_API_URL=http://localhost:3001` |
-| `server/.env` | `DATABASE_URL` 等，见 `server/.env.example` |
+| `server/.env` | `DATABASE_URL`、`JWT_SECRET`、`REGISTRATION_KEY` 等，见 `server/.env.example`（后两项**必填**，缺失时 API 拒绝启动） |
 
 ## 3. 数据库
 

@@ -8,7 +8,8 @@
 |------|--------|-------------|
 | [M-2026-05-ai-workflow](M-2026-05-ai-workflow.md) | done | `feat/ci-cd-workflow` → PR #1 |
 | [M-2026-05-req-intake](M-2026-05-req-intake.md) | done | `feat/req-intake` |
-| [M-2026-05-refactor-stage1](M-2026-05-refactor-stage1.md) | active | `feat/refactor-stage1-docs` |
+| [M-2026-05-refactor-stage1](M-2026-05-refactor-stage1.md) | done | `feat/refactor-stage1-docs` → PR #11 |
+| [M-2026-05-refactor-stage2](M-2026-05-refactor-stage2.md) | active | `feat/refactor-stage2-cleanup` |
 
 **Status 取值：** `active` | `done` | `cancelled`
 

@@ -8,6 +8,7 @@ import {
 import { loadMemberOrderMap, sortMembersByCustomOrder } from './communityOrder.js'
 import { enrichLogItemsWithReactions } from './logItemReactions.js'
 import { query } from './db.js'
+import { publicNickname } from './publicProfile.js'
 
 function formatDateKey(d = new Date()) {
   return formatDateKeyInTz(d)
@@ -15,12 +16,6 @@ function formatDateKey(d = new Date()) {
 
 function resolveClientToday(clientToday) {
   return isValidDateKey(clientToday) ? clientToday : formatDateKeyInTz()
-}
-
-function publicNickname(profile) {
-  const nick = profile.nickname?.trim()
-  if (nick) return nick.slice(0, 32)
-  return `健身者${String(profile.id).slice(0, 6)}`
 }
 
 function accountStartKey(createdAt) {

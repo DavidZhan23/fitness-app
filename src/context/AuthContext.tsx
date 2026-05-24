@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(
     async (userId: string) => {
-      const data = await httpData.getProfile(userId)
+      const data = await httpData.getProfile()
       return applyProfile(data as Profile, userId)
     },
     [applyProfile],
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const [{ user: u }, profileData] = await Promise.all([
           httpAuth.getSession(),
-          httpData.getProfile('').catch(() => null),
+          httpData.getProfile().catch(() => null),
         ])
         if (cancelled) return
         setUser(u)
@@ -177,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('请填写有效的身体资料')
     }
 
-    const saved = await httpData.updateProfile(user.id, payload)
+    const saved = await httpData.updateProfile(payload)
     setProfile(mergeProfileFromApi(saved as Profile))
   }
 
@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bmr,
       tdee,
     )
-    await httpData.updateProfile(user.id, payload)
+    await httpData.updateProfile(payload)
     await refreshProfile()
   }
 

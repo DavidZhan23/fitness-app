@@ -30,6 +30,21 @@ ssh root@<你的公网IP> "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/
 ssh root@<IP> "mkdir -p /opt/fitness-app/releases"
 ```
 
+## 步骤 2b：服务器业务 `.env` 必填变量
+
+`/opt/fitness-app/deploy/.env`（不进 Git）至少需配置：
+
+| 变量 | 用途 |
+|------|------|
+| `POSTGRES_PASSWORD` | 数据库密码 |
+| `JWT_SECRET` | 登录 token 签名（**必填**，API 无 fallback） |
+| `REGISTRATION_KEY` | 注册邀请码（**必填**） |
+| `DATABASE_URL` | 由 docker-compose 注入 api 容器时可省略单独行 |
+| `CORS_ORIGIN` | 前端访问源 |
+| `DEEPSEEK_API_KEY` | AI 估千卡（可选） |
+
+详见 [修改服务器env.md](../ops/修改服务器env.md)。
+
 ## 步骤 3：GitHub Secrets
 
 仓库 → **Settings** → **Secrets and variables** → **Actions** → New repository secret：

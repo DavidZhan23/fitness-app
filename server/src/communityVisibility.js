@@ -77,9 +77,6 @@ export async function syncCommunityVisibilityAfterLogChange(userId, clientToday)
   return syncCommunityVisibility(userId, clientToday)
 }
 
-/** @deprecated 别名，便于旧引用 */
-export const hideCommunityIfYesterdayEmpty = syncCommunityVisibility
-
 /** 社区列表：无近日记录则未公开；当前用户始终保留在列表中 */
 export async function applyYesterdayVisibilityRules(profiles, viewerId, today) {
   const members = []

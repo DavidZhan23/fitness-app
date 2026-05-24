@@ -40,6 +40,7 @@ import {
   estimateKcalFromDescription,
   getDeepSeekApiKey,
 } from './deepseekKcal.js'
+import { errorHandler } from './errorMiddleware.js'
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -623,29 +624,7 @@ app.post(
   }),
 )
 
-// 注册 / 登录等业务错误（带 status）
-app.use((err, req, res, _next) => {
-  if (res.headersSent) return
-  const status = err.status || 500
-  if (status >= 500) {
-    console.error('[api]', req.method, req.path, err)
-  }
-  let message = err.message || '请求失败'
-  if (status >= 500) {
-    const keepClientMessage =
-      status === 502 || status === 503 || status === 504
-    if (!keepClientMessage) {
-      if (err.code === '23514') message = '资料数值不合法，请检查体重、身高等'
-      else if (err.code === '22P02') message = '资料格式错误，请检查输入'
-      else if (err.code === '22003') message = '数值超出范围，请检查活动系数等'
-      else if (err.code === '42703') {
-        message = '数据库需要升级，请重启 API 服务或联系管理员执行迁移'
-      } else message = '服务器繁忙，请稍后重试'
-    }
-    console.error('[api]', req.method, req.path, err.code, err.detail || err.message)
-  }
-  res.status(status).json({ error: message })
-})
+app.use(errorHandler)
 
 async function start() {
   await waitForDb()

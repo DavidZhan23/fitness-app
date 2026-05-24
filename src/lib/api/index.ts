@@ -62,12 +62,11 @@ export const httpAuth = {
 }
 
 export const httpData = {
-  async getProfile(_userId: string): Promise<Profile> {
+  async getProfile(): Promise<Profile> {
     return apiFetch<Profile>('/profile')
   },
 
   async updateProfile(
-    _userId: string,
     data: Partial<Profile> | Record<string, string | number | boolean>,
   ): Promise<Profile> {
     return apiFetch<Profile>('/profile', {
@@ -77,7 +76,6 @@ export const httpData = {
   },
 
   async fetchDayLogWithItems(
-    _userId: string,
     logDate: string,
     _profile: Profile,
   ): Promise<{ dayLog: DayLog; exercises: Exercise[]; meals: Meal[] }> {
@@ -85,7 +83,6 @@ export const httpData = {
   },
 
   async addExercise(
-    _userId: string,
     dayLogId: string,
     name: string,
     kcal: number,
@@ -97,7 +94,6 @@ export const httpData = {
   },
 
   async addMeal(
-    _userId: string,
     dayLogId: string,
     name: string,
     kcal: number,
@@ -155,7 +151,6 @@ export const httpData = {
   },
 
   async getOrCreateDayLog(
-    _userId: string,
     logDate: string,
     tdeeSnapshot: number,
   ): Promise<DayLog> {
@@ -165,15 +160,11 @@ export const httpData = {
     })
   },
 
-  async fetchDayLogsRange(
-    _userId: string,
-    from: string,
-    to: string,
-  ): Promise<DayLog[]> {
+  async fetchDayLogsRange(from: string, to: string): Promise<DayLog[]> {
     return apiFetch<DayLog[]>(`/day-logs/range?from=${from}&to=${to}`)
   },
 
-  async fetchDayLogByDate(_userId: string, date: string): Promise<DayLog | null> {
+  async fetchDayLogByDate(date: string): Promise<DayLog | null> {
     try {
       const data = await apiFetch<{ dayLog: DayLog }>(`/day-logs/${date}`)
       return data.dayLog
@@ -199,7 +190,7 @@ export const httpData = {
     await apiFetch(`/templates/${type}/${id}`, { method: 'DELETE' })
   },
 
-  async seedDefaultTemplates(_userId: string): Promise<void> {
+  async seedDefaultTemplates(): Promise<void> {
     await apiFetch('/templates/seed', {
       method: 'POST',
       body: JSON.stringify({
