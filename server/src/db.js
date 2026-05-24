@@ -32,7 +32,16 @@ async function ensureSchemaMigrationsTable(client) {
 }
 
 async function listMigrationFiles() {
-  const files = await readdir(MIGRATIONS_DIR)
+  let files = []
+  try {
+    files = await readdir(MIGRATIONS_DIR)
+  } catch (err) {
+    if (err?.code === 'ENOENT') {
+      console.warn(`[db] migrations dir not found: ${MIGRATIONS_DIR}`)
+      return []
+    }
+    throw err
+  }
   return files
     .filter((name) => /^\d+.*\.sql$/i.test(name))
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
