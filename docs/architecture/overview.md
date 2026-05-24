@@ -58,3 +58,4 @@
 - CI/CD 细节：[deploy-pipeline.md](deploy-pipeline.md)  
 - 需求入口：[requirements/README.md](../requirements/README.md)  
 - 改图：`docs/assets/diagrams/*.mmd` → `npm run diagrams:regen`
+- 数据库迁移：新增 `server/migrations/NNN_*.sql` 后，API 启动会自动执行未应用 migration（记录在 `public.schema_migrations`）

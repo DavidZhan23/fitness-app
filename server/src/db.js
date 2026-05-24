@@ -1,6 +1,11 @@
 import pg from 'pg'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { readdir, readFile } from 'node:fs/promises'
 
 const { Pool } = pg
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const MIGRATIONS_DIR = path.resolve(__dirname, '../migrations')
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -15,6 +20,77 @@ pool.on('error', (err) => {
 
 export async function query(text, params) {
   return pool.query(text, params)
+}
+
+async function ensureSchemaMigrationsTable(client) {
+  await client.query(`
+    create table if not exists public.schema_migrations (
+      filename text primary key,
+      executed_at timestamptz not null default now()
+    )
+  `)
+}
+
+async function listMigrationFiles() {
+  const files = await readdir(MIGRATIONS_DIR)
+  return files
+    .filter((name) => /^\d+.*\.sql$/i.test(name))
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+}
+
+async function baselineExistingDatabase(client, migrationFiles) {
+  const { rows } = await client.query(
+    `select count(*)::int as c from public.schema_migrations`,
+  )
+  if ((rows[0]?.c ?? 0) > 0) return
+
+  const existing = await client.query(
+    `select to_regclass('public.users') is not null as users_exists`,
+  )
+  if (!existing.rows[0]?.users_exists || migrationFiles.length === 0) return
+
+  await client.query(
+    `insert into public.schema_migrations (filename)
+     select unnest($1::text[])
+     on conflict do nothing`,
+    [migrationFiles],
+  )
+  console.log(`[db] baseline existing schema with ${migrationFiles.length} migrations`)
+}
+
+async function runSqlFileMigrations() {
+  const client = await pool.connect()
+  try {
+    await ensureSchemaMigrationsTable(client)
+    const migrationFiles = await listMigrationFiles()
+    await baselineExistingDatabase(client, migrationFiles)
+
+    const appliedRows = await client.query(
+      `select filename from public.schema_migrations`,
+    )
+    const applied = new Set(appliedRows.rows.map((r) => r.filename))
+
+    for (const filename of migrationFiles) {
+      if (applied.has(filename)) continue
+      const sql = await readFile(path.join(MIGRATIONS_DIR, filename), 'utf8')
+      await client.query('begin')
+      try {
+        await client.query(sql)
+        await client.query(
+          `insert into public.schema_migrations (filename) values ($1)
+           on conflict do nothing`,
+          [filename],
+        )
+        await client.query('commit')
+        console.log(`[db] applied migration ${filename}`)
+      } catch (err) {
+        await client.query('rollback')
+        throw err
+      }
+    }
+  } finally {
+    client.release()
+  }
 }
 
 export async function runMigrations() {
@@ -93,6 +169,10 @@ export async function runMigrations() {
         created_at timestamptz not null default now(),
         primary key (voter_id, item_type, item_id)
       )`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
     await pool.query(`
       create table if not exists public.day_comment_likes (
         comment_id uuid not null references public.day_comments (id) on delete cascade,
@@ -100,9 +180,13 @@ export async function runMigrations() {
         created_at timestamptz not null default now(),
         primary key (comment_id, liker_id)
       )`)
+    await pool.query(`
+      create index if not exists idx_day_comment_likes_liker
+      on public.day_comment_likes (liker_id, created_at)`)
   } catch {
     /* 表未建等 */
   }
+  await runSqlFileMigrations()
 }
 
 export async function waitForDb(maxAttempts = 30, delayMs = 1000) {
