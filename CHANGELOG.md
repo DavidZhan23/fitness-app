@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/DavidZhan23/fitness-app/compare/v1.1.1...v1.1.2) (2026-05-24)
+
+
+### Bug Fixes
+
+* always show comment like button and allow self-like ([406a4ff](https://github.com/DavidZhan23/fitness-app/commit/406a4ff14f9b111e0827df7cc3d25c8f023e8bce))
+* always show comment like button and allow self-like ([73c83de](https://github.com/DavidZhan23/fitness-app/commit/73c83de48e6590ad7a603fba82be365c5ad6830e))
+
 ## [1.1.1](https://github.com/DavidZhan23/fitness-app/compare/v1.1.0...v1.1.1) (2026-05-24)
 
 
