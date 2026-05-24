@@ -1,6 +1,6 @@
 # Milestone: Refactor Stage 1 — Docs & Rules Alignment
 
-**Status:** active
+**Status:** done
 **Branch:** `feat/refactor-stage1-docs`
 **Issue:** — (内部工程改善，无 GitHub Issue)
 **Started:** 2026-05-24

@@ -7,15 +7,15 @@ function bumpCommunityListAfterLogChange() {
 }
 
 export async function getOrCreateDayLog(
-  userId: string,
+  _userId: string,
   logDate: string,
   tdeeSnapshot: number,
 ): Promise<DayLog> {
-  return httpData.getOrCreateDayLog(userId, logDate, tdeeSnapshot)
+  return httpData.getOrCreateDayLog(logDate, tdeeSnapshot)
 }
 
 export async function fetchDayLogWithItems(
-  userId: string,
+  _userId: string,
   logDate: string,
   profile: Profile,
 ): Promise<{
@@ -23,26 +23,26 @@ export async function fetchDayLogWithItems(
   exercises: Exercise[]
   meals: Meal[]
 }> {
-  return httpData.fetchDayLogWithItems(userId, logDate, profile)
+  return httpData.fetchDayLogWithItems(logDate, profile)
 }
 
 export async function addExercise(
-  userId: string,
+  _userId: string,
   dayLogId: string,
   name: string,
   kcal: number,
 ): Promise<void> {
-  await httpData.addExercise(userId, dayLogId, name, kcal)
+  await httpData.addExercise(dayLogId, name, kcal)
   bumpCommunityListAfterLogChange()
 }
 
 export async function addMeal(
-  userId: string,
+  _userId: string,
   dayLogId: string,
   name: string,
   kcal: number,
 ): Promise<void> {
-  await httpData.addMeal(userId, dayLogId, name, kcal)
+  await httpData.addMeal(dayLogId, name, kcal)
   bumpCommunityListAfterLogChange()
 }
 
@@ -74,6 +74,6 @@ export async function deleteMeal(id: string): Promise<void> {
   bumpCommunityListAfterLogChange()
 }
 
-export async function seedDefaultTemplates(userId: string): Promise<void> {
-  await httpData.seedDefaultTemplates(userId)
+export async function seedDefaultTemplates(_userId: string): Promise<void> {
+  await httpData.seedDefaultTemplates()
 }
