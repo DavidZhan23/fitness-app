@@ -157,6 +157,9 @@ export const httpData = {
       durationMs?: number
       metadata?: Record<string, unknown>
       clientAt?: string
+      sessionId?: string
+      appVersion?: string
+      commitSha?: string
     }[],
   ): Promise<{ inserted: number }> {
     return apiFetch('/telemetry/events', {

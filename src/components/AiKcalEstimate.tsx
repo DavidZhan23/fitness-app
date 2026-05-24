@@ -1,14 +1,23 @@
 import { useState } from 'react'
 import { httpData } from '../lib/api'
-import { trackEvent } from '../lib/telemetry'
+import { trackMetric } from '../lib/telemetry'
 
 interface AiKcalEstimateProps {
   kind: 'exercise' | 'meal'
   name: string
   onNameChange: (value: string) => void
   onEstimated: (kcal: number) => void
+  onAiOutcome?: (outcome: 'success' | 'timeout' | 'error') => void
   disabled?: boolean
   placeholder?: string
+}
+
+function classifyErrorType(err: unknown): 'network' | 'error' {
+  if (err instanceof TypeError) return 'network'
+  if (err instanceof Error && /无法连接|网络|network/i.test(err.message)) {
+    return 'network'
+  }
+  return 'error'
 }
 
 export function AiKcalEstimate({
@@ -16,6 +25,7 @@ export function AiKcalEstimate({
   name,
   onNameChange,
   onEstimated,
+  onAiOutcome,
   disabled,
   placeholder,
 }: AiKcalEstimateProps) {
@@ -48,27 +58,49 @@ export function AiKcalEstimate({
       })
       setLastKcal(kcal)
       onEstimated(kcal)
-      trackEvent({
+      onAiOutcome?.('success')
+      const durationMs = Math.round(performance.now() - started)
+      trackMetric({
         name: 'ai_estimate_success',
-        durationMs: Math.round(performance.now() - started),
-        metadata: { kind },
+        durationMs,
+        metadata: {
+          kind,
+          input_mode: 'ai',
+          input_length: desc.length,
+          duration_ms: durationMs,
+          status: 'ok',
+        },
       })
     } catch (err) {
+      const durationMs = Math.round(performance.now() - started)
       if (err instanceof Error && err.name === 'AbortError') {
         setError('估算超时，请稍后重试')
-        trackEvent({
+        onAiOutcome?.('timeout')
+        trackMetric({
           name: 'ai_estimate_timeout',
-          durationMs: Math.round(performance.now() - started),
-          metadata: { kind },
+          durationMs,
+          metadata: {
+            kind,
+            input_mode: 'ai',
+            input_length: desc.length,
+            duration_ms: durationMs,
+            status: 'timeout',
+            error_type: 'timeout',
+          },
         })
       } else {
         setError(err instanceof Error ? err.message : '估算失败')
-        trackEvent({
+        onAiOutcome?.('error')
+        trackMetric({
           name: 'ai_estimate_error',
-          durationMs: Math.round(performance.now() - started),
+          durationMs,
           metadata: {
             kind,
-            error: err instanceof Error ? err.message.slice(0, 120) : 'unknown',
+            input_mode: 'ai',
+            input_length: desc.length,
+            duration_ms: durationMs,
+            status: 'error',
+            error_type: classifyErrorType(err),
           },
         })
       }

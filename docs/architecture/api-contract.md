@@ -40,9 +40,14 @@ Base URL：
 
 | Method | Path | Body | 说明 |
 |--------|------|------|------|
-| POST | `/telemetry/events` | `{ events: [{ name, route?, durationMs?, metadata?, clientAt? }] }` | 批量上报前端交互事件（最多 20 条/次）；需登录 |
+| POST | `/telemetry/events` | `{ events: [{ name, route?, durationMs?, metadata?, clientAt?, sessionId?, appVersion?, commitSha? }] }` | 批量上报前端交互事件（最多 20 条/次）；需登录 |
 
-事件名白名单：`page_load`、`route_change`、`ai_estimate_*`、`log_save_*`（服务端另写 `ai_estimate_server_ok/fail`）。
+事件名白名单（6 个，本期收紧）：
+`page_load`、`route_change`、`ai_estimate_success`、`ai_estimate_timeout`、`ai_estimate_error`、`ai_estimate_fallback_complete`。
+
+`metadata` 字段白名单：`input_length`、`input_mode`、`route_from`、`route_to`、`duration_ms`、`status`、`error_type`、`kind`。前后端双侧 pick，其他字段静默丢弃。**禁止**记录饮食原文、体重、身体数据等 PII。
+
+详见 [`docs/metrics/frontend-metrics-design.md`](../metrics/frontend-metrics-design.md)。
 
 ## 日记录
 

@@ -15,9 +15,11 @@ import {
   DEFAULT_MEAL_TEMPLATES,
 } from '../lib/defaultTemplates'
 import { kcalFromGramsAndKjPer100g, KJ_PER_KCAL } from '../lib/calories'
-import { trackEvent } from '../lib/telemetry'
+import { trackMetric, type TelemetryMetadata } from '../lib/telemetry'
 
 type MealInputMode = 'kcal' | 'package'
+
+type FallbackMode = NonNullable<TelemetryMetadata['input_mode']>
 
 export function LogPage() {
   const { type } = useParams<{ type: 'exercise' | 'meal' }>()
@@ -33,6 +35,8 @@ export function LogPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const openedAt = useRef(0)
+  const pendingFallback = useRef(false)
+  const lastInputMode = useRef<FallbackMode>('manual')
 
   useEffect(() => {
     openedAt.current = performance.now()
@@ -64,7 +68,18 @@ export function LogPage() {
   const handleTemplate = (n: string, k: number) => {
     setName(n)
     setKcal(String(k))
+    lastInputMode.current = 'template'
     if (!isExercise) setMealInputMode('kcal')
+  }
+
+  const handleAiOutcome = (outcome: 'success' | 'timeout' | 'error') => {
+    if (outcome === 'success') {
+      pendingFallback.current = false
+      lastInputMode.current = 'ai'
+    } else {
+      pendingFallback.current = true
+      lastInputMode.current = 'manual'
+    }
   }
 
   const resolveKcal = (): number | null => {
@@ -101,21 +116,22 @@ export function LogPage() {
       } else {
         await addMeal(user.id, dayLog.id, name.trim(), k)
       }
-      trackEvent({
-        name: 'log_save_success',
-        durationMs: Math.round(performance.now() - openedAt.current),
-        metadata: { kind: isExercise ? 'exercise' : 'meal' },
-      })
+      if (pendingFallback.current) {
+        const durationMs = Math.round(performance.now() - openedAt.current)
+        trackMetric({
+          name: 'ai_estimate_fallback_complete',
+          durationMs,
+          metadata: {
+            kind: isExercise ? 'exercise' : 'meal',
+            input_mode: lastInputMode.current,
+            duration_ms: durationMs,
+            status: 'saved',
+          },
+        })
+        pendingFallback.current = false
+      }
       navigate('/')
     } catch (err) {
-      trackEvent({
-        name: 'log_save_failure',
-        durationMs: Math.round(performance.now() - openedAt.current),
-        metadata: {
-          kind: isExercise ? 'exercise' : 'meal',
-          error: err instanceof Error ? err.message.slice(0, 120) : 'unknown',
-        },
-      })
       setError(err instanceof Error ? err.message : '保存失败')
     } finally {
       setLoading(false)
@@ -151,6 +167,7 @@ export function LogPage() {
             if (!isExercise) setMealInputMode('kcal')
             setError('')
           }}
+          onAiOutcome={handleAiOutcome}
         />
 
         {!isExercise && (
