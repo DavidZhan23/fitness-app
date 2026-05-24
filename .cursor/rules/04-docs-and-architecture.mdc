@@ -21,6 +21,7 @@ Update docs in the **same PR** when behavior or contracts change.
 | Deploy/CI/CD behavior | `docs/architecture/deploy-pipeline.md` |
 | Significant technical choice | New `docs/decisions/ADR-NNNN-*.md` |
 | Feature milestone | `docs/milestones/<slug>.md` + README index（结构见 `_TEMPLATE.md`） |
+| User-visible feature or behavior change | Root `README.md`「功能」一节（同 PR） |
 | Doc hub / onboarding | `docs/README.md`, `docs/GETTING-START.md`, `docs/ai-playbook.md` |
 | Ops guides | `docs/ops/` |
 

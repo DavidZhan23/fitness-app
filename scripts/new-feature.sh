@@ -107,6 +107,7 @@ if [ ! -f "$MILESTONE" ]; then
 ## 13. 文档同步计划
 
 - [ ] \`docs/architecture/api-contract.md\`（若动 API）
+- [ ] 根 \`README.md\`「功能」一节（若用户可见的新功能或行为变更）
 - [ ] 本 milestone Status 改 \`done\` + \`docs/milestones/README.md\` 更新
 
 ## 14. 回滚方案
