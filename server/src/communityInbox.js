@@ -1,10 +1,5 @@
 import { query } from './db.js'
-
-function publicNickname(profileId, nickname) {
-  const nick = nickname?.trim()
-  if (nick) return nick.slice(0, 32)
-  return `健身者${String(profileId).slice(0, 6)}`
-}
+import { publicNicknameById } from './publicProfile.js'
 
 async function resolveSeenAt(userId) {
   const { rows } = await query(
@@ -88,7 +83,7 @@ export async function getCommunityInboxUnread(userId) {
 
   const items = itemRows.rows.map((r) => ({
     kind: r.kind,
-    actorNickname: publicNickname(r.actor_id, r.actor_nickname),
+    actorNickname: publicNicknameById(r.actor_id, r.actor_nickname),
     logDate: r.log_date,
     targetUserId: r.target_user_id,
     bodyPreview: r.body_preview || null,

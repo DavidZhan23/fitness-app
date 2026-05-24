@@ -2,7 +2,12 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { query } from './db.js'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production'
+const JWT_SECRET = process.env.JWT_SECRET?.trim()
+if (!JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET must be set in environment (copy server/.env.example to server/.env)',
+  )
+}
 
 export function signToken(user) {
   return jwt.sign({ sub: user.id, email: user.email }, JWT_SECRET, {

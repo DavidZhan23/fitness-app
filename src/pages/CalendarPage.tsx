@@ -45,18 +45,14 @@ export function CalendarPage() {
     setLoading(true)
     const { from, to } = getMonthRange(year, month)
 
-    const logs = await httpData.fetchDayLogsRange(user.id, from, to)
+    const logs = await httpData.fetchDayLogsRange(from, to)
 
     setDayMap(
       buildMonthDayMap(logs, threshold, todayKey, accountStartKey, profileBmr),
     )
 
     const streakFrom = getLastNDays(120)[0]
-    const streakLogs = await httpData.fetchDayLogsRange(
-      user.id,
-      streakFrom,
-      todayKey,
-    )
+    const streakLogs = await httpData.fetchDayLogsRange(streakFrom, todayKey)
 
     const streakDays: HeatmapDay[] = getLastNDays(120)
       .filter((d) => d <= todayKey)
@@ -105,7 +101,7 @@ export function CalendarPage() {
 
   const handleDayClick = async (date: string) => {
     if (!user) return
-    const log = await httpData.fetchDayLogByDate(user.id, date)
+    const log = await httpData.fetchDayLogByDate(date)
     setSelected(log)
   }
 

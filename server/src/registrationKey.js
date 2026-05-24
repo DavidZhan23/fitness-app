@@ -1,6 +1,12 @@
-/** 注册邀请密钥（环境变量 REGISTRATION_KEY，默认 454676） */
+/** 注册邀请密钥（环境变量 REGISTRATION_KEY，必填） */
 export function getRegistrationKey() {
-  return process.env.REGISTRATION_KEY || '454676'
+  const key = process.env.REGISTRATION_KEY?.trim()
+  if (!key) {
+    throw new Error(
+      'REGISTRATION_KEY must be set in environment (copy server/.env.example to server/.env)',
+    )
+  }
+  return key
 }
 
 export function assertRegistrationKey(key) {

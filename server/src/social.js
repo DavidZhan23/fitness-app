@@ -1,5 +1,6 @@
 import { query } from './db.js'
 import { assertCanViewCommunity, loadProfile } from './community.js'
+import { publicNickname } from './publicProfile.js'
 
 let ensureCommentLikeSchemaPromise = null
 
@@ -25,12 +26,6 @@ function ensureCommentLikeSchema() {
     })
   }
   return ensureCommentLikeSchemaPromise
-}
-
-function publicNickname(profile) {
-  const nick = profile?.nickname?.trim()
-  if (nick) return nick.slice(0, 32)
-  return `健身者${String(profile.id).slice(0, 6)}`
 }
 
 export async function assertCanInteract(viewerId, targetUserId) {
