@@ -2,6 +2,7 @@
 # Start a feature branch and milestone doc skeleton.
 # Usage: bash scripts/new-feature.sh <slug>
 # Example: bash scripts/new-feature.sh csv-export
+# Template: docs/milestones/_TEMPLATE.md
 
 set -euo pipefail
 
@@ -32,47 +33,95 @@ if [ ! -f "$MILESTONE" ]; then
   cat > "$MILESTONE" <<EOF
 # Milestone: ${SLUG}
 
-**Status:** active  
-**Branch:** \`${BRANCH}\`  
+**Status:** active
+**Branch:** \`${BRANCH}\`
+**Issue:** #（可选）
 **Started:** ${TODAY}
 
-## Goal
+## 1. 任务背景
 
-<!-- What problem does this solve? -->
+<!-- 触发这次工作的 issue / 反馈 / 痛点。一段话。 -->
 
-## Success criteria
+## 2. 目标 (Goal)
 
-- [ ] 
+<!-- 这次 done 长什么样。1-2 句。 -->
 
-## Non-goals
+## 3. 成功标准 (Success criteria)
 
-- 
+- [ ]
 
-## Inputs / outputs
+## 4. Non-goals
 
-| Input | Output |
-|-------|--------|
+-
+
+## 5. 已阅读的相关文档（必填）
+
+- [ ] 本 milestone 文档
+- [ ] \`docs/architecture/api-contract.md\`（若动 API）
+- [ ] \`docs/architecture/overview.md\` ER 节（若动表）
+- [ ] 其它：
+
+## 6. 已检查的可复用代码（必填）
+
+> 见 \`.cursor/rules/06-reuse-first.mdc\` 清单，命中就复用。
+
+| 想做的事 | 已有实现 | 是否复用 |
+|----------|----------|----------|
+| | | |
+
+## 7. Inputs / Outputs
+
+| 输入 | 输出 |
+|------|------|
 | | |
 
-## Edge cases
+## 8. Edge cases
 
-- 
+-
 
-## Files / modules
+## 9. 涉及文件 / 模块（预期）
 
-- 
+- \`src/...\`
+- \`server/...\`
 
-## Risks
+## 10. 实现步骤
+
+**MVP（本次必交）：**
+
+1.
+
+**后续（不做）：**
+
+-
+
+## 11. 测试方案
+
+- Smoke：\`npm run lint && npm run typecheck\`；server 改动则 \`node --check server/src/index.js\`
+
+## 12. 风险与缓解
 
 | Risk | Mitigation |
 |------|------------|
 | | |
+
+## 13. 文档同步计划
+
+- [ ] \`docs/architecture/api-contract.md\`（若动 API）
+- [ ] 本 milestone Status 改 \`done\` + \`docs/milestones/README.md\` 更新
+
+## 14. 回滚方案
+
+- 代码：revert PR；DB：是否需要 down migration？
+
+## 15. 是否满足最小可运行闭环
+
+是 / 否——
 EOF
-  echo "Created $MILESTONE"
+  echo "Created $MILESTONE (see docs/milestones/_TEMPLATE.md for full 15-section structure)"
 else
   echo "Milestone doc already exists: $MILESTONE"
 fi
 
 echo ""
-echo "Next: clarify requirements (Cursor planning rules), implement, then:"
+echo "Next: clarify in Cursor (docs/ai-playbook.md), implement, then:"
 echo "  bash scripts/ai-flow.sh --message \"feat(${SLUG}): ...\""

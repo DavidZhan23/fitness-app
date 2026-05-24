@@ -24,14 +24,19 @@ alwaysApply: true
 | `server/src/index.js` | API routes |
 | `server/migrations/*.sql` | Schema (run in filename order) |
 | `deploy/` | docker-compose + nginx for production |
-| `docs/` | Ops and architecture docs |
-| `docs/milestones/` | Per-feature milestone specs |
+| `docs/README.md` | Doc hub — start here for humans and Cursor |
+| `docs/GETTING-START.md` | Local dev setup |
+| `docs/ai-playbook.md` | Cursor agent checklist |
+| `docs/milestones/` | Per-feature specs (`_TEMPLATE.md`) |
+| `docs/requirements/` | GitHub Issue intake |
+| `docs/ops/` | DB, deploy, PWA ops guides |
+| `docs/architecture/` | Overview, API contract, CI/CD |
 | `scripts/ai-flow.sh` | Commit + push + draft PR (after user confirms `go`) |
 | `scripts/new-feature.sh` | Start `feat/<slug>` branch + milestone skeleton |
 
 ## Local dev
 
-- DB: `brew services start postgresql@16`, database `fitness` — see `docs/本地数据库启停.md`
+- DB: `brew services start postgresql@16`, database `fitness` — see `docs/ops/本地数据库启停.md`
 - API: `cd server && npm run dev` (port 3001)
 - Web: `npm run dev` (port 5173), `.env.local` with `VITE_API_URL=http://localhost:3001`
 

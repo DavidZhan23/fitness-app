@@ -1,0 +1,55 @@
+# 需求管理（GitHub Issues）
+
+用手机或网页 **随手记** 需求；在 Cursor 里 **澄清并实现**。不依赖腾讯文档等第三方。
+
+## 提需求
+
+仓库 → **Issues** → **New issue**：
+
+| 模板 | 用途 |
+|------|------|
+| Feature request | 新功能、改动想法 |
+| Bug report | 缺陷 |
+
+**填写原则**：标题一句话即可；详情、优先级、截图均可空。说不清的在 Cursor 说「开始 #N」时再澄清。
+
+表单定义：`.github/ISSUE_TEMPLATE/*.yml`（随 `feat/req-intake` 合并进 `main` 后，在 GitHub 新建 Issue 时可见）。
+
+## 看自己的待办
+
+```bash
+npm run req:list           # 我提交的、label: status:todo
+npm run req:list -- --all  # 我所有 open issue
+```
+
+## Issue 状态（自动）
+
+| 状态 | 何时 |
+|------|------|
+| `status:todo` | 新建 issue（`issue-triage` workflow） |
+| `status:doing` | 有 PR 正文 `Closes #N` |
+| 已关闭 | PR merge 进 `main` |
+
+优先级标签：`priority:high` / `priority:med` / `priority:low`（由 workflow 根据表单同步）。
+
+## Cursor 里开工
+
+1. `npm run req:list` 或说「列我的待办」
+2. 说「开始 #12」→ 读 issue → 澄清 → 写 `docs/milestones/...` → `bash scripts/new-feature.sh <slug>`
+3. 实现 → PR 写 `Closes #12`
+
+澄清内容写在 **milestone 文档**，不会自动贴回 issue 正文。
+
+## Owner 一次性配置
+
+labels + Project 看板：[github-project-setup.md](github-project-setup.md)
+
+```bash
+bash scripts/setup-req-labels.sh
+```
+
+## 相关文档
+
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) — 完整贡献流程
+- [ai-playbook.md](../ai-playbook.md) — Cursor 检查清单
+- [milestones/M-2026-05-req-intake.md](../milestones/M-2026-05-req-intake.md) — 本能力 milestone

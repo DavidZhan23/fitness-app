@@ -12,6 +12,8 @@
     "prepare": "husky",
     "ai-flow": "bash scripts/ai-flow.sh",
     "new-feature": "bash scripts/new-feature.sh",
+    "req:list": "bash scripts/req-list.sh",
+    "diagrams:regen": "bash scripts/regen-diagrams.sh",
     "deploy:tencent": "bash scripts/deploy-tencent.sh",
     "deploy:tencent:api": "bash scripts/deploy-tencent.sh --api"
   },

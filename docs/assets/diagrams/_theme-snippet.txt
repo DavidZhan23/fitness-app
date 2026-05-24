@@ -1,0 +1,2 @@
+%% Dark minimal — 中文节点建议手动 <br/> 换行 + min-width，避免 mermaid.ink 裁字
+%% wrappingWidth: 320 · fontFamily 含 PingFang SC / 微软雅黑
