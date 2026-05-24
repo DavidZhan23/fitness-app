@@ -10,6 +10,13 @@ body:
         **随手记即可**：把现象说清楚即可，复现步骤和环境可后补。
 
   - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图 / 日志（可选）
+      description: 可粘贴图片或拖拽上传
+      placeholder: 粘贴截图或拖拽图片到此处
+
+  - type: textarea
     id: what
     attributes:
       label: 现象
@@ -35,8 +42,3 @@ body:
     attributes:
       label: 环境（可选）
       placeholder: 设备 / 浏览器；本地或线上
-
-  - type: textarea
-    id: screenshot
-    attributes:
-      label: 截图 / 日志（可选）
