@@ -48,7 +48,13 @@ npm run deploy:tencent:api
 1. **SSH** — Secret、authorized_keys、安全组 22  
 2. **docker** — 服务器 `cd /opt/fitness-app/deploy && docker compose ps`  
 3. **health** — `curl http://127.0.0.1/api/health`  
+4. **merge 后前端没更新** — 若曾用手动 `npm run deploy:tencent` 部署，`/opt/fitness-app/dist` 可能是真实目录而非 symlink，CD 的 `ln -sfn` 无法替换它。修复：Deploy workflow 已改为 `rm -rf dist && ln -sfn …`；若仍异常，SSH 执行 `ls -la /opt/fitness-app/dist` 确认是指向 `releases/<sha>/dist` 的 symlink。
 
 ## 回滚
 
-`/opt/fitness-app/releases/<sha>/dist` 切换 symlink，见上文 owner 文档。
+`/opt/fitness-app/releases/<sha>/dist` 切换 symlink：
+
+```bash
+ssh root@<IP> "ln -sfn /opt/fitness-app/releases/<sha>/dist /opt/fitness-app/dist"
+cd /opt/fitness-app/deploy && docker compose up -d web
+```
