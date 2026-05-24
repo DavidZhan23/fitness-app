@@ -4,6 +4,7 @@ import { httpData } from '../lib/api'
 import { syncAppIconBadge } from '../lib/appBadge'
 
 const POLL_MS = 45_000
+const INBOX_DEFER_MS = 2_000
 
 export function useCommunityInbox() {
   const { user } = useAuth()
@@ -36,8 +37,13 @@ export function useCommunityInbox() {
   }, [user])
 
   useEffect(() => {
-    void refresh()
-    const id = window.setInterval(() => void refresh(), POLL_MS)
+    if (!user) {
+      setUnreadCount(0)
+      void syncAppIconBadge(0)
+      return
+    }
+    const deferId = window.setTimeout(() => void refresh(), INBOX_DEFER_MS)
+    const pollId = window.setInterval(() => void refresh(), POLL_MS)
     const onFocus = () => void refresh()
     const onVisible = () => {
       if (document.visibilityState === 'visible') void refresh()
@@ -45,11 +51,12 @@ export function useCommunityInbox() {
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisible)
     return () => {
-      window.clearInterval(id)
+      window.clearTimeout(deferId)
+      window.clearInterval(pollId)
       window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [refresh])
+  }, [refresh, user])
 
   return { unreadCount, refresh, markRead }
 }

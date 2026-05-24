@@ -8,11 +8,17 @@ import {
   type ReactNode,
 } from 'react'
 import { httpAuth, httpData } from '../lib/api'
+import { getStoredToken } from '../lib/api/http'
 import {
   calculateBmr,
   calculateTdee,
   resolveProfileMetabolism,
 } from '../lib/calories'
+import {
+  clearTemplatesSeededForUser,
+  markTemplatesSeededForUser,
+  shouldSeedTemplatesForUser,
+} from '../lib/defaultTemplates'
 import { buildProfilePatchBody, mergeProfileForCalc } from '../lib/profilePayload'
 import { seedDefaultTemplates } from '../lib/dayLogService'
 import { isBackendConfigured } from '../lib/config'
@@ -61,7 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (raw: Profile, userId: string) => {
       const synced = mergeProfileFromApi(raw)
       setProfile(synced)
-      seedDefaultTemplates(userId).catch(() => {})
+      if (shouldSeedTemplatesForUser(userId)) {
+        markTemplatesSeededForUser(userId)
+        seedDefaultTemplates(userId).catch(() => {
+          clearTemplatesSeededForUser(userId)
+        })
+      }
       return synced
     },
     [mergeProfileFromApi],
@@ -85,19 +96,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       return
     }
-    httpAuth.getSession().then(({ user: u }) => {
-      setUser(u)
+    const token = getStoredToken()
+    if (!token) {
       setLoading(false)
-    })
-  }, [])
+      return
+    }
+
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const [{ user: u }, profileData] = await Promise.all([
+          httpAuth.getSession(),
+          httpData.getProfile('').catch(() => null),
+        ])
+        if (cancelled) return
+        setUser(u)
+        if (u && profileData) {
+          await applyProfile(profileData as Profile, u.id)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [applyProfile])
 
   useEffect(() => {
     if (!user) {
       setProfile(null)
       return
     }
+    if (profile) return
     fetchProfile(user.id).catch(console.error)
-  }, [user?.id, fetchProfile])
+  }, [user?.id, fetchProfile, profile])
 
   const signIn = async (email: string, password: string) => {
     const { user: u } = await httpAuth.signIn(email, password)

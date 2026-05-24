@@ -1,3 +1,17 @@
+const seededUserIds = new Set<string>()
+
+export function shouldSeedTemplatesForUser(userId: string) {
+  return !seededUserIds.has(userId)
+}
+
+export function markTemplatesSeededForUser(userId: string) {
+  seededUserIds.add(userId)
+}
+
+export function clearTemplatesSeededForUser(userId: string) {
+  seededUserIds.delete(userId)
+}
+
 export const DEFAULT_EXERCISE_TEMPLATES = [
   { name: '跑步 30 分钟', kcal: 300 },
   { name: '力量训练 45 分钟', kcal: 250 },

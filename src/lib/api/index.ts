@@ -79,13 +79,8 @@ export const httpData = {
   async fetchDayLogWithItems(
     _userId: string,
     logDate: string,
-    profile: Profile,
+    _profile: Profile,
   ): Promise<{ dayLog: DayLog; exercises: Exercise[]; meals: Meal[] }> {
-    const tdee = profile.tdee ?? 0
-    await apiFetch<DayLog>('/day-logs/ensure', {
-      method: 'POST',
-      body: JSON.stringify({ log_date: logDate, tdee_snapshot: tdee }),
-    }).catch(() => null)
     return apiFetch(`/day-logs/${logDate}`)
   },
 
