@@ -11,7 +11,8 @@
 | [M-2026-05-refactor-stage1](M-2026-05-refactor-stage1.md) | done | `feat/refactor-stage1-docs` → PR #11 |
 | [M-2026-05-refactor-stage2](M-2026-05-refactor-stage2.md) | done | `feat/refactor-stage2-cleanup` → PR #29 |
 | [M-2026-05-refactor-stage3](M-2026-05-refactor-stage3.md) | done | `feat/refactor-stage3-routes` → PR #38 |
-| [M-2026-05-playwright-e2e](M-2026-05-playwright-e2e.md) | active | `feat/playwright-e2e-smoke` |
+| [M-2026-05-playwright-e2e](M-2026-05-playwright-e2e.md) | done | `feat/playwright-e2e-smoke` → PR #43 |
+| [M-2026-05-telemetry](M-2026-05-telemetry.md) | active | `feat/telemetry-l4` |
 
 **Status 取值：** `active` | `done` | `cancelled`
 

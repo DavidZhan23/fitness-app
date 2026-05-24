@@ -36,6 +36,14 @@ Base URL：
 |--------|------|------|
 | POST | `/ai/estimate-kcal` | DeepSeek 估算千卡（需服务端 Key） |
 
+## 遥测（轻量埋点）
+
+| Method | Path | Body | 说明 |
+|--------|------|------|------|
+| POST | `/telemetry/events` | `{ events: [{ name, route?, durationMs?, metadata?, clientAt? }] }` | 批量上报前端交互事件（最多 20 条/次）；需登录 |
+
+事件名白名单：`page_load`、`route_change`、`ai_estimate_*`、`log_save_*`（服务端另写 `ai_estimate_server_ok/fail`）。
+
 ## 日记录
 
 | Method | Path | 说明 |

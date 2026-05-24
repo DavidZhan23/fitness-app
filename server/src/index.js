@@ -7,6 +7,7 @@ import authRouter from './routes/auth.js'
 import aiRouter from './routes/ai.js'
 import logsRouter from './routes/logs.js'
 import communityRouter from './routes/community.js'
+import telemetryRouter from './routes/telemetry.js'
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -19,6 +20,7 @@ app.use(authRouter)
 app.use(aiRouter)
 app.use(logsRouter)
 app.use(communityRouter)
+app.use(telemetryRouter)
 
 app.use(errorHandler)
 

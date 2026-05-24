@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
+import { TelemetryListener } from './components/TelemetryListener'
 import { LoginPage } from './pages/LoginPage'
 import { SetupPage } from './pages/SetupPage'
 import { TodayPage } from './pages/TodayPage'
@@ -43,6 +44,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <TelemetryListener />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
           <Route path="/setup" element={<SetupPage />} />

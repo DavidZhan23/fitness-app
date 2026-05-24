@@ -4,30 +4,29 @@ import {
   registerAndOnboard,
   uniqueE2eEmail,
 } from './helpers/auth'
+import {
+  logExercise,
+  logMeal,
+  openCommunity,
+  switchCommunityFilter,
+} from './helpers/flows'
 
 test.describe.serial('main flow smoke', () => {
-  test('register, log exercise, and navigate tabs', async ({ page }) => {
+  test('register, log exercise and meal, navigate tabs', async ({ page }) => {
     const email = uniqueE2eEmail()
     const exerciseName = 'E2E 慢跑 30 分钟'
+    const mealName = 'E2E 鸡胸肉 150g'
 
     await registerAndOnboard(page, email)
 
-    await page.getByRole('link', { name: '+ 记运动' }).click()
-    await page.getByRole('heading', { name: '记运动' }).waitFor()
-    await page.getByLabel('名称').fill(exerciseName)
-    await page.getByLabel('热量 (kcal)').fill('300')
-    await page.getByRole('button', { name: '保存' }).click()
-
-    await expect(page.getByText(exerciseName)).toBeVisible()
+    await logExercise(page, exerciseName, '300')
+    await logMeal(page, mealName, '250')
 
     const nav = mainNav(page)
     await nav.getByRole('link', { name: '打卡' }).click()
     await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
 
-    await nav.getByRole('link', { name: '社区' }).click()
-    await expect(
-      page.getByRole('heading', { name: '社区', exact: true }),
-    ).toBeVisible()
+    await openCommunity(page)
 
     await nav.getByRole('link', { name: '模板' }).click()
     await expect(page.getByRole('heading', { name: '我的模板' })).toBeVisible()
@@ -35,5 +34,22 @@ test.describe.serial('main flow smoke', () => {
     await nav.getByRole('link', { name: '今日' }).click()
     await expect(page.getByRole('link', { name: '+ 记运动' })).toBeVisible()
     await expect(page.getByText(exerciseName)).toBeVisible()
+    await expect(page.getByText(mealName)).toBeVisible()
+  })
+
+  test('community filter switches without full-page loading', async ({
+    page,
+  }) => {
+    await registerAndOnboard(page, uniqueE2eEmail())
+    await logExercise(page, 'E2E 社区可见运动', '200')
+
+    await openCommunity(page)
+    await switchCommunityFilter(page, '关注')
+    await switchCommunityFilter(page, '全部')
+
+    await expect(
+      page.getByRole('heading', { name: '社区', exact: true }),
+    ).toBeVisible()
+    await expect(page.getByText('加载社区…')).toBeHidden()
   })
 })

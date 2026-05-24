@@ -1,6 +1,6 @@
 # Milestone: Playwright E2E Smoke
 
-**Status:** active
+**Status:** done
 **Branch:** `feat/playwright-e2e-smoke`
 **Issue:** — (内部工程改善)
 **Started:** 2026-05-24
@@ -15,14 +15,15 @@
 
 ## 3. 成功标准 (Success criteria)
 
-- [ ] `playwright.config.ts` + `e2e/smoke.spec.ts` 主流程通过
-- [ ] `npm run test:e2e` 本地可跑
-- [ ] CI `e2e` job 绿（PostgreSQL service + API + Vite）
-- [ ] GETTING-START + milestones README 同步
+- [x] `playwright.config.ts` + `e2e/smoke.spec.ts` 主流程通过
+- [x] `npm run test:e2e` 本地可跑
+- [x] CI `e2e` job 绿（PostgreSQL service + API + Vite）
+- [x] GETTING-START + milestones README 同步
+- [x] 覆盖 5 条主路径：首页/注册 onboarding、运动记录、饮食记录、社区筛选切换、AI 超时兜底
 
 ## 4. Non-goals
 
-- AI 估算 kcal、社区互动、删除/编辑记录
+- 社区关注/点赞/取消关注跨视图回归（#32 类交互，后续可加）
 - 跨浏览器矩阵（仅 Chromium mobile）
 - data-testid 大规模添加
 
