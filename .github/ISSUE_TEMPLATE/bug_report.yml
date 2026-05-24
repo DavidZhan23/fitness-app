@@ -9,6 +9,18 @@ body:
       value: |
         **随手记即可**：把现象说清楚即可，复现步骤和环境可后补。
 
+  - type: dropdown
+    id: impact
+    attributes:
+      label: 对你影响
+      description: 用于排序修 bug 的先后；提交后 workflow 会同步 priority 标签
+      options:
+        - 用不了
+        - 数据不对
+        - 体验差
+        - 小问题
+      default: 2
+
   - type: textarea
     id: screenshot
     attributes:
