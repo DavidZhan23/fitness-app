@@ -69,6 +69,7 @@ Base URL：
 | GET | `/community/users/:userId/comments` | 评论列表 |
 || POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写） |
 | DELETE | `/community/comments/:commentId` | 删评论 |
+| POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |
 | GET | `/community/inbox/unread` | 未读 |
 | POST | `/community/inbox/mark-read` | 标已读 |

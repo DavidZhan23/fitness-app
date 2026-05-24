@@ -93,6 +93,13 @@ export async function runMigrations() {
         created_at timestamptz not null default now(),
         primary key (voter_id, item_type, item_id)
       )`)
+    await pool.query(`
+      create table if not exists public.day_comment_likes (
+        comment_id uuid not null references public.day_comments (id) on delete cascade,
+        liker_id uuid not null references public.users (id) on delete cascade,
+        created_at timestamptz not null default now(),
+        primary key (comment_id, liker_id)
+      )`)
   } catch {
     /* 表未建等 */
   }

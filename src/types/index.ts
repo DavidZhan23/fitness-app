@@ -54,6 +54,8 @@ export interface DayComment {
   body: string
   createdAt: string
   isOwn: boolean
+  likeCount: number
+  viewerLiked: boolean
   /** 回复时挂在的顶层评论 id */
   parentCommentId?: string | null
   replyToUserId?: string | null

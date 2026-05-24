@@ -39,6 +39,7 @@
 | `follows` | 关注关系 | `follower_id / followee_id → users.id` |
 | `day_likes` | 对某天打卡点赞 | `liker_id / target_user_id → users.id` |
 | `day_comments` | 对某天打卡评论（含回复） | `author_id / target_user_id → users.id`；`parent_comment_id → day_comments.id` |
+| `day_comment_likes` | 对评论点赞 | `comment_id → day_comments.id`；`liker_id → users.id` |
 | `community_member_order` | 每位用户自定义社区列表顺序 | `viewer_id / member_id → users.id` |
 | `log_item_reactions` | 对单条运动/饮食点赞或点踩（+1/-1） | `voter_id / owner_user_id → users.id` |
 | `profiles.community_notify_seen_at` | 通知已读时间戳（profiles 列） | — |

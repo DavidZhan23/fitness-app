@@ -19,9 +19,11 @@ import {
   followUser,
   getDayLikeStats,
   isFollowing,
+  likeDayComment,
   likeDay,
   listDayComments,
   unfollowUser,
+  unlikeDayComment,
   unlikeDay,
 } from './social.js'
 import { query, waitForDb } from './db.js'
@@ -551,6 +553,24 @@ app.delete(
   asyncHandler(async (req, res) => {
     await deleteDayComment(req.userId, req.params.commentId)
     res.json({ ok: true })
+  }),
+)
+
+app.post(
+  '/community/comments/:commentId/likes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await likeDayComment(req.userId, req.params.commentId)
+    res.json(data)
+  }),
+)
+
+app.delete(
+  '/community/comments/:commentId/likes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await unlikeDayComment(req.userId, req.params.commentId)
+    res.json(data)
   }),
 )
 
