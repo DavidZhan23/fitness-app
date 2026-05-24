@@ -1,6 +1,32 @@
 import { query } from './db.js'
 import { assertCanViewCommunity, loadProfile } from './community.js'
 
+let ensureCommentLikeSchemaPromise = null
+
+function ensureCommentLikeSchema() {
+  if (!ensureCommentLikeSchemaPromise) {
+    ensureCommentLikeSchemaPromise = (async () => {
+      await query(
+        `create table if not exists public.day_comment_likes (
+          comment_id uuid not null references public.day_comments (id) on delete cascade,
+          liker_id uuid not null references public.users (id) on delete cascade,
+          created_at timestamptz not null default now(),
+          primary key (comment_id, liker_id)
+        )`,
+      )
+      await query(
+        `create index if not exists idx_day_comment_likes_liker
+         on public.day_comment_likes (liker_id, created_at)`,
+      )
+    })().catch((err) => {
+      // Reset so subsequent requests can retry if startup race/DB transient error occurs.
+      ensureCommentLikeSchemaPromise = null
+      throw err
+    })
+  }
+  return ensureCommentLikeSchemaPromise
+}
+
 function publicNickname(profile) {
   const nick = profile?.nickname?.trim()
   if (nick) return nick.slice(0, 32)
@@ -176,6 +202,7 @@ async function getCommentById(commentId) {
 }
 
 export async function getDayCommentLikeStats(commentId, viewerId) {
+  await ensureCommentLikeSchema()
   const [counts, viewer] = await Promise.all([
     query(
       `select count(*)::int as c from day_comment_likes
@@ -224,6 +251,7 @@ async function loadParentForReply(parentCommentId, targetUserId, logDate) {
 }
 
 export async function listDayComments(targetUserId, logDate, viewerId) {
+  await ensureCommentLikeSchema()
   await assertCanInteract(viewerId, targetUserId)
   const { rows } = await query(
     `with comment_rows as (
@@ -341,6 +369,7 @@ export async function deleteDayComment(viewerId, commentId) {
 }
 
 export async function likeDayComment(viewerId, commentId) {
+  await ensureCommentLikeSchema()
   const comment = await getCommentById(commentId)
   await assertCanInteract(viewerId, comment.target_user_id)
   if (viewerId === comment.author_id) {
@@ -358,6 +387,7 @@ export async function likeDayComment(viewerId, commentId) {
 }
 
 export async function unlikeDayComment(viewerId, commentId) {
+  await ensureCommentLikeSchema()
   const comment = await getCommentById(commentId)
   await assertCanInteract(viewerId, comment.target_user_id)
   await query(
