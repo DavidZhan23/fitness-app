@@ -183,20 +183,18 @@ export function DayCommentSection({
           <p className="mt-1 text-sm leading-relaxed text-slate-100">{c.body}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {!c.isOwn && (
-            <button
-              type="button"
-              disabled={likingCommentId === c.id}
-              onClick={() => void toggleCommentLike(c)}
-              className={`text-xs ${
-                c.viewerLiked
-                  ? 'text-amber-300 hover:text-amber-200'
-                  : 'text-muted hover:text-slate-200'
-              } disabled:opacity-40`}
-            >
-              👍 {c.likeCount}
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={likingCommentId === c.id}
+            onClick={() => void toggleCommentLike(c)}
+            className={`text-xs ${
+              c.viewerLiked
+                ? 'text-amber-300 hover:text-amber-200'
+                : 'text-muted hover:text-slate-200'
+            } disabled:opacity-40`}
+          >
+            👍 {c.likeCount}
+          </button>
           <button
             type="button"
             onClick={() => startReply(c)}
