@@ -24,7 +24,7 @@ For **repository admin (DavidZhan23)** enabling automated deploy on merge to `ma
    - Public key → server `~/.ssh/authorized_keys`
 2. **Server prep**
    - `mkdir -p /opt/fitness-app/releases`
-   - Ensure `/opt/fitness-app/deploy` and docker compose work (see `docs/腾讯云部署-一步步做.md`)
+   - Ensure `/opt/fitness-app/deploy` and docker compose work (see `docs/ops/腾讯云部署-一步步做.md`)
 3. **GitHub Secrets** (repo → Settings → Secrets → Actions)
    - `TENCENT_SSH_KEY` — private key contents
    - `TENCENT_HOST` — public IP

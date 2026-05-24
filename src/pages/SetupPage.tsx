@@ -15,7 +15,7 @@ VITE_API_URL=http://localhost:3001
         </pre>
         <p className="text-sm text-muted">
           部署说明见{' '}
-          <code className="rounded bg-slate-800 px-1">docs/腾讯云部署-一步步做.md</code>
+          <code className="rounded bg-slate-800 px-1">docs/ops/腾讯云部署-一步步做.md</code>
         </p>
       </div>
     </div>

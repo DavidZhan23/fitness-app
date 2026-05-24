@@ -1,0 +1,36 @@
+name: Feature request
+description: 新功能或改动（随手记即可，细节开发时再澄清）
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **随手记即可**：标题一句话就够；下面字段都可空或默认。
+        细化需求、架构、验收在 Cursor 里说「开始 #N」时再澄清。
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: 详情（可选）
+      description: 说不清也行，开发时在 Cursor 里再澄清
+      placeholder: 例如：希望在打卡墙看到连续天数
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 默认「中」；表单提交后 workflow 会同步 priority 标签
+      options:
+        - 高
+        - 中
+        - 低
+      default: 1
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图 / 示意（可选）
+      description: 可粘贴图片或文字描述
+      placeholder: 粘贴截图链接或跳过

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="712" viewBox="0 0 300 712">
+  <rect width="100%" height="100%" fill="#2d2d2d"/>
+  <rect x="20" y="20" width="260" height="52" rx="4" ry="4" fill="#404040" stroke="#707070" stroke-width="1"/>
+  <text x="150" y="42" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">GitHub Issue</text>
+    <text x="150" y="60" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">随手记</text>
+  <line x1="150" y1="72" x2="150" y2="94" stroke="#9ca3af" stroke-width="1"/><polygon points="150,100 145,93 155,93" fill="#9ca3af"/>
+  <rect x="20" y="144" width="260" height="52" rx="4" ry="4" fill="#404040" stroke="#707070" stroke-width="1"/>
+  <text x="150" y="166" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">npm run</text>
+    <text x="150" y="184" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">req:list</text>
+  <line x1="150" y1="196" x2="150" y2="218" stroke="#9ca3af" stroke-width="1"/><polygon points="150,224 145,217 155,217" fill="#9ca3af"/>
+  <rect x="20" y="268" width="260" height="52" rx="4" ry="4" fill="#404040" stroke="#707070" stroke-width="1"/>
+  <text x="150" y="290" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">Cursor</text>
+    <text x="150" y="308" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">开始 issue</text>
+  <line x1="150" y1="320" x2="150" y2="342" stroke="#9ca3af" stroke-width="1"/><polygon points="150,348 145,341 155,341" fill="#9ca3af"/>
+  <rect x="20" y="392" width="260" height="52" rx="4" ry="4" fill="#404040" stroke="#707070" stroke-width="1"/>
+  <text x="150" y="414" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">milestone</text>
+    <text x="150" y="432" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">+ 实现</text>
+  <line x1="150" y1="444" x2="150" y2="466" stroke="#9ca3af" stroke-width="1"/><polygon points="150,472 145,465 155,465" fill="#9ca3af"/>
+  <rect x="20" y="516" width="260" height="52" rx="4" ry="4" fill="#404040" stroke="#707070" stroke-width="1"/>
+  <text x="150" y="538" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">PR</text>
+    <text x="150" y="556" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">关联 issue</text>
+  <line x1="150" y1="568" x2="150" y2="590" stroke="#9ca3af" stroke-width="1"/><polygon points="150,596 145,589 155,589" fill="#9ca3af"/>
+  <rect x="20" y="640" width="260" height="52" rx="4" ry="4" fill="#404040" stroke="#707070" stroke-width="1"/>
+  <text x="150" y="662" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">merge</text>
+    <text x="150" y="680" text-anchor="middle" fill="#f5f5f5" font-size="14" font-family="PingFang SC, Microsoft YaHei, ui-sans-serif, system-ui, sans-serif">issue 关闭</text>
+  </svg>

@@ -1,5 +1,7 @@
 # API 契约
 
+> 导航：[文档中心](../README.md) · [架构总览](overview.md)
+
 Base URL：
 
 - 本地：`http://localhost:3001`
@@ -17,7 +19,7 @@ Base URL：
 
 | Method | Path | Body | 说明 |
 |--------|------|------|------|
-| POST | `/auth/register` | email, password, registration_key | 注册 |
+| POST | `/auth/register` | email, password, registration_key | 注册（`registration_key` 须与服务端 `REGISTRATION_KEY` env 一致） |
 | POST | `/auth/login` | email, password | 登录 |
 | GET | `/auth/me` | — | 当前用户 |
 
@@ -60,13 +62,14 @@ Base URL：
 |--------|------|------|
 | GET | `/community/members` | 成员列表 |
 | PUT | `/community/member-order` | 排序 |
-| GET | `/community/users/:userId` | 用户公开页 |
+| GET | `/community/users/:userId` | 用户公开页（`?date=YYYY-MM-DD` 可选，默认今日） |
 | GET | `/community/users/:userId/month` | 月历 |
 | POST/DELETE | `/community/users/:userId/follow` | 关注 |
 | POST/DELETE | `/community/users/:userId/likes` | 点赞日 |
-| GET/POST | `/community/users/:userId/comments` | 评论 |
+| GET | `/community/users/:userId/comments` | 评论列表 |
+|| POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写） |
 | DELETE | `/community/comments/:commentId` | 删评论 |
-| PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应 |
+| PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |
 | GET | `/community/inbox/unread` | 未读 |
 | POST | `/community/inbox/mark-read` | 标已读 |
 

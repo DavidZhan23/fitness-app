@@ -1,0 +1,42 @@
+name: Bug report
+description: 报告缺陷（现象一句话也行，步骤可后补）
+title: "fix: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **随手记即可**：把现象说清楚即可，复现步骤和环境可后补。
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象
+      placeholder: 例如：打卡后刷新页面，今日记录消失
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望（可选）
+      placeholder: 例如：刷新后仍应显示今日打卡
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤（可选）
+      placeholder: |
+        1. 打开打卡页
+        2. 点击打卡
+        3. 刷新页面
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境（可选）
+      placeholder: 设备 / 浏览器；本地或线上
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图 / 日志（可选）

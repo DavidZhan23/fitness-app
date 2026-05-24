@@ -3,5 +3,7 @@
     "https://github.com": "default",
     "http://github.com": "default"
   },
-  "simpleBrowser.focusLockIndicator.enabled": true
+  "simpleBrowser.focusLockIndicator.enabled": true,
+  "markdown.mermaid.enabled": true,
+  "markdown.preview.breaks": true
 }
