@@ -86,6 +86,7 @@
 - [ ] `docs/architecture/api-contract.md`（若动 API）
 - [ ] `docs/architecture/overview.md` ER 节（若动表）
 - [ ] `docs/architecture/deploy-pipeline.md`（若动 CI/CD）
+- [ ] 根 `README.md`「功能」一节（若用户可见的新功能或行为变更）
 - [ ] 本 milestone Status 改 `done` + `docs/milestones/README.md` 索引更新
 
 ## 14. 回滚方案
