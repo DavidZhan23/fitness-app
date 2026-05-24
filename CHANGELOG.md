@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/DavidZhan23/fitness-app/compare/v1.0.1...v1.1.0) (2026-05-24)
+
+
+### Features
+
+* add comment likes and enforce chronological comment order ([b64b29f](https://github.com/DavidZhan23/fitness-app/commit/b64b29fe5181bffd763757d91ba93d5eea34ae25))
+* add comment likes and enforce chronological comment order ([8997fa5](https://github.com/DavidZhan23/fitness-app/commit/8997fa5b7669dda369a439c65105c7a608a3b37b))
+
 ## [1.0.1](https://github.com/DavidZhan23/fitness-app/compare/v1.0.0...v1.0.1) (2026-05-23)
 
 
