@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.5](https://github.com/DavidZhan23/fitness-app/compare/v1.1.4...v1.1.5) (2026-05-24)
+
+
+### Bug Fixes
+
+* **ci:** trigger checks for release-please PRs ([967dbb8](https://github.com/DavidZhan23/fitness-app/commit/967dbb8d2524c3df58ad090f83f46a356156106a))
+* **ci:** use PAT for release-please so PR checks can run ([be2286c](https://github.com/DavidZhan23/fitness-app/commit/be2286ca10714123439a0c0fe7da5a6d7290d285))
+* split issue-triage workflows to avoid skipped PR checks ([4528815](https://github.com/DavidZhan23/fitness-app/commit/4528815d4a640ec71c746243400eef46015bcd51))
+* split issue-triage workflows to avoid skipped PR checks ([c6f179d](https://github.com/DavidZhan23/fitness-app/commit/c6f179d168d2f12f45dd77b697a26650b3564ccb))
+
 ## [1.1.4](https://github.com/DavidZhan23/fitness-app/compare/v1.1.3...v1.1.4) (2026-05-24)
 
 
