@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { getTodayMemberCardBadge } from '../lib/communityBadges'
+import { saveCommunityUserPreview } from '../lib/communityListCache'
 import { computeCommunityDeficit } from '../lib/communityDeficit'
 import type { CommunityMember, Profile } from '../types'
 import { CommunityDayStatus } from './CommunityDayStatus'
@@ -56,6 +57,10 @@ export function CommunityMemberCard({
       ? 'community-card-elite'
       : ''
 
+  const prefetchUserPage = () => {
+    void import('../pages/CommunityUserPage')
+  }
+
   return (
     <article
       className={`group relative overflow-hidden bg-card/80 ring-1 ring-slate-700/50 transition hover:ring-violet-500/40 hover:bg-slate-800/90 ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? 'hover:ring-inherit' : ''}`}
@@ -110,7 +115,13 @@ export function CommunityMemberCard({
       <Link
         to={`/community/${member.id}`}
         className={`block px-3 pt-3 pb-1.5 active:scale-[0.99] ${sortLocked ? 'pointer-events-none' : ''}`}
-        onClick={() => onBeforeNavigate?.()}
+        onMouseEnter={prefetchUserPage}
+        onFocus={prefetchUserPage}
+        onTouchStart={prefetchUserPage}
+        onClick={() => {
+          saveCommunityUserPreview(member)
+          onBeforeNavigate?.()
+        }}
       >
         <div className="flex items-center gap-2.5">
           <div

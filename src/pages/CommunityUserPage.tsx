@@ -10,6 +10,7 @@ import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
+import { loadCommunityUserPreview } from '../lib/communityListCache'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
   formatMonthTitle,
@@ -25,27 +26,48 @@ import type {
   DayLog,
 } from '../types'
 
+function readInitialUserState(userId: string | undefined) {
+  if (!userId) {
+    return {
+      preview: null as ReturnType<typeof loadCommunityUserPreview>,
+      loading: true,
+    }
+  }
+  const preview = loadCommunityUserPreview(userId)
+  return { preview, loading: !preview }
+}
+
 export function CommunityUserPage() {
   const { profile } = useAuth()
   const { markRead } = useCommunityInbox()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
+  const initial = readInitialUserState(userId)
   const [view, setView] = useState(getTodayMonth)
-  const [nickname, setNickname] = useState('')
-  const [isSelf, setIsSelf] = useState(false)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [viewDate, setViewDate] = useState(todayKey)
-  const [snapshot, setSnapshot] = useState<CommunityDaySnapshot | null>(null)
+  const [nickname, setNickname] = useState(initial.preview?.nickname ?? '')
+  const [isSelf, setIsSelf] = useState(initial.preview?.isSelf ?? false)
+  const [isFollowing, setIsFollowing] = useState(
+    initial.preview?.isFollowing ?? false,
+  )
+  const [viewDate, setViewDate] = useState(
+    initial.preview?.today.date ?? todayKey,
+  )
+  const [snapshot, setSnapshot] = useState<CommunityDaySnapshot | null>(
+    initial.preview?.today ?? null,
+  )
   const [exercises, setExercises] = useState<CommunityPublicExercise[]>([])
   const [meals, setMeals] = useState<CommunityPublicMeal[]>([])
-  const [likeCount, setLikeCount] = useState(0)
-  const [viewerLiked, setViewerLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(initial.preview?.todayLikeCount ?? 0)
+  const [viewerLiked, setViewerLiked] = useState(
+    initial.preview?.viewerLikedToday ?? false,
+  )
   const [comments, setComments] = useState<DayComment[]>([])
   const [dayMap, setDayMap] = useState(() => new Map())
   const [accountStartKey, setAccountStartKey] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(initial.loading)
   const [dayLoading, setDayLoading] = useState(false)
+  const [monthLoading, setMonthLoading] = useState(false)
   const [error, setError] = useState('')
 
   const { year, month } = view
@@ -88,40 +110,61 @@ export function CommunityUserPage() {
 
   const loadMonth = useCallback(async () => {
     if (!userId) return
-    const data = await httpData.getCommunityUserMonth(userId, year, month)
-    setNickname(data.member.nickname)
-    setIsSelf(data.member.isSelf)
-    setAccountStartKey(data.accountStartKey)
-    setDayMap(
-      buildMonthDayMap(
-        data.logs as DayLog[],
-        data.threshold,
-        todayKey,
-        data.accountStartKey,
-        data.dailyBmr,
-      ),
-    )
+    setMonthLoading(true)
+    try {
+      const data = await httpData.getCommunityUserMonth(userId, year, month)
+      setNickname(data.member.nickname)
+      setIsSelf(data.member.isSelf)
+      setAccountStartKey(data.accountStartKey)
+      setDayMap(
+        buildMonthDayMap(
+          data.logs as DayLog[],
+          data.threshold,
+          todayKey,
+          data.accountStartKey,
+          data.dailyBmr,
+        ),
+      )
+    } finally {
+      setMonthLoading(false)
+    }
   }, [userId, year, month, todayKey])
 
   const load = useCallback(async () => {
     if (!userId) return
-    setLoading(true)
+    const preview = loadCommunityUserPreview(userId)
+    if (!preview) setLoading(true)
     setError('')
     try {
-      await Promise.all([loadDay(todayKey), loadMonth()])
+      await loadDay(preview?.today.date ?? todayKey)
     } catch (err) {
       setError(err instanceof Error ? err.message : '无法查看该用户')
     } finally {
       setLoading(false)
     }
-  }, [userId, todayKey, loadDay, loadMonth])
+  }, [userId, todayKey, loadDay])
 
   useEffect(() => {
-    load()
-  }, [load])
+    if (!userId) return
+    const preview = loadCommunityUserPreview(userId)
+    if (preview) {
+      setNickname(preview.nickname)
+      setIsSelf(preview.isSelf)
+      setIsFollowing(preview.isFollowing)
+      setSnapshot(preview.today)
+      setViewDate(preview.today.date)
+      setLikeCount(preview.todayLikeCount)
+      setViewerLiked(preview.viewerLikedToday)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+    void load()
+  }, [userId, load])
 
   useEffect(() => {
-    if (!loading && !error) loadMonth()
+    if (loading || error) return
+    void loadMonth()
   }, [year, month, loading, error, loadMonth])
 
   useEffect(() => {
@@ -162,7 +205,7 @@ export function CommunityUserPage() {
     { month: 'long', day: 'numeric', weekday: 'short' },
   )
 
-  if (loading) {
+  if (loading && !snapshot) {
     return <p className="py-12 text-center text-muted">加载中…</p>
   }
 
@@ -315,18 +358,24 @@ export function CommunityUserPage() {
             </button>
           </div>
         </div>
-        <MonthHeatmap
-          year={year}
-          month={month}
-          dayMap={dayMap}
-          todayKey={todayKey}
-          accountStartKey={accountStartKey}
-          selectedDateKey={viewDate}
-          onDayClick={handleDayClick}
-        />
-        <p className="mt-3 text-center text-xs text-muted">
-          点击日期查看该日记录与评论
-        </p>
+        {monthLoading && dayMap.size === 0 ? (
+          <p className="py-8 text-center text-xs text-muted">加载打卡墙…</p>
+        ) : (
+          <>
+            <MonthHeatmap
+              year={year}
+              month={month}
+              dayMap={dayMap}
+              todayKey={todayKey}
+              accountStartKey={accountStartKey}
+              selectedDateKey={viewDate}
+              onDayClick={handleDayClick}
+            />
+            <p className="mt-3 text-center text-xs text-muted">
+              点击日期查看该日记录与评论
+            </p>
+          </>
+        )}
       </section>
 
       {isSelf && (

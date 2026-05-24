@@ -1,10 +1,42 @@
 import type { CommunityFilter } from '../components/CommunitySegment'
-import type { CommunityMember } from '../types'
+import type { CommunityDaySnapshot, CommunityMember } from '../types'
 
 const STORAGE_KEY = 'fitness-community-list-cache'
+const PREVIEW_KEY = 'fitness-community-user-preview'
 const TTL_MS = 15 * 60 * 1000
 
+type FilterSlice = {
+  members: CommunityMember[]
+  savedAt: number
+}
+
+/** v2：按筛选分别缓存，切换 tab 可即时展示 */
 export interface CommunityListCache {
+  version: 2
+  activeFilter: CommunityFilter
+  members: CommunityMember[]
+  followingCount: number
+  scrollY: number
+  savedAt: number
+  byFilter: Partial<Record<CommunityFilter, FilterSlice>>
+}
+
+export interface CommunityUserPreview {
+  userId: string
+  nickname: string
+  isSelf: boolean
+  isFollowing: boolean
+  todayLikeCount: number
+  viewerLikedToday: boolean
+  today: CommunityDaySnapshot
+  savedAt: number
+}
+
+/** 内存备份，避免 sessionStorage 读写时序问题 */
+let memoryCache: CommunityListCache | null = null
+let memoryPreview: CommunityUserPreview | null = null
+
+type LegacyCommunityListCache = {
   filter: CommunityFilter
   members: CommunityMember[]
   followingCount: number
@@ -12,13 +44,87 @@ export interface CommunityListCache {
   savedAt: number
 }
 
-/** 内存备份，避免 sessionStorage 读写时序问题 */
-let memoryCache: CommunityListCache | null = null
+function isExpired(savedAt: number) {
+  return Date.now() - savedAt > TTL_MS
+}
+
+function normalizeListCache(raw: unknown): CommunityListCache | null {
+  if (!raw || typeof raw !== 'object') return null
+  const parsed = raw as Partial<CommunityListCache & LegacyCommunityListCache>
+  if (parsed.version === 2 && parsed.activeFilter && parsed.byFilter) {
+    if (isExpired(parsed.savedAt ?? 0)) return null
+    return parsed as CommunityListCache
+  }
+  if (parsed.filter && Array.isArray(parsed.members) && parsed.savedAt) {
+    if (isExpired(parsed.savedAt)) return null
+    return {
+      version: 2,
+      activeFilter: parsed.filter,
+      members: parsed.members,
+      followingCount: parsed.followingCount ?? 0,
+      scrollY: parsed.scrollY ?? 0,
+      savedAt: parsed.savedAt,
+      byFilter: {
+        [parsed.filter]: {
+          members: parsed.members,
+          savedAt: parsed.savedAt,
+        },
+      },
+    }
+  }
+  return null
+}
+
+function readRawListCache(): CommunityListCache | null {
+  const candidates: unknown[] = [memoryCache]
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw) candidates.push(JSON.parse(raw))
+  } catch {
+    /* ignore */
+  }
+
+  for (const candidate of candidates) {
+    const normalized = normalizeListCache(candidate)
+    if (normalized) {
+      memoryCache = normalized
+      return normalized
+    }
+  }
+
+  memoryCache = null
+  try {
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+  return null
+}
 
 export function saveCommunityListCache(
-  data: Omit<CommunityListCache, 'savedAt'>,
+  data: Omit<CommunityListCache, 'savedAt' | 'version' | 'byFilter'> & {
+    byFilter?: Partial<Record<CommunityFilter, FilterSlice>>
+  },
 ) {
-  const payload: CommunityListCache = { ...data, savedAt: Date.now() }
+  const existing = readRawListCache()
+  const now = Date.now()
+  const byFilter: Partial<Record<CommunityFilter, FilterSlice>> = {
+    ...(existing?.byFilter ?? {}),
+    ...(data.byFilter ?? {}),
+    [data.activeFilter]: {
+      members: data.members,
+      savedAt: now,
+    },
+  }
+  const payload: CommunityListCache = {
+    version: 2,
+    activeFilter: data.activeFilter,
+    members: data.members,
+    followingCount: data.followingCount,
+    scrollY: data.scrollY,
+    savedAt: now,
+    byFilter,
+  }
   memoryCache = payload
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
@@ -30,34 +136,64 @@ export function saveCommunityListCache(
 /** 今日打卡变更后调用，避免列表仍展示旧的缺口/成就快照 */
 export function invalidateCommunityListCache() {
   memoryCache = null
+  memoryPreview = null
   try {
     sessionStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(PREVIEW_KEY)
   } catch {
     /* ignore */
   }
 }
 
 export function loadCommunityListCache(): CommunityListCache | null {
-  const candidates: (CommunityListCache | null)[] = [memoryCache]
+  return readRawListCache()
+}
+
+export function loadCommunityFilterCache(
+  filter: CommunityFilter,
+): CommunityMember[] | null {
+  const cache = readRawListCache()
+  if (!cache) return null
+  const slice = cache.byFilter[filter]
+  if (!slice || isExpired(slice.savedAt)) return null
+  return slice.members
+}
+
+export function saveCommunityUserPreview(member: CommunityMember) {
+  const payload: CommunityUserPreview = {
+    userId: member.id,
+    nickname: member.nickname,
+    isSelf: member.isSelf,
+    isFollowing: member.isFollowing,
+    todayLikeCount: member.todayLikeCount,
+    viewerLikedToday: member.viewerLikedToday,
+    today: member.today,
+    savedAt: Date.now(),
+  }
+  memoryPreview = payload
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (raw) candidates.push(JSON.parse(raw) as CommunityListCache)
+    sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(payload))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadCommunityUserPreview(
+  userId: string,
+): CommunityUserPreview | null {
+  const candidates: (CommunityUserPreview | null)[] = [memoryPreview]
+  try {
+    const raw = sessionStorage.getItem(PREVIEW_KEY)
+    if (raw) candidates.push(JSON.parse(raw) as CommunityUserPreview)
   } catch {
     /* ignore */
   }
 
   for (const parsed of candidates) {
-    if (!parsed) continue
-    if (Date.now() - parsed.savedAt > TTL_MS) continue
-    memoryCache = parsed
+    if (!parsed || parsed.userId !== userId) continue
+    if (isExpired(parsed.savedAt)) continue
+    memoryPreview = parsed
     return parsed
-  }
-
-  memoryCache = null
-  try {
-    sessionStorage.removeItem(STORAGE_KEY)
-  } catch {
-    /* ignore */
   }
   return null
 }

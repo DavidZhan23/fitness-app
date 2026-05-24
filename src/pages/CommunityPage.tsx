@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
 import {
+  loadCommunityFilterCache,
   loadCommunityListCache,
   getCommunityMainElement,
   restoreCommunityMainScroll,
@@ -32,7 +33,7 @@ function readInitialCommunityState() {
   }
   return {
     fromCache: true as const,
-    filter: cached.filter,
+    filter: cached.activeFilter,
     members: cached.members,
     followingCount: cached.followingCount,
     scrollY: cached.scrollY,
@@ -55,46 +56,62 @@ export function CommunityPage() {
   const [members, setMembers] = useState<CommunityMember[]>(initial.members)
   const [followingCount, setFollowingCount] = useState(initial.followingCount)
   const [loading, setLoading] = useState(!initial.fromCache)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
 
   const listStateRef = useRef({ filter, members, followingCount })
   listStateRef.current = { filter, members, followingCount }
+  const membersRef = useRef(members)
+  membersRef.current = members
+  const loadGenRef = useRef(0)
 
   const persistListCache = useCallback(() => {
     saveCommunityListCache({
-      ...listStateRef.current,
+      activeFilter: listStateRef.current.filter,
+      members: listStateRef.current.members,
+      followingCount: listStateRef.current.followingCount,
       scrollY: scrollYRef.current,
     })
   }, [])
 
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
-      if (!opts?.silent) {
+      const requestFilter = filter
+      const gen = ++loadGenRef.current
+      const hasMembers = membersRef.current.length > 0
+      const blockUi = !opts?.silent && !hasMembers
+      if (blockUi) {
         setLoading(true)
         setError('')
+      } else {
+        setRefreshing(true)
       }
       try {
-        const data = await httpData.listCommunityMembers(todayKey, filter)
+        const data = await httpData.listCommunityMembers(todayKey, requestFilter)
+        if (gen !== loadGenRef.current) return
         setMembers(data.members)
         let nextFollowing = listStateRef.current.followingCount
-        if (filter === 'all') {
+        if (requestFilter === 'all') {
           nextFollowing = data.members.filter(
             (m) => m.isFollowing && !m.isSelf,
           ).length
           setFollowingCount(nextFollowing)
         }
         saveCommunityListCache({
-          filter,
+          activeFilter: requestFilter,
           members: data.members,
           followingCount: nextFollowing,
           scrollY: scrollYRef.current,
         })
       } catch (err) {
-        if (!opts?.silent) {
+        if (gen === loadGenRef.current && blockUi) {
           setError(err instanceof Error ? err.message : '加载失败')
         }
       } finally {
-        if (!opts?.silent) setLoading(false)
+        if (gen === loadGenRef.current) {
+          if (blockUi) setLoading(false)
+          setRefreshing(false)
+        }
       }
     },
     [todayKey, filter],
@@ -112,7 +129,9 @@ export function CommunityPage() {
     return () => {
       main.removeEventListener('scroll', onScroll)
       saveCommunityListCache({
-        ...listStateRef.current,
+        activeFilter: listStateRef.current.filter,
+        members: listStateRef.current.members,
+        followingCount: listStateRef.current.followingCount,
         scrollY: scrollYRef.current,
       })
     }
@@ -164,6 +183,29 @@ export function CommunityPage() {
     void load()
   }, [filter, load])
 
+  const handleFilterChange = useCallback(
+    (next: CommunityFilter) => {
+      if (next === filter) return
+      loadGenRef.current += 1
+      saveCommunityListCache({
+        activeFilter: filter,
+        members: listStateRef.current.members,
+        followingCount: listStateRef.current.followingCount,
+        scrollY: scrollYRef.current,
+      })
+      setFilter(next)
+      const cachedMembers = loadCommunityFilterCache(next)
+      if (cachedMembers) {
+        setMembers(cachedMembers)
+        setLoading(false)
+        setError('')
+      } else {
+        setMembers([])
+      }
+    },
+    [filter],
+  )
+
   const prevVisible = useRef(profile?.community_visible)
   useEffect(() => {
     if (prevVisible.current === profile?.community_visible) return
@@ -183,10 +225,20 @@ export function CommunityPage() {
       const next = prev.map((m) =>
         m.id === userId ? { ...m, isFollowing: following } : m,
       )
-      if (filter === 'following' && !following) {
-        return next.filter((m) => m.id !== userId)
-      }
-      return next
+      const filtered =
+        filter === 'following' && !following
+          ? next.filter((m) => m.id !== userId)
+          : next
+      saveCommunityListCache({
+        activeFilter: filter,
+        members: filtered,
+        followingCount: Math.max(
+          0,
+          listStateRef.current.followingCount + (following ? 1 : -1),
+        ),
+        scrollY: scrollYRef.current,
+      })
+      return filtered
     })
     setFollowingCount((c) => Math.max(0, c + (following ? 1 : -1)))
   }
@@ -287,11 +339,12 @@ export function CommunityPage() {
 
       <CommunitySegment
         value={filter}
+        refreshing={refreshing}
         followingCount={followingCount}
-        onChange={setFilter}
+        onChange={handleFilterChange}
       />
 
-      {loading && (
+      {loading && members.length === 0 && (
         <p className="py-12 text-center text-muted">加载社区…</p>
       )}
 
@@ -313,7 +366,7 @@ export function CommunityPage() {
           <p className="text-muted">还没有关注任何人</p>
           <button
             type="button"
-            onClick={() => setFilter('all')}
+            onClick={() => handleFilterChange('all')}
             className="mt-3 text-sm text-violet-300 hover:text-violet-200"
           >
             去发现健友 →
@@ -328,7 +381,7 @@ export function CommunityPage() {
         </div>
       )}
 
-      {!loading && !error && members.length > 0 && (
+      {!error && members.length > 0 && (
         <>
           {filter === 'following' && (
             <p className="text-xs text-muted">
