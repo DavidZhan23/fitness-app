@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4](https://github.com/DavidZhan23/fitness-app/compare/v1.1.3...v1.1.4) (2026-05-24)
+
+
+### Bug Fixes
+
+* **community:** reduce tab/card loading lag and fix filter race ([0565459](https://github.com/DavidZhan23/fitness-app/commit/056545927a9035cd733bbcbc1d77464525ebc082))
+* **community:** reduce tab/card loading lag and fix filter race ([#26](https://github.com/DavidZhan23/fitness-app/issues/26)) ([8c3dc1b](https://github.com/DavidZhan23/fitness-app/commit/8c3dc1b08bcd5a8bbc6f71b85d4bf7a03bb06770))
+
 ## [1.1.3](https://github.com/DavidZhan23/fitness-app/compare/v1.1.2...v1.1.3) (2026-05-24)
 
 
