@@ -1,6 +1,6 @@
 # Milestone: Refactor Stage 2 — Cleanup, Tests & Secret Hardening
 
-**Status:** active
+**Status:** done
 **Branch:** `feat/refactor-stage2-cleanup`
 **Issue:** — (内部工程改善，无 GitHub Issue)
 **Started:** 2026-05-24
