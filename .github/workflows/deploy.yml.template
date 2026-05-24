@@ -61,7 +61,8 @@ jobs:
             "${GITHUB_WORKSPACE}/server/" "${SSH_TARGET}:${REMOTE_DIR}/server/"
           scp deploy/docker-compose.yml deploy/nginx.conf \
             "${SSH_TARGET}:${REMOTE_DIR}/deploy/"
-          ssh "${SSH_TARGET}" "ln -sfn ${RELEASE_DIR}/dist ${REMOTE_DIR}/dist"
+          # Remove real dist dir from manual deploys so ln creates a symlink nginx can follow
+          ssh "${SSH_TARGET}" "rm -rf ${REMOTE_DIR}/dist && ln -sfn ${RELEASE_DIR}/dist ${REMOTE_DIR}/dist"
 
       - name: Restart containers
         env:
