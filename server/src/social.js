@@ -372,11 +372,6 @@ export async function likeDayComment(viewerId, commentId) {
   await ensureCommentLikeSchema()
   const comment = await getCommentById(commentId)
   await assertCanInteract(viewerId, comment.target_user_id)
-  if (viewerId === comment.author_id) {
-    const err = new Error('不能给自己的评论点赞')
-    err.status = 400
-    throw err
-  }
   await query(
     `insert into day_comment_likes (comment_id, liker_id)
      values ($1, $2)
