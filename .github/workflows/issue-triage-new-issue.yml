@@ -1,18 +1,14 @@
-name: Issue triage
+name: Issue triage (new issue)
 
 on:
   issues:
     types: [opened]
-  pull_request:
-    types: [opened, edited, synchronize]
 
 permissions:
   issues: write
-  pull-requests: read
 
 jobs:
   triage-new-issue:
-    if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
@@ -54,33 +50,3 @@ jobs:
         with:
           project-url: ${{ vars.REQUIREMENTS_PROJECT_URL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  triage-linked-pr:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.pull_request.body ?? '';
-            const re =
-              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
-            const ids = [...new Set([...body.matchAll(re)].map((m) => m[1]))];
-            if (ids.length === 0) return;
-
-            for (const id of ids) {
-              const num = Number(id);
-              const { data: issue } = await github.rest.issues.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: num,
-              });
-              const labels = issue.labels.map((l) => l.name).filter((n) => n !== 'status:todo');
-              if (!labels.includes('status:doing')) labels.push('status:doing');
-              await github.rest.issues.setLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: num,
-                labels,
-              });
-            }
