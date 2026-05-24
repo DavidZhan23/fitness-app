@@ -22,13 +22,30 @@ jobs:
               labels.add('status:todo');
             }
 
-            const priMatch = body.match(/###\s*优先级[\s\S]*?\n\n([高中低])/);
-            const pri = priMatch?.[1] ?? '中';
-            const priMap = { 高: 'priority:high', 中: 'priority:med', 低: 'priority:low' };
-            for (const p of ['priority:high', 'priority:med', 'priority:low']) {
+            const priorityLabels = ['priority:high', 'priority:med', 'priority:low'];
+            let priorityLabel = 'priority:med';
+
+            if (labels.has('bug')) {
+              const impactMatch = body.match(/###\s*对你影响[\s\S]*?\n\n([^\n]+)/);
+              const impact = impactMatch?.[1]?.trim() ?? '';
+              const impactMap = {
+                用不了: 'priority:high',
+                数据不对: 'priority:high',
+                体验差: 'priority:med',
+                小问题: 'priority:low',
+              };
+              priorityLabel = impactMap[impact] ?? 'priority:med';
+            } else {
+              const priMatch = body.match(/###\s*优先级[\s\S]*?\n\n([高中低])/);
+              const pri = priMatch?.[1] ?? '中';
+              const featureMap = { 高: 'priority:high', 中: 'priority:med', 低: 'priority:low' };
+              priorityLabel = featureMap[pri] ?? 'priority:med';
+            }
+
+            for (const p of priorityLabels) {
               labels.delete(p);
             }
-            labels.add(priMap[pri] ?? 'priority:med');
+            labels.add(priorityLabel);
 
             await github.rest.issues.setLabels({
               owner: context.repo.owner,

@@ -11,7 +11,7 @@
 | Feature request | 新功能、改动想法 |
 | Bug report | 缺陷 |
 
-**填写原则**：标题一句话即可；详情、优先级、截图均可空。说不清的在 Cursor 说「开始 #N」时再澄清。
+**填写原则**：标题一句话即可；详情、截图均可空。Bug 选「对你影响」、Feature 选「优先级」；说不清的在 Cursor 说「开始 #N」时再澄清。
 
 表单定义：`.github/ISSUE_TEMPLATE/*.yml`（随 `feat/req-intake` 合并进 `main` 后，在 GitHub 新建 Issue 时可见）。
 
@@ -30,7 +30,10 @@ npm run req:list -- --all  # 我所有 open issue
 | `status:doing` | 有 PR 正文 `Closes #N` |
 | 已关闭 | PR merge 进 `main` |
 
-优先级标签：`priority:high` / `priority:med` / `priority:low`（由 workflow 根据表单同步）。
+优先级标签：`priority:high` / `priority:med` / `priority:low`（workflow 根据表单同步）。
+
+- **Bug** — 表单「对你影响」：用不了、数据不对 → `high`；体验差 → `med`；小问题 → `low`
+- **Feature** — 表单「优先级」：高 / 中 / 低 → 同上三档
 
 ## Cursor 里开工
 
