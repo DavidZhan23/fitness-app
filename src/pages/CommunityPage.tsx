@@ -16,6 +16,8 @@ import {
   getCommunityMainElement,
   restoreCommunityMainScroll,
   saveCommunityListCache,
+  syncFollowStatusInCommunityListCache,
+  syncLikeStatsInCommunityListCache,
 } from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
 import type { CommunityInboxSummary, CommunityMember } from '../types'
@@ -221,6 +223,10 @@ export function CommunityPage() {
   }, [loading, members.length])
 
   const handleFollowChange = (userId: string, following: boolean) => {
+    const nextFollowingCount = Math.max(
+      0,
+      listStateRef.current.followingCount + (following ? 1 : -1),
+    )
     setMembers((prev) => {
       const next = prev.map((m) =>
         m.id === userId ? { ...m, isFollowing: following } : m,
@@ -229,26 +235,23 @@ export function CommunityPage() {
         filter === 'following' && !following
           ? next.filter((m) => m.id !== userId)
           : next
-      saveCommunityListCache({
+      syncFollowStatusInCommunityListCache(userId, following, {
         activeFilter: filter,
-        members: filtered,
-        followingCount: Math.max(
-          0,
-          listStateRef.current.followingCount + (following ? 1 : -1),
-        ),
+        activeMembers: filtered,
+        followingCount: nextFollowingCount,
         scrollY: scrollYRef.current,
       })
       return filtered
     })
-    setFollowingCount((c) => Math.max(0, c + (following ? 1 : -1)))
+    setFollowingCount(nextFollowingCount)
   }
 
   const handleLikeChange = (
     userId: string,
     stats: { likeCount: number; viewerLiked: boolean },
   ) => {
-    setMembers((prev) =>
-      prev.map((m) =>
+    setMembers((prev) => {
+      const next = prev.map((m) =>
         m.id === userId
           ? {
               ...m,
@@ -256,8 +259,15 @@ export function CommunityPage() {
               viewerLikedToday: stats.viewerLiked,
             }
           : m,
-      ),
-    )
+      )
+      syncLikeStatsInCommunityListCache(userId, stats, {
+        activeFilter: filter,
+        activeMembers: next,
+        followingCount: listStateRef.current.followingCount,
+        scrollY: scrollYRef.current,
+      })
+      return next
+    })
   }
 
   const visible = Boolean(profile?.community_visible)

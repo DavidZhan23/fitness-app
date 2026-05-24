@@ -10,7 +10,12 @@ import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
-import { loadCommunityUserPreview } from '../lib/communityListCache'
+import {
+  loadCommunityListCache,
+  loadCommunityUserPreview,
+  syncFollowStatusInCommunityListCache,
+  syncLikeStatsInCommunityListCache,
+} from '../lib/communityListCache'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
   formatMonthTitle,
@@ -254,7 +259,27 @@ export function CommunityUserPage() {
           <FollowButton
             userId={userId!}
             isFollowing={isFollowing}
-            onChange={setIsFollowing}
+            onChange={(following) => {
+              setIsFollowing(following)
+              const cache = loadCommunityListCache()
+              if (!cache || !userId) return
+              const activeMembers = cache.members.map((m) =>
+                m.id === userId ? { ...m, isFollowing: following } : m,
+              )
+              const filtered =
+                cache.activeFilter === 'following' && !following
+                  ? activeMembers.filter((m) => m.id !== userId)
+                  : activeMembers
+              syncFollowStatusInCommunityListCache(userId, following, {
+                activeFilter: cache.activeFilter,
+                activeMembers: filtered,
+                followingCount: Math.max(
+                  0,
+                  cache.followingCount + (following ? 1 : -1),
+                ),
+                scrollY: cache.scrollY,
+              })
+            }}
           />
         )}
       </div>
@@ -289,6 +314,24 @@ export function CommunityUserPage() {
           onChange={(stats) => {
             setLikeCount(stats.likeCount)
             setViewerLiked(stats.viewerLiked)
+            if (!userId || viewDate !== todayKey) return
+            const cache = loadCommunityListCache()
+            if (!cache) return
+            const activeMembers = cache.members.map((m) =>
+              m.id === userId
+                ? {
+                    ...m,
+                    todayLikeCount: stats.likeCount,
+                    viewerLikedToday: stats.viewerLiked,
+                  }
+                : m,
+            )
+            syncLikeStatsInCommunityListCache(userId, stats, {
+              activeFilter: cache.activeFilter,
+              activeMembers,
+              followingCount: cache.followingCount,
+              scrollY: cache.scrollY,
+            })
           }}
         />
       </div>

@@ -159,6 +159,134 @@ export function loadCommunityFilterCache(
   return slice.members
 }
 
+function patchMemberFollowStatus(
+  members: CommunityMember[],
+  userId: string,
+  isFollowing: boolean,
+  filter: CommunityFilter,
+  sourceMember?: CommunityMember,
+): CommunityMember[] {
+  const hasMember = members.some((m) => m.id === userId)
+  if (!hasMember) {
+    if (filter === 'following' && isFollowing && sourceMember) {
+      return [sourceMember, ...members]
+    }
+    return members
+  }
+  const patched = members.map((m) =>
+    m.id === userId ? { ...m, isFollowing } : m,
+  )
+  if (filter === 'following' && !isFollowing) {
+    return patched.filter((m) => m.id !== userId)
+  }
+  return patched
+}
+
+function patchMemberLikeStats(
+  members: CommunityMember[],
+  userId: string,
+  stats: { likeCount: number; viewerLiked: boolean },
+): CommunityMember[] {
+  const hasMember = members.some((m) => m.id === userId)
+  if (!hasMember) return members
+  return members.map((m) =>
+    m.id === userId
+      ? {
+          ...m,
+          todayLikeCount: stats.likeCount,
+          viewerLikedToday: stats.viewerLiked,
+        }
+      : m,
+  )
+}
+
+/** 关注/取消关注后同步各 tab 缓存中的 isFollowing，避免切换「全部」仍显示已关注 */
+export function syncFollowStatusInCommunityListCache(
+  userId: string,
+  isFollowing: boolean,
+  opts: {
+    activeFilter: CommunityFilter
+    activeMembers: CommunityMember[]
+    followingCount: number
+    scrollY: number
+  },
+) {
+  const cache = readRawListCache()
+  const now = Date.now()
+  const sourceMember = opts.activeMembers.find((m) => m.id === userId)
+  const byFilter: Partial<Record<CommunityFilter, FilterSlice>> = {
+    ...(cache?.byFilter ?? {}),
+    [opts.activeFilter]: {
+      members: opts.activeMembers,
+      savedAt: now,
+    },
+  }
+
+  for (const filter of ['all', 'following'] as CommunityFilter[]) {
+    if (filter === opts.activeFilter) continue
+    const slice = byFilter[filter]
+    if (!slice) continue
+    byFilter[filter] = {
+      members: patchMemberFollowStatus(
+        slice.members,
+        userId,
+        isFollowing,
+        filter,
+        sourceMember,
+      ),
+      savedAt: now,
+    }
+  }
+
+  saveCommunityListCache({
+    activeFilter: opts.activeFilter,
+    members: opts.activeMembers,
+    followingCount: opts.followingCount,
+    scrollY: opts.scrollY,
+    byFilter,
+  })
+}
+
+/** 点赞/取消点赞后同步各 tab 缓存中的今日点赞状态，避免切换列表出现旧数据 */
+export function syncLikeStatsInCommunityListCache(
+  userId: string,
+  stats: { likeCount: number; viewerLiked: boolean },
+  opts: {
+    activeFilter: CommunityFilter
+    activeMembers: CommunityMember[]
+    followingCount: number
+    scrollY: number
+  },
+) {
+  const cache = readRawListCache()
+  const now = Date.now()
+  const byFilter: Partial<Record<CommunityFilter, FilterSlice>> = {
+    ...(cache?.byFilter ?? {}),
+    [opts.activeFilter]: {
+      members: opts.activeMembers,
+      savedAt: now,
+    },
+  }
+
+  for (const filter of ['all', 'following'] as CommunityFilter[]) {
+    if (filter === opts.activeFilter) continue
+    const slice = byFilter[filter]
+    if (!slice) continue
+    byFilter[filter] = {
+      members: patchMemberLikeStats(slice.members, userId, stats),
+      savedAt: now,
+    }
+  }
+
+  saveCommunityListCache({
+    activeFilter: opts.activeFilter,
+    members: opts.activeMembers,
+    followingCount: opts.followingCount,
+    scrollY: opts.scrollY,
+    byFilter,
+  })
+}
+
 export function saveCommunityUserPreview(member: CommunityMember) {
   const payload: CommunityUserPreview = {
     userId: member.id,
