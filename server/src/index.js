@@ -188,12 +188,10 @@ app.get(
         dayLog.id,
       ]),
     ])
-    const visibility = await afterDayLogChanged(req.userId, date)
     res.json({
       dayLog,
       exercises: ex.rows,
       meals: meals.rows,
-      community_visible: visibility?.community_visible,
     })
   }),
 )
@@ -597,11 +595,15 @@ app.post(
   authMiddleware,
   asyncHandler(async (req, res) => {
     const { exerciseTemplates, mealTemplates } = req.body
-    const exCount = await query(
-      `select count(*)::int as c from exercise_templates where user_id = $1`,
+    const { rows: counts } = await query(
+      `select
+         (select count(*)::int from exercise_templates where user_id = $1) as ex,
+         (select count(*)::int from meal_templates where user_id = $1) as meal`,
       [req.userId],
     )
-    if (Number(exCount.rows[0].c) === 0 && exerciseTemplates?.length) {
+    const exCount = Number(counts.rows[0]?.ex ?? 0)
+    const mealCount = Number(counts.rows[0]?.meal ?? 0)
+    if (exCount === 0 && exerciseTemplates?.length) {
       for (const t of exerciseTemplates) {
         await query(
           `insert into exercise_templates (user_id, name, kcal) values ($1, $2, $3)`,
@@ -609,11 +611,7 @@ app.post(
         )
       }
     }
-    const mealCount = await query(
-      `select count(*)::int as c from meal_templates where user_id = $1`,
-      [req.userId],
-    )
-    if (Number(mealCount.rows[0].c) === 0 && mealTemplates?.length) {
+    if (mealCount === 0 && mealTemplates?.length) {
       for (const t of mealTemplates) {
         await query(
           `insert into meal_templates (user_id, name, kcal) values ($1, $2, $3)`,
