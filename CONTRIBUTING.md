@@ -1,110 +1,79 @@
 # Contributing to fitness-app
 
-感谢参与 [DavidZhan23/fitness-app](https://github.com/DavidZhan23/fitness-app)。本文说明本地开发、提交流程与如何观察 CI/CD。
+感谢参与 [DavidZhan23/fitness-app](https://github.com/DavidZhan23/fitness-app)。
 
-## 前置条件
+> **文档入口：** [docs/README.md](docs/README.md)（按角色导航）· [docs/GETTING-START.md](docs/GETTING-START.md)（本地跑起来）· [docs/ai-playbook.md](docs/ai-playbook.md)（Cursor 协作）
 
-- Node.js 22+、npm
-- PostgreSQL 16（本地 Homebrew）— [docs/本地数据库启停.md](docs/本地数据库启停.md)
-- [GitHub CLI](https://cli.github.com/)：`gh auth login`
-- [Cursor](https://cursor.com/)（推荐，加载 `.cursor/rules/`）
+## 快速流程
 
-```bash
-git clone https://github.com/DavidZhan23/fitness-app.git
-cd fitness-app
-npm install
-cp .env.example .env.local
-cp server/.env.example server/.env
-# 按 本地数据库启停.md 建库并跑 migrations
+```text
+Issue 随手记 → npm run req:list → Cursor 澄清 + milestone
+→ feat/* 实现 → lint/typecheck → 回复 go → ai-flow.sh → draft PR → merge
 ```
+
+| 步骤 | 命令 / 动作 |
+|------|-------------|
+| 本地环境 | [docs/GETTING-START.md](docs/GETTING-START.md) |
+| 看待办 | `npm run req:list` |
+| 开功能分支 | `bash scripts/new-feature.sh <slug>` |
+| 提交 PR | `bash scripts/ai-flow.sh -m "feat(scope): ..."`（先等 AI confirm，你回复 `go`） |
+| 观察 CI | 终端 Cmd+Click 链接或 `gh run watch` |
+
+**禁止**直接 push / commit 到 `main`。
+
+## 提需求（GitHub）
+
+Issues → **Feature request** / **Bug report**。标题一句话即可，其余可空。详见 [docs/requirements/README.md](docs/requirements/README.md)。
+
+Owner 首次配置 labels / 看板：[docs/requirements/github-project-setup.md](docs/requirements/github-project-setup.md)。
 
 ## 两种贡献身份
 
-### A. Collaborator（owner 已邀请）
+**Collaborator：** `git push origin feat/<slug>` + `ai-flow.sh`
 
-- 直接 `git push origin feat/<slug>`
-- 使用 `bash scripts/ai-flow.sh` 完成 commit / push / draft PR
-
-### B. Fork 贡献者
+**Fork：**
 
 ```bash
-gh repo fork DavidZhan23/fitness-app --remote --clone
-# 开发后
-git push -u <your-fork-remote> feat/<slug>
-gh pr create --repo DavidZhan23/fitness-app --head <your-github-user>:feat/<slug> --draft
+git push -u <fork-remote> feat/<slug>
+gh pr create --repo DavidZhan23/fitness-app --head <user>:feat/<slug> --draft
 ```
 
-`ai-flow.sh` 当前**不**自动处理 fork；需手动 push 与 `gh pr create --repo`。
+`ai-flow.sh` 不自动处理 fork。
 
-## 推荐开发流程
-
-1. **开分支与 milestone**  
-   `bash scripts/new-feature.sh <slug>`
-
-2. **在 Cursor 描述需求**  
-   Rules 会引导澄清边界，并维护 `docs/milestones/<slug>.md`。
-
-3. **实现 + 本地 smoke**  
-   ```bash
-   npm run lint && npm run typecheck
-   ```
-
-4. **人工确认后提交**  
-   AI 会输出 confirm 摘要；你回复 `go` 后执行：  
-   ```bash
-   bash scripts/ai-flow.sh --message "feat(scope): description"
-   ```
-
-5. **观察 CI（Cursor 内）**  
-   - 终端 **Cmd+Click** 脚本打印的 PR / Actions / Run 链接（Simple Browser）  
-   - 或按 Enter 运行 `gh run watch`
-
-6. **Mark PR ready** → 等待 @DavidZhan23 review 并 **merge**
-
-7. **合并后**  
-   - 若 owner 已启用 [自动部署](docs/architecture/owner-setup-guide.md)，main 合并会触发 Deploy workflow  
-   - 可选：release-please 维护 [CHANGELOG.md](CHANGELOG.md)
-
-## 分支与 commit
+## 分支与 Commit
 
 | 类型 | 前缀 | 示例 |
 |------|------|------|
-| 功能 | `feat/` | `feat/export-csv` |
+| 功能 | `feat/` | `feat/12-export-csv` |
 | 修复 | `fix/` | `fix/login-error` |
-| 文档 | `docs/` | `docs/api-contract` |
-| 杂项 | `chore/` | `chore/ci` |
+| 文档 | `docs/` | `docs: refresh doc hub` |
 
-Commit message 使用 [Conventional Commits](https://www.conventionalcommits.org/)，本地 husky + commitlint 会校验。
+[Conventional Commits](https://www.conventionalcommits.org/) + 本地 commitlint。
 
-**禁止**直接 push 到 `main`。
+PR 关联 issue 时在正文写：`Closes #N`。
 
-## CI 跑什么
+## CI（[ci.yml](.github/workflows/ci.yml)）
 
-Push 或 PR 触发 [.github/workflows/ci.yml](.github/workflows/ci.yml)：
+| Job | 说明 |
+|-----|------|
+| lint | ESLint（历史债务可能 warn，`continue-on-error`） |
+| typecheck | `tsc -b --noEmit` |
+| build | 前端生产构建 |
+| server-syntax | `node --check` |
 
-- `lint` — ESLint
-- `typecheck` — `tsc -b --noEmit`
-- `build` — 前端生产构建
-- `server-syntax` — `node --check` on server modules
+失败排查：[docs/architecture/deploy-pipeline.md](docs/architecture/deploy-pipeline.md)。
 
-全绿后 owner 方可 merge（需 owner 配置 branch protection）。
+## Owner 清单
 
-> **说明：** 若 `lint` job 因历史代码告警失败，可先修 ESLint 或单独开 PR；`typecheck`、`build`、`server-syntax` 应通过。
+1. Branch protection on `main`（PR、review、required checks）
+2. 自动部署：[docs/architecture/owner-setup-guide.md](docs/architecture/owner-setup-guide.md)
 
-## 给 Owner（@DavidZhan23）合并本 PR 后请做
+## 文档索引
 
-1. **Branch protection** on `main`：Require PR、1 approval、Code Owners、required status checks、no bypass  
-2. （可选）Review 默认要求 @DavidZhan23  
-3. **自动部署**：见 [docs/architecture/owner-setup-guide.md](docs/architecture/owner-setup-guide.md) 或 Cursor 说「帮我配自动部署」
-
-## 文档导航
-
-- [docs/README.md](docs/README.md)
-- [架构总览](docs/architecture/overview.md)
-- [部署流水线](docs/architecture/deploy-pipeline.md)
-- [AI 协作手册](docs/ai-playbook.md)
-
-## 出问题
-
-- CI 失败：对照 [deploy-pipeline.md](docs/architecture/deploy-pipeline.md) 速查表  
-- 本地数据库：[本地数据库启停.md](docs/本地数据库启停.md)
+| 主题 | 路径 |
+|------|------|
+| 总导航 | [docs/README.md](docs/README.md) |
+| 架构 / API | [docs/architecture/](docs/architecture/) |
+| 运维 / 部署 | [docs/ops/README.md](docs/ops/README.md) |
+| Milestones | [docs/milestones/](docs/milestones/) |
+| ADR | [docs/decisions/](docs/decisions/) |

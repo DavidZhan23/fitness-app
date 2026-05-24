@@ -9,6 +9,7 @@ alwaysApply: true
 
 1. Read the active `docs/milestones/<slug>.md` if it exists.
 2. If no milestone doc and the task is non-trivial, follow `01-planning-clarify.mdc` first.
+3. Before creating any new file in `src/lib/`, `src/hooks/`, `src/context/`, or `server/src/`: grep the reuse table in `06-reuse-first.mdc` for the concept. If a match exists, extend or import it — do not create a parallel implementation.
 
 ## While implementing
 
@@ -32,7 +33,7 @@ When touching server:
 node --check server/src/index.js
 ```
 
-If DB-related, remind user DB must be running (`docs/本地数据库启停.md`).
+If DB-related, remind user DB must be running (`docs/ops/本地数据库启停.md`).
 
 ## Stuck rule
 

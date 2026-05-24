@@ -1,0 +1,67 @@
+---
+description: Reuse-first rule — check existing modules before writing new code
+alwaysApply: true
+---
+
+# Reuse First
+
+Before adding any new file to `src/lib/`, `src/hooks/`, `src/context/`, `server/src/`, or `scripts/`:
+
+1. **grep** the table below for the concept (e.g. "date", "deficit", "nickname", "token").
+2. If a match exists — **extend or import** it; do not create a parallel implementation.
+3. If nothing matches — that is fine, but note it explicitly in the milestone's **Section 6**.
+
+## Frontend (`src/lib/`) — Reusable Modules
+
+| Module | File | Covers |
+|--------|------|--------|
+| HTTP client + token | `src/lib/api/http.ts#apiFetch` | All API calls; auto-attaches JWT, translates network errors |
+| API endpoint layer | `src/lib/api/index.ts#httpData / httpAuth` | All backend endpoints; add new endpoints here |
+| Calorie / BMR / TDEE formulae | `src/lib/calories.ts` | `calculateBmr`, `calculateTdee`, `resolveProfileMetabolism`, `getDeficitHeatmapCell`, deficit colour palette, `ACTIVITY_LEVELS` |
+| Minute-level metabolism | `src/lib/metabolism.ts` | `calculateSpreadDeficit`, `getAccumulatedMetabolism`, `getMinutesElapsedForDate` |
+| Date key (browser-local) | `src/lib/streaks.ts` | `formatDateKey`, `normalizeDateKey`, `getLastNDays`, `getWeeksGrid`, `parseDateKey`, `computeStreak`, `getAccountStartDateKey` |
+| Month calendar grid | `src/lib/monthCalendar.ts` | `getMonthGrid`, `getMonthRange`, `shiftMonth`, `formatMonthTitle` |
+| Month heatmap data | `src/lib/monthData.ts` | `buildMonthDayMap` — builds `MonthDayCell[]` from `DayLog[]` |
+| Community list cache | `src/lib/communityListCache.ts` | sessionStorage + memory cache with TTL; `saveCommunityListCache`, `invalidateCommunityListCache`, `loadCommunityListCache`, scroll restore |
+| Community deficit (frontend) | `src/lib/communityDeficit.ts` | `computeCommunityDeficit`, `computeCommunityMetabolism` — same algorithm as TodayPage |
+| Community member sort | `src/lib/communityMemberOrder.ts` | `reorderCommunityMembers` (self pinned-top), `memberIdsForOrder` |
+| Community badges | `src/lib/communityBadges.ts` | `resolveHeatmapDayBadge` |
+| Day-log mutations | `src/lib/dayLogService.ts` | Wraps `httpData.*` + invalidates community cache |
+| Profile payload | `src/lib/profilePayload.ts` | `buildProfilePatchBody`, `mergeProfileForCalc` — profile PATCH body builder |
+| Profile display name | `src/lib/profileDisplay.ts` | `displayName` |
+| Default templates | `src/lib/defaultTemplates.ts` | `DEFAULT_EXERCISE_TEMPLATES`, `DEFAULT_MEAL_TEMPLATES` |
+| Auth errors (Chinese) | `src/lib/authErrors.ts` | Auth/profile error messages |
+| App badge | `src/lib/appBadge.ts` | PWA badge API |
+| API base URL / backend flag | `src/lib/config.ts` | `apiBaseUrl`, `isBackendConfigured` |
+| Types | `src/types/index.ts` | `Profile`, `DayLog`, `Exercise`, `Meal`, `CommunityMember`, etc. |
+| Auth context | `src/context/AuthContext.tsx` | `useAuth()`, `AuthProvider`, `updateProfile`, `completeOnboarding` |
+| Community inbox hook | `src/hooks/useCommunityInbox.ts` | Inbox polling and markRead |
+
+## Backend (`server/src/`) — Reusable Modules
+
+| Module | File | Covers |
+|--------|------|--------|
+| Async route wrapper | `server/src/asyncHandler.js#asyncHandler` | Wrap every Express handler; passes errors to middleware |
+| Auth middleware + JWT | `server/src/auth.js#authMiddleware`, `signToken`, `verifyToken` | All auth-protected routes |
+| DB pool + query | `server/src/db.js#query`, `pool` | All SQL queries |
+| Date key (server TZ) | `server/src/dateKey.js` | `formatDateKeyInTz` (Asia/Shanghai), `isValidDateKey`, `shiftDateKey`, `yesterdayDateKey` |
+| Calorie formulae (server) | `server/src/calories.js` | `toKcal`, `calculateBmr`, `calculateTdee`, `resolveProfileBmr`, `resolveProfileTdee` |
+| Metabolism (server) | `server/src/metabolism.js` | `calculateSpreadDeficit`, `getAccumulatedMetabolism` |
+| Profile PATCH builder | `server/src/profilePatch.js#buildProfileUpdate` | Clean and validate PATCH /profile body |
+| Registration key | `server/src/registrationKey.js#assertRegistrationKey` | Check registration_key on sign-up |
+| Community queries | `server/src/community.js` | `loadProfile`, `assertCanViewCommunity`, `toPublicMember`, `computeDaySnapshot` |
+| Community visibility sync | `server/src/communityVisibility.js#syncCommunityVisibility` | Auto-show/hide based on recent log; call after any day-log change |
+| Community order | `server/src/communityOrder.js` | `saveCommunityMemberOrder`, `loadMemberOrderMap`, `sortMembersByCustomOrder` |
+| Social actions | `server/src/social.js` | `followUser`, `unfollowUser`, `likeDay`, `unlikeDay`, `addDayComment`, `deleteDayComment`, `listDayComments`, `getDayLikeStats`, `enrichMembersSocial`, `assertCanInteract` |
+| Log item reactions | `server/src/logItemReactions.js#setLogItemReaction`, `enrichLogItemsWithReactions` | Thumbs-up/down on exercises/meals |
+| Community inbox | `server/src/communityInbox.js#getCommunityInboxUnread`, `markCommunityInboxRead` | Inbox notifications |
+| Day-log mutations hooks | `server/src/dayLogMutation.js` | `afterDayLogChanged`, `afterDayLogIdChanged`, `afterExerciseOrMealChanged` — call after mutating logs |
+| DeepSeek AI estimate | `server/src/deepseekKcal.js#estimateKcalFromDescription` | AI kcal estimation via DeepSeek API |
+
+## Hard Rules
+
+- **Do NOT** duplicate `calculateBmr`, `calculateTdee`, `calculateSpreadDeficit`, `formatDateKey*`, or `toKcal` anywhere outside the files listed above.
+- **Do NOT** read `localStorage` / `sessionStorage` outside `src/lib/api/http.ts` and `src/lib/communityListCache.ts`.
+- **Do NOT** write raw `fetch()` calls — always go through `apiFetch`.
+- **Do NOT** write a new `publicNickname` function — it lives in `server/src/publicProfile.js` (Stage 2 will create this).
+- Schema changes: add a new `server/migrations/NNN_<slug>.sql` **and** add the same idempotent DDL to `server/src/db.js#runMigrations()` until the two sources are merged.

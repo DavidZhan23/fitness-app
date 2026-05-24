@@ -17,13 +17,24 @@ Update docs in the **same PR** when behavior or contracts change.
 |--------|--------|
 | New/changed API route | `docs/architecture/api-contract.md` |
 | New tables/columns | `docs/architecture/overview.md` ER section + migration file |
+| Schema changes | Add new `server/migrations/NNN_<slug>.sql` **and** add same idempotent DDL to `server/src/db.js#runMigrations()` |
 | Deploy/CI/CD behavior | `docs/architecture/deploy-pipeline.md` |
 | Significant technical choice | New `docs/decisions/ADR-NNNN-*.md` |
-| Feature milestone | `docs/milestones/<slug>.md` + README index status |
+| Feature milestone | `docs/milestones/<slug>.md` + README index（结构见 `_TEMPLATE.md`） |
+| Doc hub / onboarding | `docs/README.md`, `docs/GETTING-START.md`, `docs/ai-playbook.md` |
+| Ops guides | `docs/ops/` |
 
 ## ADR format
 
 Use `docs/decisions/_template.md`. Keep ADRs short: context, decision, consequences.
+
+## Milestone lifecycle
+
+When a milestone's acceptance criteria are all met:
+
+1. Change `Status: active` → `Status: done` in `docs/milestones/<slug>.md`.
+2. Update the row in `docs/milestones/README.md` to `done`.
+3. Commit the status change in the same PR as the feature, or as a follow-up `docs:` commit.
 
 ## Do not
 

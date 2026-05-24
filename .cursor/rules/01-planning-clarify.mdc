@@ -39,14 +39,18 @@ Document answers for:
 
 ## Deliverable
 
-Create or update `docs/milestones/<slug>.md` with:
+Create or update `docs/milestones/<slug>.md` (structure: `docs/milestones/_TEMPLATE.md`) with:
 
 - Goal, acceptance criteria, non-goals
 - Inputs/outputs and edge cases
 - Files/modules likely touched
 - Risks and rollback
+- **已阅读文档清单**（Section 2）：列出本次规划阅读过的文档（≥ 2 个）
+- **已检查可复用模块**（Section 3）：对照 `06-reuse-first.mdc` 表格，标注命中或未命中
 
-Index in `docs/milestones/README.md` as **active**.
+Index in `docs/milestones/README.md` as **active**. Read `docs/ai-playbook.md` for doc order.
+
+> Plan 冻结前须确认上述两项已填写；否则视为规划不完整，不进入编码阶段。
 
 ## After planning
 
