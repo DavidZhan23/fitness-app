@@ -1,6 +1,6 @@
 # Milestone: Refactor Stage 3 — Route Splitting
 
-**Status:** active
+**Status:** done
 **Branch:** `feat/refactor-stage3-routes`
 **Issue:** — (内部工程改善，无 GitHub Issue)
 **Started:** 2026-05-24
@@ -15,14 +15,14 @@
 
 ## 3. 成功标准 (Success criteria)
 
-- [ ] `server/src/routes/auth.js` — `/health`, `/auth/*`, `/profile`
-- [ ] `server/src/routes/ai.js` — `/ai/*`
-- [ ] `server/src/routes/logs.js` — `/day-logs/*`, `/exercises/*`, `/meals/*`, `/templates/*`
-- [ ] `server/src/routes/community.js` — `/community/*`
-- [ ] `server/src/index.js` ≤ 40 行，仅含 app 初始化 + 挂载 router + start()
-- [ ] `node --check server/src/*.js server/src/routes/*.js` 无错
-- [ ] `npm run lint && npx tsc -b --noEmit` 通过
-- [ ] Stage 2 milestone → done；milestones/README.md 索引更新
+- [x] `server/src/routes/auth.js` — `/health`, `/auth/*`, `/profile`
+- [x] `server/src/routes/ai.js` — `/ai/*`
+- [x] `server/src/routes/logs.js` — `/day-logs/*`, `/exercises/*`, `/meals/*`, `/templates/*`
+- [x] `server/src/routes/community.js` — `/community/*`
+- [x] `server/src/index.js` ≤ 40 行，仅含 app 初始化 + 挂载 router + start()
+- [x] `node --check server/src/*.js server/src/routes/*.js` 无错
+- [x] `npm run lint && npx tsc -b --noEmit` 通过
+- [x] Stage 2 milestone → done；milestones/README.md 索引更新
 
 ## 4. Non-goals
 
