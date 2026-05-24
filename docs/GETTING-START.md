@@ -68,9 +68,21 @@ npm run dev
 ```bash
 npm run lint
 npm run typecheck
+npm run test          # Vitest 纯函数
+npm run test:e2e      # Playwright 主流程冒烟（需 PostgreSQL 可用）
 # 若改了 server：
 node --check server/src/index.js
 ```
+
+**E2E 说明：** `npm run test:e2e` 会通过 Playwright 自动启动 API（3101）与 Vite（4173），默认 `REGISTRATION_KEY=e2e-test-key`。这样可避免误复用你手动启动且配置不同的 dev server。
+
+如需复用已启动服务（例如你在本地调试时固定跑 3001/5173），请显式开启：
+
+```bash
+PW_REUSE_SERVER=1 PLAYWRIGHT_API_PORT=3001 PLAYWRIGHT_WEB_PORT=5173 REGISTRATION_KEY=454676 npm run test:e2e
+```
+
+首次运行需安装浏览器：`npx playwright install chromium`
 
 与 CI [.github/workflows/ci.yml](../.github/workflows/ci.yml) 一致。
 
