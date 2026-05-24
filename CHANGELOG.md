@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.7](https://github.com/DavidZhan23/fitness-app/compare/v1.1.6...v1.1.7) (2026-05-24)
+
+
+### Bug Fixes
+
+* sync community follow and like state across filter caches ([#32](https://github.com/DavidZhan23/fitness-app/issues/32)) ([f1f091b](https://github.com/DavidZhan23/fitness-app/commit/f1f091b487468edbd70f9f3143e6dc0cf7be020c))
+* sync community follow and like state across filter caches ([#32](https://github.com/DavidZhan23/fitness-app/issues/32)) ([41c360f](https://github.com/DavidZhan23/fitness-app/commit/41c360f363eaa70cfe9c2196eced0332a112aac9))
+
 ## [1.1.6](https://github.com/DavidZhan23/fitness-app/compare/v1.1.5...v1.1.6) (2026-05-24)
 
 
