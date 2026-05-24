@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.3](https://github.com/DavidZhan23/fitness-app/compare/v1.1.2...v1.1.3) (2026-05-24)
+
+
+### Bug Fixes
+
+* CD deploy replaces dist dir before symlink ([14f2207](https://github.com/DavidZhan23/fitness-app/commit/14f22073147ddf72f9f9fcb55779c8cab90456d6))
+* reduce app startup latency ([92c2320](https://github.com/DavidZhan23/fitness-app/commit/92c23203d4d3ca7577356da530d06e2719ffdd5c))
+* reduce app startup latency on parallel bootstrap and lighter reads ([31188cf](https://github.com/DavidZhan23/fitness-app/commit/31188cf3ca83adf5b33cd1d971b1b50b64ca1eb6))
+* replace dist directory before CD symlink on deploy ([d0e4a25](https://github.com/DavidZhan23/fitness-app/commit/d0e4a256091614e9a1da2a166bf5705ce876e100))
+
 ## [1.1.2](https://github.com/DavidZhan23/fitness-app/compare/v1.1.1...v1.1.2) (2026-05-24)
 
 
