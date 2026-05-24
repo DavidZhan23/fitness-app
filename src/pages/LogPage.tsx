@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AiKcalEstimate } from '../components/AiKcalEstimate'
 import { TemplatePicker } from '../components/TemplatePicker'
@@ -15,6 +15,7 @@ import {
   DEFAULT_MEAL_TEMPLATES,
 } from '../lib/defaultTemplates'
 import { kcalFromGramsAndKjPer100g, KJ_PER_KCAL } from '../lib/calories'
+import { trackEvent } from '../lib/telemetry'
 
 type MealInputMode = 'kcal' | 'package'
 
@@ -31,6 +32,11 @@ export function LogPage() {
   const [templates, setTemplates] = useState<{ id?: string; name: string; kcal: number }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const openedAt = useRef(0)
+
+  useEffect(() => {
+    openedAt.current = performance.now()
+  }, [])
 
   const packageKcal = useMemo(() => {
     const g = parseFloat(grams)
@@ -95,8 +101,21 @@ export function LogPage() {
       } else {
         await addMeal(user.id, dayLog.id, name.trim(), k)
       }
+      trackEvent({
+        name: 'log_save_success',
+        durationMs: Math.round(performance.now() - openedAt.current),
+        metadata: { kind: isExercise ? 'exercise' : 'meal' },
+      })
       navigate('/')
     } catch (err) {
+      trackEvent({
+        name: 'log_save_failure',
+        durationMs: Math.round(performance.now() - openedAt.current),
+        metadata: {
+          kind: isExercise ? 'exercise' : 'meal',
+          error: err instanceof Error ? err.message.slice(0, 120) : 'unknown',
+        },
+      })
       setError(err instanceof Error ? err.message : '保存失败')
     } finally {
       setLoading(false)

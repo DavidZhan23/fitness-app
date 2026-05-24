@@ -5,6 +5,15 @@ alwaysApply: true
 
 # Coding
 
+## Triage on intake（接手 issue 必做）
+
+接手 issue / 模糊需求时，**先输出一行判断**，让用户随时覆盖：
+
+- `直接修复` — 现象清楚、改动 ≤ 2 文件、不动 API / Schema / 关键交互 → 跳过 milestone，直接进 `Before editing`
+- `需澄清` — 任一不满足（现象不清、影响范围大、动接口/数据/重要交互、有多种合理实现）→ 进 `01-planning-clarify`，最多 5 问，结果写进 `docs/milestones/<slug>.md`
+
+用户可用 `走澄清` / `直接修` / `先看一下再说` 一句话覆盖判断。判断时**列出做出该判断的 1–2 条关键依据**（如「只改 1 个组件、无契约变更」），不要只给结论。
+
 ## Before editing
 
 1. Read the active `docs/milestones/<slug>.md` if it exists.

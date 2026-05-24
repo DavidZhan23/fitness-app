@@ -150,6 +150,22 @@ export const httpData = {
     })
   },
 
+  async ingestTelemetryEvents(
+    events: {
+      name: string
+      route?: string
+      durationMs?: number
+      metadata?: Record<string, unknown>
+      clientAt?: string
+    }[],
+  ): Promise<{ inserted: number }> {
+    return apiFetch('/telemetry/events', {
+      method: 'POST',
+      body: JSON.stringify({ events }),
+      keepalive: true,
+    })
+  },
+
   async getOrCreateDayLog(
     logDate: string,
     tdeeSnapshot: number,

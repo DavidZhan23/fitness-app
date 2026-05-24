@@ -69,7 +69,7 @@ npm run dev
 npm run lint
 npm run typecheck
 npm run test          # Vitest 纯函数
-npm run test:e2e      # Playwright 主流程冒烟（需 PostgreSQL 可用）
+npm run test:e2e      # Playwright 冒烟：注册/onboarding、运动+饮食记录、Tab 导航、社区筛选切换、AI 超时兜底
 # 若改了 server：
 node --check server/src/index.js
 ```

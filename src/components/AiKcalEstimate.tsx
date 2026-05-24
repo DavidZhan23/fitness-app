@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { httpData } from '../lib/api'
+import { trackEvent } from '../lib/telemetry'
 
 interface AiKcalEstimateProps {
   kind: 'exercise' | 'meal'
@@ -37,6 +38,7 @@ export function AiKcalEstimate({
     setError('')
     setLastKcal(null)
 
+    const started = performance.now()
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => controller.abort(), 35_000)
 
@@ -46,11 +48,29 @@ export function AiKcalEstimate({
       })
       setLastKcal(kcal)
       onEstimated(kcal)
+      trackEvent({
+        name: 'ai_estimate_success',
+        durationMs: Math.round(performance.now() - started),
+        metadata: { kind },
+      })
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setError('估算超时，请稍后重试')
+        trackEvent({
+          name: 'ai_estimate_timeout',
+          durationMs: Math.round(performance.now() - started),
+          metadata: { kind },
+        })
       } else {
         setError(err instanceof Error ? err.message : '估算失败')
+        trackEvent({
+          name: 'ai_estimate_error',
+          durationMs: Math.round(performance.now() - started),
+          metadata: {
+            kind,
+            error: err instanceof Error ? err.message.slice(0, 120) : 'unknown',
+          },
+        })
       }
     } finally {
       window.clearTimeout(timeoutId)
