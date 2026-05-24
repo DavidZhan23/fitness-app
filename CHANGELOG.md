@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.8](https://github.com/DavidZhan23/fitness-app/compare/v1.1.7...v1.1.8) (2026-05-24)
+
+
+### Bug Fixes
+
+* **issues:** add bug impact field for priority triage ([0ad1257](https://github.com/DavidZhan23/fitness-app/commit/0ad12579cada385212e341333ed45ebf56821062))
+* **issues:** add bug impact field for priority triage ([8bf8bf9](https://github.com/DavidZhan23/fitness-app/commit/8bf8bf93ecfeecb0fd33cd21fe34ec8faf65f3e6))
+
 ## [1.1.7](https://github.com/DavidZhan23/fitness-app/compare/v1.1.6...v1.1.7) (2026-05-24)
 
 
