@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1](https://github.com/DavidZhan23/fitness-app/compare/v1.1.0...v1.1.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* auto-apply pending SQL migrations on server startup ([03371d6](https://github.com/DavidZhan23/fitness-app/commit/03371d66c1d8b5e5662f848f1deefc91510f6b94))
+* auto-apply pending SQL migrations on server startup ([f643d50](https://github.com/DavidZhan23/fitness-app/commit/f643d50583658da29527abb608f367bd0096e61a))
+* include migrations in api image and guard missing dir ([6ddbd74](https://github.com/DavidZhan23/fitness-app/commit/6ddbd74f3277a95201e9f676ce8c05bcb1957d00))
+* include migrations in api image and guard missing dir ([430f7f8](https://github.com/DavidZhan23/fitness-app/commit/430f7f89e71fb6ee178fdae2dec2c9651d90a7bf))
+
 ## [1.1.0](https://github.com/DavidZhan23/fitness-app/compare/v1.0.1...v1.1.0) (2026-05-24)
 
 
