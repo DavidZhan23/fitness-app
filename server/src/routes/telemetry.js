@@ -1,9 +1,20 @@
 import { Router } from 'express'
 import { asyncHandler } from '../asyncHandler.js'
 import { authMiddleware } from '../auth.js'
-import { insertTelemetryEvents, TELEMETRY_EVENT_NAMES } from '../telemetry.js'
+import {
+  insertTelemetryEvents,
+  TELEMETRY_EVENT_NAMES,
+  pickMetadata,
+} from '../telemetry.js'
 
 const router = Router()
+
+function pickShortString(value, max = 200) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return trimmed.length <= max ? trimmed : null
+}
 
 function normalizeEvent(raw) {
   if (!raw || typeof raw !== 'object') return null
@@ -15,10 +26,7 @@ function normalizeEvent(raw) {
       ? Math.max(0, Math.round(raw.durationMs))
       : null
 
-  const route =
-    typeof raw.route === 'string' && raw.route.length <= 200
-      ? raw.route
-      : null
+  const route = pickShortString(raw.route, 200)
 
   let clientAt = null
   if (typeof raw.clientAt === 'string' && raw.clientAt.length <= 40) {
@@ -28,12 +36,18 @@ function normalizeEvent(raw) {
     }
   }
 
-  let metadata = null
-  if (raw.metadata && typeof raw.metadata === 'object' && !Array.isArray(raw.metadata)) {
-    metadata = raw.metadata
-  }
+  const metadata = pickMetadata(raw.metadata)
 
-  return { name, route, durationMs, metadata, clientAt }
+  return {
+    name,
+    route,
+    durationMs,
+    metadata,
+    clientAt,
+    sessionId: pickShortString(raw.sessionId, 64),
+    appVersion: pickShortString(raw.appVersion, 32),
+    commitSha: pickShortString(raw.commitSha, 64),
+  }
 }
 
 router.post(

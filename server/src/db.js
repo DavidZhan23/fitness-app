@@ -216,6 +216,22 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  try {
+    await pool.query(
+      `alter table public.telemetry_events add column if not exists session_id text`,
+    )
+    await pool.query(
+      `alter table public.telemetry_events add column if not exists app_version text`,
+    )
+    await pool.query(
+      `alter table public.telemetry_events add column if not exists commit_sha text`,
+    )
+    await pool.query(`
+      create index if not exists idx_telemetry_events_session
+      on public.telemetry_events (session_id, created_at desc)`)
+  } catch {
+    /* 表未建等 */
+  }
   await runSqlFileMigrations()
 }
 

@@ -1,9 +1,11 @@
-# Milestone: 轻量交互遥测（L4）
+# Milestone: 轻量交互遥测（L4 · Phase 1a）
 
-**Status:** active
-**Branch:** `feat/telemetry-l4`
+**Status:** done
+**Branch:** `feat/infra-e2e-telemetry` → PR #46（已合并）
 **Issue:** — (内部工程改善)
 **Started:** 2026-05-24
+
+> **接力**：Phase 1b（白名单收紧 + fallback 埋点 + session/version 上下文列）和 Phase 2（周报）在 [M-2026-05-telemetry-weekly](M-2026-05-telemetry-weekly.md) 中继续。
 
 ## 1. 任务背景
 
