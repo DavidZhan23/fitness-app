@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/DavidZhan23/fitness-app/compare/v1.2.0...v1.3.0) (2026-05-25)
+
+
+### Features
+
+* **telemetry:** tighten event whitelist, log AI fallback, add session/version context ([d7e0801](https://github.com/DavidZhan23/fitness-app/commit/d7e0801e20dc229a2eaeef423feff30ca25e02dd))
+* **telemetry:** tighten L4 events, AI fallback metric, session context ([f1f4176](https://github.com/DavidZhan23/fitness-app/commit/f1f41762fc61b5781362f98e71a57deb8a60533b))
+
 ## [1.2.0](https://github.com/DavidZhan23/fitness-app/compare/v1.1.8...v1.2.0) (2026-05-24)
 
 
