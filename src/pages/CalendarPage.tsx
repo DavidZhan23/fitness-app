@@ -20,7 +20,12 @@ import {
   isBeforeAccountStart,
   normalizeDateKey,
 } from '../lib/streaks'
-import { resolveProfileMetabolism, toKcal } from '../lib/calories'
+import {
+  EXERCISE_KCAL_STAT_LABEL,
+  MEAL_KCAL_STAT_LABEL,
+  resolveProfileMetabolism,
+  toKcal,
+} from '../lib/calories'
 import type { DayLog, HeatmapDay } from '../types'
 
 export function CalendarPage() {
@@ -193,8 +198,14 @@ export function CalendarPage() {
                 resolveProfileMetabolism(profile).tdee
               }
             />
-            <Item label="运动" value={toKcal(selected.exercise_kcal)} />
-            <Item label="饮食" value={toKcal(selected.meal_kcal)} />
+            <Item
+              label={EXERCISE_KCAL_STAT_LABEL}
+              value={toKcal(selected.exercise_kcal)}
+            />
+            <Item
+              label={MEAL_KCAL_STAT_LABEL}
+              value={toKcal(selected.meal_kcal)}
+            />
             <Item
               label="缺口"
               value={

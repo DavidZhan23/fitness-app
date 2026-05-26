@@ -247,6 +247,63 @@ export function syncFollowStatusInCommunityListCache(
   })
 }
 
+/** 自己的今日公开状态变更后，同步各 tab 缓存，避免切换「全部/关注」顶栏开关不一致 */
+export function patchSelfDayCommunityVisible(
+  members: CommunityMember[],
+  visible: boolean,
+): CommunityMember[] {
+  return members.map((m) =>
+    m.isSelf
+      ? {
+          ...m,
+          today: {
+            ...m.today,
+            dayCommunityVisible: visible,
+            hidden: false,
+          },
+        }
+      : m,
+  )
+}
+
+export function syncSelfDayVisibleInCommunityListCache(
+  visible: boolean,
+  opts: {
+    activeFilter: CommunityFilter
+    activeMembers: CommunityMember[]
+    followingCount: number
+    scrollY: number
+  },
+) {
+  const cache = readRawListCache()
+  const now = Date.now()
+  const byFilter: Partial<Record<CommunityFilter, FilterSlice>> = {
+    ...(cache?.byFilter ?? {}),
+    [opts.activeFilter]: {
+      members: opts.activeMembers,
+      savedAt: now,
+    },
+  }
+
+  for (const filter of ['all', 'following'] as CommunityFilter[]) {
+    if (filter === opts.activeFilter) continue
+    const slice = byFilter[filter]
+    if (!slice) continue
+    byFilter[filter] = {
+      members: patchSelfDayCommunityVisible(slice.members, visible),
+      savedAt: now,
+    }
+  }
+
+  saveCommunityListCache({
+    activeFilter: opts.activeFilter,
+    members: opts.activeMembers,
+    followingCount: opts.followingCount,
+    scrollY: opts.scrollY,
+    byFilter,
+  })
+}
+
 /** 点赞/取消点赞后同步各 tab 缓存中的今日点赞状态，避免切换列表出现旧数据 */
 export function syncLikeStatsInCommunityListCache(
   userId: string,

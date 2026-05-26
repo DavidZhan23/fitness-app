@@ -1,4 +1,8 @@
-import { hasDeficitCheck } from '../lib/calories'
+import {
+  EXERCISE_KCAL_STAT_LABEL,
+  MEAL_KCAL_STAT_LABEL,
+  hasDeficitCheck,
+} from '../lib/calories'
 import {
   computeCommunityDeficit,
   computeCommunityMetabolism,
@@ -26,8 +30,6 @@ export function CommunityDaySummary({
     mealKcal,
     threshold,
     date,
-    exerciseCount,
-    mealCount,
   } = snapshot
   const opts = { viewerProfile, isSelf }
   const deficit = computeCommunityDeficit(snapshot, opts)
@@ -65,21 +67,15 @@ export function CommunityDaySummary({
           </dd>
         </div>
         <div className="rounded-lg bg-black/20 px-2 py-2">
-          <dt className="text-muted">运动</dt>
+          <dt className="text-muted">{EXERCISE_KCAL_STAT_LABEL}</dt>
           <dd className="mt-0.5 font-semibold tabular-nums text-teal-300">
-            {Math.round(exerciseKcal)}
-            {exerciseCount > 0 && (
-              <span className="ml-0.5 font-normal text-muted">·{exerciseCount}项</span>
-            )}
+            {Math.round(exerciseKcal)} kcal
           </dd>
         </div>
         <div className="rounded-lg bg-black/20 px-2 py-2">
-          <dt className="text-muted">饮食</dt>
+          <dt className="text-muted">{MEAL_KCAL_STAT_LABEL}</dt>
           <dd className="mt-0.5 font-semibold tabular-nums text-amber-300">
-            {Math.round(mealKcal)}
-            {mealCount > 0 && (
-              <span className="ml-0.5 font-normal text-muted">·{mealCount}项</span>
-            )}
+            {Math.round(mealKcal)} kcal
           </dd>
         </div>
       </dl>

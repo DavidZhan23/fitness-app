@@ -5,6 +5,11 @@ import {
   heatmapBadgeEmoji,
   type CommunityDayBadge,
 } from '../lib/communityBadges'
+import {
+  EXERCISE_KCAL_STAT_LABEL,
+  MEAL_KCAL_STAT_LABEL,
+  formatMealKcalLine,
+} from '../lib/calories'
 import { computeCommunityDeficit } from '../lib/communityDeficit'
 import type { CommunityDaySnapshot, Profile } from '../types'
 
@@ -177,7 +182,7 @@ function FoodKingBanner({
           </span>
           美食大王
           <span className="ml-auto tabular-nums text-[10px] font-normal text-rose-200/70">
-            饮食 {Math.round(mealKcal)} kcal
+            {formatMealKcalLine(mealKcal)}
           </span>
         </p>
       </div>
@@ -205,7 +210,10 @@ function FoodKingBanner({
             今日饮食热量达到基础代谢的 1.2 倍，吃货实力认证！
           </p>
           <dl className="mt-3 flex flex-wrap gap-2 text-[11px]">
-            <StatChip label="饮食" value={`${Math.round(mealKcal)}`} />
+            <StatChip
+              label={MEAL_KCAL_STAT_LABEL}
+              value={`${Math.round(mealKcal)} kcal`}
+            />
             <StatChip label="达标线" value={`≥${threshold}`} />
             <StatChip label="基础代谢" value={`${Math.round(dailyBmr)}`} />
           </dl>
@@ -320,9 +328,15 @@ function BadgeBanner({
           </p>
           <dl className="mt-3 flex flex-wrap gap-2 text-[11px]">
             <StatChip label="缺口" value={`+${Math.round(deficit)}`} />
-            <StatChip label="运动" value={`${Math.round(exerciseKcal)}`} />
+            <StatChip
+              label={EXERCISE_KCAL_STAT_LABEL}
+              value={`${Math.round(exerciseKcal)} kcal`}
+            />
             {isChampion && (
-              <StatChip label="饮食" value={`${Math.round(mealKcal)}`} />
+              <StatChip
+                label={MEAL_KCAL_STAT_LABEL}
+                value={`${Math.round(mealKcal)} kcal`}
+              />
             )}
           </dl>
         </div>

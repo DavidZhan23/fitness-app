@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { getTodayMemberCardBadge } from '../lib/communityBadges'
 import { saveCommunityUserPreview } from '../lib/communityListCache'
+import { formatExerciseKcalLine, formatMealKcalLine } from '../lib/calories'
 import { computeCommunityDeficit } from '../lib/communityDeficit'
 import type { CommunityMember, Profile } from '../types'
 import { CommunityDayStatus } from './CommunityDayStatus'
-import { DayCommunityVisibleToggle } from './DayCommunityVisibleToggle'
 import { DayLikeButton } from './DayLikeButton'
 import { FollowButton } from './FollowButton'
 
@@ -17,8 +17,6 @@ interface CommunityMemberCardProps {
     userId: string,
     stats: { likeCount: number; viewerLiked: boolean },
   ) => void
-  onDayVisibleChange?: (visible: boolean) => void
-  togglingDayVisible?: boolean
   isDragging?: boolean
   sortLocked?: boolean
   roundedLeft?: boolean
@@ -31,18 +29,15 @@ export function CommunityMemberCard({
   viewerProfile,
   onFollowChange,
   onLikeChange,
-  onDayVisibleChange,
-  togglingDayVisible = false,
   isDragging,
   sortLocked,
   roundedLeft = true,
   onBeforeNavigate,
 }: CommunityMemberCardProps) {
   const isToday = member.today.date === todayKey
-  const dayVisible = member.today.dayCommunityVisible !== false
   const isHiddenForViewer = Boolean(member.today.hidden) && !member.isSelf
 
-  const { exerciseKcal, mealKcal, exerciseCount, mealCount } = member.today
+  const { exerciseKcal, mealKcal } = member.today
   const deficit = isHiddenForViewer
     ? 0
     : computeCommunityDeficit(member.today, {
@@ -159,37 +154,29 @@ export function CommunityMemberCard({
               {isToday ? '今日动态' : member.today.date}
             </p>
           </div>
-          {member.isSelf && isToday && onDayVisibleChange ? (
-            <DayCommunityVisibleToggle
-              visible={dayVisible}
-              saving={togglingDayVisible}
-              onToggle={() => onDayVisibleChange(!dayVisible)}
-            />
-          ) : (
-            <div
-              className={`shrink-0 text-right ${todayBadge ? 'mt-[calc(0.2cm+2mm)]' : ''}`}
-            >
-              {isHiddenForViewer ? (
-                <p className="text-xs text-muted">已隐藏</p>
-              ) : (
-                <>
-                  <p
-                    className={`text-base font-bold tabular-nums leading-tight ${
-                      surplus
-                        ? 'text-red-400'
-                        : deficit > 0
-                          ? 'text-emerald-400'
-                          : 'text-amber-400'
-                    }`}
-                  >
-                    {deficit > 0 ? '+' : ''}
-                    {Math.round(deficit)}
-                  </p>
-                  <p className="text-[9px] text-muted">kcal</p>
-                </>
-              )}
-            </div>
-          )}
+          <div
+            className={`shrink-0 text-right ${todayBadge ? 'mt-[calc(0.2cm+2mm)]' : ''}`}
+          >
+            {isHiddenForViewer ? (
+              <p className="text-xs text-muted">已隐藏</p>
+            ) : (
+              <>
+                <p
+                  className={`text-base font-bold tabular-nums leading-tight ${
+                    surplus
+                      ? 'text-red-400'
+                      : deficit > 0
+                        ? 'text-emerald-400'
+                        : 'text-amber-400'
+                  }`}
+                >
+                  {deficit > 0 ? '+' : ''}
+                  {Math.round(deficit)}
+                </p>
+                <p className="text-[9px] text-muted">kcal</p>
+              </>
+            )}
+          </div>
         </div>
 
         {isHiddenForViewer ? (
@@ -200,12 +187,10 @@ export function CommunityMemberCard({
           <>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-muted">
               <span className="rounded-md bg-teal-900/30 px-1.5 py-0.5 text-teal-300/90">
-                运动 {Math.round(exerciseKcal)}
-                {exerciseCount > 0 ? ` · ${exerciseCount}项` : ''}
+                {formatExerciseKcalLine(exerciseKcal)}
               </span>
               <span className="rounded-md bg-amber-900/25 px-1.5 py-0.5 text-amber-300/90">
-                饮食 {Math.round(mealKcal)}
-                {mealCount > 0 ? ` · ${mealCount}项` : ''}
+                {formatMealKcalLine(mealKcal)}
               </span>
             </div>
           </>
