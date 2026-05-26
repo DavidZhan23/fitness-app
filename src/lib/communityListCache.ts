@@ -247,6 +247,13 @@ export function syncFollowStatusInCommunityListCache(
   })
 }
 
+/** 从成员列表解析自己的当日公开状态（不依赖 today.date 严格匹配，避免列表日期字段不一致时误判为「公开」） */
+export function resolveSelfDayVisible(members: CommunityMember[]): boolean {
+  const self = members.find((m) => m.isSelf)
+  if (!self) return true
+  return self.today.dayCommunityVisible !== false
+}
+
 /** 自己的今日公开状态变更后，同步各 tab 缓存，避免切换「全部/关注」顶栏开关不一致 */
 export function patchSelfDayCommunityVisible(
   members: CommunityMember[],
