@@ -21,7 +21,7 @@ Base URL：
 |--------|------|------|------|
 | POST | `/auth/register` | email, password, registration_key | 注册（`registration_key` 须与服务端 `REGISTRATION_KEY` env 一致） |
 | POST | `/auth/login` | email, password | 登录 |
-| GET | `/auth/me` | — | 当前用户 |
+| GET | `/auth/me` | — | 当前用户；响应 `user.isDeveloper`（由 `DEVELOPER_EMAILS` / `ADMIN_EMAILS` 判定） |
 
 ## 资料
 
@@ -48,6 +48,18 @@ Base URL：
 `metadata` 字段白名单：`input_length`、`input_mode`、`route_from`、`route_to`、`duration_ms`、`status`、`error_type`、`kind`。前后端双侧 pick，其他字段静默丢弃。**禁止**记录饮食原文、体重、身体数据等 PII。
 
 详见 [`docs/metrics/frontend-metrics-design.md`](../metrics/frontend-metrics-design.md)。
+
+### 遥测周报（开发者 only）
+
+| Method | Path | 说明 |
+|--------|------|------|
+| GET | `/telemetry/weekly-reports` | 列表（最近 52 周，不含 `report_md`）；需开发者 |
+| GET | `/telemetry/weekly-reports/:week` | 详情（含完整 `report_md`）；week 格式 `YYYY-Www` |
+| POST | `/telemetry/weekly-reports/:week/regenerate` | 强制重新生成指定周报；需开发者 |
+
+**开发者鉴权**：`DEVELOPER_EMAILS`（优先）或 `ADMIN_EMAILS`（回退），逗号分隔；`requireDeveloper` middleware 比对 `req.userEmail`。App 内入口：设置页「开发者后台」（仅 `isDeveloper` 为 true 时显示）。
+
+详见 [`docs/reports/weekly/README.md`](../reports/weekly/README.md)。
 
 ## 日记录
 

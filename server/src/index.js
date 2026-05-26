@@ -3,6 +3,7 @@ import cors from 'cors'
 import express from 'express'
 import { waitForDb } from './db.js'
 import { errorHandler } from './errorMiddleware.js'
+import { startSchedulers } from './scheduler.js'
 import authRouter from './routes/auth.js'
 import aiRouter from './routes/ai.js'
 import logsRouter from './routes/logs.js'
@@ -26,6 +27,7 @@ app.use(errorHandler)
 
 async function start() {
   await waitForDb()
+  startSchedulers()
   app.listen(port, '0.0.0.0', () => {
     console.log(`API listening on http://0.0.0.0:${port}`)
   })

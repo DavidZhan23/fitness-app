@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { DeveloperRoute } from './components/DeveloperRoute'
 import { AuthProvider } from './context/AuthContext'
 import { TelemetryListener } from './components/TelemetryListener'
 import { LoginPage } from './pages/LoginPage'
@@ -29,6 +30,16 @@ const CommunityPage = lazy(() =>
 const CommunityUserPage = lazy(() =>
   import('./pages/CommunityUserPage').then((m) => ({
     default: m.CommunityUserPage,
+  })),
+)
+const DeveloperReportsPage = lazy(() =>
+  import('./pages/DeveloperReportsPage').then((m) => ({
+    default: m.DeveloperReportsPage,
+  })),
+)
+const DeveloperReportDetailPage = lazy(() =>
+  import('./pages/DeveloperReportDetailPage').then((m) => ({
+    default: m.DeveloperReportDetailPage,
   })),
 )
 
@@ -79,6 +90,17 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dev"
+            element={
+              <ProtectedRoute>
+                <DeveloperRoute />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DeveloperReportsPage />} />
+            <Route path="reports/:week" element={<DeveloperReportDetailPage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

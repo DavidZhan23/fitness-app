@@ -82,3 +82,52 @@ export function authMiddleware(req, res, next) {
     return res.status(401).json({ error: '登录已过期，请重新登录' })
   }
 }
+
+/** @param {string | undefined} raw */
+export function parseEmailAllowlist(raw) {
+  return (raw ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+/**
+ * 开发者邮箱白名单：优先 DEVELOPER_EMAILS，未配置时回退 ADMIN_EMAILS（兼容旧部署）。
+ */
+export function getDeveloperEmails() {
+  const dev = parseEmailAllowlist(process.env.DEVELOPER_EMAILS)
+  if (dev.length > 0) return dev
+  return parseEmailAllowlist(process.env.ADMIN_EMAILS)
+}
+
+/** @param {string | undefined} email */
+export function isDeveloperEmail(email) {
+  const allowed = getDeveloperEmails()
+  if (allowed.length === 0) return false
+  return allowed.includes((email ?? '').toLowerCase())
+}
+
+/** @param {{ id: string, email: string }} user */
+export function toPublicUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    isDeveloper: isDeveloperEmail(user.email),
+  }
+}
+
+/**
+ * 开发者专用接口鉴权（周报等）。须在 authMiddleware 之后使用。
+ */
+export function requireDeveloper(req, res, next) {
+  if (!isDeveloperEmail(req.userEmail)) {
+    const configured = getDeveloperEmails().length > 0
+    return res.status(403).json({
+      error: configured ? '无开发者权限' : '开发者功能未配置',
+    })
+  }
+  next()
+}
+
+/** @deprecated 使用 requireDeveloper；保留别名避免旧引用断裂 */
+export const requireAdmin = requireDeveloper
