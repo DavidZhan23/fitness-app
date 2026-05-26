@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0](https://github.com/DavidZhan23/fitness-app/compare/v1.5.1...v1.6.0) (2026-05-26)
+
+
+### Features
+
+* **community:** per-day visibility toggle and birthday support ([04d4d14](https://github.com/DavidZhan23/fitness-app/commit/04d4d145bf4fc367898df55e1d0707d27f91e757))
+* **community:** per-day visibility toggle and birthday support ([fd50781](https://github.com/DavidZhan23/fitness-app/commit/fd50781f38f42adb5f27efdbc040a6733f208a1f))
+
+
+### Bug Fixes
+
+* dedupe release changelog entries ([c0c1ca0](https://github.com/DavidZhan23/fitness-app/commit/c0c1ca0ac2d39943a869aa84578fd74275d274e8))
+* **release:** dedupe changelog and enforce squash merges ([68fd385](https://github.com/DavidZhan23/fitness-app/commit/68fd38558a099693af8d2477e9db019885abd0a2))
+
 ## [1.5.1](https://github.com/DavidZhan23/fitness-app/compare/v1.5.0...v1.5.1) (2026-05-26)
 
 
