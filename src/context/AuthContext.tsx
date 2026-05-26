@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { httpAuth, httpData } from '../lib/api'
+import { httpAuth, httpData, type AppUser } from '../lib/api'
 import { getStoredToken } from '../lib/api/http'
 import {
   calculateBmr,
@@ -23,11 +23,6 @@ import { buildProfilePatchBody, mergeProfileForCalc } from '../lib/profilePayloa
 import { seedDefaultTemplates } from '../lib/dayLogService'
 import { isBackendConfigured } from '../lib/config'
 import type { Profile, Sex } from '../types'
-
-export interface AppUser {
-  id: string
-  email: string
-}
 
 interface AuthContextValue {
   user: AppUser | null

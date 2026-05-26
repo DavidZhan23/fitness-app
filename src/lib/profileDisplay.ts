@@ -1,5 +1,5 @@
 import type { Profile } from '../types'
-import type { AppUser } from '../context/AuthContext'
+import type { AppUser } from './api'
 
 /** 展示用称呼：优先昵称，否则邮箱 @ 前，否则「用户」 */
 export function displayName(

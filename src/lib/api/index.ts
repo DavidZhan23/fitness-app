@@ -11,15 +11,23 @@ import type {
   Exercise,
   Meal,
   Profile,
+  WeeklyReportDetail,
+  WeeklyReportSummary,
 } from '../../types'
+
+export interface AppUser {
+  id: string
+  email: string
+  isDeveloper?: boolean
+}
 import { apiFetch, getStoredToken, setStoredToken } from './http'
 
 export const httpAuth = {
   async getSession() {
     const token = getStoredToken()
-    if (!token) return { user: null as { id: string; email: string } | null }
+    if (!token) return { user: null as AppUser | null }
     try {
-      const data = await apiFetch<{ user: { id: string; email: string } }>('/auth/me')
+      const data = await apiFetch<{ user: AppUser }>('/auth/me')
       return { user: data.user }
     } catch {
       setStoredToken(null)
@@ -30,7 +38,7 @@ export const httpAuth = {
   async signIn(email: string, password: string) {
     const data = await apiFetch<{
       token: string
-      user: { id: string; email: string }
+      user: AppUser
     }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -42,7 +50,7 @@ export const httpAuth = {
   async signUp(email: string, password: string, registrationKey: string) {
     const data = await apiFetch<{
       token: string
-      user: { id: string; email: string }
+      user: AppUser
       needsEmailConfirmation: boolean
     }>('/auth/register', {
       method: 'POST',
@@ -337,6 +345,23 @@ export const httpData = {
   }> {
     return apiFetch(
       `/community/users/${userId}/month?year=${year}&month=${month}`,
+    )
+  },
+
+  async listWeeklyReports(): Promise<{ reports: WeeklyReportSummary[] }> {
+    return apiFetch('/telemetry/weekly-reports')
+  },
+
+  async getWeeklyReport(weekId: string): Promise<WeeklyReportDetail> {
+    return apiFetch(`/telemetry/weekly-reports/${encodeURIComponent(weekId)}`)
+  },
+
+  async regenerateWeeklyReport(
+    weekId: string,
+  ): Promise<{ ok: boolean; weekId?: string; status?: string; ai_ok?: boolean }> {
+    return apiFetch(
+      `/telemetry/weekly-reports/${encodeURIComponent(weekId)}/regenerate`,
+      { method: 'POST' },
     )
   },
 }

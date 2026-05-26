@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { InstallGuide } from '../components/InstallGuide'
@@ -8,7 +8,7 @@ import { ACTIVITY_LEVELS } from '../lib/calories'
 import type { Sex } from '../types'
 
 export function SettingsPage() {
-  const { profile, updateProfile, signOut } = useAuth()
+  const { user, profile, updateProfile, signOut } = useAuth()
   const navigate = useNavigate()
   const [weight, setWeight] = useState(String(profile?.weight_kg ?? ''))
   const [height, setHeight] = useState(String(profile?.height_cm ?? ''))
@@ -59,6 +59,16 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">设置</h1>
+
+      {user?.isDeveloper && (
+        <Link
+          to="/dev"
+          className="flex items-center justify-between rounded-xl border border-brand/40 bg-brand/10 px-4 py-3 text-sm font-medium text-brand"
+        >
+          <span>开发者后台 · 质量周报</span>
+          <span aria-hidden>→</span>
+        </Link>
+      )}
 
       {profile && <MetabolismSummary profile={profile} />}
 

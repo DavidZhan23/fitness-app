@@ -1,7 +1,13 @@
 import { Router } from 'express'
 import { asyncHandler } from '../asyncHandler.js'
 import { buildProfileUpdate } from '../profilePatch.js'
-import { authMiddleware, loginUser, registerUser, signToken } from '../auth.js'
+import {
+  authMiddleware,
+  loginUser,
+  registerUser,
+  signToken,
+  toPublicUser,
+} from '../auth.js'
 import { assertRegistrationKey } from '../registrationKey.js'
 import { query } from '../db.js'
 import { getDeepSeekApiKey } from '../deepseekKcal.js'
@@ -28,7 +34,7 @@ router.post(
     const token = signToken(user)
     res.json({
       token,
-      user: { id: user.id, email: user.email },
+      user: toPublicUser(user),
       needsEmailConfirmation: false,
     })
   }),
@@ -40,7 +46,7 @@ router.post(
     const { email, password } = req.body
     const user = await loginUser(email, password)
     const token = signToken(user)
-    res.json({ token, user: { id: user.id, email: user.email } })
+    res.json({ token, user: toPublicUser(user) })
   }),
 )
 
@@ -48,7 +54,9 @@ router.get(
   '/auth/me',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    res.json({ user: { id: req.userId, email: req.userEmail } })
+    res.json({
+      user: toPublicUser({ id: req.userId, email: req.userEmail }),
+    })
   }),
 )
 

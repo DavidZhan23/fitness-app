@@ -1,7 +1,7 @@
 # Milestone: L4 最小埋点 + 每周质量报告
 
 **Status:** active
-**Branch:** Phase 1b → `feat/telemetry-l4-tighten`；Phase 2 → `feat/telemetry-weekly-report`
+**Branch:** Phase 1b → `feat/telemetry-l4-tighten` (PR #48 merged)；Phase 2 → `feat/telemetry-weekly-report`
 **Issue:** —（内部工程改善，紧接 `M-2026-05-telemetry` 的 Phase 1a 实现）
 **Started:** 2026-05-24
 

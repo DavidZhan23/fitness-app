@@ -25,6 +25,7 @@ Owner 自动部署：[docs/architecture/owner-setup-guide.md](docs/architecture/
 - 运动 / 饮食快捷模板
 - 打卡墙 + 社区公开动态
 - PWA：添加到主屏幕
+- AI 辅助每周质量周报（路由耗时 / AI 估算成功率，自动生成 markdown）
 
 ## 本地开发（简）
 

@@ -157,3 +157,23 @@ export interface HeatmapDay {
   deficit: number
   exerciseKcal: number
 }
+
+/** 周报列表项（不含 report_md） */
+export interface WeeklyReportSummary {
+  week_id: string
+  week_start_date: string
+  week_end_date: string
+  status: string
+  generated_by: string
+  report_path: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** 周报详情 */
+export interface WeeklyReportDetail extends WeeklyReportSummary {
+  metrics_json: Record<string, unknown>
+  analysis_md: string | null
+  recommendations_md: string | null
+  report_md: string
+}
