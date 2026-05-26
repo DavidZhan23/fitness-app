@@ -39,6 +39,8 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      DEVELOPER_EMAILS: ${DEVELOPER_EMAILS:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     ports:
       - '3001:3001'
     expose:
