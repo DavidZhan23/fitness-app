@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/DavidZhan23/fitness-app/compare/v1.5.0...v1.5.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* **ci:** use manifest mode for release-please ([ba49230](https://github.com/DavidZhan23/fitness-app/commit/ba49230349517da9bf504d69d92cff8b3fb29ce7))
+* **ci:** use manifest mode for release-please ([cc1c97c](https://github.com/DavidZhan23/fitness-app/commit/cc1c97c44d8609035b2487e365c153e401432ffa))
+
 ## [1.5.0](https://github.com/DavidZhan23/fitness-app/compare/v1.4.0...v1.5.0) (2026-05-26)
 
 
