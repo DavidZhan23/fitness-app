@@ -52,6 +52,8 @@ gh pr create --repo DavidZhan23/fitness-app --head <user>:feat/<slug> --draft
 
 PR 关联 issue 时在正文写：`Closes #N`。
 
+**合并方式：** Owner 合并功能 PR 时请用 **Squash and merge**。普通 merge commit 会让 [release-please](https://github.com/googleapis/release-please) 把「合并提交」和「功能提交」各写一条进 `CHANGELOG.md`（[说明](https://github.com/googleapis/release-please/issues/2476)）。若已出现重复，可本地执行 `npm run changelog:dedupe`。
+
 ## CI（[ci.yml](.github/workflows/ci.yml)）
 
 | Job | 说明 |
