@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { BMR_FORMULA_NAME, resolveProfileMetabolism } from '../lib/calories'
-import type { Profile } from '../types'
+import type { Profile, Sex } from '../types'
 
 interface MetabolismSummaryProps {
   profile: Profile
@@ -8,6 +8,7 @@ interface MetabolismSummaryProps {
 
 export function MetabolismSummary({ profile }: MetabolismSummaryProps) {
   const { bmr } = resolveProfileMetabolism(profile)
+  const sex = profile.sex
 
   return (
     <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/90 to-card ring-1 ring-slate-600/40">
@@ -27,33 +28,48 @@ export function MetabolismSummary({ profile }: MetabolismSummaryProps) {
       </div>
 
       <div className="border-t border-slate-600/40 bg-slate-900/40 px-4 py-3">
-        <div className="grid gap-2 sm:grid-cols-2">
+        {sex === 'male' || sex === 'female' ? (
           <FormulaCard
-            symbol="♂"
-            accent="text-sky-400"
-            expr={
-              <>
-                10<Var>w</Var> + 6.25<Var>h</Var> − 5<Var>a</Var>
-                <span className="text-brand"> + 5</span>
-              </>
-            }
+            symbol={sex === 'male' ? '♂' : '♀'}
+            accent={sex === 'male' ? 'text-sky-400' : 'text-pink-400'}
+            expr={formulaExpr(sex)}
           />
-          <FormulaCard
-            symbol="♀"
-            accent="text-pink-400"
-            expr={
-              <>
-                10<Var>w</Var> + 6.25<Var>h</Var> − 5<Var>a</Var>
-                <span className="text-brand"> − 161</span>
-              </>
-            }
-          />
-        </div>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <FormulaCard
+              symbol="♂"
+              accent="text-sky-400"
+              expr={formulaExpr('male')}
+            />
+            <FormulaCard
+              symbol="♀"
+              accent="text-pink-400"
+              expr={formulaExpr('female')}
+            />
+          </div>
+        )}
         <p className="mt-2 text-center text-[10px] text-muted">
           w 体重(kg) · h 身高(cm) · a 年龄
         </p>
       </div>
     </section>
+  )
+}
+
+function formulaExpr(sex: Sex): ReactNode {
+  if (sex === 'male') {
+    return (
+      <>
+        10<Var>w</Var> + 6.25<Var>h</Var> − 5<Var>a</Var>
+        <span className="text-brand"> + 5</span>
+      </>
+    )
+  }
+  return (
+    <>
+      10<Var>w</Var> + 6.25<Var>h</Var> − 5<Var>a</Var>
+      <span className="text-brand"> − 161</span>
+    </>
   )
 }
 

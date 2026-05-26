@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ACTIVITY_LEVELS } from '../lib/calories'
+import { ageFromBirthdayKey, formatTodayDateKey, parseBirthdayKey } from '../lib/birthday'
 import type { Sex } from '../types'
 
 export function OnboardingPage() {
@@ -9,11 +10,13 @@ export function OnboardingPage() {
   const navigate = useNavigate()
   const [weight, setWeight] = useState('')
   const [height, setHeight] = useState('')
-  const [age, setAge] = useState('')
+  const [birthday, setBirthday] = useState('')
   const [sex, setSex] = useState<Sex>('male')
   const [activity, setActivity] = useState(1.375)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const todayKey = formatTodayDateKey()
+  const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
 
   if (profile?.onboarding_complete) {
     return <Navigate to="/" replace />
@@ -24,9 +27,14 @@ export function OnboardingPage() {
     setError('')
     const w = parseFloat(weight)
     const h = parseFloat(height)
-    const a = parseInt(age, 10)
-    if (!w || !h || !a) {
-      setError('请填写完整信息')
+    const parsedBirthday = parseBirthdayKey(birthday)
+    const derived = parsedBirthday ? ageFromBirthdayKey(parsedBirthday) : null
+    if (!w || !h) {
+      setError('请填写有效的体重和身高')
+      return
+    }
+    if (!parsedBirthday || !derived) {
+      setError('请填写有效的生日')
       return
     }
     setLoading(true)
@@ -34,7 +42,7 @@ export function OnboardingPage() {
       await completeOnboarding({
         weight_kg: w,
         height_cm: h,
-        age: a,
+        birthday: parsedBirthday,
         sex,
         activity_factor: activity,
       })
@@ -76,14 +84,20 @@ export function OnboardingPage() {
             className="input"
           />
         </Field>
-        <Field label="年龄">
+        <Field label="生日">
           <input
-            type="number"
+            type="date"
+            max={todayKey}
             required
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
+            value={birthday}
+            onChange={(e) => setBirthday(e.target.value)}
             className="input"
           />
+          {derivedAge != null && (
+            <p className="mt-1 text-xs text-muted">
+              {birthday}（{derivedAge} 岁）
+            </p>
+          )}
         </Field>
         <Field label="性别">
           <select

@@ -4,6 +4,7 @@ import { saveCommunityUserPreview } from '../lib/communityListCache'
 import { computeCommunityDeficit } from '../lib/communityDeficit'
 import type { CommunityMember, Profile } from '../types'
 import { CommunityDayStatus } from './CommunityDayStatus'
+import { DayCommunityVisibleToggle } from './DayCommunityVisibleToggle'
 import { DayLikeButton } from './DayLikeButton'
 import { FollowButton } from './FollowButton'
 
@@ -16,6 +17,8 @@ interface CommunityMemberCardProps {
     userId: string,
     stats: { likeCount: number; viewerLiked: boolean },
   ) => void
+  onDayVisibleChange?: (visible: boolean) => void
+  togglingDayVisible?: boolean
   isDragging?: boolean
   sortLocked?: boolean
   roundedLeft?: boolean
@@ -28,25 +31,34 @@ export function CommunityMemberCard({
   viewerProfile,
   onFollowChange,
   onLikeChange,
+  onDayVisibleChange,
+  togglingDayVisible = false,
   isDragging,
   sortLocked,
   roundedLeft = true,
   onBeforeNavigate,
 }: CommunityMemberCardProps) {
-  const { exerciseKcal, mealKcal, exerciseCount, mealCount } = member.today
-  const deficit = computeCommunityDeficit(member.today, {
-    viewerProfile,
-    isSelf: member.isSelf,
-  })
   const isToday = member.today.date === todayKey
+  const dayVisible = member.today.dayCommunityVisible !== false
+  const isHiddenForViewer = Boolean(member.today.hidden) && !member.isSelf
+
+  const { exerciseKcal, mealKcal, exerciseCount, mealCount } = member.today
+  const deficit = isHiddenForViewer
+    ? 0
+    : computeCommunityDeficit(member.today, {
+        viewerProfile,
+        isSelf: member.isSelf,
+      })
   const surplus = deficit < 0
   const initials = member.nickname.slice(0, 1).toUpperCase()
-  const todayBadge = getTodayMemberCardBadge(isToday, {
-    deficit,
-    exerciseKcal,
-    mealKcal,
-    dailyBmr: member.today.dailyBmr,
-  })
+  const todayBadge = isHiddenForViewer
+    ? null
+    : getTodayMemberCardBadge(isToday, {
+        deficit,
+        exerciseKcal,
+        mealKcal,
+        dailyBmr: member.today.dailyBmr,
+      })
   const isChampion = todayBadge === 'champion'
   const isElite = todayBadge === 'elite'
 
@@ -147,45 +159,69 @@ export function CommunityMemberCard({
               {isToday ? '今日动态' : member.today.date}
             </p>
           </div>
-          <div
-            className={`shrink-0 text-right ${todayBadge ? 'mt-[calc(0.2cm+2mm)]' : ''}`}
-          >
-            <p
-              className={`text-base font-bold tabular-nums leading-tight ${
-                surplus
-                  ? 'text-red-400'
-                  : deficit > 0
-                    ? 'text-emerald-400'
-                    : 'text-amber-400'
-              }`}
+          {member.isSelf && isToday && onDayVisibleChange ? (
+            <DayCommunityVisibleToggle
+              visible={dayVisible}
+              saving={togglingDayVisible}
+              onToggle={() => onDayVisibleChange(!dayVisible)}
+            />
+          ) : (
+            <div
+              className={`shrink-0 text-right ${todayBadge ? 'mt-[calc(0.2cm+2mm)]' : ''}`}
             >
-              {deficit > 0 ? '+' : ''}
-              {Math.round(deficit)}
-            </p>
-            <p className="text-[9px] text-muted">kcal</p>
-          </div>
+              {isHiddenForViewer ? (
+                <p className="text-xs text-muted">已隐藏</p>
+              ) : (
+                <>
+                  <p
+                    className={`text-base font-bold tabular-nums leading-tight ${
+                      surplus
+                        ? 'text-red-400'
+                        : deficit > 0
+                          ? 'text-emerald-400'
+                          : 'text-amber-400'
+                    }`}
+                  >
+                    {deficit > 0 ? '+' : ''}
+                    {Math.round(deficit)}
+                  </p>
+                  <p className="text-[9px] text-muted">kcal</p>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-muted">
-          <span className="rounded-md bg-teal-900/30 px-1.5 py-0.5 text-teal-300/90">
-            运动 {Math.round(exerciseKcal)}
-            {exerciseCount > 0 ? ` · ${exerciseCount}项` : ''}
-          </span>
-          <span className="rounded-md bg-amber-900/25 px-1.5 py-0.5 text-amber-300/90">
-            饮食 {Math.round(mealKcal)}
-            {mealCount > 0 ? ` · ${mealCount}项` : ''}
-          </span>
-        </div>
+        {isHiddenForViewer ? (
+          <p className="mt-2 rounded-lg border border-dashed border-slate-600/60 bg-slate-900/40 px-2 py-2 text-center text-xs text-muted">
+            今日已隐藏
+          </p>
+        ) : (
+          <>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-muted">
+              <span className="rounded-md bg-teal-900/30 px-1.5 py-0.5 text-teal-300/90">
+                运动 {Math.round(exerciseKcal)}
+                {exerciseCount > 0 ? ` · ${exerciseCount}项` : ''}
+              </span>
+              <span className="rounded-md bg-amber-900/25 px-1.5 py-0.5 text-amber-300/90">
+                饮食 {Math.round(mealKcal)}
+                {mealCount > 0 ? ` · ${mealCount}项` : ''}
+              </span>
+            </div>
+          </>
+        )}
       </Link>
 
-      <div className="px-3 pb-0.5">
-        <CommunityDayStatus
-          snapshot={member.today}
-          viewerProfile={viewerProfile}
-          isSelf={member.isSelf}
-          variant="compact"
-        />
-      </div>
+      {!isHiddenForViewer && (
+        <div className="px-3 pb-0.5">
+          <CommunityDayStatus
+            snapshot={member.today}
+            viewerProfile={viewerProfile}
+            isSelf={member.isSelf}
+            variant="compact"
+          />
+        </div>
+      )}
 
       <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1.5 border-t border-slate-700/40 px-3 py-2">
         {!member.isSelf ? (

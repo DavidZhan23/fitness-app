@@ -9,6 +9,8 @@ export interface Profile {
   created_at?: string
   weight_kg: number | null
   height_cm: number | null
+  /** 生日 YYYY-MM-DD（展示用；age 由前后端根据生日推算） */
+  birthday?: string | null
   age: number | null
   sex: Sex | null
   activity_factor: number
@@ -84,6 +86,10 @@ export interface CommunityDaySnapshot {
   dailyBmr: number
   threshold: number
   accountStartKey: string | null
+  /** 他人查看时当日已手动隐藏 */
+  hidden?: boolean
+  /** 当日是否在社区展示（自己卡片开关用） */
+  dayCommunityVisible?: boolean
 }
 
 export type LogItemViewerReaction = 'up' | 'down' | null
@@ -116,6 +122,7 @@ export interface DayLog {
   exercise_kcal: number
   meal_kcal: number
   deficit: number
+  community_visible?: boolean
 }
 
 export interface Exercise {

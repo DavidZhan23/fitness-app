@@ -22,27 +22,23 @@ export function CommunityShareToggle({ compact = false }: CommunityShareTogglePr
   }
 
   if (compact) {
-    const label = saving ? '…' : visible ? '已公开' : '未公开'
+    const label = visible ? '已公开' : '未公开'
     return (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={visible}
-        aria-label={visible ? '社区已公开，点击关闭' : '社区未公开，点击开启'}
-        disabled={saving}
-        onClick={toggle}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition ${
+      <span
+        role="status"
+        aria-label={visible ? '社区已公开' : '社区未公开'}
+        className={`inline-flex shrink-0 cursor-default select-none items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${
           visible
             ? 'bg-violet-500/25 text-violet-200 ring-1 ring-violet-400/40'
             : 'bg-slate-800 text-muted ring-1 ring-slate-600'
-        } disabled:opacity-50`}
+        }`}
       >
         <span
           aria-hidden
           className={`h-2 w-2 shrink-0 rounded-full ${visible ? 'bg-violet-400' : 'bg-slate-500'}`}
         />
         <span className="shrink-0">{label}</span>
-      </button>
+      </span>
     )
   }
 

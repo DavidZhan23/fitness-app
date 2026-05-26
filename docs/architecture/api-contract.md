@@ -28,7 +28,7 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/profile` | 读取资料 |
-| PATCH | `/profile` | 更新资料（BMR/TDEE 等） |
+| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`） |
 
 ## AI
 
@@ -87,6 +87,7 @@ Base URL：
 |--------|------|------|
 | GET | `/community/members` | 成员列表 |
 | PUT | `/community/member-order` | 排序 |
+| PATCH | `/community/days/:date/visible` | 设置当日社区动态是否公开；body `{ visible: boolean }`；`:date` 为 `YYYY-MM-DD`，仅本人 |
 | GET | `/community/users/:userId` | 用户公开页（`?date=YYYY-MM-DD` 可选，默认今日） |
 | GET | `/community/users/:userId/month` | 月历 |
 | POST/DELETE | `/community/users/:userId/follow` | 关注 |

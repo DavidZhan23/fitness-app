@@ -100,14 +100,15 @@ body {
   padding-top: max(0.75rem, var(--safe-top));
   padding-left: max(1rem, var(--safe-left));
   padding-right: max(1rem, var(--safe-right));
-  padding-bottom: calc(var(--tabbar-total-h) + 0.75rem);
+  padding-bottom: calc(var(--tabbar-total-h) + 1.25rem);
 }
 
 .app-main__inner {
   margin: 0 auto;
   width: 100%;
   max-width: 32rem;
-  padding: 0 0 1rem;
+  /* 长页（设置等）滚到底时，末项与底栏之间留出可扫过的空白 */
+  padding: 0 0 2rem;
 }
 
 .app-tabbar {

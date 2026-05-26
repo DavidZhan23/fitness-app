@@ -14,6 +14,7 @@ import {
   calculateTdee,
   resolveProfileMetabolism,
 } from '../lib/calories'
+import { ageFromBirthdayKey, parseBirthdayKey } from '../lib/birthday'
 import {
   clearTemplatesSeededForUser,
   markTemplatesSeededForUser,
@@ -40,7 +41,7 @@ interface AuthContextValue {
   completeOnboarding: (data: {
     weight_kg: number
     height_cm: number
-    age: number
+    birthday: string
     sex: Sex
     activity_factor: number
   }) => Promise<void>
@@ -179,15 +180,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeOnboarding = async (data: {
     weight_kg: number
     height_cm: number
-    age: number
+    birthday: string
     sex: Sex
     activity_factor: number
   }) => {
     if (!user) return
-    const bmr = calculateBmr(data.weight_kg, data.height_cm, data.age, data.sex)
+    const parsedBirthday = parseBirthdayKey(data.birthday)
+    const age = parsedBirthday ? ageFromBirthdayKey(parsedBirthday) : null
+    if (!parsedBirthday || age == null) {
+      throw new Error('请填写有效的生日')
+    }
+    const bmr = calculateBmr(data.weight_kg, data.height_cm, age, data.sex)
     const tdee = calculateTdee(bmr, data.activity_factor)
     const payload = buildProfilePatchBody(
-      { ...data, onboarding_complete: true },
+      { ...data, age, birthday: parsedBirthday, onboarding_complete: true },
       bmr,
       tdee,
     )

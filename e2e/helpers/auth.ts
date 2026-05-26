@@ -19,7 +19,7 @@ export async function registerAndOnboard(page: Page, email: string) {
   await page.getByRole('heading', { name: '完善身体资料' }).waitFor()
   await page.getByLabel('体重 (kg)').fill('70')
   await page.getByLabel('身高 (cm)').fill('175')
-  await page.getByLabel('年龄').fill('30')
+  await page.getByLabel('生日').fill('1996-06-15')
   await page.getByRole('button', { name: '开始使用' }).click()
 
   await page.getByRole('navigation', { name: '主导航' }).waitFor()
