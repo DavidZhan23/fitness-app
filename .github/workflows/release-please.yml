@@ -18,4 +18,5 @@ jobs:
         with:
           # Use PAT so release PR events can trigger CI checks.
           token: ${{ secrets.RELEASE_PLEASE_PAT }}
-          release-type: node
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
