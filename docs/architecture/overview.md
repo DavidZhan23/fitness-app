@@ -31,7 +31,7 @@
 |------|------|---------|
 | `users` | 账号（email + password_hash） | — |
 | `profiles` | 身体指标（含 `birthday`）+ 社区开关 | `id → users.id` |
-| `day_logs` | 每日打卡汇总（deficit 由触发器计算） | `user_id → users.id` |
+| `day_logs` | 每日打卡汇总（deficit 由触发器计算）；含 `community_visible`（当日动态是否对他人公开，默认 true） | `user_id → users.id` |
 | `exercises` | 单条运动记录 | `day_log_id → day_logs.id`，`user_id → users.id` |
 | `meals` | 单条饮食记录 | `day_log_id → day_logs.id`，`user_id → users.id` |
 | `exercise_templates` | 用户运动模板 | `user_id → users.id` |
@@ -54,6 +54,13 @@
 2. **今日与昨日均无记录** → `profiles.community_visible = false`（自动隐藏）
 3. 账号创建当日：若创建时间晚于"昨日"基准，则跳过昨日判断，仅看今日。
 4. 调用入口：`server/src/dayLogMutation.js#afterDayLogChanged`，所有 day-log 写操作结束后统一触发。
+
+### 3.3 当日社区动态可见（per-day）
+
+- 列：`day_logs.community_visible`（迁移 `016_day_logs_visible.sql`）
+- API：`PATCH /community/days/:date/visible`，body `{ visible: boolean }`，仅本人
+- 列表：`GET /community/members` 的 `today.dayCommunityVisible` / `today.hidden`；对他人隐藏时展示「今日已隐藏」，本人仍可见自己的缺口
+- UI：社区页顶栏切换「今日公开/隐藏」（与 `profiles.community_visible` 总开关独立）
 
 ## 更多
 

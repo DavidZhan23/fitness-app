@@ -1,4 +1,8 @@
-import { hasDeficitCheck } from '../lib/calories'
+import {
+  EXERCISE_KCAL_STAT_LABEL,
+  MEAL_KCAL_STAT_LABEL,
+  hasDeficitCheck,
+} from '../lib/calories'
 
 interface DeficitCardProps {
   dateLabel: string
@@ -48,8 +52,8 @@ export function DeficitCard({
       </p>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
         <Stat label={metabolismLabel} value={metabolismKcal} />
-        <Stat label="运动" value={exerciseKcal} accent />
-        <Stat label="饮食" value={mealKcal} />
+        <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} accent />
+        <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} />
       </div>
     </section>
   )
@@ -72,7 +76,7 @@ function Stat({
           accent ? 'text-brand' : 'text-slate-100'
         }`}
       >
-        {Math.round(value)}
+        {Math.round(value)} kcal
       </p>
     </div>
   )

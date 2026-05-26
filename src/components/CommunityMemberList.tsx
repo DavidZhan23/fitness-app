@@ -22,8 +22,6 @@ interface CommunityMemberListProps {
     userId: string,
     stats: { likeCount: number; viewerLiked: boolean },
   ) => void
-  onDayVisibleChange?: (visible: boolean) => void
-  togglingDayVisible?: boolean
   /** 点开名片前保存列表滚动位置 */
   onBeforeOpenMember?: () => void
 }
@@ -36,8 +34,6 @@ export function CommunityMemberList({
   onMembersChange,
   onFollowChange,
   onLikeChange,
-  onDayVisibleChange,
-  togglingDayVisible,
   onBeforeOpenMember,
 }: CommunityMemberListProps) {
   const [localMembers, setLocalMembers] = useState(members)
@@ -153,8 +149,6 @@ export function CommunityMemberList({
                   viewerProfile={viewerProfile}
                   onFollowChange={onFollowChange}
                   onLikeChange={onLikeChange}
-                  onDayVisibleChange={onDayVisibleChange}
-                  togglingDayVisible={togglingDayVisible}
                   isDragging={dragging}
                   sortLocked={draggingId !== null}
                   roundedLeft={!showHandles}

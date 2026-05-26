@@ -6,6 +6,7 @@ import {
   type CommunityFilter,
 } from '../components/CommunitySegment'
 import { CommunityInboxHint } from '../components/CommunityInboxHint'
+import { DayCommunityVisibleToggle } from '../components/DayCommunityVisibleToggle'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
@@ -14,9 +15,12 @@ import {
   loadCommunityListCache,
   getCommunityMainElement,
   restoreCommunityMainScroll,
+  patchSelfDayCommunityVisible,
+  resolveSelfDayVisible,
   saveCommunityListCache,
   syncFollowStatusInCommunityListCache,
   syncLikeStatsInCommunityListCache,
+  syncSelfDayVisibleInCommunityListCache,
 } from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
 import type { CommunityInboxSummary, CommunityMember } from '../types'
@@ -60,11 +64,16 @@ export function CommunityPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [togglingDayVisible, setTogglingDayVisible] = useState(false)
+  const [selfDayVisible, setSelfDayVisible] = useState(() =>
+    resolveSelfDayVisible(initial.members),
+  )
 
   const listStateRef = useRef({ filter, members, followingCount })
   listStateRef.current = { filter, members, followingCount }
   const membersRef = useRef(members)
   membersRef.current = members
+  const selfDayVisibleRef = useRef(selfDayVisible)
+  selfDayVisibleRef.current = selfDayVisible
   const loadGenRef = useRef(0)
 
   const persistListCache = useCallback(() => {
@@ -76,42 +85,37 @@ export function CommunityPage() {
     })
   }, [])
 
-  const patchSelfDayVisible = useCallback(
-    (visible: boolean, list: CommunityMember[]) =>
-      list.map((m) =>
-        m.isSelf
-          ? {
-              ...m,
-              today: {
-                ...m.today,
-                dayCommunityVisible: visible,
-                hidden: false,
-              },
-            }
-          : m,
-      ),
-    [],
-  )
-
   const handleDayVisibleChange = useCallback(
     async (visible: boolean) => {
+      loadGenRef.current += 1
       const prev = membersRef.current
+      const prevVisible = selfDayVisibleRef.current
       setTogglingDayVisible(true)
-      const optimistic = patchSelfDayVisible(visible, prev)
+      setSelfDayVisible(visible)
+      const optimistic = patchSelfDayCommunityVisible(prev, visible)
       setMembers(optimistic)
       listStateRef.current = {
         ...listStateRef.current,
         members: optimistic,
       }
       try {
-        await httpData.setDayCommunityVisible(todayKey, visible)
-        saveCommunityListCache({
+        const { community_visible: applied } =
+          await httpData.setDayCommunityVisible(todayKey, visible)
+        setSelfDayVisible(applied)
+        const synced = patchSelfDayCommunityVisible(optimistic, applied)
+        setMembers(synced)
+        listStateRef.current = {
+          ...listStateRef.current,
+          members: synced,
+        }
+        syncSelfDayVisibleInCommunityListCache(applied, {
           activeFilter: listStateRef.current.filter,
-          members: optimistic,
+          activeMembers: synced,
           followingCount: listStateRef.current.followingCount,
           scrollY: scrollYRef.current,
         })
       } catch (err) {
+        setSelfDayVisible(prevVisible)
         setMembers(prev)
         listStateRef.current = {
           ...listStateRef.current,
@@ -122,7 +126,7 @@ export function CommunityPage() {
         setTogglingDayVisible(false)
       }
     },
-    [todayKey, patchSelfDayVisible],
+    [todayKey],
   )
 
   const load = useCallback(
@@ -141,6 +145,7 @@ export function CommunityPage() {
         const data = await httpData.listCommunityMembers(todayKey, requestFilter)
         if (gen !== loadGenRef.current) return
         setMembers(data.members)
+        setSelfDayVisible(resolveSelfDayVisible(data.members))
         let nextFollowing = listStateRef.current.followingCount
         if (requestFilter === 'all') {
           nextFollowing = data.members.filter(
@@ -247,7 +252,12 @@ export function CommunityPage() {
       setFilter(next)
       const cachedMembers = loadCommunityFilterCache(next)
       if (cachedMembers) {
-        setMembers(cachedMembers)
+        setMembers(
+          patchSelfDayCommunityVisible(
+            cachedMembers,
+            selfDayVisibleRef.current,
+          ),
+        )
         setLoading(false)
         setError('')
       } else {
@@ -326,7 +336,18 @@ export function CommunityPage() {
     <div className="space-y-5 pb-2">
       <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600/20 via-slate-800 to-slate-900 px-4 py-5 ring-1 ring-violet-500/25">
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-2xl" />
-        <h1 className="text-xl font-bold tracking-tight text-violet-200/85">社区</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-xl font-bold tracking-tight text-violet-200/85">社区</h1>
+          {user && (
+            <DayCommunityVisibleToggle
+              visible={selfDayVisible}
+              saving={togglingDayVisible}
+              onToggle={() =>
+                void handleDayVisibleChange(!selfDayVisibleRef.current)
+              }
+            />
+          )}
+        </div>
         <div className="mt-3 space-y-2 text-sm leading-relaxed">
           <div className="space-y-0.5 leading-snug">
             <p className="text-violet-200/85">
@@ -454,8 +475,6 @@ export function CommunityPage() {
             onMembersChange={setMembers}
             onFollowChange={handleFollowChange}
             onLikeChange={handleLikeChange}
-            onDayVisibleChange={handleDayVisibleChange}
-            togglingDayVisible={togglingDayVisible}
             onBeforeOpenMember={persistListCache}
           />
         </>
