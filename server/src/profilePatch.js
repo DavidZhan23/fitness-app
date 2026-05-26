@@ -1,11 +1,14 @@
 /** 清洗 PATCH /profile 请求体，避免 NaN、非法枚举导致 500 */
 
+import { formatDateKeyInTz } from './dateKey.js'
+
 const ALLOWED = [
   'nickname',
   'community_visible',
   'weight_kg',
   'height_cm',
   'age',
+  'birthday',
   'sex',
   'activity_factor',
   'bmr',
@@ -13,6 +16,26 @@ const ALLOWED = [
   'deficit_threshold',
   'onboarding_complete',
 ]
+
+/** @param {unknown} value */
+export function parseBirthdayKey(value) {
+  if (typeof value !== 'string') return null
+  const s = value.trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null
+  const today = formatDateKeyInTz()
+  if (s > today) return null
+  return s
+}
+
+/** @param {string} birthdayKey YYYY-MM-DD */
+export function ageFromBirthdayKey(birthdayKey) {
+  const today = formatDateKeyInTz()
+  const [by, bm, bd] = birthdayKey.split('-').map(Number)
+  const [ty, tm, td] = today.split('-').map(Number)
+  let age = ty - by
+  if (tm < bm || (tm === bm && td < bd)) age -= 1
+  return age > 0 && age < 150 ? age : null
+}
 
 export function buildProfileUpdate(body) {
   const updates = []
@@ -41,10 +64,25 @@ export function buildProfileUpdate(body) {
     const h = num(body.height_cm)
     if (h != null && h > 0) push('height_cm', h)
   }
-  if (body.age !== undefined) {
+
+  let parsedBirthday = null
+  if (body.birthday !== undefined) {
+    if (body.birthday === null || body.birthday === '') {
+      push('birthday', null)
+    } else {
+      parsedBirthday = parseBirthdayKey(body.birthday)
+      if (parsedBirthday) push('birthday', parsedBirthday)
+    }
+  }
+
+  if (parsedBirthday) {
+    const derivedAge = ageFromBirthdayKey(parsedBirthday)
+    if (derivedAge != null) push('age', derivedAge)
+  } else if (body.age !== undefined) {
     const a = num(body.age)
     if (a != null && a > 0) push('age', Math.round(a))
   }
+
   if (body.sex === 'male' || body.sex === 'female') push('sex', body.sex)
   if (body.activity_factor !== undefined) {
     const f = num(body.activity_factor)

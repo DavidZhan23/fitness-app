@@ -6,7 +6,6 @@ import {
   type CommunityFilter,
 } from '../components/CommunitySegment'
 import { CommunityInboxHint } from '../components/CommunityInboxHint'
-import { CommunityShareToggle } from '../components/CommunityShareToggle'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
@@ -60,6 +59,7 @@ export function CommunityPage() {
   const [loading, setLoading] = useState(!initial.fromCache)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
+  const [togglingDayVisible, setTogglingDayVisible] = useState(false)
 
   const listStateRef = useRef({ filter, members, followingCount })
   listStateRef.current = { filter, members, followingCount }
@@ -75,6 +75,55 @@ export function CommunityPage() {
       scrollY: scrollYRef.current,
     })
   }, [])
+
+  const patchSelfDayVisible = useCallback(
+    (visible: boolean, list: CommunityMember[]) =>
+      list.map((m) =>
+        m.isSelf
+          ? {
+              ...m,
+              today: {
+                ...m.today,
+                dayCommunityVisible: visible,
+                hidden: false,
+              },
+            }
+          : m,
+      ),
+    [],
+  )
+
+  const handleDayVisibleChange = useCallback(
+    async (visible: boolean) => {
+      const prev = membersRef.current
+      setTogglingDayVisible(true)
+      const optimistic = patchSelfDayVisible(visible, prev)
+      setMembers(optimistic)
+      listStateRef.current = {
+        ...listStateRef.current,
+        members: optimistic,
+      }
+      try {
+        await httpData.setDayCommunityVisible(todayKey, visible)
+        saveCommunityListCache({
+          activeFilter: listStateRef.current.filter,
+          members: optimistic,
+          followingCount: listStateRef.current.followingCount,
+          scrollY: scrollYRef.current,
+        })
+      } catch (err) {
+        setMembers(prev)
+        listStateRef.current = {
+          ...listStateRef.current,
+          members: prev,
+        }
+        setError(err instanceof Error ? err.message : '更新当日公开状态失败')
+      } finally {
+        setTogglingDayVisible(false)
+      }
+    },
+    [todayKey, patchSelfDayVisible],
+  )
 
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -277,10 +326,7 @@ export function CommunityPage() {
     <div className="space-y-5 pb-2">
       <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600/20 via-slate-800 to-slate-900 px-4 py-5 ring-1 ring-violet-500/25">
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-2xl" />
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-xl font-bold tracking-tight text-violet-200/85">社区</h1>
-          <CommunityShareToggle compact />
-        </div>
+        <h1 className="text-xl font-bold tracking-tight text-violet-200/85">社区</h1>
         <div className="mt-3 space-y-2 text-sm leading-relaxed">
           <div className="space-y-0.5 leading-snug">
             <p className="text-violet-200/85">
@@ -408,18 +454,18 @@ export function CommunityPage() {
             onMembersChange={setMembers}
             onFollowChange={handleFollowChange}
             onLikeChange={handleLikeChange}
+            onDayVisibleChange={handleDayVisibleChange}
+            togglingDayVisible={togglingDayVisible}
             onBeforeOpenMember={persistListCache}
           />
         </>
       )}
 
-      <CommunityShareToggle />
-
       <Link
         to="/settings"
         className="block text-center text-xs text-muted hover:text-brand"
       >
-        在设置中管理昵称与公开选项
+        在设置中管理昵称与个人资料
       </Link>
     </div>
   )

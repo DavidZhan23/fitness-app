@@ -5,7 +5,9 @@ import {
   getCommunityUser,
   getCommunityUserMonth,
   listCommunityMembers,
+  setDayLogCommunityVisible,
 } from '../community.js'
+import { isValidDateKey } from '../dateKey.js'
 import { saveCommunityMemberOrder } from '../communityOrder.js'
 import { setLogItemReaction } from '../logItemReactions.js'
 import {
@@ -71,6 +73,26 @@ router.put(
   asyncHandler(async (req, res) => {
     const { memberIds } = req.body
     const data = await saveCommunityMemberOrder(req.userId, memberIds)
+    res.json(data)
+  }),
+)
+
+router.patch(
+  '/community/days/:date/visible',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { date } = req.params
+    if (!isValidDateKey(date)) {
+      return res.status(400).json({ error: '日期格式应为 YYYY-MM-DD' })
+    }
+    if (typeof req.body?.visible !== 'boolean') {
+      return res.status(400).json({ error: 'visible 须为 boolean' })
+    }
+    const data = await setDayLogCommunityVisible(
+      req.userId,
+      date,
+      req.body.visible,
+    )
     res.json(data)
   }),
 )

@@ -1,8 +1,8 @@
 /** 安卓 / 鸿蒙安装说明（系统浏览器对 PWA 支持差异大） */
-export function InstallGuide() {
+
+function InstallGuideContent() {
   return (
-    <section className="rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-600/50">
-      <h2 className="font-semibold text-slate-100">添加到手机桌面</h2>
+    <>
       <p className="mt-1 text-sm leading-relaxed text-muted">
         iPhone 用 Safari「添加到主屏幕」即可。安卓建议用
         <strong className="font-normal text-slate-300"> Chrome 浏览器</strong>
@@ -27,6 +27,41 @@ export function InstallGuide() {
           </p>
         </div>
       </div>
+    </>
+  )
+}
+
+interface InstallGuideProps {
+  /** 设置页：默认折叠，仅显示标题行 */
+  collapsible?: boolean
+}
+
+export function InstallGuide({ collapsible = false }: InstallGuideProps) {
+  if (collapsible) {
+    return (
+      <details className="group rounded-2xl bg-slate-800/80 ring-1 ring-slate-600/50">
+        <summary className="cursor-pointer list-none px-4 py-3 font-semibold text-slate-100 marker:content-none [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center justify-between gap-2">
+            添加到手机桌面
+            <span
+              className="text-muted transition group-open:rotate-90"
+              aria-hidden
+            >
+              ▸
+            </span>
+          </span>
+        </summary>
+        <div className="border-t border-slate-600/40 px-4 pb-4 pt-1">
+          <InstallGuideContent />
+        </div>
+      </details>
+    )
+  }
+
+  return (
+    <section className="rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-600/50">
+      <h2 className="font-semibold text-slate-100">添加到手机桌面</h2>
+      <InstallGuideContent />
     </section>
   )
 }

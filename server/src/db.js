@@ -255,6 +255,20 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  try {
+    await pool.query(
+      `alter table public.profiles add column if not exists birthday date`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(
+      `alter table public.day_logs add column if not exists community_visible boolean not null default true`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
   await runSqlFileMigrations()
 }
 

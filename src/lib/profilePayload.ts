@@ -1,3 +1,4 @@
+import { ageFromBirthdayKey, parseBirthdayKey } from './birthday'
 import { toKcal } from './calories'
 import type { Profile, Sex } from '../types'
 
@@ -26,6 +27,12 @@ export function buildProfilePatchBody(
   if (w !== undefined && w > 0) body.weight_kg = w
   if (h !== undefined && h > 0) body.height_cm = h
   if (a !== undefined && a > 0) body.age = Math.round(a)
+
+  if (data.birthday !== undefined) {
+    const b =
+      typeof data.birthday === 'string' ? data.birthday.trim() : ''
+    body.birthday = b && /^\d{4}-\d{2}-\d{2}$/.test(b) ? b : null
+  }
 
   if (data.sex === 'male' || data.sex === 'female') body.sex = data.sex
 
@@ -63,7 +70,20 @@ export function mergeProfileForCalc(
 } | null {
   const w = toKcal(data.weight_kg ?? profile?.weight_kg)
   const h = toKcal(data.height_cm ?? profile?.height_cm)
-  const age = Number(data.age ?? profile?.age)
+  let age = Number(data.age ?? profile?.age)
+
+  if (data.birthday !== undefined) {
+    const parsed =
+      typeof data.birthday === 'string' ? parseBirthdayKey(data.birthday) : null
+    if (parsed) {
+      const derived = ageFromBirthdayKey(parsed)
+      if (derived != null) age = derived
+    }
+  } else if (profile?.birthday) {
+    const derived = ageFromBirthdayKey(profile.birthday)
+    if (derived != null) age = derived
+  }
+
   const sex = (data.sex ?? profile?.sex) as Sex | null
   const factor = toKcal(data.activity_factor ?? profile?.activity_factor) || 1.2
   if (w > 0 && h > 0 && age > 0 && (sex === 'male' || sex === 'female')) {

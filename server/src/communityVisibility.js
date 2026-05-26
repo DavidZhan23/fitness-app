@@ -86,7 +86,7 @@ export async function applyYesterdayVisibilityRules(profiles, viewerId, today) {
     if (seen.has(profile.id)) continue
     seen.add(profile.id)
 
-    const todaySnap = await computeDaySnapshot(profile, today)
+    const todaySnap = await computeDaySnapshot(profile, today, new Date(), viewerId)
     const hasLog = await recentDaysHaveLog(profile, today)
 
     if (hasLog) {

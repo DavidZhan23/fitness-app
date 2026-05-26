@@ -57,13 +57,46 @@ export function toPublicMember(profile, viewerId) {
   }
 }
 
-export async function computeDaySnapshot(profile, logDate, now = new Date()) {
+function isDayLogCommunityVisible(log) {
+  if (!log) return true
+  return log.community_visible !== false
+}
+
+export async function computeDaySnapshot(
+  profile,
+  logDate,
+  now = new Date(),
+  viewerId = null,
+) {
   const bmr = resolveProfileBmr(profile)
   const { rows: logs } = await query(
     `select * from day_logs where user_id = $1 and log_date = $2`,
     [profile.id, logDate],
   )
   const log = logs[0]
+  const dayCommunityVisible = isDayLogCommunityVisible(log)
+
+  if (
+    viewerId &&
+    profile.id !== viewerId &&
+    log &&
+    !dayCommunityVisible
+  ) {
+    return {
+      date: logDate,
+      hidden: true,
+      dayCommunityVisible: false,
+      deficit: 0,
+      exerciseKcal: 0,
+      mealKcal: 0,
+      exerciseCount: 0,
+      mealCount: 0,
+      dailyBmr: bmr,
+      threshold: toKcal(profile.deficit_threshold),
+      accountStartKey: accountStartKey(profile.created_at),
+    }
+  }
+
   const exerciseKcal = toKcal(log?.exercise_kcal)
   const mealKcal = toKcal(log?.meal_kcal)
   const endOfDay =
@@ -95,6 +128,7 @@ export async function computeDaySnapshot(profile, logDate, now = new Date()) {
 
   return {
     date: logDate,
+    dayCommunityVisible,
     deficit,
     exerciseKcal,
     mealKcal,
@@ -104,6 +138,35 @@ export async function computeDaySnapshot(profile, logDate, now = new Date()) {
     threshold: toKcal(profile.deficit_threshold),
     accountStartKey: accountStartKey(profile.created_at),
   }
+}
+
+export async function setDayLogCommunityVisible(userId, logDate, visible) {
+  if (!isValidDateKey(logDate)) {
+    const err = new Error('日期格式无效')
+    err.status = 400
+    throw err
+  }
+  const profile = await loadProfile(userId)
+  const tdee = toKcal(profile?.tdee) || 0
+  const flag = Boolean(visible)
+
+  const { rows } = await query(
+    `select id from day_logs where user_id = $1 and log_date = $2`,
+    [userId, logDate],
+  )
+  if (rows[0]) {
+    await query(
+      `update day_logs set community_visible = $1, updated_at = now() where id = $2`,
+      [flag, rows[0].id],
+    )
+  } else {
+    await query(
+      `insert into day_logs (user_id, log_date, tdee_snapshot, deficit, community_visible)
+       values ($1, $2, $3, $3, $4)`,
+      [userId, logDate, tdee, flag],
+    )
+  }
+  return { log_date: logDate, community_visible: flag }
 }
 
 export async function listCommunityMembers(viewerId, clientToday, filter = 'all') {
@@ -168,7 +231,7 @@ export async function getCommunityUser(viewerId, targetUserId, logDate) {
   assertCanViewCommunity(profile, viewerId)
 
   const date = logDate || formatDateKey()
-  const snapshot = await computeDaySnapshot(profile, date)
+  const snapshot = await computeDaySnapshot(profile, date, new Date(), viewerId)
 
   let exercises = []
   let meals = []
@@ -177,7 +240,7 @@ export async function getCommunityUser(viewerId, targetUserId, logDate) {
     [targetUserId, date],
   )
   const dayLog = logs[0]
-  if (dayLog) {
+  if (dayLog && !snapshot.hidden) {
     const [ex, ml] = await Promise.all([
       query(
         `select id, name, kcal, created_at from exercises where day_log_id = $1 order by created_at desc`,

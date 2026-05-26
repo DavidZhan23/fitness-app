@@ -247,6 +247,16 @@ export const httpData = {
     })
   },
 
+  async setDayCommunityVisible(
+    date: string,
+    visible: boolean,
+  ): Promise<{ log_date: string; community_visible: boolean }> {
+    return apiFetch(`/community/days/${encodeURIComponent(date)}/visible`, {
+      method: 'PATCH',
+      body: JSON.stringify({ visible }),
+    })
+  },
+
   async getCommunityUser(
     userId: string,
     date?: string,
