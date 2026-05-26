@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/DavidZhan23/fitness-app/compare/v1.4.0...v1.5.0) (2026-05-26)
+
+
+### Features
+
+* **community:** profile birthday, day visibility, and settings UX ([efa72ab](https://github.com/DavidZhan23/fitness-app/commit/efa72ab534295090c99c1b4e4b8caae968eed0e3))
+* **community:** profile birthday, day visibility, and settings UX ([f121ed4](https://github.com/DavidZhan23/fitness-app/commit/f121ed4e231bde65e6879c51f3330adda43e1ebb))
+
+
+### Bug Fixes
+
+* **deploy:** inject developer emails from deploy env ([0df3b40](https://github.com/DavidZhan23/fitness-app/commit/0df3b40562f95af11c2916f31046759ed797c554))
+* **deploy:** inject developer emails from deploy env ([0af6d70](https://github.com/DavidZhan23/fitness-app/commit/0af6d70f8bbafe4f2008561d612c5eba106f4fff))
+
 ## [1.4.0](https://github.com/DavidZhan23/fitness-app/compare/v1.3.0...v1.4.0) (2026-05-26)
 
 
