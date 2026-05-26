@@ -85,7 +85,7 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/community/members` | 成员列表 |
+| GET | `/community/members` | 成员列表；`?filter=all\|following`；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日） |
 | PUT | `/community/member-order` | 排序 |
 | PATCH | `/community/days/:date/visible` | 设置当日社区动态是否公开；body `{ visible: boolean }`；`:date` 为 `YYYY-MM-DD`，仅本人 |
 | GET | `/community/users/:userId` | 用户公开页（`?date=YYYY-MM-DD` 可选，默认今日） |
@@ -93,7 +93,7 @@ Base URL：
 | POST/DELETE | `/community/users/:userId/follow` | 关注 |
 | POST/DELETE | `/community/users/:userId/likes` | 点赞日 |
 | GET | `/community/users/:userId/comments` | 评论列表 |
-|| POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写） |
+| POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写） |
 | DELETE | `/community/comments/:commentId` | 删评论 |
 | POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |

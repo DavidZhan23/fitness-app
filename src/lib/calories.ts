@@ -167,3 +167,15 @@ export function getDeficitHeatmapClass(
     tone === 'surplus' ? DEFICIT_SURPLUS_LEVEL_CLASSES : DEFICIT_LEVEL_CLASSES
   return palette[level]
 }
+
+/** 运动/饮食热量展示（社区、今日、打卡等统一文案） */
+export const EXERCISE_KCAL_STAT_LABEL = '运动消耗'
+export const MEAL_KCAL_STAT_LABEL = '饮食增加'
+
+export function formatExerciseKcalLine(kcal: number) {
+  return `${EXERCISE_KCAL_STAT_LABEL} ${Math.round(kcal)} kcal`
+}
+
+export function formatMealKcalLine(kcal: number) {
+  return `${MEAL_KCAL_STAT_LABEL} ${Math.round(kcal)} kcal`
+}

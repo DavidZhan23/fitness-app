@@ -14,6 +14,7 @@
 | [M-2026-05-playwright-e2e](M-2026-05-playwright-e2e.md) | done | `feat/playwright-e2e-smoke` → PR #43 |
 | [M-2026-05-telemetry](M-2026-05-telemetry.md) | done | `feat/infra-e2e-telemetry` → PR #46 |
 | [M-2026-05-telemetry-weekly](M-2026-05-telemetry-weekly.md) | active | Phase 1b → `feat/telemetry-l4-tighten`；Phase 2 → `feat/telemetry-weekly-report` |
+| [M-2026-05-community-profile](M-2026-05-community-profile.md) | active | `feat/community-profile-birthday` → PR #54 |
 
 **Status 取值：** `active` | `done` | `cancelled`
 

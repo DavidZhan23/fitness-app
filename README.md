@@ -20,10 +20,10 @@ Owner 自动部署：[docs/architecture/owner-setup-guide.md](docs/architecture/
 ## 功能
 
 - 邮箱注册 / 登录，数据同步至自托管 API
-- 身体资料 → BMR / TDEE（Mifflin-St Jeor）
+- 身体资料（生日）→ BMR / TDEE（Mifflin-St Jeor）；设置页自动保存
 - 运动、饮食及大卡记录，当日缺口汇总
 - 运动 / 饮食快捷模板
-- 打卡墙 + 社区公开动态
+- 打卡墙 + 社区动态（总公开随近日记录自动同步；可单独切换「今日公开/隐藏」）
 - PWA：添加到主屏幕
 - AI 辅助每周质量周报（路由耗时 / AI 估算成功率，自动生成 markdown）
 
