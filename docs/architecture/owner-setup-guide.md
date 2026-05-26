@@ -42,8 +42,12 @@ ssh root@<IP> "mkdir -p /opt/fitness-app/releases"
 | `DATABASE_URL` | 由 docker-compose 注入 api 容器时可省略单独行 |
 | `CORS_ORIGIN` | 前端访问源 |
 | `DEEPSEEK_API_KEY` | AI 估千卡（可选） |
+| `DEVELOPER_EMAILS` | 开发者白名单（逗号分隔，控制「开发者后台」入口） |
 
 详见 [修改服务器env.md](../ops/修改服务器env.md)。
+
+> 合并到 `main` 后，请在**生产服务器** `deploy/.env` 设置 `DEVELOPER_EMAILS=邮箱1,邮箱2`。  
+> `deploy/.env.example` 仅保留占位符（如 `owner@example.com`），不要提交真实邮箱到仓库。
 
 ## 步骤 3：GitHub Secrets
 
