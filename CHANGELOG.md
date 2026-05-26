@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/DavidZhan23/fitness-app/compare/v1.3.0...v1.4.0) (2026-05-26)
+
+
+### Features
+
+* **telemetry:** weekly reports, developer console, and cron ([152f65d](https://github.com/DavidZhan23/fitness-app/commit/152f65dd8114409dbe1df3af83534b82e40f238a))
+* **telemetry:** weekly reports, developer console, and cron ([63d5c44](https://github.com/DavidZhan23/fitness-app/commit/63d5c444d3e723c4a23598c39201d1b98138e2f5))
+
 ## [1.3.0](https://github.com/DavidZhan23/fitness-app/compare/v1.2.0...v1.3.0) (2026-05-25)
 
 
