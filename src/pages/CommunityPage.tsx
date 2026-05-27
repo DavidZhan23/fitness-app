@@ -334,10 +334,10 @@ export function CommunityPage() {
 
   return (
     <div className="space-y-5 pb-2">
-      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600/20 via-slate-800 to-slate-900 px-4 py-5 ring-1 ring-violet-500/25">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-2xl" />
+      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#80B2E5]/52 via-[#80B2E5]/36 to-[#ACD1EE]/24 px-4 py-5 ring-1 ring-[#80B2E5]/64">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#80B2E5]/40 blur-2xl" />
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-xl font-bold tracking-tight text-violet-200/85">社区</h1>
+          <h1 className="text-xl font-bold tracking-tight text-[#E7F4FF]">社区</h1>
           {user && (
             <DayCommunityVisibleToggle
               visible={selfDayVisible}
@@ -350,15 +350,15 @@ export function CommunityPage() {
         </div>
         <div className="mt-3 space-y-2 text-sm leading-relaxed">
           <div className="space-y-0.5 leading-snug">
-            <p className="text-violet-200/85">
+            <p className="text-[#E7F4FF]">
               关注健友、每日点赞，在打卡下留言鼓励
             </p>
-            <p className="text-violet-200/85">
+            <p className="text-[#E7F4FF]">
               按住左侧 ⋮⋮ 可拖动排序；点击名片查看详情
             </p>
           </div>
           <p className="flex flex-nowrap items-center gap-2">
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-600/30 to-cyan-600/20 px-2 py-0.5 font-semibold text-violet-100 ring-1 ring-violet-400/35">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-[#80B2E5]/45 to-[#ACD1EE]/28 px-2 py-0.5 font-semibold text-[#E7F4FF] ring-1 ring-[#80B2E5]/52">
               <span aria-hidden>🔥</span>
               减脂先锋
             </span>
@@ -370,7 +370,7 @@ export function CommunityPage() {
             </span>
           </p>
           <p className="flex flex-nowrap items-center gap-2">
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-amber-600/35 to-orange-600/25 px-2 py-0.5 font-semibold text-amber-100 ring-1 ring-amber-400/40">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-[#80B2E5]/42 to-[#F8C2DA]/24 px-2 py-0.5 font-semibold text-[#E7F4FF] ring-1 ring-[#80B2E5]/50">
               <span aria-hidden>👑</span>
               运动大王
             </span>
@@ -382,7 +382,7 @@ export function CommunityPage() {
             </span>
           </p>
           <p className="flex flex-nowrap items-center gap-2">
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-rose-600/30 to-orange-600/20 px-2 py-0.5 font-semibold text-rose-100 ring-1 ring-rose-400/35">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-[#FCE1F0]/45 to-[#80B2E5]/26 px-2 py-0.5 font-semibold text-[#E7F4FF] ring-1 ring-[#80B2E5]/50">
               <span aria-hidden>🥘</span>
               美食大王
             </span>
@@ -409,7 +409,7 @@ export function CommunityPage() {
         )}
 
       {!visible && (
-        <p className="rounded-xl border border-dashed border-violet-500/30 bg-violet-950/20 px-3 py-2.5 text-sm leading-relaxed text-violet-200/90">
+        <p className="rounded-xl border border-dashed border-[#F8C2DA]/78 bg-[#FCE1F0]/20 px-3 py-2.5 text-sm leading-relaxed text-[#F8C2DA]">
           昨日与今日均未记录运动或饮食时会自动未公开；任一日有记录即可留在社区（今日记一笔后会自动恢复公开）。
         </p>
       )}
@@ -444,7 +444,7 @@ export function CommunityPage() {
           <button
             type="button"
             onClick={() => handleFilterChange('all')}
-            className="mt-3 text-sm text-violet-300 hover:text-violet-200"
+            className="mt-3 text-sm text-[#80B2E5] hover:text-[#ACD1EE]"
           >
             去发现健友 →
           </button>

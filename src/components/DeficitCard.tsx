@@ -29,7 +29,7 @@ export function DeficitCard({
   const positive = hasDeficitCheck(deficit, threshold)
 
   return (
-    <section className="rounded-2xl bg-gradient-to-br from-teal-900/60 to-slate-800/80 p-5 ring-1 ring-teal-500/20">
+    <section className="theme-hero-card p-5">
       <p className="text-sm text-muted">{dateLabel}</p>
       <div className="mt-2 flex items-baseline gap-2">
         <span
@@ -69,7 +69,7 @@ function Stat({
   accent?: boolean
 }) {
   return (
-    <div className="rounded-xl bg-slate-900/50 px-2 py-2">
+    <div className="theme-hero-stat px-2 py-2">
       <p className="text-xs text-muted">{label}</p>
       <p
         className={`mt-0.5 font-semibold tabular-nums ${

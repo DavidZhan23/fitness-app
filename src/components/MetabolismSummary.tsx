@@ -11,7 +11,7 @@ export function MetabolismSummary({ profile }: MetabolismSummaryProps) {
   const sex = profile.sex
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/90 to-card ring-1 ring-slate-600/40">
+    <section className="surface-panel overflow-hidden">
       <div className="flex items-center justify-between gap-4 px-5 py-4">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted">
