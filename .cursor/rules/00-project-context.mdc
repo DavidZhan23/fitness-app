@@ -14,7 +14,7 @@ alwaysApply: true
 - **Frontend**: Vite 8, React 19, TypeScript, Tailwind 4, vite-plugin-pwa — `src/`
 - **Backend**: Node.js Express (ESM), `server/src/`
 - **DB**: PostgreSQL 16 — local Homebrew; production Docker in `deploy/`
-- **Deploy**: `scripts/deploy-tencent.sh` (manual); GitHub Actions CD optional via `deploy.yml.template`
+- **Deploy**: `scripts/deploy-tencent.sh` (manual)
 
 ## Key paths
 
@@ -30,8 +30,8 @@ alwaysApply: true
 | `docs/milestones/` | Per-feature specs (`_TEMPLATE.md`) |
 | `docs/requirements/` | GitHub Issue intake |
 | `docs/ops/` | DB, deploy, PWA ops guides |
-| `docs/architecture/` | Overview, API contract, CI/CD |
-| `scripts/ai-flow.sh` | Commit + push + draft PR (after user confirms `go`) |
+| `docs/architecture/` | Overview, API contract, deploy |
+| `scripts/verify-local.sh` | Local quality gate before push |
 | `scripts/new-feature.sh` | Start `feat/<slug>` branch + milestone skeleton |
 
 ## Local dev
@@ -43,6 +43,5 @@ alwaysApply: true
 ## Collaboration
 
 - Repo: `DavidZhan23/fitness-app` (public)
-- Default reviewer / owner: **@DavidZhan23**
-- Contributors use `feat/*` branches; never push `main` directly
-- Merge and production deploy are owner-controlled
+- Default owner: **@DavidZhan23**
+- Current delivery flow: local verify → direct push `main` → owner manual deploy

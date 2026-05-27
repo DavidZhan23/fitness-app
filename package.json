@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
+    "verify": "bash scripts/verify-local.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -20,7 +21,8 @@
     "diagrams:regen": "bash scripts/regen-diagrams.sh",
     "deploy:tencent": "bash scripts/deploy-tencent.sh",
     "deploy:tencent:api": "bash scripts/deploy-tencent.sh --api",
-    "changelog:dedupe": "node scripts/dedupe-changelog.mjs"
+    "changelog:dedupe": "node scripts/dedupe-changelog.mjs",
+    "check:milestones": "node scripts/check-milestone-status.mjs"
   },
   "dependencies": {
     "react": "^19.2.6",

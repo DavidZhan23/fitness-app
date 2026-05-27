@@ -1,9 +1,10 @@
 # Milestone: 社区资料与当日可见
 
-**Status:** active  
+**Status:** done  
 **Branch:** `feat/community-profile-birthday`  
-**PR:** #54  
-**Started:** 2026-05-26
+**PR:** #54（+ 后续 polish PR #61 `feat/community-day-visible-toggle`）  
+**Started:** 2026-05-26  
+**Closed:** 2026-05-27
 
 ## 1. 任务背景
 

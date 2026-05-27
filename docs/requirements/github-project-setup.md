@@ -2,7 +2,7 @@
 
 > 流程说明：[requirements/README.md](README.md) · 文档中心：[../README.md](../README.md)
 
-Issue Forms 与 `issue-triage` workflow 在仓库合并后即可用；**看板列**需 owner 在 GitHub 网页上建一次 Project。
+Issue Forms 可直接使用；看板列需 owner 在 GitHub 网页上建一次 Project。
 
 ## 1. 创建 labels
 
@@ -21,13 +21,13 @@ bash scripts/setup-req-labels.sh
 
 ## 3. 配置仓库 Variable
 
-Settings → Secrets and variables → **Actions** → **Variables** → New repository variable：
+Settings → Secrets and variables → **Actions** → **Variables** → New repository variable（可选）：
 
 | Name | Value |
 |------|--------|
-| `REQUIREMENTS_PROJECT_URL` | 上一步复制的 Project URL |
+| `REQUIREMENTS_PROJECT_URL` | 上一步复制的 Project URL（仅手动记录用） |
 
-未配置时：issue 仍会自动打 `status:todo` 并 assign 给作者，只是**不会**自动进看板。
+未配置时：不影响手动 issue 管理流程。
 
 ## 4. 看板列与 label（建议）
 
@@ -42,6 +42,6 @@ Settings → Secrets and variables → **Actions** → **Variables** → New rep
 ## 5. 验证
 
 1. 手机或网页 **New issue** → Feature request，标题随便写一句，提交
-2. 确认 issue 有 `status:todo`、`priority:med`、assignee 为你自己
-3. 开 PR 正文写 `Closes #<n>`，确认 issue 变为 `status:doing`
-4. 合并 PR 后 issue 自动 close
+2. 手动给 issue 加 `status:todo`、`priority:med`（可选）
+3. 开工时改为 `status:doing`（可选）
+4. push 到 `main` 后在 issue/commit 中写 `Closes #<n>`，确认 issue 关闭

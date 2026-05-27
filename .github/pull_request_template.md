@@ -8,7 +8,7 @@
 
 ## 验收标准
 
-- [ ] 本地 `npm run lint` 与 `npm run typecheck` 通过
+- [ ] 本地 `npm run verify` 通过
 - [ ] （如改 API）已更新 `docs/architecture/api-contract.md`
 - [ ] （如改表结构）已添加 `server/migrations/` 且本地迁移可跑
 
@@ -24,4 +24,4 @@
 
 ## 给 Reviewer（@DavidZhan23）
 
-合并前请确认 CI 全绿。合并后若已启用 Deploy workflow，将自动部署到腾讯云。
+合并前请确认本地验证记录完整。合并后由 owner 按手动部署流程执行上线。

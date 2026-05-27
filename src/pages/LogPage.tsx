@@ -1,135 +1,51 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AiKcalEstimate } from '../components/AiKcalEstimate'
 import { TemplatePicker } from '../components/TemplatePicker'
 import { useAuth } from '../context/AuthContext'
-import {
-  addExercise,
-  addMeal,
-  getOrCreateDayLog,
-} from '../lib/dayLogService'
-import { formatDateKey } from '../lib/streaks'
-import { httpData } from '../lib/api'
-import {
-  DEFAULT_EXERCISE_TEMPLATES,
-  DEFAULT_MEAL_TEMPLATES,
-} from '../lib/defaultTemplates'
-import { kcalFromGramsAndKjPer100g, KJ_PER_KCAL } from '../lib/calories'
-import { trackMetric, type TelemetryMetadata } from '../lib/telemetry'
-
-type MealInputMode = 'kcal' | 'package'
-
-type FallbackMode = NonNullable<TelemetryMetadata['input_mode']>
+import { LogEntryForm } from '../features/log/LogEntryForm'
+import { submitLog } from '../features/log/submitLog'
+import { useAiEstimateFallbackTracker } from '../hooks/useAiEstimateFallbackTracker'
+import { useLogForm } from '../hooks/useLogForm'
+import { useLogTemplates } from '../hooks/useLogTemplates'
 
 export function LogPage() {
   const { type } = useParams<{ type: 'exercise' | 'meal' }>()
   const isExercise = type === 'exercise'
+  const kind = isExercise ? 'exercise' : 'meal'
   const { user, profile } = useAuth()
   const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [kcal, setKcal] = useState('')
-  const [mealInputMode, setMealInputMode] = useState<MealInputMode>('kcal')
-  const [grams, setGrams] = useState('')
-  const [kjPer100g, setKjPer100g] = useState('')
-  const [templates, setTemplates] = useState<{ id?: string; name: string; kcal: number }[]>([])
+  const form = useLogForm(isExercise)
+  const aiFallbackTracker = useAiEstimateFallbackTracker()
+  const templates = useLogTemplates(user?.id, kind, isExercise)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const openedAt = useRef(0)
-  const pendingFallback = useRef(false)
-  const lastInputMode = useRef<FallbackMode>('manual')
-
-  useEffect(() => {
-    openedAt.current = performance.now()
-  }, [])
-
-  const packageKcal = useMemo(() => {
-    const g = parseFloat(grams)
-    const kj = parseFloat(kjPer100g)
-    if (!g || !kj || g <= 0 || kj <= 0) return null
-    return kcalFromGramsAndKjPer100g(g, kj)
-  }, [grams, kjPer100g])
-
-  useEffect(() => {
-    if (!user) return
-    const type = isExercise ? 'exercise' : 'meal'
-    const loadTemplates = async () => {
-      const data = await httpData.listTemplates(type)
-      setTemplates(
-        data.length > 0
-          ? data
-          : isExercise
-            ? DEFAULT_EXERCISE_TEMPLATES
-            : DEFAULT_MEAL_TEMPLATES,
-      )
-    }
-    loadTemplates()
-  }, [user, isExercise])
-
-  const handleTemplate = (n: string, k: number) => {
-    setName(n)
-    setKcal(String(k))
-    lastInputMode.current = 'template'
-    if (!isExercise) setMealInputMode('kcal')
-  }
-
-  const handleAiOutcome = (outcome: 'success' | 'timeout' | 'error') => {
-    if (outcome === 'success') {
-      pendingFallback.current = false
-      lastInputMode.current = 'ai'
-    } else {
-      pendingFallback.current = true
-      lastInputMode.current = 'manual'
-    }
-  }
-
-  const resolveKcal = (): number | null => {
-    if (isExercise || mealInputMode === 'kcal') {
-      const k = parseFloat(kcal)
-      return k > 0 ? k : null
-    }
-    return packageKcal
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !profile) return
-    const k = resolveKcal()
-    if (!name.trim() || k == null || k <= 0) {
+
+    const kcalValue = form.resolveKcal()
+    if (!form.name.trim() || kcalValue == null || kcalValue <= 0) {
       setError(
-        isExercise || mealInputMode === 'kcal'
+        isExercise || form.mealInputMode === 'kcal'
           ? '请填写名称和有效热量'
           : '请填写名称、克数与千焦/100g',
       )
       return
     }
+
     setLoading(true)
     setError('')
     try {
-      const today = formatDateKey()
-      const dayLog = await getOrCreateDayLog(
-        user.id,
-        today,
-        profile.tdee ?? 0,
-      )
-      if (isExercise) {
-        await addExercise(user.id, dayLog.id, name.trim(), k)
-      } else {
-        await addMeal(user.id, dayLog.id, name.trim(), k)
-      }
-      if (pendingFallback.current) {
-        const durationMs = Math.round(performance.now() - openedAt.current)
-        trackMetric({
-          name: 'ai_estimate_fallback_complete',
-          durationMs,
-          metadata: {
-            kind: isExercise ? 'exercise' : 'meal',
-            input_mode: lastInputMode.current,
-            duration_ms: durationMs,
-            status: 'saved',
-          },
-        })
-        pendingFallback.current = false
-      }
+      await submitLog({
+        userId: user.id,
+        profileTdee: profile.tdee,
+        kind,
+        name: form.name.trim(),
+        kcal: kcalValue,
+      })
+      aiFallbackTracker.recordSavedIfPending(kind)
       navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败')
@@ -141,130 +57,59 @@ export function LogPage() {
   return (
     <div className="page-standalone">
       <div className="mx-auto max-w-lg space-y-6 px-4 py-4">
-      <div>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="text-sm text-muted hover:text-slate-200"
-        >
-          ← 返回
-        </button>
-        <h1 className="mt-2 text-xl font-bold">
-          {isExercise ? '记运动' : '记饮食'}
-        </h1>
-      </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="text-sm text-muted hover:text-slate-200"
+          >
+            ← 返回
+          </button>
+          <h1 className="mt-2 text-xl font-bold">
+            {isExercise ? '记运动' : '记饮食'}
+          </h1>
+        </div>
 
-      <TemplatePicker templates={templates} onSelect={handleTemplate} />
-
-      <form onSubmit={handleSubmit} className="space-y-4 pb-8">
-        <AiKcalEstimate
-          kind={isExercise ? 'exercise' : 'meal'}
-          name={name}
-          onNameChange={setName}
-          disabled={loading}
-          onEstimated={(value) => {
-            setKcal(String(value))
-            if (!isExercise) setMealInputMode('kcal')
-            setError('')
+        <TemplatePicker
+          templates={templates}
+          onSelect={(nextName, nextKcal) => {
+            form.applyTemplate(nextName, nextKcal)
+            aiFallbackTracker.markTemplateInput()
           }}
-          onAiOutcome={handleAiOutcome}
         />
 
-        {!isExercise && (
-          <div
-            role="group"
-            aria-label="热量输入方式"
-            className="flex rounded-lg bg-slate-800/60 p-1 text-sm"
-          >
-            <button
-              type="button"
-              onClick={() => setMealInputMode('kcal')}
-              className={`flex-1 rounded-md py-2 transition ${
-                mealInputMode === 'kcal'
-                  ? 'bg-slate-700 font-medium text-slate-100'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              直接输入 kcal
-            </button>
-            <button
-              type="button"
-              onClick={() => setMealInputMode('package')}
-              className={`flex-1 rounded-md py-2 transition ${
-                mealInputMode === 'package'
-                  ? 'bg-slate-700 font-medium text-slate-100'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              包装标注 (g + kJ)
-            </button>
-          </div>
-        )}
-
-        {isExercise || mealInputMode === 'kcal' ? (
-          <label className="block">
-            <span className="text-sm text-muted">热量 (kcal)</span>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={kcal}
-              onChange={(e) => setKcal(e.target.value)}
-              className="input mt-1"
-              placeholder="300"
-              required={isExercise || mealInputMode === 'kcal'}
-            />
-          </label>
-        ) : (
-          <>
-            <label className="block">
-              <span className="text-sm text-muted">食用量 (g)</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={grams}
-                onChange={(e) => setGrams(e.target.value)}
-                className="input mt-1"
-                placeholder="例如：50"
-                required
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm text-muted">能量 (千焦 / 100g)</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={kjPer100g}
-                onChange={(e) => setKjPer100g(e.target.value)}
-                className="input mt-1"
-                placeholder="包装袋上的数值，如 1200"
-                required
-              />
-              <p className="mt-1 text-xs text-muted">
-                按包装标注自动换算：kcal = (g ÷ 100) × (kJ/100g ÷ {KJ_PER_KCAL})
-              </p>
-            </label>
-            {packageKcal != null && packageKcal > 0 && (
-              <p className="rounded-lg bg-amber-900/20 px-3 py-2 text-sm text-amber-200/90">
-                约 <span className="font-semibold tabular-nums">{packageKcal}</span>{' '}
-                kcal
-              </p>
-            )}
-          </>
-        )}
-
-        {error && <p className="text-sm text-red-400">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-xl bg-brand-dark py-3 font-medium disabled:opacity-50"
-        >
-          {loading ? '保存中…' : '保存'}
-        </button>
-      </form>
+        <LogEntryForm
+          kind={kind}
+          isExercise={isExercise}
+          loading={loading}
+          error={error}
+          name={form.name}
+          onNameChange={form.setName}
+          kcal={form.kcal}
+          onKcalChange={(value) => {
+            form.setKcal(value)
+            aiFallbackTracker.markManualInput()
+          }}
+          mealInputMode={form.mealInputMode}
+          onMealInputModeChange={form.setMealInputMode}
+          grams={form.grams}
+          onGramsChange={(value) => {
+            form.setGrams(value)
+            aiFallbackTracker.markManualInput()
+          }}
+          kjPer100g={form.kjPer100g}
+          onKjPer100gChange={(value) => {
+            form.setKjPer100g(value)
+            aiFallbackTracker.markManualInput()
+          }}
+          packageKcal={form.packageKcal}
+          onEstimated={(value) => {
+            form.applyAiEstimatedKcal(value)
+            setError('')
+          }}
+          onAiOutcome={aiFallbackTracker.markAiOutcome}
+          onSubmit={handleSubmit}
+        />
       </div>
     </div>
   )

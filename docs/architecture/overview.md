@@ -1,6 +1,6 @@
 # 架构总览
 
-> 导航：[文档中心](../README.md) · [API 契约](api-contract.md) · [CI/CD](deploy-pipeline.md)
+> 导航：[文档中心](../README.md) · [API 契约](api-contract.md) · [部署说明](deploy.md)
 
 ## 开发协作流程
 
@@ -64,7 +64,7 @@
 
 ## 更多
 
-- CI/CD 细节：[deploy-pipeline.md](deploy-pipeline.md)  
+- 部署说明：[deploy.md](deploy.md)  
 - 需求入口：[requirements/README.md](../requirements/README.md)  
 - 改图：`docs/assets/diagrams/*.mmd` → `npm run diagrams:regen`
 - 数据库迁移：新增 `server/migrations/NNN_*.sql` 后，API 启动会自动执行未应用 migration（记录在 `public.schema_migrations`）

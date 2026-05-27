@@ -57,12 +57,12 @@ Before adding any new file to `src/lib/`, `src/hooks/`, `src/context/`, `server/
 | Community inbox | `server/src/communityInbox.js#getCommunityInboxUnread`, `markCommunityInboxRead` | Inbox notifications |
 | Public nickname | `server/src/publicProfile.js#publicNickname`, `publicNicknameById` | Community/social display names |
 | Day-log mutations hooks | `server/src/dayLogMutation.js` | `afterDayLogChanged`, `afterDayLogIdChanged`, `afterExerciseOrMealChanged` — call after mutating logs |
-| DeepSeek AI estimate | `server/src/deepseekKcal.js#estimateKcalFromDescription` | AI kcal estimation via DeepSeek API |
+| DeepSeek AI estimate | `server/src/ai/providers/deepseekText.js#estimateKcalFromDescription` | AI kcal estimation via DeepSeek API |
 
 ## Hard Rules
 
 - **Do NOT** duplicate `calculateBmr`, `calculateTdee`, `calculateSpreadDeficit`, `formatDateKey*`, or `toKcal` anywhere outside the files listed above.
-- **Do NOT** read `localStorage` / `sessionStorage` outside `src/lib/api/http.ts` and `src/lib/communityListCache.ts`.
-- **Do NOT** write raw `fetch()` calls — always go through `apiFetch`.
+- **Do NOT** read `localStorage` / `sessionStorage` outside `src/lib/api/http.ts`, `src/lib/communityListCache.ts`, and `src/lib/telemetry.ts`.
+- **Do NOT** write raw `fetch()` calls — always go through `apiFetch` (except telemetry transport in `src/lib/telemetry.ts`).
 - **Do NOT** write a new `publicNickname` function — use `server/src/publicProfile.js`.
 - Schema changes: add a new `server/migrations/NNN_<slug>.sql` **and** add the same idempotent DDL to `server/src/db.js#runMigrations()` until the two sources are merged.

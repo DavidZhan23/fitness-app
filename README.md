@@ -1,9 +1,5 @@
 # 健身打卡 — 热量追踪 PWA
 
-[![CI](https://github.com/DavidZhan23/fitness-app/actions/workflows/ci.yml/badge.svg)](https://github.com/DavidZhan23/fitness-app/actions/workflows/ci.yml)
-[![Deploy](https://github.com/DavidZhan23/fitness-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/DavidZhan23/fitness-app/actions/workflows/deploy.yml)
-[![Release](https://img.shields.io/github/v/release/DavidZhan23/fitness-app?label=release)](https://github.com/DavidZhan23/fitness-app/releases)
-
 记录每日运动与饮食，结合基础代谢计算热量缺口，并以打卡墙展示运动与缺口。
 
 ## 参与开发
@@ -11,11 +7,11 @@
 | 我想… | 读这里 |
 |--------|--------|
 | 本地跑项目 | [docs/GETTING-START.md](docs/GETTING-START.md) |
-| 提需求 / PR / CI | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| 提需求 / 提交流程 | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | 用 Cursor 做功能 | [docs/ai-playbook.md](docs/ai-playbook.md) |
 | 查全部文档 | [docs/README.md](docs/README.md) |
 
-Owner 自动部署：[docs/architecture/owner-setup-guide.md](docs/architecture/owner-setup-guide.md)
+当前交付模型：本地 `npm run verify` → 直接 push `main` → owner 手动部署。
 
 ## 功能
 
@@ -43,7 +39,7 @@ npm install && npm run dev                  # :5173，需 .env.local
 | 方式 | 文档 |
 |------|------|
 | 手动上腾讯云 | [docs/ops/腾讯云部署-一步步做.md](docs/ops/腾讯云部署-一步步做.md) |
-| CI/CD / 自动部署 | [docs/architecture/deploy-pipeline.md](docs/architecture/deploy-pipeline.md) |
+| 部署说明（当前手动） | [docs/architecture/deploy.md](docs/architecture/deploy.md) |
 
 ```bash
 cp .env.deploy.example .env.deploy

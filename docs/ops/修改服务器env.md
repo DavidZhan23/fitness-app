@@ -61,7 +61,7 @@ DEEPSEEK_API_KEY=sk-你的密钥
 ### 原理
 
 - `dotenv` 在 API 启动时加载 `server/.env` 到 `process.env`。
-- `deepseekKcal.js` 读 `process.env.DEEPSEEK_API_KEY` 去请求 DeepSeek。
+- `ai/providers/deepseekText.js` 读 `process.env.DEEPSEEK_API_KEY` 去请求 DeepSeek。
 - 改 `.env` 后必须**重启** `npm run dev`，否则旧进程没有新变量。
 
 ### 验收
