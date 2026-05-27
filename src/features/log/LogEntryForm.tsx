@@ -40,15 +40,15 @@ export function LogEntryForm(props: LogEntryFormProps) {
         <div
           role="group"
           aria-label="热量输入方式"
-          className="flex rounded-lg bg-slate-800/60 p-1 text-sm"
+          className="log-meal-mode-tabs flex p-1 text-sm"
         >
           <button
             type="button"
             onClick={() => props.onMealInputModeChange('kcal')}
             className={`flex-1 rounded-md py-2 transition ${
               props.mealInputMode === 'kcal'
-                ? 'bg-slate-700 font-medium text-slate-100'
-                : 'text-muted hover:text-slate-200'
+                ? 'log-meal-mode-btn--active font-medium'
+                : 'log-meal-mode-btn--idle'
             }`}
           >
             直接输入 kcal
@@ -58,8 +58,8 @@ export function LogEntryForm(props: LogEntryFormProps) {
             onClick={() => props.onMealInputModeChange('package')}
             className={`flex-1 rounded-md py-2 transition ${
               props.mealInputMode === 'package'
-                ? 'bg-slate-700 font-medium text-slate-100'
-                : 'text-muted hover:text-slate-200'
+                ? 'log-meal-mode-btn--active font-medium'
+                : 'log-meal-mode-btn--idle'
             }`}
           >
             包装标注 (g + kJ)
@@ -113,7 +113,7 @@ export function LogEntryForm(props: LogEntryFormProps) {
             </p>
           </label>
           {props.packageKcal != null && props.packageKcal > 0 && (
-            <p className="rounded-lg bg-amber-900/20 px-3 py-2 text-sm text-amber-200/90">
+            <p className="log-package-kcal-hint px-3 py-2 text-sm">
               约 <span className="font-semibold tabular-nums">{props.packageKcal}</span>{' '}
               kcal
             </p>

@@ -70,10 +70,8 @@ export function DayLikeButton({
         disabled={disabled || busy}
         onClick={toggle}
         aria-pressed={viewerLiked}
-        className={`inline-flex max-w-full shrink items-center gap-px rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:cursor-default disabled:opacity-60 ${
-          viewerLiked
-            ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-400/40'
-            : 'bg-slate-800 text-slate-200 ring-1 ring-slate-600 hover:ring-rose-400/30'
+        className={`day-like-btn day-like-btn--compact inline-flex max-w-full shrink items-center gap-px rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:cursor-default disabled:opacity-60 ${
+          viewerLiked ? 'day-like-btn--liked' : 'day-like-btn--idle'
         }`}
       >
         <span
@@ -97,10 +95,8 @@ export function DayLikeButton({
         disabled={disabled || busy}
         onClick={toggle}
         aria-pressed={viewerLiked}
-        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition active:scale-95 disabled:cursor-default disabled:opacity-60 ${
-          viewerLiked
-            ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-400/40'
-            : 'bg-slate-800 text-slate-200 ring-1 ring-slate-600 hover:ring-rose-400/30'
+        className={`day-like-btn flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition active:scale-95 disabled:cursor-default disabled:opacity-60 ${
+          viewerLiked ? 'day-like-btn--liked' : 'day-like-btn--idle'
         }`}
       >
         <span

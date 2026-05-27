@@ -384,18 +384,18 @@ export function CommunityUserPage() {
             <button
               type="button"
               onClick={goPrev}
-              className="rounded-lg bg-slate-800 px-2.5 py-1 text-sm"
+              className="btn-month-nav px-2.5 py-1"
             >
               ‹
             </button>
-            <span className="min-w-[5rem] text-center text-sm tabular-nums">
+            <span className="min-w-[5rem] text-center text-sm tabular-nums text-primary">
               {formatMonthTitle(year, month)}
             </span>
             <button
               type="button"
               onClick={goNext}
               disabled={isCurrentMonth}
-              className="rounded-lg bg-slate-800 px-2.5 py-1 text-sm disabled:opacity-40"
+              className="btn-month-nav px-2.5 py-1"
             >
               ›
             </button>

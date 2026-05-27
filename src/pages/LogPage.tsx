@@ -61,7 +61,7 @@ export function LogPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="text-sm text-muted hover:text-slate-200"
+            className="text-sm text-secondary hover:text-primary"
           >
             ← 返回
           </button>

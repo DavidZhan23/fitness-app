@@ -17,7 +17,7 @@ export function MetabolismSummary({ profile }: MetabolismSummaryProps) {
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted">
             基础代谢 BMR
           </p>
-          <p className="mt-0.5 text-xs text-slate-400">{BMR_FORMULA_NAME}</p>
+          <p className="bmr-formula-subtitle mt-0.5 text-xs">{BMR_FORMULA_NAME}</p>
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold tabular-nums leading-none text-brand">
@@ -27,28 +27,16 @@ export function MetabolismSummary({ profile }: MetabolismSummaryProps) {
         </div>
       </div>
 
-      <div className="border-t border-slate-600/40 bg-slate-900/40 px-4 py-3">
+      <div className="bmr-formula-panel px-4 py-3">
         {sex === 'male' || sex === 'female' ? (
-          <FormulaCard
-            symbol={sex === 'male' ? '♂' : '♀'}
-            accent={sex === 'male' ? 'text-sky-400' : 'text-pink-400'}
-            expr={formulaExpr(sex)}
-          />
+          <FormulaCard sex={sex} expr={formulaExpr(sex)} />
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
-            <FormulaCard
-              symbol="♂"
-              accent="text-sky-400"
-              expr={formulaExpr('male')}
-            />
-            <FormulaCard
-              symbol="♀"
-              accent="text-pink-400"
-              expr={formulaExpr('female')}
-            />
+            <FormulaCard sex="male" expr={formulaExpr('male')} />
+            <FormulaCard sex="female" expr={formulaExpr('female')} />
           </div>
         )}
-        <p className="mt-2 text-center text-[10px] text-muted">
+        <p className="bmr-formula-legend mt-2 text-center text-[10px]">
           w 体重(kg) · h 身高(cm) · a 年龄
         </p>
       </div>
@@ -61,39 +49,33 @@ function formulaExpr(sex: Sex): ReactNode {
     return (
       <>
         10<Var>w</Var> + 6.25<Var>h</Var> − 5<Var>a</Var>
-        <span className="text-brand"> + 5</span>
+        <span className="bmr-formula-constant"> + 5</span>
       </>
     )
   }
   return (
     <>
       10<Var>w</Var> + 6.25<Var>h</Var> − 5<Var>a</Var>
-      <span className="text-brand"> − 161</span>
+      <span className="bmr-formula-constant"> − 161</span>
     </>
   )
 }
 
-function FormulaCard({
-  symbol,
-  accent,
-  expr,
-}: {
-  symbol: string
-  accent: string
-  expr: ReactNode
-}) {
+function FormulaCard({ sex, expr }: { sex: Sex; expr: ReactNode }) {
+  const symbol = sex === 'male' ? '♂' : '♀'
+  const sexClass =
+    sex === 'male' ? 'bmr-formula-sex--male' : 'bmr-formula-sex--female'
+
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-slate-800/60 px-3 py-2.5 ring-1 ring-slate-700/50">
-      <span className={`text-lg ${accent}`}>{symbol}</span>
-      <p className="font-mono text-xs leading-relaxed text-slate-200">{expr}</p>
+    <div className="bmr-formula-card flex items-center gap-2 px-3 py-2.5">
+      <span className={`text-lg ${sexClass}`}>{symbol}</span>
+      <p className="bmr-formula-text font-mono text-xs leading-relaxed">{expr}</p>
     </div>
   )
 }
 
 function Var({ children }: { children: ReactNode }) {
   return (
-    <span className="mx-0.5 rounded bg-slate-700/80 px-1 py-0.5 text-brand">
-      {children}
-    </span>
+    <span className="bmr-formula-var mx-0.5 px-1 py-0.5">{children}</span>
   )
 }

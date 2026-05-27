@@ -46,9 +46,9 @@ export function TemplatesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">我的模板</h1>
+      <h1 className="text-xl font-bold text-primary">我的模板</h1>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2" role="tablist" aria-label="模板类型">
         <TabButton active={tab === 'exercise'} onClick={() => setTab('exercise')}>
           运动
         </TabButton>
@@ -60,7 +60,7 @@ export function TemplatesPage() {
       <button
         type="button"
         onClick={addTemplate}
-        className="w-full rounded-xl border border-dashed border-slate-600 py-2 text-sm text-brand"
+        className="template-add-btn w-full rounded-xl border border-dashed py-2 text-sm"
       >
         + 添加模板
       </button>
@@ -69,7 +69,7 @@ export function TemplatesPage() {
         {list.map((t) => (
           <li
             key={t.id}
-            className="flex items-center justify-between rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-700/50"
+            className="surface-card flex items-center justify-between rounded-xl px-3 py-2.5"
           >
             <div>
               <p className="font-medium">{t.name}</p>
@@ -78,7 +78,7 @@ export function TemplatesPage() {
             <button
               type="button"
               onClick={() => deleteTemplate(t.id)}
-              className="text-xs text-red-400"
+              className="text-danger text-xs"
             >
               删除
             </button>
@@ -101,9 +101,11 @@ function TabButton({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
-      className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-        active ? 'bg-brand-dark text-white' : 'bg-card text-muted'
+      className={`template-tab flex-1 rounded-lg py-2 text-sm font-medium ${
+        active ? 'template-tab--active' : 'template-tab--inactive'
       }`}
     >
       {children}

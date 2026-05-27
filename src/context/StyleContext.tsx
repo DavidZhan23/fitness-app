@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 
-export type AppStyle = 'default' | 'dream'
+export type AppStyle = 'default' | 'cream' | 'sakura' | 'aqua'
 
 interface StyleContextValue {
   style: AppStyle
@@ -20,7 +20,12 @@ const STYLE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 const StyleContext = createContext<StyleContextValue | null>(null)
 
 function normalizeStyle(value: string | null): AppStyle {
-  return value === 'dream' ? 'dream' : 'default'
+  if (value === 'cream') return 'cream'
+  if (value === 'sakura') return 'sakura'
+  if (value === 'aqua') return 'aqua'
+  // 旧 cookie 'dream' 自动迁移到粉主题「樱海粉梦」
+  if (value === 'dream') return 'sakura'
+  return 'default'
 }
 
 function readStyleFromCookie(): AppStyle {

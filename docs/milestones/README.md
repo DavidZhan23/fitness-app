@@ -15,6 +15,8 @@
 | [M-2026-05-telemetry](M-2026-05-telemetry.md) | done | `feat/infra-e2e-telemetry` → PR #46 |
 | [M-2026-05-telemetry-weekly](M-2026-05-telemetry-weekly.md) | done | Phase 1b → PR #48；Phase 2 → PR #51 |
 | [M-2026-05-community-profile](M-2026-05-community-profile.md) | done | PR #54（+ polish PR #61） |
+| [M-2026-05-pink-blue-light-theme](M-2026-05-pink-blue-light-theme.md) | done | `feat/style-color-tuning` |
+| [M-2026-05-macaron-themes](M-2026-05-macaron-themes.md) | done | `feat/style-color-tuning`（接续：拆出 cream / sakura） |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）

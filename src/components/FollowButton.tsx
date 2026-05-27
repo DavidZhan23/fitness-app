@@ -48,10 +48,8 @@ export function FollowButton({
         type="button"
         disabled={busy}
         onClick={toggle}
-        className={`shrink-0 rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:opacity-50 ${
-          following
-            ? 'bg-violet-950/50 text-violet-200 ring-1 ring-violet-500/40'
-            : 'bg-violet-600/80 text-white hover:bg-violet-500'
+        className={`follow-btn follow-btn--compact shrink-0 rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:opacity-50 ${
+          following ? 'follow-btn--following' : 'follow-btn--idle'
         }`}
       >
         {busy ? '…' : following ? '已关注' : '关注'}
@@ -64,10 +62,8 @@ export function FollowButton({
       type="button"
       disabled={busy}
       onClick={toggle}
-      className={`rounded-full px-4 py-1.5 text-sm font-medium transition active:scale-95 disabled:opacity-50 ${
-        following
-          ? 'bg-violet-950/50 text-violet-200 ring-1 ring-violet-500/40 hover:bg-violet-900/40'
-          : 'bg-violet-600 text-white hover:bg-violet-500'
+      className={`follow-btn rounded-full px-4 py-1.5 text-sm font-medium transition active:scale-95 disabled:opacity-50 ${
+        following ? 'follow-btn--following' : 'follow-btn--idle'
       }`}
     >
       {busy ? '…' : following ? '已关注' : '+ 关注'}

@@ -27,13 +27,16 @@ export function DeficitCard({
   fullDayBmr,
 }: DeficitCardProps) {
   const positive = hasDeficitCheck(deficit, threshold)
+  const surplus = deficit < -threshold
 
   return (
     <section className="theme-hero-card p-5">
       <p className="text-sm text-muted">{dateLabel}</p>
       <div className="mt-2 flex items-baseline gap-2">
         <span
-          className="text-4xl font-bold tabular-nums !text-[#F8C2DA]"
+          className={`text-4xl font-bold tabular-nums ${
+            surplus ? 'text-red-400' : positive ? 'text-emerald-400' : 'text-amber-400'
+          }`}
         >
           {deficit > 0 ? '+' : ''}
           {Math.round(deficit)}

@@ -21,10 +21,12 @@ export function TemplatePicker({ templates, onSelect }: TemplatePickerProps) {
             key={t.id ?? t.name}
             type="button"
             onClick={() => onSelect(t.name, t.kcal)}
-            className="rounded-full bg-slate-800 px-3 py-1.5 text-sm ring-1 ring-slate-600 hover:bg-slate-700"
+            className="log-template-chip px-3 py-1.5 text-sm"
           >
             {t.name}{' '}
-            <span className="text-muted tabular-nums">{Math.round(t.kcal)}</span>
+            <span className="log-template-chip__kcal tabular-nums">
+              {Math.round(t.kcal)}
+            </span>
           </button>
         ))}
       </div>

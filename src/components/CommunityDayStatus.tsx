@@ -137,12 +137,18 @@ export function PersonalDayStatus({
   if (!status.needsMealLog && !status.badge && !status.foodKing) return null
 
   if (variant === 'side') {
-    const items: { icon: string; title: string; desc: string }[] = []
+    const items: {
+      icon: string
+      title: string
+      desc: string
+      tone: 'exercise' | 'meal'
+    }[] = []
     if (status.badge === 'champion') {
       items.push({
         icon: '👑',
         title: '运动大王',
         desc: '高强度训练 + 充足饮食，硬核一天',
+        tone: 'exercise',
       })
     }
     if (status.badge === 'elite') {
@@ -150,6 +156,7 @@ export function PersonalDayStatus({
         icon: '🔥',
         title: '减脂先锋',
         desc: '热量缺口拉满，缺口达人',
+        tone: 'exercise',
       })
     }
     if (status.foodKing) {
@@ -157,6 +164,7 @@ export function PersonalDayStatus({
         icon: '🥘',
         title: '美食大王',
         desc: '今日饮食达基础代谢 1.2 倍',
+        tone: 'meal',
       })
     }
     if (status.needsMealLog) {
@@ -164,6 +172,7 @@ export function PersonalDayStatus({
         icon: '🍽️',
         title: '记得记饮食',
         desc: '缺口不错，补录饮食更准确',
+        tone: 'meal',
       })
     }
 
@@ -206,23 +215,22 @@ function SideAchievementCard({
   icon,
   title,
   desc,
+  tone,
 }: {
   icon: string
   title: string
   desc: string
+  tone: 'exercise' | 'meal'
 }) {
   return (
-    <section className="flex flex-col items-center gap-1.5 rounded-xl border border-violet-500/25 bg-violet-950/25 px-3 py-3 ring-1 ring-violet-500/25">
-      <div
-        className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-500/20 ring-1 ring-violet-400/35"
-        aria-hidden
-      >
-        <span className="text-[2.25rem] leading-none">{icon}</span>
+    <section
+      className={`achievement-card achievement-card--${tone}`}
+    >
+      <div className="achievement-card__icon" aria-hidden>
+        <span>{icon}</span>
       </div>
-      <p className="text-sm font-bold leading-tight text-slate-100">{title}</p>
-      <p className="text-center text-[11px] leading-snug text-slate-300/90">
-        {desc}
-      </p>
+      <p className="achievement-card__title">{title}</p>
+      <p className="achievement-card__desc">{desc}</p>
     </section>
   )
 }
@@ -297,23 +305,18 @@ function CompactPill({
   kind: 'champion' | 'elite' | 'meal' | 'foodKing'
   label: string
 }) {
-  const styles = {
-    champion:
-      'bg-gradient-to-r from-amber-500/25 to-orange-600/20 text-amber-200 ring-amber-400/40',
-    elite:
-      'bg-gradient-to-r from-violet-500/25 to-cyan-500/20 text-violet-200 ring-violet-400/40',
-    foodKing:
-      'bg-gradient-to-r from-rose-500/20 to-orange-500/15 text-rose-100 ring-rose-400/35',
-    meal: 'bg-amber-900/35 text-amber-200/95 ring-amber-500/35',
+  const pillClass = {
+    champion: 'community-pill community-pill--champion',
+    elite: 'community-pill community-pill--elite',
+    foodKing: 'community-pill community-pill--foodKing',
+    meal: 'community-pill community-pill--meal',
   } as const
 
   const emoji =
     kind === 'foodKing' ? '🥘' : heatmapBadgeEmoji(kind)
 
   return (
-    <span
-      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[9px] font-semibold ring-1 ${styles[kind]}`}
-    >
+    <span className={pillClass[kind]}>
       <span aria-hidden>{emoji}</span>
       {label}
     </span>

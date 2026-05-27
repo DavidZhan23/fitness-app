@@ -134,29 +134,29 @@ export function getDeficitHeatmapCell(
 }
 
 export const EXERCISE_LEVEL_CLASSES = [
-  'bg-slate-700/60',
-  'bg-teal-900/80',
-  'bg-teal-700',
-  'bg-teal-500',
-  'bg-teal-300',
+  'heatmap-empty',
+  'heatmap-exercise-1',
+  'heatmap-exercise-2',
+  'heatmap-exercise-3',
+  'heatmap-exercise-4',
 ] as const
 
-/** 代谢缺口（绿，越深缺口越大） */
+/** 代谢缺口（绿/蓝由主题 token 决定） */
 export const DEFICIT_LEVEL_CLASSES = [
-  'bg-slate-700/60',
-  'bg-emerald-900/80',
-  'bg-emerald-700',
-  'bg-emerald-500',
-  'bg-emerald-300',
+  'heatmap-empty',
+  'heatmap-deficit-1',
+  'heatmap-deficit-2',
+  'heatmap-deficit-3',
+  'heatmap-deficit-4',
 ] as const
 
-/** 热量盈余（红：level 1 浅 → level 4 深，盈余越大越深红） */
+/** 热量盈余（红/粉由主题 token 决定） */
 export const DEFICIT_SURPLUS_LEVEL_CLASSES = [
-  'bg-slate-700/60',
-  'bg-red-300',
-  'bg-red-500',
-  'bg-red-700',
-  'bg-red-900/80',
+  'heatmap-empty',
+  'heatmap-surplus-1',
+  'heatmap-surplus-2',
+  'heatmap-surplus-3',
+  'heatmap-surplus-4',
 ] as const
 
 export function getDeficitHeatmapClass(

@@ -21,7 +21,7 @@ export function SplitMonthWall({
   return (
     <div className="space-y-3">
       <div
-        className="flex w-fit max-w-full rounded-xl bg-slate-800/80 p-1 ring-1 ring-slate-700/50"
+        className="wall-pane-tabs flex w-fit max-w-full rounded-xl p-1"
         role="tablist"
         aria-label="打卡墙切换"
       >
@@ -79,10 +79,8 @@ function WallPaneTab({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-        active
-          ? 'bg-violet-600/40 text-violet-100 shadow-sm ring-1 ring-violet-500/30'
-          : 'text-muted hover:text-slate-200'
+      className={`wall-pane-tab rounded-lg px-4 py-2 text-sm font-medium transition ${
+        active ? 'wall-pane-tab--active' : ''
       }`}
     >
       {children}
