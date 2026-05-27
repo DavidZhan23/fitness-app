@@ -12,7 +12,7 @@ import {
   normalizeBirthdayFromApi,
 } from '../lib/birthday'
 import { useDebouncedAutosave } from '../hooks/useDebouncedAutosave'
-import type { Sex } from '../types'
+import type { Sex, WallStyle } from '../types'
 
 const styleOptions: Array<{
   id: AppStyle
@@ -49,6 +49,9 @@ export function SettingsPage() {
   )
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
+  const [wallStyle, setWallStyle] = useState<WallStyle>(
+    () => (profile?.wall_style === 'split' ? 'split' : 'classic'),
+  )
 
   const todayKey = formatTodayDateKey()
   const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
@@ -62,6 +65,7 @@ export function SettingsPage() {
     setActivity(Number(profile.activity_factor) || 1.375)
     setNickname(profile.nickname ?? '')
     setThreshold(String(profile.deficit_threshold ?? 0))
+    setWallStyle(profile.wall_style === 'split' ? 'split' : 'classic')
   }, [profile])
 
   const trimmedNickname = nickname.trim()
@@ -137,6 +141,21 @@ export function SettingsPage() {
   })
   const bodySaveState = bodyAutosave.state
   const bodySaveError = bodyAutosave.error
+
+  const savedWallStyle: WallStyle =
+    profile?.wall_style === 'split' ? 'split' : 'classic'
+
+  const saveWallStyle = useCallback(async () => {
+    await updateProfile({ wall_style: wallStyle })
+  }, [updateProfile, wallStyle])
+
+  const wallStyleAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: wallStyle === savedWallStyle,
+    save: saveWallStyle,
+    mapError: () => '保存失败',
+  })
+  const wallStyleSaveState = wallStyleAutosave.state
 
   const handleSignOut = async () => {
     await signOut()
@@ -293,6 +312,56 @@ export function SettingsPage() {
 
           </div>
         </details>
+      </section>
+
+      <section className="rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-600/50">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="font-semibold text-slate-100">打卡墙样式</h2>
+          {wallStyleSaveState === 'saving' && (
+            <span className="text-xs text-muted">保存中…</span>
+          )}
+          {wallStyleSaveState === 'saved' && (
+            <span className="text-xs text-brand">已保存</span>
+          )}
+          {wallStyleSaveState === 'error' && (
+            <span className="text-xs text-amber-400">保存失败</span>
+          )}
+        </div>
+        <fieldset className="mt-3 space-y-2">
+          <legend className="sr-only">打卡墙样式</legend>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-600/50 px-3 py-2.5 has-[:checked]:border-violet-500/50 has-[:checked]:bg-violet-950/20">
+            <input
+              type="radio"
+              name="wall_style"
+              value="classic"
+              checked={wallStyle === 'classic'}
+              onChange={() => setWallStyle('classic')}
+              className="mt-1"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-slate-100">经典版</span>
+              <span className="mt-0.5 block text-xs text-muted">
+                同时展示运动和代谢
+              </span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-600/50 px-3 py-2.5 has-[:checked]:border-violet-500/50 has-[:checked]:bg-violet-950/20">
+            <input
+              type="radio"
+              name="wall_style"
+              value="split"
+              checked={wallStyle === 'split'}
+              onChange={() => setWallStyle('split')}
+              className="mt-1"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-slate-100">分屏版</span>
+              <span className="mt-0.5 block text-xs text-muted">
+                切换查看，更聚焦
+              </span>
+            </span>
+          </label>
+        </fieldset>
       </section>
 
       {profile && <MetabolismSummary profile={profile} />}

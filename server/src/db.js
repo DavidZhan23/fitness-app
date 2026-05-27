@@ -273,6 +273,19 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  try {
+    await pool.query(
+      `alter table public.profiles add column if not exists wall_style text not null default 'classic'`,
+    )
+    await pool.query(
+      `alter table public.profiles drop constraint if exists profiles_wall_style_check`,
+    )
+    await pool.query(
+      `alter table public.profiles add constraint profiles_wall_style_check check (wall_style in ('classic', 'split'))`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
   await runSqlFileMigrations()
 }
 

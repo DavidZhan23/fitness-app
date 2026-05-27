@@ -115,3 +115,4 @@ export function heatmapBadgeEmoji(badge: HeatmapDayBadge): string {
       return '🍽️'
   }
 }
+

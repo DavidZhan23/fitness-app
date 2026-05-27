@@ -51,5 +51,32 @@ test.describe.serial('main flow smoke', () => {
       page.getByRole('heading', { name: '社区', exact: true }),
     ).toBeVisible()
     await expect(page.getByText('加载社区…')).toBeHidden()
+    await expect(page.getByLabel('更新中')).toBeHidden()
+  })
+
+  test('calendar wall split style toggle', async ({ page }) => {
+    await registerAndOnboard(page, uniqueE2eEmail())
+    await logExercise(page, 'E2E 墙样式运动', '200')
+
+    const nav = mainNav(page)
+    await nav.getByRole('link', { name: '打卡' }).click()
+    await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
+    await expect(page.getByText('运动量少')).toBeVisible()
+    await expect(page.getByText('盈余少')).toBeVisible()
+    await expect(page.getByText('运动连续')).toBeVisible()
+    await expect(page.getByText('缺口连续')).toBeVisible()
+
+    await nav.getByRole('link', { name: '设置' }).click()
+    await page.getByRole('radio', { name: /分屏版/ }).click()
+    await expect(page.getByText('已保存')).toBeVisible({ timeout: 8000 })
+
+    await nav.getByRole('link', { name: '打卡' }).click()
+    await expect(page.getByRole('tab', { name: '运动墙' })).toBeVisible()
+    await expect(page.getByText('运动量少')).toBeVisible()
+    await expect(page.getByText('盈余少')).toBeHidden()
+
+    await page.getByRole('tab', { name: '代谢墙' }).click()
+    await expect(page.getByText('运动量少')).toBeHidden()
+    await expect(page.getByText('盈余少')).toBeVisible()
   })
 })

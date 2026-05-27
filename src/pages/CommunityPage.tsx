@@ -138,7 +138,7 @@ export function CommunityPage() {
       if (blockUi) {
         setLoading(true)
         setError('')
-      } else {
+      } else if (!opts?.silent) {
         setRefreshing(true)
       }
       try {
@@ -236,7 +236,7 @@ export function CommunityPage() {
 
   useEffect(() => {
     if (filter === initialFilter.current) return
-    void load()
+    void load({ silent: true })
   }, [filter, load])
 
   const handleFilterChange = useCallback(

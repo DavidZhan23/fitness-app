@@ -28,9 +28,27 @@ export function formatDateKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
-/** 统一 API 返回的 log_date（可能带时间或时区后缀） */
-export function normalizeDateKey(value: string): string {
-  return value.slice(0, 10)
+/** 统一 API 返回的 log_date（可能带时间或时区后缀）为本地日历 YYYY-MM-DD */
+export function normalizeDateKey(value: string | Date): string {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return ''
+    return formatDateKey(value)
+  }
+  const s = String(value).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const d = new Date(s)
+  if (!Number.isNaN(d.getTime())) return formatDateKey(d)
+  return s.slice(0, 10)
+}
+
+/** 打卡墙详情标题等展示用 */
+export function formatDateKeyLabel(dateKey: string): string {
+  const key = normalizeDateKey(dateKey)
+  return parseDateKey(key).toLocaleDateString('zh-CN', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  })
 }
 
 /** 账号起始日（注册日，本地时区 YYYY-MM-DD） */

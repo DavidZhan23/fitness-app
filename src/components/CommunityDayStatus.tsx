@@ -120,11 +120,13 @@ export function PersonalDayStatus({
   exerciseKcal,
   mealKcal,
   dailyBmr,
+  variant = 'full',
 }: {
   deficit: number
   exerciseKcal: number
   mealKcal: number
   dailyBmr: number
+  variant?: 'full' | 'side'
 }) {
   const status = evaluateCommunityDayStatus({
     deficit,
@@ -133,6 +135,46 @@ export function PersonalDayStatus({
     dailyBmr,
   })
   if (!status.needsMealLog && !status.badge && !status.foodKing) return null
+
+  if (variant === 'side') {
+    const items: { icon: string; title: string; desc: string }[] = []
+    if (status.badge === 'champion') {
+      items.push({
+        icon: '👑',
+        title: '运动大王',
+        desc: '高强度训练 + 充足饮食，硬核一天',
+      })
+    }
+    if (status.badge === 'elite') {
+      items.push({
+        icon: '🔥',
+        title: '减脂先锋',
+        desc: '热量缺口拉满，缺口达人',
+      })
+    }
+    if (status.foodKing) {
+      items.push({
+        icon: '🥘',
+        title: '美食大王',
+        desc: '今日饮食达基础代谢 1.2 倍',
+      })
+    }
+    if (status.needsMealLog) {
+      items.push({
+        icon: '🍽️',
+        title: '记得记饮食',
+        desc: '缺口不错，补录饮食更准确',
+      })
+    }
+
+    return (
+      <div className="flex flex-col gap-2">
+        {items.map((item) => (
+          <SideAchievementCard key={item.title} {...item} />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">
@@ -157,6 +199,31 @@ export function PersonalDayStatus({
       )}
       {status.needsMealLog && <MealReminderCard isSelf />}
     </div>
+  )
+}
+
+function SideAchievementCard({
+  icon,
+  title,
+  desc,
+}: {
+  icon: string
+  title: string
+  desc: string
+}) {
+  return (
+    <section className="flex flex-col items-center gap-1.5 rounded-xl border border-violet-500/25 bg-violet-950/25 px-3 py-3 ring-1 ring-violet-500/25">
+      <div
+        className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-500/20 ring-1 ring-violet-400/35"
+        aria-hidden
+      >
+        <span className="text-[2.25rem] leading-none">{icon}</span>
+      </div>
+      <p className="text-sm font-bold leading-tight text-slate-100">{title}</p>
+      <p className="text-center text-[11px] leading-snug text-slate-300/90">
+        {desc}
+      </p>
+    </section>
   )
 }
 
