@@ -6,6 +6,7 @@ import { DayCommentSection } from '../components/DayCommentSection'
 import { DayLikeButton } from '../components/DayLikeButton'
 import { FollowButton } from '../components/FollowButton'
 import { MonthHeatmap } from '../components/MonthHeatmap'
+import { SplitMonthWall } from '../components/SplitMonthWall'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
@@ -231,7 +232,7 @@ export function CommunityUserPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-sm text-muted hover:text-slate-200"
+          className="text-sm text-secondary hover:text-primary"
         >
           ← 社区
         </button>
@@ -240,16 +241,14 @@ export function CommunityUserPage() {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold ${
-              isSelf
-                ? 'bg-violet-500/30 text-violet-200 ring-1 ring-violet-400/50'
-                : 'bg-slate-700 text-slate-100 ring-1 ring-slate-600'
+            className={`community-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl ${
+              isSelf ? 'community-avatar--self' : ''
             }`}
           >
             {nickname.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold">{nickname}</h1>
+            <h1 className="truncate text-xl font-bold text-primary">{nickname}</h1>
             <p className="text-sm text-muted">
               {isSelf ? '这是你的公开主页' : '公开打卡动态'}
             </p>
@@ -303,7 +302,7 @@ export function CommunityUserPage() {
         variant="full"
       />
 
-      <div className="rounded-2xl bg-card/60 px-4 py-3 ring-1 ring-slate-700/40">
+      <div className="surface-card rounded-2xl px-4 py-3">
         <DayLikeButton
           key={`${userId}-${viewDate}-like`}
           userId={userId!}
@@ -337,7 +336,7 @@ export function CommunityUserPage() {
       </div>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-slate-200">当日记录</h2>
+        <h2 className="mb-2 text-sm font-medium text-primary">当日记录</h2>
         {!isSelf && (exercises.length > 0 || meals.length > 0) && (
           <p className="mb-2 text-xs text-muted">
             {/* 每条记录右侧可 👍 👎 表态（再次点击取消） */}
@@ -377,9 +376,9 @@ export function CommunityUserPage() {
         />
       </div>
 
-      <section className="rounded-2xl bg-card p-4 ring-1 ring-slate-700/50">
+      <section className="surface-card rounded-2xl p-4">
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="font-medium">打卡墙</h2>
+          <h2 className="font-medium text-primary">打卡墙</h2>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -405,15 +404,27 @@ export function CommunityUserPage() {
           <p className="py-8 text-center text-xs text-muted">加载打卡墙…</p>
         ) : (
           <>
-            <MonthHeatmap
-              year={year}
-              month={month}
-              dayMap={dayMap}
-              todayKey={todayKey}
-              accountStartKey={accountStartKey}
-              selectedDateKey={viewDate}
-              onDayClick={handleDayClick}
-            />
+            {profile?.wall_style === 'split' ? (
+              <SplitMonthWall
+                year={year}
+                month={month}
+                dayMap={dayMap}
+                todayKey={todayKey}
+                accountStartKey={accountStartKey}
+                selectedDateKey={viewDate}
+                onDayClick={handleDayClick}
+              />
+            ) : (
+              <MonthHeatmap
+                year={year}
+                month={month}
+                dayMap={dayMap}
+                todayKey={todayKey}
+                accountStartKey={accountStartKey}
+                selectedDateKey={viewDate}
+                onDayClick={handleDayClick}
+              />
+            )}
             <p className="mt-3 text-center text-xs text-muted">
               点击日期查看该日记录与评论
             </p>
@@ -424,7 +435,7 @@ export function CommunityUserPage() {
       {isSelf && (
         <Link
           to="/settings"
-          className="block rounded-xl bg-violet-900/30 py-3 text-center text-sm font-medium text-violet-200 ring-1 ring-violet-500/30"
+          className="surface-card block rounded-xl py-3 text-center text-sm font-medium text-brand"
         >
           管理我的公开设置
         </Link>

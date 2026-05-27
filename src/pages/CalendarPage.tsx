@@ -174,8 +174,8 @@ export function CalendarPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="运动连续" value={streakExercise} unit="天" />
-        <StatCard label="缺口连续" value={streakDeficit} unit="天" />
+        <StatCard label="运动连续" value={streakExercise} unit="天" variant="exercise" />
+        <StatCard label="缺口连续" value={streakDeficit} unit="天" variant="deficit" />
       </div>
 
       <section className="surface-card p-4">
@@ -305,13 +305,15 @@ function StatCard({
   label,
   value,
   unit,
+  variant,
 }: {
   label: string
   value: number
   unit: string
+  variant: 'exercise' | 'deficit'
 }) {
   return (
-    <div className="calendar-stat-card px-4 py-3 text-center">
+    <div className={`calendar-stat-card calendar-stat-card--${variant} px-4 py-3 text-center`}>
       <p className="text-xs text-muted">{label}</p>
       <p className="calendar-stat-card__value text-2xl font-bold tabular-nums">
         {value}

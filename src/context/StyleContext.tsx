@@ -7,7 +7,16 @@ import {
   type ReactNode,
 } from 'react'
 
-export type AppStyle = 'default' | 'cream' | 'sakura' | 'aqua'
+export type AppStyle =
+  | 'default'
+  | 'abyssal-jade'
+  | 'lavender'
+  | 'sakura'
+  | 'sakura-blush'
+  | 'active-mint'
+  | 'eva'
+  | 'eva-unit02'
+  | 'gundam-hangar'
 
 interface StyleContextValue {
   style: AppStyle
@@ -20,10 +29,19 @@ const STYLE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 const StyleContext = createContext<StyleContextValue | null>(null)
 
 function normalizeStyle(value: string | null): AppStyle {
-  if (value === 'cream') return 'cream'
+  if (value === 'lavender') return 'lavender'
+  // 旧 cookie「奶霜马卡龙」迁移到薰衣云梦
+  if (value === 'cream') return 'lavender'
   if (value === 'sakura') return 'sakura'
-  if (value === 'aqua') return 'aqua'
-  // 旧 cookie 'dream' 自动迁移到粉主题「樱海粉梦」
+  if (value === 'sakura-blush') return 'sakura-blush'
+  // 已下线「雾海潮蓝」，旧 cookie 迁移到樱海晴梦
+  if (value === 'aqua') return 'sakura'
+  if (value === 'active-mint') return 'active-mint'
+  if (value === 'eva') return 'eva'
+  if (value === 'eva-unit02') return 'eva-unit02'
+  if (value === 'gundam-hangar') return 'gundam-hangar'
+  if (value === 'abyssal-jade') return 'abyssal-jade'
+  // 旧 cookie 'dream' 自动迁移到粉主题「樱海晴梦」
   if (value === 'dream') return 'sakura'
   return 'default'
 }

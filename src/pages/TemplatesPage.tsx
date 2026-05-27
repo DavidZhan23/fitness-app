@@ -49,10 +49,10 @@ export function TemplatesPage() {
       <h1 className="text-xl font-bold text-primary">我的模板</h1>
 
       <div className="flex gap-2" role="tablist" aria-label="模板类型">
-        <TabButton active={tab === 'exercise'} onClick={() => setTab('exercise')}>
+        <TabButton kind="exercise" active={tab === 'exercise'} onClick={() => setTab('exercise')}>
           运动
         </TabButton>
-        <TabButton active={tab === 'meal'} onClick={() => setTab('meal')}>
+        <TabButton kind="meal" active={tab === 'meal'} onClick={() => setTab('meal')}>
           饮食
         </TabButton>
       </div>
@@ -90,10 +90,12 @@ export function TemplatesPage() {
 }
 
 function TabButton({
+  kind,
   active,
   onClick,
   children,
 }: {
+  kind: 'exercise' | 'meal'
   active: boolean
   onClick: () => void
   children: React.ReactNode
@@ -105,7 +107,11 @@ function TabButton({
       aria-selected={active}
       onClick={onClick}
       className={`template-tab flex-1 rounded-lg py-2 text-sm font-medium ${
-        active ? 'template-tab--active' : 'template-tab--inactive'
+        active
+          ? kind === 'exercise'
+            ? 'template-tab--active-exercise'
+            : 'template-tab--active-meal'
+          : 'template-tab--inactive'
       }`}
     >
       {children}

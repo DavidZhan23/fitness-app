@@ -1,0 +1,32 @@
+# Theme color palettes
+
+Each file defines **CSS custom properties only** for one `data-style` value. Semantic utilities (`.surface-card`, `.community-segment__tab`, etc.) stay in [`src/index.css`](../index.css).
+
+| File | Selector | 设置页名称 |
+|------|----------|------------|
+| `default.css` | `:root` | 深海能量 |
+| `abyssal-jade.css` | `[data-style='abyssal-jade']` | 深海能量 2 |
+| `lavender.css` | `[data-style='lavender']` | 薰衣云梦 |
+| `sakura.css` | `[data-style='sakura']` | 樱海晴梦 |
+| `sakura-blush.css` | `[data-style='sakura-blush']` | 樱粉云境 |
+| `active-mint.css` | `[data-style='active-mint']` | 轻氧薄荷 |
+| `eva.css` | `[data-style='eva']` | 暴走初号机 |
+| `eva-unit02.css` | `[data-style='eva-unit02']` | 烈焰二号机 |
+| `gundam-hangar.css` | `[data-style='gundam-hangar']` | 格纳库提坦斯 |
+
+## Edit workflow
+
+1. Open the palette file for the theme you are tuning.
+2. Keep **token names** identical across all palette files (see ADR-0007).
+3. Run `npm run verify` from repo root.
+
+## Add a new theme
+
+1. Copy `lavender.css` → `my-theme.css`, change selector to `[data-style='my-theme']`.
+2. Add `@import './my-theme.css';` in `index.css` (this folder).
+3. Extend `AppStyle` in `src/context/StyleContext.tsx`.
+4. Add a row in `styleOptions` on `SettingsPage.tsx` plus `style-swatch-*` / `style-option-*` in `src/index.css` if needed.
+
+## Related docs
+
+- [`docs/decisions/0007-theme-tokens.md`](../../../docs/decisions/0007-theme-tokens.md)

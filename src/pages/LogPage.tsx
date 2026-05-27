@@ -55,7 +55,7 @@ export function LogPage() {
   }
 
   return (
-    <div className="page-standalone">
+    <div className="page-standalone" data-log-kind={kind}>
       <div className="mx-auto max-w-lg space-y-6 px-4 py-4">
         <div>
           <button

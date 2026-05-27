@@ -126,7 +126,7 @@ export function LogEntryForm(props: LogEntryFormProps) {
       <button
         type="submit"
         disabled={props.loading}
-        className="w-full rounded-xl bg-brand-dark py-3 font-medium disabled:opacity-50"
+        className="btn-primary w-full py-3 disabled:opacity-50"
       >
         {props.loading ? '保存中…' : '保存'}
       </button>
