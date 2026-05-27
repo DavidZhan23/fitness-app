@@ -27,22 +27,17 @@ alwaysApply: true
 - API changes: note updates needed in `docs/architecture/api-contract.md` (M2+).
 - Schema changes: add numbered SQL under `server/migrations/`, never edit old migrations.
 
-## Local smoke (before asking to commit)
+## Local smoke (before asking to commit / push)
 
-From repo root when touching frontend:
-
-```bash
-npm run lint
-npx tsc -b --noEmit
-```
-
-When touching server:
+Run from repo root before `03-commit-and-push` confirm gate:
 
 ```bash
-node --check server/src/index.js
+npm run verify
 ```
 
-If DB-related, remind user DB must be running (`docs/ops/本地数据库启停.md`).
+- `verify` wraps lint / typecheck / unit / e2e / server syntax / rule guards.
+- `test:e2e` needs **PostgreSQL** on `postgres://localhost:5432/fitness` (`docs/ops/本地数据库启停.md`). Playwright auto-starts API (3101) + Vite (4173); default `REGISTRATION_KEY=e2e-test-key`. Details: `docs/GETTING-START.md` §5.
+- **Docs-only** (`docs/**` only, no `src/` / `server/`): may run `bash scripts/verify-local.sh --skip-e2e`.
 
 ## Stuck rule
 

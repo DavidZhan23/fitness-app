@@ -10,7 +10,7 @@ import {
 } from '../auth.js'
 import { assertRegistrationKey } from '../registrationKey.js'
 import { query } from '../db.js'
-import { getDeepSeekApiKey } from '../deepseekKcal.js'
+import { getDeepSeekApiKey } from '../ai/providers/deepseekText.js'
 
 const router = Router()
 

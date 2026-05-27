@@ -103,6 +103,10 @@ async function runSqlFileMigrations() {
 }
 
 export async function runMigrations() {
+  // NOTE(phase-1): Inline DDL below is kept for legacy databases created
+  // before schema_migrations baseline existed. New schema changes must land in
+  // server/migrations/NNN_*.sql first; inline section is compatibility-only.
+  // See docs/decisions/0006-migration-single-source.md.
   try {
     await pool.query(
       `alter table public.profiles alter column activity_factor type numeric(6, 3)`,

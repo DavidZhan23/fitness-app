@@ -1,7 +1,7 @@
 # Owner: copy to deploy.yml to enable CD on merge to main.
 #   cp .github/workflows/deploy.yml.template .github/workflows/deploy.yml
 # Requires GitHub Secrets: TENCENT_SSH_KEY, TENCENT_HOST, TENCENT_USER, TENCENT_REMOTE_DIR
-# See docs/architecture/owner-setup-guide.md
+# See docs/architecture/deploy.md
 
 name: Deploy
 

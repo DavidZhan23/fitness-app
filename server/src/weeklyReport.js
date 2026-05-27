@@ -4,7 +4,7 @@
  * 所有函数均为纯函数（除 explainWithDeepSeek 需要网络），可单独单测。
  */
 
-import { getDeepSeekApiKey } from './deepseekKcal.js'
+import { getDeepSeekApiKey } from './ai/providers/deepseekText.js'
 
 const TZ = process.env.DISPLAY_TIMEZONE || 'Asia/Shanghai'
 const DEEPSEEK_API_URL =

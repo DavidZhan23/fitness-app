@@ -9,7 +9,7 @@
 | Node.js | 22+ |
 | npm | 随 Node |
 | PostgreSQL | 16（推荐 Homebrew） |
-| GitHub CLI | 可选，`gh auth login`（提 PR / `req:list`） |
+| GitHub CLI | 可选，`gh auth login`（`req:list` 等命令） |
 | Cursor | 推荐，自动加载 `.cursor/rules/` |
 
 ## 1. 克隆与安装
@@ -65,14 +65,14 @@ npm run dev
 
 ## 5. 提交前自检
 
+统一入口：
+
 ```bash
-npm run lint
-npm run typecheck
-npm run test          # Vitest 纯函数
-npm run test:e2e      # Playwright 冒烟：注册/onboarding、运动+饮食记录、Tab 导航、社区筛选切换、AI 超时兜底
-# 若改了 server：
-node --check server/src/index.js
+npm run verify
 ```
+
+`verify` 会串联 lint / typecheck / test / e2e / server syntax / guard 检查。  
+如需跳过 e2e：`bash scripts/verify-local.sh --skip-e2e`。
 
 **E2E 说明：** `npm run test:e2e` 会通过 Playwright 自动启动 API（3101）与 Vite（4173），默认 `REGISTRATION_KEY=e2e-test-key`。这样可避免误复用你手动启动且配置不同的 dev server。
 
@@ -84,15 +84,13 @@ PW_REUSE_SERVER=1 PLAYWRIGHT_API_PORT=3001 PLAYWRIGHT_WEB_PORT=5173 REGISTRATION
 
 首次运行需安装浏览器：`npx playwright install chromium`
 
-与 CI [.github/workflows/ci.yml](../.github/workflows/ci.yml) 一致。
-
 ## 6. 开始一个新功能
 
 ```bash
 bash scripts/new-feature.sh <slug>
 ```
 
-会创建 `feat/<slug>` 与 [milestones/_TEMPLATE.md](milestones/_TEMPLATE.md) 结构的规格文档。
+会创建 `feat/<slug>` 与 [milestones/_TEMPLATE.md](milestones/_TEMPLATE.md) 结构的规格文档（可用于大功能拆分）。
 
 ## 查看文档里的流程图
 
@@ -100,6 +98,6 @@ bash scripts/new-feature.sh <slug>
 
 ## 下一步
 
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — 分支、Issue、`ai-flow.sh`
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — 需求与提交流程
 - [ai-playbook.md](ai-playbook.md) — Cursor 协作
 - [architecture/overview.md](architecture/overview.md) — 系统与数据模型

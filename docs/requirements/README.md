@@ -22,15 +22,15 @@ npm run req:list           # 我提交的、label: status:todo
 npm run req:list -- --all  # 我所有 open issue
 ```
 
-## Issue 状态（自动）
+## Issue 状态
 
 | 状态 | 何时 |
 |------|------|
-| `status:todo` | 新建 issue（`issue-triage` workflow） |
-| `status:doing` | 有 PR 正文 `Closes #N` |
-| 已关闭 | PR merge 进 `main` |
+| `status:todo` | 新建 issue 后手动添加（可选） |
+| `status:doing` | 开工后手动切换（可选） |
+| 已关闭 | push 到 `main` 后在 issue 写 `Closes #N` 或手动关闭 |
 
-优先级标签：`priority:high` / `priority:med` / `priority:low`（workflow 根据表单同步）。
+优先级标签：`priority:high` / `priority:med` / `priority:low`（手动维护）。
 
 - **Bug** — 表单「对你影响」：用不了、数据不对 → `high`；体验差 → `med`；小问题 → `low`
 - **Feature** — 表单「优先级」：高 / 中 / 低 → 同上三档
@@ -39,7 +39,7 @@ npm run req:list -- --all  # 我所有 open issue
 
 1. `npm run req:list` 或说「列我的待办」
 2. 说「开始 #12」→ 读 issue → 澄清 → 写 `docs/milestones/...` → `bash scripts/new-feature.sh <slug>`
-3. 实现 → PR 写 `Closes #12`
+3. 实现 → push 到 `main` 时在 commit/issue 说明里写 `Closes #12`
 
 澄清内容写在 **milestone 文档**，不会自动贴回 issue 正文。
 

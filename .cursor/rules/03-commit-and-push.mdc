@@ -1,30 +1,26 @@
----
-description: Git workflow — confirm gate, conventional commits, feat branches, draft PR, CI visibility
+description: Git workflow — confirm gate, conventional commits, push-main with manual deploy reminder
 alwaysApply: true
 ---
 
-# Commit, Push, and PR
+# Commit and Push
 
 ## Hard rules
 
-- **Never** `git push` to `main`.
-- **Never** `git commit` on `main` — create `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, etc. first.
 - Use **Conventional Commits**: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
-- One feature per branch; do not pile unrelated changes on an open PR branch.
-- Default PR: **draft**, reviewer **DavidZhan23**.
+- Keep one user-facing change per commit.
+- Do not commit or push unless user explicitly confirms.
 
 ## Confirm gate (mandatory)
 
-Before **any** `git checkout -b`, `git commit`, or `git push`, print this block and **stop**:
+Before **any** `git commit` or `git push`, print this block and **stop**:
 
 ```text
 准备执行：
-- 分支：feat/<slug>（当前 HEAD: <branch>）
+- 当前分支：<branch>
 - 改动文件：<list, N files>
 - diff 摘要：+<additions> / -<deletions> 行
 - commit message：<full conventional message>
-- push 目标：origin <branch>
-- PR：draft，reviewer @DavidZhan23
+- push 目标：origin main
 
 回复 go 继续，或告诉我需要调整哪里。
 ```
@@ -33,23 +29,11 @@ Proceed only if the user replies `go`, `ok`, `yes`, or clear approval. Any other
 
 ## After user says go
 
-Prefer running:
+Commit and push manually with the same checks.
 
-```bash
-bash scripts/ai-flow.sh --message "<commit message>"
-```
+## After push — manual deploy reminder
 
-Or perform equivalent steps manually with the same checks.
+After a successful push to `main`, remind user:
 
-## After push — CI visibility
-
-Repeat the script output in chat:
-
-- PR URL, Actions workflow URL, run URL
-- **Cmd+Click** links in terminal → Cursor Simple Browser (see `.vscode/settings.json`)
-- Optional: user presses Enter to run `gh run watch` in terminal
-- **CD/deploy** runs only after owner merges to `main`; contributor cannot see deploy unless checking Actions → Deploy workflow or README deploy badge
-
-## Fork contributors
-
-`ai-flow.sh` assumes **collaborator** push to `origin`. Fork users: manual `git push <fork-remote>` and `gh pr create --repo DavidZhan23/fitness-app --head <user>:feat/<slug>` — see `CONTRIBUTING.md`.
+- owner needs to run manual deploy (`npm run deploy:tencent` or `npm run deploy:tencent:api`)
+- repo currently has no active GitHub Actions deploy pipeline

@@ -13,10 +13,11 @@
 | [M-2026-05-refactor-stage3](M-2026-05-refactor-stage3.md) | done | `feat/refactor-stage3-routes` → PR #38 |
 | [M-2026-05-playwright-e2e](M-2026-05-playwright-e2e.md) | done | `feat/playwright-e2e-smoke` → PR #43 |
 | [M-2026-05-telemetry](M-2026-05-telemetry.md) | done | `feat/infra-e2e-telemetry` → PR #46 |
-| [M-2026-05-telemetry-weekly](M-2026-05-telemetry-weekly.md) | active | Phase 1b → `feat/telemetry-l4-tighten`；Phase 2 → `feat/telemetry-weekly-report` |
-| [M-2026-05-community-profile](M-2026-05-community-profile.md) | active | `feat/community-profile-birthday` → PR #54 |
+| [M-2026-05-telemetry-weekly](M-2026-05-telemetry-weekly.md) | done | Phase 1b → PR #48；Phase 2 → PR #51 |
+| [M-2026-05-community-profile](M-2026-05-community-profile.md) | done | PR #54（+ polish PR #61） |
 
 **Status 取值：** `active` | `done` | `cancelled`
+（`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）
 
 ## 创建新 milestone
 

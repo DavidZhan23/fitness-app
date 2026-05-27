@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
@@ -10,6 +10,7 @@ import {
   formatTodayDateKey,
   normalizeBirthdayFromApi,
 } from '../lib/birthday'
+import { useDebouncedAutosave } from '../hooks/useDebouncedAutosave'
 import type { Sex } from '../types'
 
 export function SettingsPage() {
@@ -26,13 +27,6 @@ export function SettingsPage() {
   )
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
-  const [nicknameSaveState, setNicknameSaveState] = useState<
-    'idle' | 'saving' | 'saved' | 'error'
-  >('idle')
-  const [bodySaveState, setBodySaveState] = useState<
-    'idle' | 'saving' | 'saved' | 'error'
-  >('idle')
-  const [bodySaveError, setBodySaveError] = useState('')
 
   const todayKey = formatTodayDateKey()
   const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
@@ -48,111 +42,79 @@ export function SettingsPage() {
     setThreshold(String(profile.deficit_threshold ?? 0))
   }, [profile])
 
-  useEffect(() => {
-    if (!profile) return
-    const trimmed = nickname.trim()
-    const saved = (profile.nickname ?? '').trim()
-    if (trimmed === saved) {
-      setNicknameSaveState('idle')
-      return
-    }
+  const trimmedNickname = nickname.trim()
+  const savedNickname = (profile?.nickname ?? '').trim()
+  const parsedWeight = parseFloat(weight)
+  const parsedHeight = parseFloat(height)
+  const parsedDeficit = parseInt(threshold, 10) || 0
+  const savedWeight = Number(profile?.weight_kg)
+  const savedHeight = Number(profile?.height_cm)
+  const savedDeficit = Number(profile?.deficit_threshold ?? 0)
+  const savedBirthday = normalizeBirthdayFromApi(profile?.birthday) ?? ''
+  const savedActivity = Number(profile?.activity_factor) || 1.375
+  const savedSex = profile?.sex ?? 'male'
 
-    setNicknameSaveState('saving')
-    const timer = window.setTimeout(() => {
-      void updateProfile({ nickname: trimmed || null })
-        .then(() => setNicknameSaveState('saved'))
-        .catch(() => setNicknameSaveState('error'))
-    }, 450)
-
-    return () => clearTimeout(timer)
-  }, [nickname, profile?.nickname, profile, updateProfile])
-
-  useEffect(() => {
-    if (nicknameSaveState !== 'saved') return
-    const fade = window.setTimeout(() => setNicknameSaveState('idle'), 3000)
-    return () => clearTimeout(fade)
-  }, [nicknameSaveState])
-
-  useEffect(() => {
-    if (!profile) return
-
-    const w = parseFloat(weight)
-    const h = parseFloat(height)
-    const deficit = parseInt(threshold, 10) || 0
-    const savedWeight = Number(profile.weight_kg)
-    const savedHeight = Number(profile.height_cm)
-    const savedDeficit = Number(profile.deficit_threshold ?? 0)
-    const savedBirthday = normalizeBirthdayFromApi(profile.birthday) ?? ''
-    const savedActivity = Number(profile.activity_factor) || 1.375
-    const savedSex = profile.sex ?? 'male'
-
-    const unchanged =
-      savedWeight === w &&
-      savedHeight === h &&
+  const bodyUnchanged = profile
+    ? savedWeight === parsedWeight &&
+      savedHeight === parsedHeight &&
       savedBirthday === birthday &&
       savedSex === sex &&
       savedActivity === activity &&
-      savedDeficit === deficit
+      savedDeficit === parsedDeficit
+    : true
 
-    if (unchanged) {
-      setBodySaveState('idle')
-      setBodySaveError('')
-      return
-    }
+  const saveNickname = useCallback(async () => {
+    await updateProfile({ nickname: trimmedNickname || null })
+  }, [updateProfile, trimmedNickname])
 
-    if (!w || !h) {
-      setBodySaveState('idle')
-      setBodySaveError('请填写有效的体重和身高')
-      return
-    }
-    if (!birthday) {
-      setBodySaveState('idle')
-      setBodySaveError('请填写生日')
-      return
-    }
+  const nicknameAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: trimmedNickname === savedNickname,
+    save: saveNickname,
+    mapError: () => '保存失败',
+  })
+  const nicknameSaveState = nicknameAutosave.state
+
+  const validateBody = useCallback(() => {
+    if (!parsedWeight || !parsedHeight) return '请填写有效的体重和身高'
+    if (!birthday) return '请填写生日'
+    if (!ageFromBirthdayKey(birthday)) return '请填写有效的生日'
+    return null
+  }, [parsedWeight, parsedHeight, birthday])
+
+  const saveBody = useCallback(async () => {
+    if (!profile) return
     const age = ageFromBirthdayKey(birthday)
-    if (!age) {
-      setBodySaveState('idle')
-      setBodySaveError('请填写有效的生日')
-      return
-    }
-
-    setBodySaveState('saving')
-    setBodySaveError('')
-    const timer = window.setTimeout(() => {
-      void updateProfile({
-        weight_kg: w,
-        height_cm: h,
-        birthday,
-        age,
-        sex,
-        activity_factor: activity,
-        deficit_threshold: deficit,
-      })
-        .then(() => setBodySaveState('saved'))
-        .catch((err) => {
-          setBodySaveState('error')
-          setBodySaveError(err instanceof Error ? err.message : '保存失败')
-        })
-    }, 450)
-
-    return () => clearTimeout(timer)
+    if (!age) throw new Error('请填写有效的生日')
+    await updateProfile({
+      weight_kg: parsedWeight,
+      height_cm: parsedHeight,
+      birthday,
+      age,
+      sex,
+      activity_factor: activity,
+      deficit_threshold: parsedDeficit,
+    })
   }, [
-    weight,
-    height,
+    profile,
     birthday,
     sex,
     activity,
-    threshold,
-    profile,
+    parsedWeight,
+    parsedHeight,
+    parsedDeficit,
     updateProfile,
   ])
 
-  useEffect(() => {
-    if (bodySaveState !== 'saved') return
-    const fade = window.setTimeout(() => setBodySaveState('idle'), 3000)
-    return () => clearTimeout(fade)
-  }, [bodySaveState])
+  const bodyAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: bodyUnchanged,
+    validate: validateBody,
+    save: saveBody,
+    mapError: (err) => (err instanceof Error ? err.message : '保存失败'),
+  })
+  const bodySaveState = bodyAutosave.state
+  const bodySaveError = bodyAutosave.error
 
   const handleSignOut = async () => {
     await signOut()

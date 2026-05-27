@@ -55,7 +55,7 @@ if (args.mock) {
     path.resolve(__dirname, '../server/src/weeklyReport.js')
   )
 
-  // 设置占位环境变量避免 deepseekKcal 因缺少 JWT_SECRET 等而抛错
+  // 设置占位环境变量，避免 AI provider 依赖环境变量时报错
   process.env.DATABASE_URL ??= 'postgres://mock:mock@localhost:5432/mock'
   process.env.JWT_SECRET ??= 'mock_secret_for_dry_run_only_not_real'
 

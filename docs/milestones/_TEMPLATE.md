@@ -1,6 +1,6 @@
 # Milestone: <一句话标题>
 
-**Status:** active | done | cancelled
+**Status:** active | done | cancelled（仅允许这 3 个值）
 **Branch:** `feat/<slug>`
 **Issue:** #<n>（可选）
 **Started:** YYYY-MM-DD
@@ -72,7 +72,7 @@
 ## 11. 测试方案
 
 - 纯函数单测：`server/test/...` 或 `src/lib/__tests__/...`
-- Smoke：`npm run lint && npm run typecheck`；touch server 则 `node --check server/src/index.js`
+- Smoke：`npm run lint && npm run typecheck && npm run test && npm run test:e2e`（docs-only 可跳过 test/e2e）；touch server 则 `node --check server/src/*.js`
 - 手动验证步骤 / curl：
 
 ## 12. 风险与缓解
@@ -85,7 +85,7 @@
 
 - [ ] `docs/architecture/api-contract.md`（若动 API）
 - [ ] `docs/architecture/overview.md` ER 节（若动表）
-- [ ] `docs/architecture/deploy-pipeline.md`（若动 CI/CD）
+- [ ] `docs/architecture/deploy.md`（若动交付/部署流程）
 - [ ] 根 `README.md`「功能」一节（若用户可见的新功能或行为变更）
 - [ ] 本 milestone Status 改 `done` + `docs/milestones/README.md` 索引更新
 

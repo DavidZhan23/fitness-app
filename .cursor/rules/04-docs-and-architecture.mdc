@@ -17,8 +17,8 @@ Update docs in the **same PR** when behavior or contracts change.
 |--------|--------|
 | New/changed API route | `docs/architecture/api-contract.md` |
 | New tables/columns | `docs/architecture/overview.md` ER section + migration file |
-| Schema changes | Add new `server/migrations/NNN_<slug>.sql` **and** add same idempotent DDL to `server/src/db.js#runMigrations()` |
-| Deploy/CI/CD behavior | `docs/architecture/deploy-pipeline.md` |
+| Schema changes | Follow `.cursor/rules/06-reuse-first.mdc` schema hard rule |
+| Deploy behavior | `docs/architecture/deploy.md` |
 | Significant technical choice | New `docs/decisions/ADR-NNNN-*.md` |
 | Feature milestone | `docs/milestones/<slug>.md` + README index（结构见 `_TEMPLATE.md`） |
 | User-visible feature or behavior change | Root `README.md`「功能」一节（同 PR） |
@@ -40,4 +40,3 @@ When a milestone's acceptance criteria are all met:
 ## Do not
 
 - Put secrets in docs or committed `.env` files
-- Auto-edit `CHANGELOG.md` (release-please handles after M4)

@@ -10,12 +10,11 @@
 | 服务器 `.env`、DeepSeek Key | [修改服务器env.md](修改服务器env.md) |
 | 安卓 / iPhone PWA 安装 | [安卓安装与PWA说明.md](安卓安装与PWA说明.md) |
 
-## CI/CD 与自动部署
+## 交付与部署
 
 | 文档 | 读者 |
 |------|------|
-| [../architecture/deploy-pipeline.md](../architecture/deploy-pipeline.md) | 所有人：CI job、排错、回滚 |
-| [../architecture/owner-setup-guide.md](../architecture/owner-setup-guide.md) | Owner：GitHub Secrets、Deploy workflow |
+| [../architecture/deploy.md](../architecture/deploy.md) | 所有人：当前交付模型、手动部署、回滚 |
 
 手动部署命令见根目录 [README.md](../../README.md#部署到腾讯云)。
 
