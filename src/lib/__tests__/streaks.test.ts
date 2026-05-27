@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { computeStreak, getLastNDays, getWeeksGrid } from '../streaks'
+import {
+  computeStreak,
+  formatDateKey,
+  getLastNDays,
+  getWeeksGrid,
+  normalizeDateKey,
+} from '../streaks'
 
 describe('streaks', () => {
   it('computeStreak counts consecutive exercise days from most recent hit', () => {
@@ -19,5 +25,14 @@ describe('streaks', () => {
   it('getWeeksGrid pads leading blanks to week boundary', () => {
     const { weeks } = getWeeksGrid(['2026-05-24'])
     expect(weeks[0].filter(Boolean)).toEqual(['2026-05-24'])
+  })
+
+  it('normalizeDateKey keeps plain YYYY-MM-DD', () => {
+    expect(normalizeDateKey('2026-05-26')).toBe('2026-05-26')
+  })
+
+  it('normalizeDateKey maps ISO timestamps to local calendar day', () => {
+    const iso = '2026-05-25T16:00:00.000Z'
+    expect(normalizeDateKey(iso)).toBe(formatDateKey(new Date(iso)))
   })
 })

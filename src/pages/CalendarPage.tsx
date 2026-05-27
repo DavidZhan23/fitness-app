@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { MonthHeatmap } from '../components/MonthHeatmap'
+import { SplitMonthWall } from '../components/SplitMonthWall'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import { calculateSpreadDeficit } from '../lib/metabolism'
@@ -20,12 +21,7 @@ import {
   isBeforeAccountStart,
   normalizeDateKey,
 } from '../lib/streaks'
-import {
-  EXERCISE_KCAL_STAT_LABEL,
-  MEAL_KCAL_STAT_LABEL,
-  resolveProfileMetabolism,
-  toKcal,
-} from '../lib/calories'
+import { resolveProfileMetabolism, toKcal } from '../lib/calories'
 import type { DayLog, HeatmapDay } from '../types'
 
 export function CalendarPage() {
@@ -37,11 +33,15 @@ export function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [streakExercise, setStreakExercise] = useState(0)
   const [streakDeficit, setStreakDeficit] = useState(0)
+  const scrollToDetailAfterSelect = useRef(false)
 
   const threshold = toKcal(profile?.deficit_threshold)
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
   const { bmr: profileBmr } = resolveProfileMetabolism(profile)
   const { year, month } = view
+  const selectedDateKey = selected
+    ? normalizeDateKey(String(selected.log_date))
+    : null
   const isCurrentMonth =
     year === getTodayMonth().year && month === getTodayMonth().month
 
@@ -97,6 +97,7 @@ export function CalendarPage() {
 
     setStreakExercise(computeStreak(streakDays, 'exercise'))
     setStreakDeficit(computeStreak(streakDays, 'deficit'))
+
     setLoading(false)
   }, [user, year, month, threshold, todayKey, accountStartKey, profileBmr])
 
@@ -104,8 +105,24 @@ export function CalendarPage() {
     load()
   }, [load])
 
+  useEffect(() => {
+    if (!selected || !scrollToDetailAfterSelect.current) return
+    scrollToDetailAfterSelect.current = false
+    const id = window.setTimeout(() => {
+      document
+        .getElementById('calendar-day-detail')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+    return () => window.clearTimeout(id)
+  }, [selected, selectedDateKey])
+
   const handleDayClick = async (date: string) => {
     if (!user) return
+    if (selectedDateKey === date) {
+      setSelected(null)
+      return
+    }
+    scrollToDetailAfterSelect.current = true
     const log = await httpData.fetchDayLogByDate(date)
     setSelected(log)
   }
@@ -123,6 +140,25 @@ export function CalendarPage() {
     setView(next)
   }
   const goToday = () => setView(getTodayMonth())
+  const selectedDeficit =
+    selected && selectedDateKey
+      ? isBeforeAccountStart(selectedDateKey, accountStartKey)
+        ? 0
+        : selectedDateKey === todayKey
+          ? calculateSpreadDeficit(
+              profileBmr,
+              toKcal(selected.exercise_kcal),
+              toKcal(selected.meal_kcal),
+              todayKey,
+            )
+          : calculateSpreadDeficit(
+              profileBmr,
+              toKcal(selected.exercise_kcal),
+              toKcal(selected.meal_kcal),
+              selectedDateKey,
+              new Date(`${selectedDateKey}T23:59:59`),
+            )
+      : 0
 
   if (loading) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -173,102 +209,88 @@ export function CalendarPage() {
           </button>
         </div>
 
-        <MonthHeatmap
-          year={year}
-          month={month}
-          dayMap={dayMap}
-          todayKey={todayKey}
-          accountStartKey={accountStartKey}
-          onDayClick={handleDayClick}
-        />
+        {profile?.wall_style === 'split' ? (
+          <SplitMonthWall
+            year={year}
+            month={month}
+            dayMap={dayMap}
+            todayKey={todayKey}
+            accountStartKey={accountStartKey}
+            selectedDateKey={selectedDateKey}
+            onDayClick={handleDayClick}
+          />
+        ) : (
+          <MonthHeatmap
+            year={year}
+            month={month}
+            dayMap={dayMap}
+            todayKey={todayKey}
+            accountStartKey={accountStartKey}
+            selectedDateKey={selectedDateKey}
+            onDayClick={handleDayClick}
+          />
+        )}
       </section>
 
       {selected && (
-        <section className="rounded-2xl bg-card p-4 ring-1 ring-slate-700/50">
-          <h2 className="font-medium">{selected.log_date}</h2>
-          <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
-            <Item
-              label="BMR"
-              value={resolveProfileMetabolism(profile).bmr}
-            />
-            <Item
-              label="TDEE"
-              value={
-                toKcal(selected.tdee_snapshot) ||
-                resolveProfileMetabolism(profile).tdee
-              }
-            />
-            <Item
-              label={EXERCISE_KCAL_STAT_LABEL}
-              value={toKcal(selected.exercise_kcal)}
-            />
-            <Item
-              label={MEAL_KCAL_STAT_LABEL}
-              value={toKcal(selected.meal_kcal)}
-            />
-            <Item
-              label="缺口"
-              value={
-                isBeforeAccountStart(
-                  normalizeDateKey(String(selected.log_date)),
-                  accountStartKey,
-                )
-                  ? 0
-                  : normalizeDateKey(String(selected.log_date)) === todayKey
-                    ? calculateSpreadDeficit(
-                        profileBmr,
-                        toKcal(selected.exercise_kcal),
-                        toKcal(selected.meal_kcal),
-                        todayKey,
-                      )
-                    : calculateSpreadDeficit(
-                        profileBmr,
-                        toKcal(selected.exercise_kcal),
-                        toKcal(selected.meal_kcal),
-                        normalizeDateKey(String(selected.log_date)),
-                        new Date(
-                          `${normalizeDateKey(String(selected.log_date))}T23:59:59`,
-                        ),
-                      )
-              }
-              highlight
-            />
-          </dl>
-          <p className="mt-2 text-xs text-muted">
-            基础代谢按分钟均匀累计，非一次性计入全天
-          </p>
-          {!isBeforeAccountStart(
-            normalizeDateKey(String(selected.log_date)),
-            accountStartKey,
-          ) && (
-            <div className="mt-4">
-              <PersonalDayStatus
-                deficit={
-                  normalizeDateKey(String(selected.log_date)) === todayKey
-                    ? calculateSpreadDeficit(
-                        profileBmr,
-                        toKcal(selected.exercise_kcal),
-                        toKcal(selected.meal_kcal),
-                        todayKey,
-                      )
-                    : calculateSpreadDeficit(
-                        profileBmr,
-                        toKcal(selected.exercise_kcal),
-                        toKcal(selected.meal_kcal),
-                        normalizeDateKey(String(selected.log_date)),
-                        new Date(
-                          `${normalizeDateKey(String(selected.log_date))}T23:59:59`,
-                        ),
-                      )
+        <section
+          id="calendar-day-detail"
+          className="scroll-mt-4 rounded-2xl bg-card p-4 ring-1 ring-slate-700/50"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-medium">
+              {selectedDateKey === todayKey ? '今日小结' : '当日小结'}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className="rounded-lg px-2 py-1 text-xs text-muted hover:bg-slate-800 hover:text-slate-200"
+              aria-label="关闭当日详情"
+            >
+              关闭
+            </button>
+          </div>
+          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(7.5rem,9.5rem)] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:gap-4">
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+              <Item
+                label="基础代谢 (BMR)"
+                value={resolveProfileMetabolism(profile).bmr}
+              />
+              <Item label="运动消耗" value={toKcal(selected.exercise_kcal)} />
+              <Item
+                label="全日总消耗 (TDEE)"
+                value={
+                  toKcal(selected.tdee_snapshot) ||
+                  resolveProfileMetabolism(profile).tdee
                 }
+              />
+              <Item label="饮食摄入" value={toKcal(selected.meal_kcal)} />
+              <Item label="热量缺口" value={selectedDeficit} highlight />
+            </dl>
+            {selectedDateKey &&
+              !isBeforeAccountStart(selectedDateKey, accountStartKey) && (
+              <PersonalDayStatus
+                variant="side"
+                deficit={selectedDeficit}
                 exerciseKcal={toKcal(selected.exercise_kcal)}
                 mealKcal={toKcal(selected.meal_kcal)}
                 dailyBmr={profileBmr}
               />
-            </div>
-          )}
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted">
+            基础代谢 (BMR) 按时间逐分钟累计，不是一次性算进全天
+          </p>
         </section>
       )}
+
+      <p className="text-center text-xs text-muted">
+        打卡墙样式可在{' '}
+        <Link to="/settings" className="text-brand underline">
+          设置
+        </Link>{' '}
+        切换
+      </p>
 
       <Link to="/" className="block text-center text-sm text-brand">
         返回今日
@@ -308,9 +330,9 @@ function Item({
 }) {
   return (
     <div>
-      <dt className="text-muted">{label}</dt>
+      <dt className="text-xs text-muted">{label}</dt>
       <dd
-        className={`font-semibold tabular-nums ${
+        className={`mt-0.5 font-semibold tabular-nums ${
           highlight ? 'text-emerald-400' : ''
         }`}
       >

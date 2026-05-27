@@ -52,6 +52,10 @@ export function buildProfilePatchBody(
     body.community_visible = Boolean(data.community_visible)
   }
 
+  if (data.wall_style === 'classic' || data.wall_style === 'split') {
+    body.wall_style = data.wall_style
+  }
+
   if (bmr != null && bmr > 0) body.bmr = Math.round(bmr)
   if (tdee != null && tdee > 0) body.tdee = Math.round(tdee)
 

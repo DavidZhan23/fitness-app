@@ -5,6 +5,7 @@ import { formatDateKeyInTz } from './dateKey.js'
 const ALLOWED = [
   'nickname',
   'community_visible',
+  'wall_style',
   'weight_kg',
   'height_cm',
   'age',
@@ -107,6 +108,9 @@ export function buildProfileUpdate(body) {
   }
   if (body.community_visible !== undefined) {
     push('community_visible', Boolean(body.community_visible))
+  }
+  if (body.wall_style === 'classic' || body.wall_style === 'split') {
+    push('wall_style', body.wall_style)
   }
 
   return { updates, values, allowed: ALLOWED }

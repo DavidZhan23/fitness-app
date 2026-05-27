@@ -9,13 +9,16 @@ import {
 
 const router = Router()
 
+/** PG date 经 node-pg 序列化易带 UTC 时刻；对外统一 YYYY-MM-DD 文本 */
+const DAY_LOG_SELECT = `id, user_id, log_date::text as log_date, tdee_snapshot, exercise_kcal, meal_kcal, deficit, created_at, updated_at, community_visible`
+
 router.get(
   '/day-logs/range',
   authMiddleware,
   asyncHandler(async (req, res) => {
     const { from, to } = req.query
     const { rows } = await query(
-      `select * from day_logs where user_id = $1 and log_date >= $2 and log_date <= $3 order by log_date`,
+      `select ${DAY_LOG_SELECT} from day_logs where user_id = $1 and log_date >= $2 and log_date <= $3 order by log_date`,
       [req.userId, from, to],
     )
     res.json(rows)
@@ -28,7 +31,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { date } = req.params
     let { rows } = await query(
-      `select * from day_logs where user_id = $1 and log_date = $2`,
+      `select ${DAY_LOG_SELECT} from day_logs where user_id = $1 and log_date = $2`,
       [req.userId, date],
     )
     let dayLog = rows[0]
@@ -39,7 +42,7 @@ router.get(
       const tdee = profile.rows[0]?.tdee ?? 0
       const ins = await query(
         `insert into day_logs (user_id, log_date, tdee_snapshot, deficit)
-         values ($1, $2, $3, $3) returning *`,
+         values ($1, $2, $3, $3) returning ${DAY_LOG_SELECT}`,
         [req.userId, date, tdee],
       )
       dayLog = ins.rows[0]
@@ -67,13 +70,13 @@ router.post(
   asyncHandler(async (req, res) => {
     const { log_date, tdee_snapshot } = req.body
     let { rows } = await query(
-      `select * from day_logs where user_id = $1 and log_date = $2`,
+      `select ${DAY_LOG_SELECT} from day_logs where user_id = $1 and log_date = $2`,
       [req.userId, log_date],
     )
     if (rows[0]) return res.json(rows[0])
     const ins = await query(
       `insert into day_logs (user_id, log_date, tdee_snapshot, deficit)
-       values ($1, $2, $3, $3) returning *`,
+       values ($1, $2, $3, $3) returning ${DAY_LOG_SELECT}`,
       [req.userId, log_date, tdee_snapshot],
     )
     res.json(ins.rows[0])

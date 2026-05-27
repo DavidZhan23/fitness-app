@@ -28,7 +28,7 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/profile` | 读取资料 |
-| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`） |
+| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换） |
 
 ## AI
 

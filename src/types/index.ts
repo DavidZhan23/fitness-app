@@ -1,5 +1,8 @@
 export type Sex = 'male' | 'female'
 
+/** 打卡墙展示：classic 同页双热力图；split 运动墙/代谢墙分屏切换 */
+export type WallStyle = 'classic' | 'split'
+
 export interface Profile {
   id: string
   email: string | null
@@ -20,6 +23,8 @@ export interface Profile {
   onboarding_complete: boolean
   /** 是否在社区公开今日动态与打卡墙 */
   community_visible?: boolean
+  /** 打卡墙样式，默认 classic */
+  wall_style?: WallStyle
 }
 
 export interface CommunityMember {

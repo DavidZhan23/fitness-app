@@ -13,7 +13,7 @@ import {
 } from '../lib/communityBadges'
 import type { MonthDayCell } from '../lib/monthData'
 
-interface MonthHeatmapProps {
+export interface MonthHeatmapProps {
   year: number
   month: number
   dayMap: Map<string, MonthDayCell>
@@ -37,7 +37,6 @@ export function MonthHeatmap({
   return (
     <div className="space-y-5">
       <MonthGrid
-        title="运动（越深运动越多）"
         weeks={weeks}
         dayMap={dayMap}
         todayKey={todayKey}
@@ -47,7 +46,6 @@ export function MonthHeatmap({
         onDayClick={onDayClick}
       />
       <MonthGrid
-        title="代谢缺口（绿=缺口，红=盈余）"
         weeks={weeks}
         dayMap={dayMap}
         todayKey={todayKey}
@@ -60,8 +58,19 @@ export function MonthHeatmap({
   )
 }
 
-function MonthGrid({
-  title,
+export type MonthGridType = 'exercise' | 'deficit'
+
+export interface MonthGridProps {
+  weeks: (string | null)[][]
+  dayMap: Map<string, MonthDayCell>
+  todayKey: string
+  accountStartKey: string | null
+  selectedDateKey?: string | null
+  type: MonthGridType
+  onDayClick?: (date: string) => void
+}
+
+export function MonthGrid({
   weeks,
   dayMap,
   todayKey,
@@ -69,19 +78,9 @@ function MonthGrid({
   selectedDateKey,
   type,
   onDayClick,
-}: {
-  title: string
-  weeks: (string | null)[][]
-  dayMap: Map<string, MonthDayCell>
-  todayKey: string
-  accountStartKey: string | null
-  selectedDateKey?: string | null
-  type: 'exercise' | 'deficit'
-  onDayClick?: (date: string) => void
-}) {
+}: MonthGridProps) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium text-slate-200">{title}</p>
       <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] text-muted">
         {WEEKDAY_LABELS.map((w) => (
           <span key={w}>{w}</span>
@@ -121,14 +120,14 @@ function MonthGrid({
               : null
 
           const titleText = beforeAccount
-            ? `${dateKey} 注册前，代谢缺口不计入`
+            ? `${formatTooltipDate(dateKey)} 注册之前不统计`
             : cell
               ? type === 'exercise'
-                ? `${dateKey} 运动 ${Math.round(cell.exerciseKcal)} kcal`
+                ? `${formatTooltipDate(dateKey)} 运动 ${Math.round(cell.exerciseKcal)} 千卡`
                 : `${formatDeficitTooltip(dateKey, cell.deficit)}${badgeLabel ? ` · ${badgeLabel}` : ''}`
               : type === 'deficit' && accountStartKey && dateKey >= accountStartKey
-                ? `${dateKey} 缺口 0 kcal`
-                : `${dateKey} 无记录`
+                ? `${formatTooltipDate(dateKey)} 收支持平`
+                : `${formatTooltipDate(dateKey)} 无记录`
 
           return (
             <button
@@ -161,72 +160,71 @@ function MonthGrid({
       {type === 'exercise' ? (
         <Legend levelClasses={EXERCISE_LEVEL_CLASSES} />
       ) : (
-        <>
-          <DeficitLegend />
-          <BadgeLegend />
-        </>
+        <DeficitLegend />
       )}
     </div>
   )
 }
 
-function formatDeficitTooltip(dateKey: string, deficit: number): string {
+function formatTooltipDate(dateKey: string): string {
+  const [, mm, dd] = dateKey.split('-')
+  return `${Number(mm)}月${Number(dd)}日`
+}
+
+export function formatDeficitTooltip(dateKey: string, deficit: number): string {
+  const label = formatTooltipDate(dateKey)
   const rounded = Math.round(deficit)
-  if (rounded > 0) return `${dateKey} 缺口 +${rounded} kcal`
-  if (rounded < 0) return `${dateKey} 盈余 ${Math.abs(rounded)} kcal`
-  return `${dateKey} 持平 0 kcal`
+  if (rounded > 0) return `${label} 比消耗少吃了 ${rounded} 千卡`
+  if (rounded < 0) return `${label} 比消耗多吃了 ${Math.abs(rounded)} 千卡`
+  return `${label} 收支持平`
 }
 
 function Legend({ levelClasses }: { levelClasses: readonly string[] }) {
   return (
     <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px] text-muted">
-      <span>少</span>
+      <span className="shrink-0">运动量少</span>
       {levelClasses.map((cls, i) => (
-        <div key={i} className={`h-3 w-3 rounded-sm ${cls}`} />
+        <div key={i} className={`h-3 w-3 shrink-0 rounded-sm ${cls}`} />
       ))}
-      <span>多</span>
+      <span className="shrink-0">运动量多</span>
     </div>
   )
 }
 
-function BadgeLegend() {
+function DeficitLegendRow({
+  labelStart,
+  labelEnd,
+  levelClasses,
+}: {
+  labelStart: string
+  labelEnd: string
+  levelClasses: readonly string[]
+}) {
   return (
-    <div className="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[10px] text-muted">
-      <span className="text-slate-500">成就</span>
-      <span>👑 运动大王</span>
-      <span>🔥 减脂先锋</span>
-      <span>🥘 美食大王</span>
-      <span>🍽️ 记得记饮食</span>
+    <div className="flex shrink-0 items-center gap-1">
+      <span>{labelStart}</span>
+      {levelClasses.map((cls, i) => (
+        <div key={i} className={`h-3 w-3 rounded-sm ${cls}`} />
+      ))}
+      <span>{labelEnd}</span>
     </div>
   )
 }
 
 function DeficitLegend() {
-  const neutral = DEFICIT_LEVEL_CLASSES[0]
   const levels = [1, 2, 3, 4] as const
   return (
-    <div className="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 text-[10px] text-muted">
-      <div className="flex items-center gap-1">
-        <span>盈余少</span>
-        {levels.map((l) => (
-          <div
-            key={`s-${l}`}
-            className={`h-3 w-3 rounded-sm ${DEFICIT_SURPLUS_LEVEL_CLASSES[l]}`}
-          />
-        ))}
-        <span>多</span>
-      </div>
-      <div className={`h-3 w-3 rounded-sm ${neutral}`} title="未达色阶" />
-      <div className="flex items-center gap-1">
-        <span>缺口少</span>
-        {levels.map((l) => (
-          <div
-            key={`d-${l}`}
-            className={`h-3 w-3 rounded-sm ${DEFICIT_LEVEL_CLASSES[l]}`}
-          />
-        ))}
-        <span>多</span>
-      </div>
+    <div className="mt-2 flex flex-col items-end gap-1 text-[10px] text-muted">
+      <DeficitLegendRow
+        labelStart="盈余少"
+        labelEnd="盈余多"
+        levelClasses={levels.map((l) => DEFICIT_SURPLUS_LEVEL_CLASSES[l])}
+      />
+      <DeficitLegendRow
+        labelStart="缺口少"
+        labelEnd="缺口多"
+        levelClasses={levels.map((l) => DEFICIT_LEVEL_CLASSES[l])}
+      />
     </div>
   )
 }
