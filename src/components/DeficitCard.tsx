@@ -33,9 +33,7 @@ export function DeficitCard({
       <p className="text-sm text-muted">{dateLabel}</p>
       <div className="mt-2 flex items-baseline gap-2">
         <span
-          className={`text-4xl font-bold tabular-nums ${
-            positive ? 'text-emerald-400' : 'text-amber-400'
-          }`}
+          className="text-4xl font-bold tabular-nums !text-[#F8C2DA]"
         >
           {deficit > 0 ? '+' : ''}
           {Math.round(deficit)}

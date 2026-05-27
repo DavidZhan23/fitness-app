@@ -409,7 +409,7 @@ export function CommunityPage() {
         )}
 
       {!visible && (
-        <p className="rounded-xl border border-dashed border-[#F8C2DA]/78 bg-[#FCE1F0]/20 px-3 py-2.5 text-sm leading-relaxed text-[#F8C2DA]">
+        <p className="rounded-xl border border-dashed border-[#F8C2DA]/78 bg-[#FCE1F0]/20 px-3 py-2.5 text-sm leading-relaxed !text-[#F8C2DA]">
           昨日与今日均未记录运动或饮食时会自动未公开；任一日有记录即可留在社区（今日记一笔后会自动恢复公开）。
         </p>
       )}

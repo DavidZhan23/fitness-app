@@ -680,6 +680,121 @@ button {
   --tw-gradient-to: rgb(248 194 218 / 0.9) var(--tw-gradient-to-position);
 }
 
+/*
+ * 粉蓝逸梦主题：背景与文字反转对比
+ * - 蓝色背景 => 粉色文字
+ * - 粉色背景 => 蓝色文字
+ */
+[data-style='dream']
+  :is(
+    [class*='bg-teal-'],
+    [class*='bg-cyan-'],
+    [class*='bg-sky-'],
+    [class*='bg-blue-'],
+    [class*='bg-emerald-'],
+    [class*='bg-[#80B2E5'],
+    [class*='bg-[#ACD1EE'],
+    [class*='bg-[#D6E2F0'],
+    [class*='from-teal-'],
+    [class*='from-cyan-'],
+    [class*='from-sky-'],
+    [class*='from-blue-'],
+    [class*='via-teal-'],
+    [class*='via-cyan-'],
+    [class*='via-sky-'],
+    [class*='via-blue-'],
+    [class*='to-teal-'],
+    [class*='to-cyan-'],
+    [class*='to-sky-'],
+    [class*='to-blue-']
+  ):not(input):not(select):not(textarea) {
+  color: #f8c2da !important;
+}
+
+[data-style='dream']
+  :is(
+    [class*='bg-teal-'],
+    [class*='bg-cyan-'],
+    [class*='bg-sky-'],
+    [class*='bg-blue-'],
+    [class*='bg-emerald-'],
+    [class*='bg-[#80B2E5'],
+    [class*='bg-[#ACD1EE'],
+    [class*='bg-[#D6E2F0'],
+    [class*='from-teal-'],
+    [class*='from-cyan-'],
+    [class*='from-sky-'],
+    [class*='from-blue-'],
+    [class*='via-teal-'],
+    [class*='via-cyan-'],
+    [class*='via-sky-'],
+    [class*='via-blue-'],
+    [class*='to-teal-'],
+    [class*='to-cyan-'],
+    [class*='to-sky-'],
+    [class*='to-blue-']
+  )
+  :is(p, span, strong, em, a, button, h1, h2, h3, h4, h5, h6, small, label) {
+  color: #f8c2da !important;
+}
+
+[data-style='dream']
+  :is(
+    [class*='bg-rose-'],
+    [class*='bg-pink-'],
+    [class*='bg-violet-'],
+    [class*='bg-amber-'],
+    [class*='bg-orange-'],
+    [class*='bg-[#FCE1F0'],
+    [class*='bg-[#F8C2DA'],
+    [class*='from-rose-'],
+    [class*='from-pink-'],
+    [class*='from-violet-'],
+    [class*='from-amber-'],
+    [class*='from-orange-'],
+    [class*='via-rose-'],
+    [class*='via-pink-'],
+    [class*='via-violet-'],
+    [class*='via-amber-'],
+    [class*='via-orange-'],
+    [class*='to-rose-'],
+    [class*='to-pink-'],
+    [class*='to-violet-'],
+    [class*='to-amber-'],
+    [class*='to-orange-']
+  ):not(input):not(select):not(textarea) {
+  color: #80b2e5 !important;
+}
+
+[data-style='dream']
+  :is(
+    [class*='bg-rose-'],
+    [class*='bg-pink-'],
+    [class*='bg-violet-'],
+    [class*='bg-amber-'],
+    [class*='bg-orange-'],
+    [class*='bg-[#FCE1F0'],
+    [class*='bg-[#F8C2DA'],
+    [class*='from-rose-'],
+    [class*='from-pink-'],
+    [class*='from-violet-'],
+    [class*='from-amber-'],
+    [class*='from-orange-'],
+    [class*='via-rose-'],
+    [class*='via-pink-'],
+    [class*='via-violet-'],
+    [class*='via-amber-'],
+    [class*='via-orange-'],
+    [class*='to-rose-'],
+    [class*='to-pink-'],
+    [class*='to-violet-'],
+    [class*='to-amber-'],
+    [class*='to-orange-']
+  )
+  :is(p, span, strong, em, a, button, h1, h2, h3, h4, h5, h6, small, label) {
+  color: #80b2e5 !important;
+}
+
 /* 开发者后台：周报 markdown 原文展示 */
 .dev-report-md__pre {
   margin: 0;
