@@ -385,8 +385,8 @@ function MealReminderCard({
           🍽️
         </span>
         <div>
-          <p className="font-semibold text-amber-100">记得记饮食</p>
-          <p className="mt-1 text-sm leading-relaxed text-amber-200/85">
+          <p className="font-semibold !text-[#F8C2DA]">记得记饮食</p>
+          <p className="mt-1 text-sm leading-relaxed !text-[#F8C2DA]">
             今天缺口看起来不错，但饮食还是 0 千卡。
             {isSelf
               ? ' 把吃了什么记下来，缺口才算真实，也方便健友给你点赞～'

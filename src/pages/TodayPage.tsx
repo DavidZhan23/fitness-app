@@ -145,13 +145,13 @@ export function TodayPage() {
       <div className="grid grid-cols-2 gap-3">
         <Link
           to="/log/exercise"
-          className="rounded-xl bg-teal-900/40 py-3 text-center font-medium ring-1 ring-teal-600/40 hover:bg-teal-900/60"
+          className="theme-quick-action theme-quick-action--exercise"
         >
           + 记运动
         </Link>
         <Link
           to="/log/meal"
-          className="rounded-xl bg-amber-900/30 py-3 text-center font-medium ring-1 ring-amber-600/30 hover:bg-amber-900/50"
+          className="theme-quick-action theme-quick-action--meal"
         >
           + 记饮食
         </Link>

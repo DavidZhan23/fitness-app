@@ -4,6 +4,7 @@ import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../context/AuthContext'
+import { useAppStyle, type AppStyle } from '../context/StyleContext'
 import { ACTIVITY_LEVELS } from '../lib/calories'
 import {
   ageFromBirthdayKey,
@@ -13,8 +14,29 @@ import {
 import { useDebouncedAutosave } from '../hooks/useDebouncedAutosave'
 import type { Sex } from '../types'
 
+const styleOptions: Array<{
+  id: AppStyle
+  title: string
+  description: string
+  swatchClassName: string
+}> = [
+  {
+    id: 'default',
+    title: '深海能量',
+    description: '偏运动感的深色青绿系',
+    swatchClassName: 'style-swatch-ocean',
+  },
+  {
+    id: 'dream',
+    title: '粉蓝逸梦',
+    description: '少女感蓝粉系（高粉感 + 浅蓝）',
+    swatchClassName: 'style-swatch-dream',
+  },
+]
+
 export function SettingsPage() {
   const { user, profile, updateProfile, signOut } = useAuth()
+  const { style, setStyle } = useAppStyle()
   const navigate = useNavigate()
   const [weight, setWeight] = useState(String(profile?.weight_kg ?? ''))
   const [height, setHeight] = useState(String(profile?.height_cm ?? ''))
@@ -135,7 +157,7 @@ export function SettingsPage() {
         </Link>
       )}
 
-      <section className="rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-600/50">
+      <section className="surface-panel p-4">
         <h2 className="font-semibold text-slate-100">个人资料</h2>
 
         <div className="mt-3 flex items-center gap-3">
@@ -274,6 +296,54 @@ export function SettingsPage() {
       </section>
 
       {profile && <MetabolismSummary profile={profile} />}
+
+      <section className="surface-panel p-4">
+        <h2 className="font-semibold text-slate-100">风格</h2>
+        <p className="mt-1 text-sm text-muted">选择你喜欢的界面配色</p>
+        <div className="mt-3 space-y-2">
+          {styleOptions.map((item) => {
+            const active = style === item.id
+            const isOcean = item.id === 'default'
+            const isDream = item.id === 'dream'
+            const optionClassName = [
+              'style-option',
+              isOcean ? 'style-option-ocean' : '',
+              isDream ? 'style-option-dream' : '',
+              active
+                ? isOcean
+                  ? 'style-option-ocean--active'
+                  : isDream
+                    ? 'style-option-dream--active'
+                    : 'style-option--active'
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setStyle(item.id)}
+                className={optionClassName}
+                aria-pressed={active}
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span>
+                    <span className="block text-sm font-medium text-slate-100">
+                      {item.title}
+                    </span>
+                    <span className="block text-xs text-muted">{item.description}</span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`h-4 w-16 shrink-0 rounded-full ring-1 ring-white/25 ${item.swatchClassName}`}
+                  />
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       <InstallGuide collapsible />
 
