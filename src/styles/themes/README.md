@@ -11,6 +11,7 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 | `sakura-blush.css` | `[data-style='sakura-blush']` | 樱雾漫境 |
 | `active-mint.css` | `[data-style='active-mint']` | 轻氧薄荷 |
 | `soy-tea.css` | `[data-style='soy-tea']` | 豆乳清茶 |
+| `wood-zen.css` | `[data-style='wood-zen']` | 木隐茶庭 |
 | `eva.css` | `[data-style='eva']` | 暴走初号机 |
 | `eva-unit02.css` | `[data-style='eva-unit02']` | 烈焰二号机 |
 | `gundam-hangar.css` | `[data-style='gundam-hangar']` | 格纳库提坦斯 |

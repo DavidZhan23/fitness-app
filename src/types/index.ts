@@ -8,6 +8,8 @@ export interface Profile {
   email: string | null
   /** 用户自定义昵称，展示用 */
   nickname?: string | null
+  /** 今日页欢迎语（可选；留空时回退为“欢迎回来，昵称。”） */
+  welcome_message?: string | null
   /** 头像 data URL（JPEG/PNG/WebP base64） */
   avatar_url?: string | null
   /** 账号注册时间，用于打卡墙「注册日前不计缺口」 */

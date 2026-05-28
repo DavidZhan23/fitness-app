@@ -651,6 +651,83 @@ button {
   color: #b8a872;
 }
 
+/* 木隐茶庭：记运动茶青底 / 记饮食米纸底 */
+[data-style='wood-zen'] .page-standalone[data-log-kind='exercise'] {
+  background: #e2e8d1;
+}
+
+[data-style='wood-zen'] .page-standalone[data-log-kind='meal'] {
+  background: #e9ddc8;
+  --log-template-chip-bg: #f3e8d7;
+  --log-template-chip-bg-hover: #f5e2c9;
+  --log-template-chip-ring: #e0c39b;
+  --log-template-chip-text: #4d4033;
+  --log-ai-card-bg: #f5e2c9;
+  --log-ai-card-ring: #e0c39b;
+  --log-ai-card-border: #e0c39b;
+  --log-ai-btn-bg: #c9854b;
+  --log-ai-btn-bg-hover: #a45f2f;
+  --log-ai-btn-text: #fff7e8;
+  --log-ai-input-bg: #f8efde;
+  --log-ai-input-ring: #e0c39b;
+}
+
+[data-style='wood-zen'] .page-standalone[data-log-kind='meal'] .log-ai-card .input:focus {
+  box-shadow:
+    inset 0 0 0 1px #c9854b,
+    0 0 0 2px rgb(201 133 75 / 0.18);
+}
+
+[data-style='wood-zen'] .page-standalone[data-log-kind='exercise'] .log-template-chip:hover {
+  color: #5f7f55;
+}
+
+[data-style='wood-zen'] .surface-card,
+[data-style='wood-zen'] .surface-panel,
+[data-style='wood-zen'] .theme-hero-card,
+[data-style='wood-zen'] .community-member-card,
+[data-style='wood-zen'] .community-badge-banner,
+[data-style='wood-zen'] .community-foodking-banner,
+[data-style='wood-zen'] #calendar-day-detail {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-style='wood-zen'] .surface-card::before,
+[data-style='wood-zen'] .surface-panel::before,
+[data-style='wood-zen'] .theme-hero-card::before,
+[data-style='wood-zen'] .community-member-card::before,
+[data-style='wood-zen'] .community-badge-banner::before,
+[data-style='wood-zen'] .community-foodking-banner::before,
+[data-style='wood-zen'] #calendar-day-detail::before {
+  pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--wood-grain-overlay-soft);
+  opacity: 0.78;
+}
+
+[data-style='wood-zen'] .theme-hero-card::before,
+[data-style='wood-zen'] .community-badge-banner::before,
+[data-style='wood-zen'] .community-foodking-banner::before,
+[data-style='wood-zen'] #calendar-day-detail::before {
+  background: var(--wood-grain-overlay);
+  opacity: 0.86;
+}
+
+[data-style='wood-zen'] .surface-card > *,
+[data-style='wood-zen'] .surface-panel > *,
+[data-style='wood-zen'] .theme-hero-card > *,
+[data-style='wood-zen'] .community-member-card > *,
+[data-style='wood-zen'] .community-badge-banner > *,
+[data-style='wood-zen'] .community-foodking-banner > *,
+[data-style='wood-zen'] #calendar-day-detail > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* 暴走初号机：记饮食页插入栓橙 chip / AI */
 [data-style='eva'][data-log-kind='meal'] {
   --log-template-chip-bg: #27163f;
@@ -785,11 +862,11 @@ button {
 /* 深海能量：固定青绿高亮，不受 dream 主题粉蓝重映射影响 */
 .style-option-ocean {
   border-color: rgb(20 184 166 / 0.42);
-  background: rgb(15 118 110 / 0.14);
+  background: #d7f3ee;
 }
 
 .style-option-ocean:hover {
-  background: rgb(15 118 110 / 0.22);
+  background: #c8eee7;
 }
 
 .style-option-ocean--active {
@@ -809,7 +886,7 @@ button {
 [data-style='soy-tea'] .style-option-ocean,
 [data-style='abyssal-jade'] .style-option-ocean {
   border-color: rgb(20 184 166 / 0.5);
-  background: rgb(15 118 110 / 0.2);
+  background: #d7f3ee;
 }
 
 [data-style='lavender'] .style-option-ocean:hover,
@@ -822,7 +899,7 @@ button {
 [data-style='gundam-hangar'] .style-option-ocean:hover,
 [data-style='soy-tea'] .style-option-ocean:hover,
 [data-style='abyssal-jade'] .style-option-ocean:hover {
-  background: rgb(15 118 110 / 0.28);
+  background: #c8eee7;
 }
 
 [data-style='lavender'] .style-option-ocean--active,
@@ -1097,6 +1174,71 @@ button {
   border-color: #798c76;
   background: #e4eee6;
   box-shadow: 0 0 0 1px rgb(121 140 118 / 0.45);
+}
+
+/* 木隐茶庭：原木米纸预览选项 */
+.style-option-wood-zen {
+  border-color: #c6a982;
+  background: #e9ddc8;
+}
+
+.style-option-wood-zen:hover {
+  background: #dcccb1;
+}
+
+.style-option-wood-zen--active {
+  border-color: #9b6f45;
+  background: #f3e8d7;
+  box-shadow: 0 0 0 1px rgb(155 111 69 / 0.45);
+}
+
+[data-style='default'] .style-option-wood-zen {
+  border-color: rgb(198 169 130 / 0.65);
+  background: rgb(233 221 200 / 0.3);
+}
+
+[data-style='default'] .style-option-wood-zen:hover {
+  background: rgb(220 204 177 / 0.42);
+}
+
+[data-style='default'] .style-option-wood-zen--active {
+  border-color: #9b6f45;
+  background: rgb(243 232 215 / 0.48);
+  box-shadow: 0 0 0 1px rgb(155 111 69 / 0.45);
+}
+
+[data-style='lavender'] .style-option-wood-zen,
+[data-style='sakura'] .style-option-wood-zen,
+[data-style='sakura-blush'] .style-option-wood-zen,
+[data-style='active-mint'] .style-option-wood-zen,
+[data-style='soy-tea'] .style-option-wood-zen,
+[data-style='wood-zen'] .style-option-wood-zen,
+[data-style='eva'] .style-option-wood-zen,
+[data-style='eva-unit02'] .style-option-wood-zen,
+[data-style='gundam-hangar'] .style-option-wood-zen,
+[data-style='abyssal-jade'] .style-option-wood-zen {
+  border-color: #c6a982;
+  background: #e9ddc8;
+}
+
+[data-style='lavender'] .style-option-wood-zen--active,
+[data-style='sakura'] .style-option-wood-zen--active,
+[data-style='sakura-blush'] .style-option-wood-zen--active,
+[data-style='active-mint'] .style-option-wood-zen--active,
+[data-style='soy-tea'] .style-option-wood-zen--active,
+[data-style='eva'] .style-option-wood-zen--active,
+[data-style='eva-unit02'] .style-option-wood-zen--active,
+[data-style='gundam-hangar'] .style-option-wood-zen--active,
+[data-style='abyssal-jade'] .style-option-wood-zen--active {
+  border-color: #9b6f45;
+  background: #f3e8d7;
+  box-shadow: 0 0 0 1px rgb(155 111 69 / 0.45);
+}
+
+[data-style='wood-zen'] .style-option-wood-zen--active {
+  border-color: #9b6f45;
+  background: #dcccb1;
+  box-shadow: 0 0 0 1px rgb(111 78 46 / 0.5);
 }
 
 [data-style='default'] .style-option-soy-tea {
@@ -1404,11 +1546,11 @@ button {
 
 /* 主题预览卡文字：与卡片背景绑定，不随当前 data-style 全局字色变化 */
 .style-option-ocean:not(.style-option-ocean--active) .text-primary {
-  color: #a7f3d0;
+  color: #0f5d56;
 }
 
 .style-option-ocean:not(.style-option-ocean--active) .text-muted {
-  color: #6ee7b7;
+  color: #2b7f77;
 }
 
 [data-style='lavender'] .style-option-ocean:not(.style-option-ocean--active) .text-primary,
@@ -1483,6 +1625,16 @@ button {
   color: #74806f;
 }
 
+.style-option-wood-zen .text-primary,
+.style-option-wood-zen--active .text-primary {
+  color: #6f4e2e;
+}
+
+.style-option-wood-zen .text-muted,
+.style-option-wood-zen--active .text-muted {
+  color: #7a6a5c;
+}
+
 .style-option-eva .text-primary,
 .style-option-eva--active .text-primary {
   color: #f8f3ff;
@@ -1536,6 +1688,7 @@ button {
 [data-style='sakura-blush'] .style-swatch-ocean,
 [data-style='active-mint'] .style-swatch-ocean,
 [data-style='soy-tea'] .style-swatch-ocean,
+[data-style='wood-zen'] .style-swatch-ocean,
 [data-style='eva'] .style-swatch-ocean,
 [data-style='eva-unit02'] .style-swatch-ocean,
 [data-style='gundam-hangar'] .style-swatch-ocean,
@@ -1591,6 +1744,16 @@ button {
 
 [data-style='default'] .style-swatch-soy-tea {
   background: linear-gradient(90deg, #bad9b7 0%, #e4eee6 100%);
+  background-color: transparent;
+}
+
+.style-swatch-wood-zen {
+  background: linear-gradient(90deg, #9b6f45 0%, #6f8f5b 100%);
+  box-shadow: inset 0 0 0 1px rgb(198 169 130 / 0.6);
+}
+
+[data-style='default'] .style-swatch-wood-zen {
+  background: linear-gradient(90deg, #9b6f45 0%, #6f8f5b 100%);
   background-color: transparent;
 }
 
@@ -1858,6 +2021,25 @@ button {
   color: var(--text-muted);
 }
 
+.today-greeting {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.875rem;
+  border: 1px solid color-mix(in oklab, var(--surface-border) 80%, transparent);
+  background: color-mix(in oklab, var(--surface-card) 90%, transparent);
+}
+
+.today-greeting__text {
+  font-size: clamp(1.02rem, 2.6vw, 1.18rem);
+  line-height: 1.45;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
 .accent-exercise {
   color: var(--accent-exercise-strong);
 }
@@ -1923,6 +2105,19 @@ button {
 
 .profile-nickname-field__edit-icon {
   color: var(--text-muted);
+}
+
+.profile-welcome-field__input {
+  padding-right: 2.5rem;
+}
+
+.profile-welcome-field__edit-icon {
+  color: var(--text-muted);
+}
+
+.profile-welcome-field {
+  border-top: 1px dashed color-mix(in oklab, var(--surface-border) 72%, transparent);
+  padding-top: 0.75rem;
 }
 
 .confirm-dialog__backdrop {
@@ -2180,6 +2375,7 @@ button {
 [data-style='sakura-blush'] .text-slate-200,
 [data-style='active-mint'] .text-slate-100,
 [data-style='soy-tea'] .text-slate-100,
+[data-style='wood-zen'] .text-slate-100,
 [data-style='eva'] .text-slate-100,
 [data-style='gundam-hangar'] .text-slate-100,
 [data-style='abyssal-jade'] .text-slate-100,
@@ -2189,6 +2385,7 @@ button {
 [data-style='eva-unit02'] .text-slate-200,
 [data-style='gundam-hangar'] .text-slate-200,
 [data-style='soy-tea'] .text-slate-200,
+[data-style='wood-zen'] .text-slate-200,
 [data-style='abyssal-jade'] .text-slate-200 {
   color: var(--text-primary);
 }
@@ -2201,6 +2398,7 @@ button {
 [data-style='eva-unit02'] .text-slate-300,
 [data-style='gundam-hangar'] .text-slate-300,
 [data-style='soy-tea'] .text-slate-300,
+[data-style='wood-zen'] .text-slate-300,
 [data-style='abyssal-jade'] .text-slate-300 {
   color: var(--text-secondary);
 }
@@ -2210,6 +2408,7 @@ button {
 [data-style='sakura-blush'] .text-emerald-400,
 [data-style='active-mint'] .text-emerald-400,
 [data-style='soy-tea'] .text-emerald-400,
+[data-style='wood-zen'] .text-emerald-400,
 [data-style='eva'] .text-emerald-400,
 [data-style='eva-unit02'] .text-emerald-400,
 [data-style='gundam-hangar'] .text-emerald-400,
@@ -2223,6 +2422,10 @@ button {
 [data-style='active-mint'] .text-brand,
 [data-style='soy-tea'] .text-brand {
   color: var(--text-link, var(--color-brand-dark));
+}
+
+[data-style='wood-zen'] .text-brand {
+  color: #6f4e2e;
 }
 
 [data-style='eva'] .text-brand,
@@ -2253,6 +2456,7 @@ button {
 [data-style='sakura-blush'] .text-muted,
 [data-style='active-mint'] .text-muted,
 [data-style='soy-tea'] .text-muted,
+[data-style='wood-zen'] .text-muted,
 [data-style='eva'] .text-muted,
 [data-style='eva-unit02'] .text-muted,
 [data-style='gundam-hangar'] .text-muted,
@@ -2343,6 +2547,23 @@ button {
 
 [data-style='soy-tea'] .wall-style-option:has(:checked) .text-muted {
   color: #74806f;
+}
+
+[data-style='wood-zen'] .wall-style-option input[type='radio'] {
+  accent-color: #9b6f45;
+}
+
+[data-style='wood-zen'] .wall-style-option:has(:checked) {
+  border-color: #6f8f5b;
+  background: #e2e8d1;
+}
+
+[data-style='wood-zen'] .wall-style-option:has(:checked) .text-primary {
+  color: #4f6f3f;
+}
+
+[data-style='wood-zen'] .wall-style-option:has(:checked) .text-muted {
+  color: #7a6a5c;
 }
 
 [data-style='eva'] .wall-style-option input[type='radio'] {
@@ -2967,6 +3188,50 @@ button {
   box-shadow: inset 0 0 0 1px rgb(245 158 11 / 0.35);
 }
 
+.community-meal-reminder {
+  border: 1px solid color-mix(in oklab, var(--accent-meal) 38%, transparent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklab, var(--accent-meal-soft) 58%, transparent),
+    color-mix(in oklab, var(--surface-card-soft) 80%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--accent-meal) 22%, transparent),
+    0 6px 16px color-mix(in oklab, var(--accent-meal-strong) 18%, transparent);
+}
+
+.community-meal-reminder--compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.community-meal-reminder__icon {
+  background: color-mix(in oklab, var(--accent-meal) 20%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-meal) 52%, transparent);
+}
+
+.community-meal-reminder__title {
+  color: var(--text-primary);
+}
+
+.community-meal-reminder__desc {
+  color: var(--text-secondary);
+}
+
+.community-meal-reminder__cta {
+  color: var(--text-on-accent);
+  background: var(--accent-meal-strong);
+}
+
+.community-meal-reminder__cta:hover {
+  background: var(--accent-meal);
+}
+
 [data-style='lavender'] .community-pill--champion {
   background: #f6edff;
   color: #8e6deb;
@@ -2990,6 +3255,12 @@ button {
   background: #e4eee6;
   color: #6f8b6e;
   box-shadow: inset 0 0 0 1px #b7d0b3;
+}
+
+[data-style='wood-zen'] .community-pill--champion {
+  background: #e2e8d1;
+  color: #4f6f3f;
+  box-shadow: inset 0 0 0 1px #b8c79c;
 }
 
 [data-style='eva'] .community-pill--champion {
@@ -3046,6 +3317,12 @@ button {
   box-shadow: inset 0 0 0 1px #ede8c4;
 }
 
+[data-style='wood-zen'] .community-pill--elite {
+  background: #efe3bf;
+  color: #7d5e2e;
+  box-shadow: inset 0 0 0 1px #d8b982;
+}
+
 [data-style='eva'] .community-pill--elite {
   background: #203d22;
   color: #b8ff2c;
@@ -3100,6 +3377,12 @@ button {
   box-shadow: inset 0 0 0 1px #8faf8c;
 }
 
+[data-style='wood-zen'] .community-pill--foodKing {
+  background: #f5e2c9;
+  color: #a45f2f;
+  box-shadow: inset 0 0 0 1px #e0c39b;
+}
+
 [data-style='eva'] .community-pill--foodKing {
   background: #4a2a18;
   color: #ffb35c;
@@ -3144,6 +3427,28 @@ button {
   box-shadow: inset 0 0 0 1px #bad9b7;
 }
 
+[data-style='wood-zen'] .community-pill--meal {
+  background: #f5e2c9;
+  color: #a45f2f;
+  box-shadow: inset 0 0 0 1px #e0c39b;
+}
+
+[data-style='wood-zen'] .community-meal-reminder {
+  border-color: #e0c39b;
+  background: linear-gradient(145deg, #f5e2c9, #f3e8d7);
+  box-shadow:
+    inset 0 0 0 1px #e0c39b,
+    0 8px 18px rgb(111 78 46 / 0.12);
+}
+
+[data-style='wood-zen'] .community-meal-reminder__title {
+  color: #6f4e2e;
+}
+
+[data-style='wood-zen'] .community-meal-reminder__desc {
+  color: #7a6a5c;
+}
+
 [data-style='eva'] .community-pill--meal {
   background: #4a2a18;
   color: #ffb35c;
@@ -3173,6 +3478,7 @@ button {
 [data-style='sakura-blush'] .text-red-400,
 [data-style='active-mint'] .text-red-400,
 [data-style='soy-tea'] .text-red-400,
+[data-style='wood-zen'] .text-red-400,
 [data-style='eva'] .text-red-400 {
   color: var(--accent-meal-strong);
 }
@@ -3845,5 +4151,33 @@ button {
   box-shadow:
     0 0 14px rgb(221 176 200 / 0.42),
     inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+/* 木隐茶庭：去除额外晕染特效，仅保留木板质感与简洁标识 */
+[data-style='wood-zen'] .community-card-elite,
+[data-style='wood-zen'] .community-card-champion {
+  animation: none;
+  border-color: color-mix(in oklab, var(--surface-card-border) 90%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--surface-card-border) 85%, transparent);
+}
+
+[data-style='wood-zen'] .community-card-elite::before,
+[data-style='wood-zen'] .community-card-champion::before,
+[data-style='wood-zen'] .community-card-champion::after,
+[data-style='wood-zen'] .community-card-champion__aura,
+[data-style='wood-zen'] .community-card-champion__orb,
+[data-style='wood-zen'] .community-card-champion__sparkle,
+[data-style='wood-zen'] .community-card-elite__ember {
+  display: none;
+}
+
+[data-style='wood-zen'] .community-card-fx-ribbon--elite,
+[data-style='wood-zen'] .community-card-fx-ribbon--champion {
+  color: #6f4e2e;
+  text-shadow: none;
+  border: 1px solid #d8b982;
+  background: #efe3bf;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  animation: none;
 }
 

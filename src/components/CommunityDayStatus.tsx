@@ -428,7 +428,7 @@ function MealReminderCard({
 }) {
   if (compact) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-100/95">
+      <div className="community-meal-reminder community-meal-reminder--compact">
         <span className="text-base" aria-hidden>
           🍽️
         </span>
@@ -441,17 +441,17 @@ function MealReminderCard({
   }
 
   return (
-    <section className="rounded-2xl border border-amber-500/35 bg-gradient-to-br from-amber-950/50 to-slate-900/80 p-4 ring-1 ring-amber-500/25">
+    <section className="community-meal-reminder rounded-2xl p-4">
       <div className="flex items-start gap-3">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-xl ring-1 ring-amber-400/40"
+          className="community-meal-reminder__icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl"
           aria-hidden
         >
           🍽️
         </span>
         <div>
-          <p className="font-semibold !text-[#F8C2DA]">记得记饮食</p>
-          <p className="mt-1 text-sm leading-relaxed !text-[#F8C2DA]">
+          <p className="community-meal-reminder__title font-semibold">记得记饮食</p>
+          <p className="community-meal-reminder__desc mt-1 text-sm leading-relaxed">
             今天缺口看起来不错，但饮食还是 0 千卡。
             {isSelf
               ? ' 把吃了什么记下来，缺口才算真实，也方便健友给你点赞～'
@@ -460,7 +460,7 @@ function MealReminderCard({
           {isSelf && (
             <Link
               to="/log/meal"
-              className="mt-3 inline-block rounded-lg bg-amber-600/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
+              className="community-meal-reminder__cta mt-3 inline-block rounded-lg px-3 py-1.5 text-xs font-medium"
             >
               去记饮食
             </Link>

@@ -21,6 +21,14 @@ export function buildProfilePatchBody(
     body.nickname = nick ? nick.slice(0, 32) : null
   }
 
+  if (data.welcome_message !== undefined) {
+    const welcome =
+      typeof data.welcome_message === 'string'
+        ? data.welcome_message.trim()
+        : ''
+    body.welcome_message = welcome ? welcome.slice(0, 30) : null
+  }
+
   if (data.avatar_url !== undefined) {
     body.avatar_url =
       typeof data.avatar_url === 'string' && data.avatar_url.trim()

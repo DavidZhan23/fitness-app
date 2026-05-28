@@ -8,6 +8,7 @@ const AVATAR_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,/
 
 const ALLOWED = [
   'nickname',
+  'welcome_message',
   'avatar_url',
   'community_visible',
   'wall_style',
@@ -61,6 +62,11 @@ export function buildProfileUpdate(body) {
   if (body.nickname !== undefined) {
     const raw = typeof body.nickname === 'string' ? body.nickname.trim() : ''
     push('nickname', raw ? raw.slice(0, 32) : null)
+  }
+  if (body.welcome_message !== undefined) {
+    const raw =
+      typeof body.welcome_message === 'string' ? body.welcome_message.trim() : ''
+    push('welcome_message', raw ? raw.slice(0, 30) : null)
   }
   if (body.weight_kg !== undefined) {
     const w = num(body.weight_kg)

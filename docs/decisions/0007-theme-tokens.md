@@ -1,7 +1,7 @@
 # ADR-0007: Theme color tokens and semantic CSS utilities
 
 **Status:** accepted  
-**Date:** 2026-05-27 · **Revised:** 2026-05-28（`cream` → `lavender`；打卡墙色阶与缺口连续统计跨主题统一；浅色文案对比度纪律）
+**Date:** 2026-05-27 · **Revised:** 2026-05-28（`cream` → `lavender`；打卡墙色阶与缺口连续统计跨主题统一；浅色文案对比度纪律；新增木隐茶庭）
 
 ## Context
 
@@ -13,17 +13,18 @@ We want a path toward uploading a color palette from a developer console without
 
 ## Decision
 
-1. **Theme = one set of CSS custom properties** defined on `:root` (default / 深海能量) and overridden per light theme. **Palette source files** live under [`src/styles/themes/`](../../src/styles/themes/) (`default.css`, `abyssal-jade.css`, `lavender.css`, `sakura.css`, `sakura-blush.css`, `active-mint.css`, `soy-tea.css`, `eva.css`, `eva-unit02.css`, `gundam-hangar.css`), aggregated by `src/styles/themes/index.css` and imported from `src/index.css` before semantic utilities:
+1. **Theme = one set of CSS custom properties** defined on `:root` (default / 深海能量) and overridden per light theme. **Palette source files** live under [`src/styles/themes/`](../../src/styles/themes/) (`default.css`, `abyssal-jade.css`, `lavender.css`, `sakura.css`, `sakura-blush.css`, `active-mint.css`, `soy-tea.css`, `wood-zen.css`, `eva.css`, `eva-unit02.css`, `gundam-hangar.css`), aggregated by `src/styles/themes/index.css` and imported from `src/index.css` before semantic utilities:
    - `[data-style='lavender']` — **薰衣云梦** (Lavender Cloud): 云雾淡紫底 `#F8F2FF`、奶白紫卡 `#FFFBFF`；主操作薰衣草紫 `#B89AF4`；运动紫蓝、饮食玫瑰紫粉。
    - `[data-style='sakura']` — **碧空樱缀** (Sky Sakura Trim): 浅蓝天底 `#EEF6FC`、云白蓝卡 `#F7FBFF`；运动亮蓝、饮食甜粉；樱粉点缀（`--accent-pop`）；主操作 `#84BDF5`。
    - `[data-style='sakura-blush']` — **樱雾漫境** (Sakura Mist): 樱花粉底 `#FFE7F0`、奶粉卡 `#FFF0F6`；运动亮蓝、饮食莓粉；主操作 `#82B8F4`。
    - `[data-style='active-mint']` — **轻氧薄荷** (Active Mint): 薄荷雾绿底 `#EAF8F3`、奶白薄荷卡 `#F6FFFB`；主操作薄荷青绿 `#45B8A6`；运动清透蓝、饮食珊瑚橙；记饮食页暖杏底 `#FFF3E6`（`index.css` 局部覆盖）。
    - `[data-style='soy-tea']` — **豆乳清茶** (Soy Tea): 色条 PNG 视觉取样（条下印刷 hex 无效）— 豆乳图 1=`#798C76` 2=`#E4EEE6`（页底）3=`#BAD9B7`（主卡）4=`#A3C5AA`（主操）；阅读文案墨绿阶 `--text-ink`/`--text-primary`=`#2F3C2D`、弱文案 `--text-muted`≥4.5:1 on 卡/页（非装饰色 `#798C76`）；运动墙淡黄阶锚点海盐图 4=`#F9F8E4`；**显式** `--heatmap-deficit-*` = 豆乳 2→3→4→1；打卡墙连续统计卡 exercise/deficit 同色淡黄块（`#F9F8E4`/`#EDE8C4`）；选中日小结 = 代谢墙 `heatmap-*`（`index.css`）。
+   - `[data-style='wood-zen']` — **木隐茶庭** (Wood Zen): 米纸原木页底 `#E9DDC8`、米杏卡 `#F3E8D7`、原木棕主操 `#9B6F45`；缺口苔绿、运动茶青、饮食柿橙三语义分工；热力图显式三套阶梯：`exercise` 茶青、`deficit` 苔绿、`surplus` 柿橙；底栏沉底木米色与浅米杏选中胶囊（`index.css` 局部覆盖）。
    - `[data-style='eva']` — **暴走初号机** (EVA Berserk Unit-01): 深黑紫机甲底 `#160B24`、初号机紫主操 `#6B35D7`、荧光绿运动、插入栓橙饮食；BMR 公式条 `#160B24`。
    - `[data-style='eva-unit02']` — **烈焰二号机** (EVA Unit-02 Asuka Overdrive): 深黑红驾驶舱 `#17080C`、二号机红主操 `#D7192A`、荧光绿运动、明日香橙黄饮食；Hero 橙顶能量线；底栏红胶囊 + 橙边（`index.css` 覆盖）；BMR 公式条 `#A80F1F`。
    - `[data-style='gundam-hangar']` — **格纳库提坦斯** (Titans Hangar): 深黑蓝底 `#0E1624`、装甲面板 `#182638` / `#203249`；钢蓝主操 `#425F8A`、高亮 `#7FA5D1`；冷青运动、暗红饮食/盈余；代谢墙缺口格与运动墙同色阶；打卡墙 Tab / 社区分段选中为暗红；BMR 公式条 `#101A28`；底栏选中钢蓝胶囊 `#203249` + 浅字（`index.css` 覆盖）。
    - `[data-style='abyssal-jade']` — **深海能量 2** (Abyssal Jade): 深墨绿底 `#061B17`、深海绿卡 `#0C2A25` / `#123A33`；翡翠主操 `#35D6A4`、荧光青运动 `#46E6D1` / `#5AD7EA`、珊瑚橙饮食 `#FF9F64`；与格纳库蓝黑工业风刻意区分；底栏选中墨绿胶囊 + 翡翠边（`index.css` 覆盖）；记饮食页珊瑚 AI/chip 局部覆盖。
-   - Tokens include surfaces, text, accent families (exercise / meal), **`--accent-pop*`** (醒目点缀：薰衣=薰衣草紫、碧空樱缀=樱粉、樱雾漫境=蓝、暴走初号机=初号机紫、烈焰二号机=二号机红、轻氧薄荷=薄荷青、豆乳清茶=奶绿、格纳库=钢蓝、深海能量2=翡翠绿、深海=运动色), danger, and heatmap level colors (`--heatmap-*`).
+   - Tokens include surfaces, text, accent families (exercise / meal), **`--accent-pop*`** (醒目点缀：薰衣=薰衣草紫、碧空樱缀=樱粉、樱雾漫境=蓝、轻氧薄荷=薄荷青、豆乳清茶=奶绿、木隐茶庭=竹叶黄绿、暴走初号机=初号机紫、烈焰二号机=二号机红、格纳库=钢蓝、深海能量2=翡翠绿、深海=运动色), danger, and heatmap level colors (`--heatmap-*`).
 
 1b. **Readable text contrast (light themes, 2026-05-28)**
 

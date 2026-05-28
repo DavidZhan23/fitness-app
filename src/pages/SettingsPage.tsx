@@ -110,6 +110,14 @@ const styleOptions: Array<{
     swatchClassName: 'style-swatch-soy-tea',
     optionClassName: 'style-option-soy-tea',
   },
+  {
+    id: 'wood-zen',
+    group: 'light',
+    title: '木隐茶庭',
+    description: '米纸原木底、米杏卡，原木棕主操、苔绿缺口、茶青运动、柿橙饮食',
+    swatchClassName: 'style-swatch-wood-zen',
+    optionClassName: 'style-option-wood-zen',
+  },
 ]
 
 export function SettingsPage() {
@@ -128,6 +136,9 @@ export function SettingsPage() {
     () => Number(profile?.activity_factor) || 1.375,
   )
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
+  const [welcomeMessage, setWelcomeMessage] = useState(
+    profile?.welcome_message ?? '',
+  )
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
   const [wallStyle, setWallStyle] = useState<WallStyle>(
     () => (profile?.wall_style === 'split' ? 'split' : 'classic'),
@@ -147,12 +158,15 @@ export function SettingsPage() {
     setSex(profile.sex ?? 'male')
     setActivity(Number(profile.activity_factor) || 1.375)
     setNickname(profile.nickname ?? '')
+    setWelcomeMessage(profile.welcome_message ?? '')
     setThreshold(String(profile.deficit_threshold ?? 0))
     setWallStyle(profile.wall_style === 'split' ? 'split' : 'classic')
   }, [profile])
 
   const trimmedNickname = nickname.trim()
   const savedNickname = (profile?.nickname ?? '').trim()
+  const trimmedWelcomeMessage = welcomeMessage.trim()
+  const savedWelcomeMessage = (profile?.welcome_message ?? '').trim()
   const parsedWeight = parseFloat(weight)
   const parsedHeight = parseFloat(height)
   const parsedDeficit = parseInt(threshold, 10) || 0
@@ -183,6 +197,18 @@ export function SettingsPage() {
     mapError: () => '保存失败',
   })
   const nicknameSaveState = nicknameAutosave.state
+
+  const saveWelcomeMessage = useCallback(async () => {
+    await updateProfile({ welcome_message: trimmedWelcomeMessage || null })
+  }, [updateProfile, trimmedWelcomeMessage])
+
+  const welcomeMessageAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: trimmedWelcomeMessage === savedWelcomeMessage,
+    save: saveWelcomeMessage,
+    mapError: () => '保存失败',
+  })
+  const welcomeMessageSaveState = welcomeMessageAutosave.state
 
   const validateBody = useCallback(() => {
     if (!parsedWeight || !parsedHeight) return '请填写有效的体重和身高'
@@ -354,6 +380,49 @@ export function SettingsPage() {
             {nicknameSaveState === 'error' && (
               <p className="mt-1 text-xs text-danger">保存失败</p>
             )}
+
+            <div className="profile-welcome-field mt-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={welcomeMessage}
+                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                  className="input profile-welcome-field__input w-full"
+                  placeholder="写一句给自己打气的欢迎语吧"
+                  aria-label="欢迎语"
+                />
+                <span
+                  className="profile-welcome-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                  aria-hidden
+                >
+                  <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
+                    <path
+                      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M13.5 6.5l4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </div>
+              {welcomeMessageSaveState === 'saving' && (
+                <p className="mt-1 text-xs text-muted">保存中…</p>
+              )}
+              {welcomeMessageSaveState === 'saved' && (
+                <p className="mt-1 text-xs text-brand">已保存</p>
+              )}
+              {welcomeMessageSaveState === 'error' && (
+                <p className="mt-1 text-xs text-danger">保存失败</p>
+              )}
+            </div>
           </div>
         </div>
 

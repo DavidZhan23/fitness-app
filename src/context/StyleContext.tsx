@@ -18,6 +18,7 @@ export type AppStyle =
   | 'eva-unit02'
   | 'gundam-hangar'
   | 'soy-tea'
+  | 'wood-zen'
 
 interface StyleContextValue {
   style: AppStyle
@@ -43,6 +44,7 @@ function normalizeStyle(value: string | null): AppStyle {
   if (value === 'gundam-hangar') return 'gundam-hangar'
   if (value === 'abyssal-jade') return 'abyssal-jade'
   if (value === 'soy-tea') return 'soy-tea'
+  if (value === 'wood-zen') return 'wood-zen'
   // 旧 cookie 'dream' 自动迁移到蓝调主题「碧空樱缀」
   if (value === 'dream') return 'sakura'
   return 'default'
