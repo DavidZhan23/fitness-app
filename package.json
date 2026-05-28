@@ -24,7 +24,8 @@
     "deploy:tencent:api": "bash scripts/deploy-tencent.sh --api",
     "changelog:dedupe": "node scripts/dedupe-changelog.mjs",
     "check:milestones": "node scripts/check-milestone-status.mjs",
-    "check:theme-contrast": "node scripts/check-theme-contrast.mjs"
+    "check:theme-contrast": "node scripts/check-theme-contrast.mjs",
+    "check:mobile-layout": "playwright test e2e/mobile-layout.spec.ts"
   },
   "dependencies": {
     "react": "^19.2.6",
