@@ -25,7 +25,9 @@
     "changelog:dedupe": "node scripts/dedupe-changelog.mjs",
     "check:milestones": "node scripts/check-milestone-status.mjs",
     "check:theme-contrast": "node scripts/check-theme-contrast.mjs",
-    "check:mobile-layout": "playwright test e2e/mobile-layout.spec.ts"
+    "check:mobile-layout": "playwright test e2e/mobile-layout.spec.ts",
+    "check:today-responsive": "playwright test e2e/today-responsive.spec.ts",
+    "check:site-responsive": "playwright test e2e/site-responsive.spec.ts"
   },
   "dependencies": {
     "react": "^19.2.6",

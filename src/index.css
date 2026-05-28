@@ -23,7 +23,12 @@
     env(safe-area-inset-bottom, 0px),
     constant(safe-area-inset-bottom, 0px)
   );
-  --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
+  --tabbar-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad) + 1px);
+  --tabbar-total-h: var(--tabbar-h);
+  --page-bottom-gutter: 0.5rem;
+  --content-bottom-safe: calc(
+    var(--tabbar-row-h) + var(--tabbar-bottom-pad) + 1px + var(--page-bottom-gutter)
+  );
   --day-like-liked-icon: var(--danger-strong);
   --day-like-disliked-icon: #e06752;
 }
@@ -36,7 +41,6 @@
       env(safe-area-inset-bottom, 0px),
       constant(safe-area-inset-bottom, 0px)
     );
-    --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
   }
 
   @media (display-mode: standalone) {
@@ -46,7 +50,6 @@
         constant(safe-area-inset-bottom, 0px),
         2.125rem
       );
-      --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
     }
   }
 }
@@ -93,8 +96,15 @@ body {
   width: 100%;
   height: 100%;
   height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
   background: var(--app-shell-bg);
+}
+
+@supports (height: 100dvh) {
+  .app-shell {
+    min-height: 100dvh;
+  }
 }
 
 .app-shell::before {
@@ -122,15 +132,290 @@ body {
   padding-top: max(0.75rem, var(--safe-top));
   padding-left: max(1rem, var(--safe-left));
   padding-right: max(1rem, var(--safe-right));
-  padding-bottom: calc(var(--tabbar-total-h) + 1.5rem);
+  padding-bottom: 0;
 }
 
 .app-main__inner {
   margin: 0 auto;
   width: 100%;
   max-width: 32rem;
-  /* 长页（设置等）滚到底时，末项与底栏之间留出可扫过的空白 */
-  padding: 0 0 2.5rem;
+}
+
+/* 滚动末端占位（Tab 页）；勿再叠 padding / BottomNavSpacer。height 不用含 max() 的变量，避免解析为 0 */
+.app-main__tabbar-pad {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: content-box;
+  height: calc(var(--tabbar-row-h) + var(--page-bottom-gutter) + 1px);
+  padding-bottom: var(--tabbar-bottom-pad);
+  pointer-events: none;
+}
+
+/* --- Responsive foundation (add-only in Phase 1; Pass 2 may remove duplicate legacy @media) --- */
+
+.responsive-page-shell {
+  --responsive-page-gap: clamp(1rem, 3vw, 1.5rem);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--responsive-page-gap);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-page-shell--standalone {
+  padding-inline: max(1rem, var(--safe-left)) max(1rem, var(--safe-right));
+  padding-block: max(0.75rem, var(--safe-top));
+}
+
+.responsive-page-shell--flush {
+  padding-inline: 0;
+}
+
+/* Tab 页底栏占位由 .app-main padding-bottom 承担；勿与 --content-bottom-safe 叠用 */
+.responsive-bottom-nav-spacer {
+  flex-shrink: 0;
+  width: 100%;
+  height: 0;
+  min-height: 0;
+}
+
+.responsive-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: clamp(0.25rem, 1.5vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.4rem, 2vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-grid-2 > *,
+.responsive-grid-3 > * {
+  min-width: 0;
+}
+
+.responsive-text {
+  max-width: 100%;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.responsive-fluid-title {
+  max-width: 100%;
+  font-size: min(
+    var(--hero-greeting-title-size, clamp(2rem, 6vw, 3.25rem)),
+    clamp(1.75rem, 10vw, 3.25rem)
+  );
+  line-height: 1.08;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.responsive-fluid-metric {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(2.35rem, 12vw, 3.9rem);
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+
+.responsive-compact-y {
+  margin-block: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.responsive-truncate {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.responsive-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.responsive-action-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-action-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.responsive-action-row__end {
+  flex-shrink: 0;
+}
+
+.responsive-chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.35rem, 1.5vw, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-chip-wrap > * {
+  flex-shrink: 0;
+}
+
+.responsive-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2.5vw, 1rem);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-form .input,
+.responsive-form input,
+.responsive-form select,
+.responsive-form textarea,
+.responsive-form button {
+  max-width: 100%;
+}
+
+.responsive-segmented {
+  display: grid;
+  grid-template-columns: repeat(var(--responsive-segmented-columns), minmax(0, 1fr));
+  gap: clamp(0.35rem, 1.5vw, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-segmented > * {
+  min-width: 0;
+}
+
+.responsive-list-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.125rem, 0.5vw, 0.35rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.25rem, 1.2vw, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-grid > * {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  min-height: 2.75rem;
+}
+
+.responsive-calendar-grid--compact {
+  gap: clamp(0.125rem, 0.5vw, 0.35rem);
+}
+
+.responsive-calendar-grid--compact > * {
+  aspect-ratio: 1 / 0.92;
+  min-height: 2.25rem;
+  font-size: clamp(0.65rem, 2.8vw, 0.8rem);
+}
+
+.responsive-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.35rem, 1.5vw, 0.65rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-legend.flex-col {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.responsive-calendar-legend > * {
+  flex-shrink: 0;
+}
+
+@media (max-width: 390px) {
+  .responsive-card {
+    padding: clamp(0.9rem, 3vw, 1.25rem);
+  }
+
+  .responsive-page-shell {
+    --responsive-page-gap: 1.25rem;
+  }
+
+  .responsive-fluid-title {
+    line-height: 1.02;
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
+
+@media (max-width: 360px) {
+  .responsive-card {
+    padding: 0.85rem;
+  }
+
+  .responsive-fluid-metric {
+    font-size: clamp(2.25rem, 11.5vw, 3.1rem);
+  }
+
+  .responsive-grid-3 {
+    gap: 0.4rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .responsive-compact-y {
+    margin-block: 0.75rem;
+  }
+
+  .responsive-page-shell {
+    --responsive-page-gap: 1rem;
+  }
 }
 
 .app-tabbar {
@@ -141,6 +426,7 @@ body {
   z-index: 50;
   box-sizing: border-box;
   margin: 0;
+  min-height: var(--tabbar-h);
   padding-left: max(0.5rem, var(--safe-left));
   padding-right: max(0.5rem, var(--safe-right));
   padding-bottom: var(--tabbar-bottom-pad);
@@ -1853,16 +2139,16 @@ button {
     inset 0 1px 0 rgb(201 225 255 / 0.34);
 }
 
-[data-style='gundam-hangar'] .theme-hero-card::before {
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgb(198 222 255 / 0.045) 0,
-      rgb(198 222 255 / 0.045) 1px,
-      transparent 1px,
-      transparent 5px
-    ),
-    var(--hero-card-atmosphere, transparent);
+[data-style='gundam-hangar'] .theme-hero-card::after {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: var(--hero-card-image-position, center);
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 [data-style='gundam-hangar'] .theme-hero-card .text-muted {
@@ -2311,10 +2597,6 @@ button {
     overflow-wrap: anywhere;
   }
 
-  .theme-deficit-card {
-    padding: 1rem;
-  }
-
   .theme-deficit-unit {
     font-size: clamp(0.85rem, 4.3vw, 1.2rem);
   }
@@ -2334,26 +2616,14 @@ button {
     letter-spacing: 0.01em;
   }
 
-  .theme-deficit-card {
-    padding: 0.9rem;
-  }
-
   .theme-deficit-value {
     font-size: clamp(2.5rem, 12.4vw, 3.25rem);
   }
-
-  .theme-deficit-stats {
-    gap: 0.4rem;
-  }
 }
 
-@media (max-height: 720px) {
+@media (max-height: 700px) {
   .hero-greeting {
     margin-bottom: 1rem;
-  }
-
-  .theme-deficit-card {
-    padding: 0.95rem;
   }
 }
 

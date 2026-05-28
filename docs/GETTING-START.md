@@ -94,6 +94,15 @@ npm run check:mobile-layout
 
 详见 [ops/mobile-layout-check.md](ops/mobile-layout-check.md)。
 
+**响应式布局检查**（改 Today 首屏 / 全站主流程 UI 后手动跑，不进默认 verify）：
+
+```bash
+npm run check:today-responsive
+npm run check:site-responsive
+```
+
+详见 [ops/site-responsive-check.md](ops/site-responsive-check.md)。
+
 ## 6. 开始一个新功能
 
 ```bash

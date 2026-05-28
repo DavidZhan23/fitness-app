@@ -23,6 +23,7 @@ import {
   syncSelfDayVisibleInCommunityListCache,
 } from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
+import { PageShell } from '../components/ui/responsive'
 import type { CommunityInboxSummary, CommunityMember } from '../types'
 
 function readInitialCommunityState() {
@@ -340,7 +341,7 @@ export function CommunityPage() {
   const othersCount = members.filter((m) => !m.isSelf).length
 
   return (
-    <div className="space-y-5 pb-2">
+    <PageShell className="pb-2">
       <header className="community-hero relative overflow-hidden px-4 py-5">
         <div
           className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-40 blur-2xl"
@@ -497,6 +498,6 @@ export function CommunityPage() {
       >
         在设置中管理昵称与个人资料
       </Link>
-    </div>
+    </PageShell>
   )
 }

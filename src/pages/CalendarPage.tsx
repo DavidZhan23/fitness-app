@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { WallDayDetailCard } from '../components/WallDayDetailCard'
+import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import { calculateSpreadDeficit } from '../lib/metabolism'
@@ -215,7 +216,7 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <PageShell>
       <div>
         <h1 className="text-xl font-bold text-primary">打卡墙</h1>
         <p className="mt-1 text-sm text-muted">
@@ -223,10 +224,10 @@ export function CalendarPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <StatsGrid columns={2}>
         <StatCard label="运动连续" value={streakExercise} unit="天" variant="exercise" />
         <StatCard label="缺口连续" value={streakDeficit} unit="天" variant="deficit" />
-      </div>
+      </StatsGrid>
 
       <section className="surface-card p-4">
         <div className="mb-4 flex items-center justify-between gap-2">
@@ -314,7 +315,7 @@ export function CalendarPage() {
       <Link to="/" className="block text-center text-sm text-brand">
         返回今日
       </Link>
-    </div>
+    </PageShell>
   )
 }
 

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { AppStyle } from '../context/StyleContext'
+import { FluidText } from './ui/responsive'
 import { getHeroGreetingConfig } from '../lib/themeMeta'
 
 const NAME_PLACEHOLDER = '{name}'
@@ -48,11 +49,11 @@ export function HeroGreeting({
 
   return (
     <header
-      className={`hero-greeting hero-greeting--${config.layout} ${allowWrap ? 'hero-greeting--allow-wrap' : ''}`}
+      className={`hero-greeting responsive-compact-y hero-greeting--${config.layout} ${allowWrap ? 'hero-greeting--allow-wrap' : ''}`}
       style={vars}
       aria-label="今日欢迎语"
     >
-      <h1 className="hero-greeting__title">
+      <FluidText as="h1" variant="title" className="hero-greeting__title">
         {templateParts ? (
           <>
             {templateParts.before && (
@@ -66,9 +67,10 @@ export function HeroGreeting({
         ) : (
           <span className="hero-greeting__line">{title}</span>
         )}
-      </h1>
-      <p className="hero-greeting__subtitle">{config.subtitle}</p>
+      </FluidText>
+      <FluidText as="p" variant="body" className="hero-greeting__subtitle">
+        {config.subtitle}
+      </FluidText>
     </header>
   )
 }
-

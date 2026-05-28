@@ -4,6 +4,7 @@ import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { DeficitCard } from '../components/DeficitCard'
 import { HeroGreeting } from '../components/HeroGreeting'
 import { LogList } from '../components/LogList'
+import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
 import {
@@ -123,7 +124,7 @@ export function TodayPage() {
   const greeting = displayName(profile, user)
 
   return (
-    <div className="space-y-6">
+    <PageShell>
       <HeroGreeting
         name={greeting}
         themeStyle={style}
@@ -147,7 +148,7 @@ export function TodayPage() {
         dailyBmr={fullDayBmr}
       />
 
-      <div className="grid grid-cols-2 gap-3">
+      <StatsGrid columns={2}>
         <Link
           to="/log/exercise"
           className="theme-quick-action theme-quick-action--exercise"
@@ -160,7 +161,7 @@ export function TodayPage() {
         >
           + 记饮食
         </Link>
-      </div>
+      </StatsGrid>
 
       <LogList
         exercises={exercises}
@@ -170,6 +171,6 @@ export function TodayPage() {
         onUpdateExercise={handleUpdateExercise}
         onUpdateMeal={handleUpdateMeal}
       />
-    </div>
+    </PageShell>
   )
 }

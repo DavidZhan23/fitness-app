@@ -18,6 +18,7 @@ export function Layout() {
       <main className="app-main">
         <div className="app-main__inner">
           <Outlet />
+          <div className="app-main__tabbar-pad" aria-hidden />
         </div>
       </main>
 

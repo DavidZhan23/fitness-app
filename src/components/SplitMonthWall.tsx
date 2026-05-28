@@ -5,6 +5,7 @@ import {
   type MonthGridType,
   type MonthHeatmapProps,
 } from './MonthHeatmap'
+import { SegmentedControl } from './ui/responsive'
 
 export function SplitMonthWall({
   year,
@@ -25,8 +26,9 @@ export function SplitMonthWall({
 
   return (
     <div className="space-y-3">
-      <div
-        className="wall-pane-tabs flex w-fit max-w-full rounded-xl p-1"
+      <SegmentedControl
+        columns={2}
+        className="wall-pane-tabs w-fit max-w-full rounded-xl p-1"
         role="tablist"
         aria-label="打卡墙切换"
       >
@@ -42,7 +44,7 @@ export function SplitMonthWall({
         >
           代谢墙
         </WallPaneTab>
-      </div>
+      </SegmentedControl>
 
       {pane === 'exercise' ? (
         <MonthGrid

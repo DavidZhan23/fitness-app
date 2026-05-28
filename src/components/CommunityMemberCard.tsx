@@ -8,6 +8,7 @@ import { CommunityDayStatus } from './CommunityDayStatus'
 import { DayLikeButton } from './DayLikeButton'
 import { FollowButton } from './FollowButton'
 import { UserAvatar } from './UserAvatar'
+import { ActionRow } from './ui/responsive'
 
 interface CommunityMemberCardProps {
   member: CommunityMember
@@ -79,7 +80,7 @@ export function CommunityMemberCard({
 
   return (
     <article
-      className={`community-member-card group relative overflow-hidden ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? '' : ''}`}
+      className={`community-member-card responsive-list-card group relative overflow-hidden ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? '' : ''}`}
     >
       {isElite && (
         <>
@@ -136,7 +137,7 @@ export function CommunityMemberCard({
           onBeforeNavigate?.()
         }}
       >
-        <div className="flex items-start gap-2.5">
+        <ActionRow className="items-start gap-2.5">
           <UserAvatar
             variant="community"
             size="sm"
@@ -144,8 +145,8 @@ export function CommunityMemberCard({
             avatarUrl={member.avatarUrl}
             isSelf={member.isSelf}
           />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-primary">
+          <div className="responsive-action-row__main">
+            <p className="responsive-truncate text-sm font-semibold text-primary">
               {member.nickname}
               {member.isSelf && (
                 <span className="ml-1 text-[10px] font-normal accent-exercise">
@@ -172,7 +173,7 @@ export function CommunityMemberCard({
               </p>
             )}
           </div>
-          <div className="community-member-card__top-actions shrink-0">
+          <div className="responsive-action-row__end community-member-card__top-actions">
             {!member.isSelf && (
               <FollowButton
                 userId={member.id}
@@ -203,7 +204,7 @@ export function CommunityMemberCard({
               )}
             </div>
           </div>
-        </div>
+        </ActionRow>
 
         {isHiddenForViewer ? (
           <p className="community-hidden-panel">今日已隐藏</p>

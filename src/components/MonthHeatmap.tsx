@@ -14,6 +14,7 @@ import {
   heatmapBadgeLabel,
 } from '../lib/communityBadges'
 import type { MonthDayCell } from '../lib/monthData'
+import { CalendarGrid, CalendarLegend } from './ui/responsive'
 
 export interface MonthHeatmapProps {
   year: number
@@ -91,12 +92,12 @@ export function MonthGrid({
 }: MonthGridProps) {
   return (
     <div>
-      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] text-muted">
+      <div className="responsive-calendar-weekdays mb-1 text-center text-[10px] text-muted">
         {WEEKDAY_LABELS.map((w) => (
           <span key={w}>{w}</span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <CalendarGrid density="compact">
         {weeks.flat().map((dateKey, i) => {
           if (!dateKey) {
             return (
@@ -172,7 +173,7 @@ export function MonthGrid({
             </button>
           )
         })}
-      </div>
+      </CalendarGrid>
       {type === 'exercise' ? (
         <Legend
           levelClasses={EXERCISE_LEVEL_CLASSES}
@@ -210,7 +211,7 @@ function Legend({
   activeSwatchIndex?: number
 }) {
   return (
-    <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px] text-muted">
+    <CalendarLegend className="mt-2 justify-end text-[10px] text-muted">
       <span className="shrink-0">运动量少</span>
       {levelClasses.map((cls, i) => (
         <div
@@ -222,7 +223,7 @@ function Legend({
         />
       ))}
       <span className="shrink-0">运动量多</span>
-    </div>
+    </CalendarLegend>
   )
 }
 
@@ -270,7 +271,7 @@ function DeficitLegend({
     highlight && highlight.deficitTone !== 'surplus' ? activeLevel : undefined
 
   return (
-    <div className="mt-2 flex flex-col items-end gap-1 text-[10px] text-muted">
+    <CalendarLegend className="mt-2 flex-col items-end text-[10px] text-muted">
       <DeficitLegendRow
         labelStart="盈余少"
         labelEnd="盈余多"
@@ -283,6 +284,6 @@ function DeficitLegend({
         levelClasses={levels.map((l) => DEFICIT_LEVEL_CLASSES[l])}
         activeLevel={deficitActive}
       />
-    </div>
+    </CalendarLegend>
   )
 }

@@ -70,40 +70,17 @@
     0 20px 42px rgb(1 5 11 / 0.52),
     0 0 28px rgb(88 122 170 / 0.24),
     inset 0 1px 0 rgb(163 206 255 / 0.38);
-  --hero-card-atmosphere:
-    radial-gradient(56% 82% at 78% 20%, rgb(132 175 221 / 0.1), transparent 62%),
-    linear-gradient(
-      90deg,
-      rgb(7 13 26 / 0.88) 0%,
-      rgb(10 21 38 / 0.68) 44%,
-      rgb(11 19 32 / 0.34) 72%,
-      rgb(11 19 32 / 0.14) 100%
-    );
-  --hero-card-image:
-    linear-gradient(
-      90deg,
-      #070d1a 0%,
-      rgb(7 13 26 / 0.62) 26%,
-      rgb(9 17 31 / 0.22) 54%,
-      rgb(16 27 45 / 0.02) 100%
-    ),
-    radial-gradient(56% 56% at 69% 34%, rgb(127 165 209 / 0.15), transparent 74%),
-    url('/theme/gundam-head-01-cutout.png');
-  --hero-card-image-opacity: 0.82;
+  --hero-card-atmosphere: transparent;
+  --hero-card-image: url('/theme/gundam-hangar-hero.jpg');
+  --hero-card-image-opacity: 1;
   --hero-card-image-blur: 0;
   --hero-card-image-blend: normal;
-  --hero-card-image-filter: saturate(1.06) contrast(1.2) brightness(0.84);
-  --hero-card-image-position: 88% 42%;
-  --hero-card-image-top: -1rem;
-  --hero-card-image-right: -1.2rem;
-  --hero-card-image-size: clamp(20rem, 58%, 28rem);
-  --hero-card-image-mask: linear-gradient(
-    to left,
-    rgb(0 0 0 / 1) 0%,
-    rgb(0 0 0 / 0.98) 58%,
-    rgb(0 0 0 / 0.72) 80%,
-    rgb(0 0 0 / 0.08) 100%
-  );
+  --hero-card-image-filter: none;
+  --hero-card-image-position: center;
+  --hero-card-image-top: 0;
+  --hero-card-image-right: 0;
+  --hero-card-image-size: 100%;
+  --hero-card-image-mask: none;
   /* Legacy aliases (kept for compatibility with older selectors) */
   --hero-card-corner-art: var(--hero-card-image);
   --hero-card-corner-opacity: var(--hero-card-image-opacity);
@@ -260,24 +237,4 @@
   --btn-sign-out-bg: #24364b;
   --btn-sign-out-border: #4c678a;
   --btn-sign-out-hover-bg: #203249;
-}
-
-@media (min-width: 768px) {
-  [data-style='gundam-hangar'] {
-    --hero-card-image-top: -1.6rem;
-    --hero-card-image-right: -2rem;
-    --hero-card-image-size: clamp(21.5rem, 58%, 29.5rem);
-    --hero-card-image-opacity: 0.8;
-    --hero-card-image-filter: saturate(1.05) contrast(1.18) brightness(0.82);
-  }
-}
-
-@media (min-width: 1200px) {
-  [data-style='gundam-hangar'] {
-    --hero-card-image-top: -2.2rem;
-    --hero-card-image-right: -2.8rem;
-    --hero-card-image-size: clamp(22.5rem, 56%, 31rem);
-    --hero-card-image-opacity: 0.76;
-    --hero-card-image-filter: saturate(1.03) contrast(1.16) brightness(0.8);
-  }
 }

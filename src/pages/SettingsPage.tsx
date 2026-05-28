@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AvatarCropEditor } from '../components/AvatarCropEditor'
+import { PageShell } from '../components/ui/responsive'
 import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
 import { UserAvatar } from '../components/UserAvatar'
@@ -401,7 +402,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div ref={pageRef} className="space-y-6 pb-12">
+    <div ref={pageRef}>
+      <PageShell>
       <h1 className="text-xl font-bold text-primary">设置</h1>
 
       {user?.isDeveloper && (
@@ -823,6 +825,7 @@ export function SettingsPage() {
       >
         退出登录
       </button>
+      </PageShell>
 
       {isAvatarPreviewOpen && (
         <div className="settings-avatar-modal" role="dialog" aria-modal="true">

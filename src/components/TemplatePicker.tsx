@@ -4,6 +4,8 @@ interface TemplateItem {
   kcal: number
 }
 
+import { ChipWrap } from './ui/responsive'
+
 interface TemplatePickerProps {
   templates: TemplateItem[]
   onSelect: (name: string, kcal: number) => void
@@ -15,7 +17,7 @@ export function TemplatePicker({ templates, onSelect }: TemplatePickerProps) {
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted">快捷模板</p>
-      <div className="flex flex-wrap gap-2">
+      <ChipWrap>
         {templates.map((t) => (
           <button
             key={t.id ?? t.name}
@@ -29,7 +31,7 @@ export function TemplatePicker({ templates, onSelect }: TemplatePickerProps) {
             </span>
           </button>
         ))}
-      </div>
+      </ChipWrap>
     </div>
   )
 }
