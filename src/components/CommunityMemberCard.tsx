@@ -83,9 +83,6 @@ export function CommunityMemberCard({
           <span className="community-card-elite__ember community-card-elite__ember--r" aria-hidden>
             🔥
           </span>
-          <span className="community-card-fx-ribbon community-card-fx-ribbon--elite">
-            🔥 ON FIRE
-          </span>
         </>
       )}
       {isChampion && (
@@ -130,7 +127,7 @@ export function CommunityMemberCard({
           onBeforeNavigate?.()
         }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-start gap-2.5">
           <UserAvatar
             variant="community"
             size="sm"
@@ -147,32 +144,49 @@ export function CommunityMemberCard({
                 </span>
               )}
             </p>
-            <p className="text-[10px] text-muted">
-              {isToday ? '今日动态' : member.today.date}
-            </p>
-          </div>
-          <div
-            className={`shrink-0 text-right ${todayBadge ? 'mt-[calc(0.2cm+2mm)]' : ''}`}
-          >
-            {isHiddenForViewer ? (
-              <p className="text-xs text-muted">已隐藏</p>
-            ) : (
-              <>
-                <p
-                  className={`text-base font-bold tabular-nums leading-tight ${
-                    surplus
-                      ? 'text-red-400'
-                      : deficit > 0
-                        ? 'text-emerald-400'
-                        : 'text-amber-400'
-                  }`}
-                >
-                  {deficit > 0 ? '+' : ''}
-                  {Math.round(deficit)}
-                </p>
-                <p className="text-[9px] text-muted">kcal</p>
-              </>
+            {isElite && (
+              <p className="mt-0.5">
+                <span className="community-member-card__onfire community-pill community-pill--elite">
+                  <span aria-hidden>🔥</span>
+                  ON FIRE
+                </span>
+              </p>
             )}
+            {!isToday && <p className="text-[10px] text-muted">{member.today.date}</p>}
+            {member.todayLikeCount > 0 && (
+              <p className="text-[10px] text-muted">已收获 {member.todayLikeCount} 赞</p>
+            )}
+          </div>
+          <div className="community-member-card__top-actions shrink-0">
+            {!member.isSelf && (
+              <FollowButton
+                userId={member.id}
+                isFollowing={member.isFollowing}
+                compact
+                onChange={(following) => onFollowChange?.(member.id, following)}
+              />
+            )}
+            <div className="community-member-card__deficit mt-1.5">
+              {isHiddenForViewer ? (
+                <p className="text-xs text-muted">已隐藏</p>
+              ) : (
+                <>
+                  <p
+                    className={`text-base font-bold tabular-nums leading-tight ${
+                      surplus
+                        ? 'text-red-400'
+                        : deficit > 0
+                          ? 'text-emerald-400'
+                          : 'text-amber-400'
+                    }`}
+                  >
+                    {deficit > 0 ? '+' : ''}
+                    {Math.round(deficit)}
+                  </p>
+                  <p className="text-[9px] text-muted">kcal</p>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -192,41 +206,36 @@ export function CommunityMemberCard({
         )}
       </Link>
 
-      {!isHiddenForViewer && (
-        <div className="px-3 pb-0.5">
-          <CommunityDayStatus
-            snapshot={member.today}
-            viewerProfile={viewerProfile}
-            isSelf={member.isSelf}
-            variant="compact"
-          />
-        </div>
-      )}
-
-      <div className="community-member-card__footer flex min-w-0 flex-nowrap items-center justify-between gap-1.5 px-3 py-2">
-        {!member.isSelf ? (
-          <DayLikeButton
-            userId={member.id}
-            date={todayKey}
-            likeCount={member.todayLikeCount}
-            viewerLiked={member.viewerLikedToday}
-            compact
-            onChange={(stats) => onLikeChange?.(member.id, stats)}
-          />
-        ) : (
+      <div className="community-member-card__footer-row flex min-w-0 flex-nowrap items-end justify-between gap-1.5 px-3 py-2">
+        {member.isSelf ? (
           <span className="truncate text-[11px] text-muted">
             {member.todayLikeCount > 0
               ? `今日 ${member.todayLikeCount} 赞`
               : '今日暂无点赞'}
           </span>
-        )}
-        {!member.isSelf && (
-          <FollowButton
-            userId={member.id}
-            isFollowing={member.isFollowing}
-            compact
-            onChange={(following) => onFollowChange?.(member.id, following)}
-          />
+        ) : (
+          <>
+            <div className="community-member-card__footer-status min-w-0 flex-1">
+              {!isHiddenForViewer && (
+                <CommunityDayStatus
+                  snapshot={member.today}
+                  viewerProfile={viewerProfile}
+                  isSelf={member.isSelf}
+                  variant="compact"
+                />
+              )}
+            </div>
+            <div className="community-member-card__footer-right">
+              <DayLikeButton
+                userId={member.id}
+                date={todayKey}
+                likeCount={member.todayLikeCount}
+                viewerLiked={member.viewerLikedToday}
+                compact
+                onChange={(stats) => onLikeChange?.(member.id, stats)}
+              />
+            </div>
+          </>
         )}
       </div>
       </div>

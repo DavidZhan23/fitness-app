@@ -77,12 +77,20 @@ for (const file of THEME_FILES) {
   const menuText = tokenValue(css, 'settings-menu-text')
   const signOutText = tokenValue(css, 'btn-sign-out-text')
   const signOutBg = tokenValue(css, 'btn-sign-out-bg')
+  const primaryText = tokenValue(css, 'btn-primary-text') ?? tokenValue(css, 'text-on-accent')
+  const primaryBg = tokenValue(css, 'btn-primary-bg')
+  const bmrValue =
+    tokenValue(css, 'bmr-value-color') ??
+    tokenValue(css, 'text-primary') ??
+    tokenValue(css, 'text-strong')
 
   console.log(`\n${styleKey}`)
 
   failed += checkPair('settings-menu/card', menuText, card)
   failed += checkPair('settings-menu/panel', menuText, panel)
   failed += checkPair('sign-out', signOutText, signOutBg)
+  failed += checkPair('primary-btn', primaryText, primaryBg)
+  failed += checkPair('bmr-value/panel', bmrValue, panel)
 
   const isLight = ['lavender', 'sakura', 'sakura-blush', 'active-mint', 'soy-tea'].includes(
     slug,

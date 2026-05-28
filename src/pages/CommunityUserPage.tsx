@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
 import { DayCommentSection } from '../components/DayCommentSection'
-import { DayLikeButton } from '../components/DayLikeButton'
 import { FollowButton } from '../components/FollowButton'
 import { UserAvatar } from '../components/UserAvatar'
 import { MonthHeatmap } from '../components/MonthHeatmap'
@@ -16,7 +15,6 @@ import {
   loadCommunityListCache,
   loadCommunityUserPreview,
   syncFollowStatusInCommunityListCache,
-  syncLikeStatsInCommunityListCache,
 } from '../lib/communityListCache'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
@@ -67,10 +65,6 @@ export function CommunityUserPage() {
   )
   const [exercises, setExercises] = useState<CommunityPublicExercise[]>([])
   const [meals, setMeals] = useState<CommunityPublicMeal[]>([])
-  const [likeCount, setLikeCount] = useState(initial.preview?.todayLikeCount ?? 0)
-  const [viewerLiked, setViewerLiked] = useState(
-    initial.preview?.viewerLikedToday ?? false,
-  )
   const [comments, setComments] = useState<DayComment[]>([])
   const [dayMap, setDayMap] = useState(() => new Map())
   const [accountStartKey, setAccountStartKey] = useState<string | null>(null)
@@ -93,8 +87,6 @@ export function CommunityUserPage() {
       setExercises(data.exercises)
       setMeals(data.meals)
       setViewDate(data.date)
-      setLikeCount(data.likeCount)
-      setViewerLiked(data.viewerLiked)
       setComments(data.comments)
     },
     [],
@@ -164,8 +156,6 @@ export function CommunityUserPage() {
       setIsFollowing(preview.isFollowing)
       setSnapshot(preview.today)
       setViewDate(preview.today.date)
-      setLikeCount(preview.todayLikeCount)
-      setViewerLiked(preview.viewerLikedToday)
       setLoading(false)
     } else {
       setLoading(true)
@@ -311,39 +301,6 @@ export function CommunityUserPage() {
         isSelf={isSelf}
         variant="full"
       />
-
-      <div className="surface-card rounded-2xl px-4 py-3">
-        <DayLikeButton
-          key={`${userId}-${viewDate}-like`}
-          userId={userId!}
-          date={viewDate}
-          likeCount={likeCount}
-          viewerLiked={viewerLiked}
-          disabled={isSelf}
-          onChange={(stats) => {
-            setLikeCount(stats.likeCount)
-            setViewerLiked(stats.viewerLiked)
-            if (!userId || viewDate !== todayKey) return
-            const cache = loadCommunityListCache()
-            if (!cache) return
-            const activeMembers = cache.members.map((m) =>
-              m.id === userId
-                ? {
-                    ...m,
-                    todayLikeCount: stats.likeCount,
-                    viewerLikedToday: stats.viewerLiked,
-                  }
-                : m,
-            )
-            syncLikeStatsInCommunityListCache(userId, stats, {
-              activeFilter: cache.activeFilter,
-              activeMembers,
-              followingCount: cache.followingCount,
-              scrollY: cache.scrollY,
-            })
-          }}
-        />
-      </div>
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-primary">当日记录</h2>

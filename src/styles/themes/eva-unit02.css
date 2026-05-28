@@ -35,6 +35,7 @@
   --danger-strong: #ff2f45;
   --btn-primary-bg: #d7192a;
   --btn-primary-hover: #a80f1f;
+  --btn-primary-text: var(--text-on-accent);
 
   --heatmap-empty: #2b1119;
   --heatmap-exercise-1: #1f3a16;
@@ -61,18 +62,70 @@
   --surface-panel-soft-hover: #4b1c2b;
   --input-bg: #3a1722;
   --input-ring: #62303a;
-  --hero-card-bg: #2b1119;
+  --hero-card-bg:
+    radial-gradient(circle at 88% 20%, rgb(255 138 28 / 0.12), transparent 26%),
+    linear-gradient(135deg, #220a12 0%, #3a121e 58%, #17080c 100%);
   --hero-card-ring: #d7192a;
-  --hero-card-shadow: 0 4px 24px rgb(215 25 42 / 0.36);
+  --hero-card-shadow:
+    0 18px 38px rgb(18 4 6 / 0.46),
+    0 0 22px rgb(215 25 42 / 0.24),
+    inset 0 1px 0 rgb(255 138 28 / 0.32);
+  --hero-card-atmosphere:
+    radial-gradient(55% 80% at 76% 20%, rgb(255 138 28 / 0.08), transparent 60%),
+    linear-gradient(
+      90deg,
+      rgb(23 8 12 / 0.78) 0%,
+      rgb(34 10 18 / 0.52) 46%,
+      rgb(34 10 18 / 0.26) 72%,
+      rgb(34 10 18 / 0.12) 100%
+    );
+  --hero-card-image:
+    linear-gradient(
+      90deg,
+      #220a12 0%,
+      rgb(34 10 18 / 0.72) 34%,
+      rgb(34 10 18 / 0.22) 66%,
+      rgb(34 10 18 / 0.03) 100%
+    ),
+    radial-gradient(56% 56% at 68% 34%, rgb(255 138 28 / 0.17), transparent 74%),
+    url('/theme/eva-head-02-cutout.png');
+  --hero-card-image-opacity: 0.6;
+  --hero-card-image-blur: 0;
+  --hero-card-image-blend: screen;
+  --hero-card-image-filter: saturate(1.12) contrast(1.1) brightness(0.98);
+  --hero-card-image-position: 88% 50%;
+  --hero-card-image-top: -0.8rem;
+  --hero-card-image-right: -3.4rem;
+  --hero-card-image-size: clamp(21.5rem, 64%, 29.5rem);
+  --hero-card-image-mask: linear-gradient(
+    to left,
+    rgb(0 0 0 / 1) 0%,
+    rgb(0 0 0 / 0.96) 48%,
+    rgb(0 0 0 / 0.58) 76%,
+    rgb(0 0 0 / 0.08) 100%
+  );
+  /* Legacy aliases (kept for compatibility with older selectors) */
+  --hero-card-corner-art: var(--hero-card-image);
+  --hero-card-corner-opacity: var(--hero-card-image-opacity);
+  --hero-card-corner-blur: var(--hero-card-image-blur);
+  --hero-card-corner-blend: var(--hero-card-image-blend);
+  --hero-card-corner-filter: var(--hero-card-image-filter);
+  --hero-card-corner-top: var(--hero-card-image-top);
+  --hero-card-corner-right: var(--hero-card-image-right);
+  --hero-card-corner-width: var(--hero-card-image-size);
+  --hero-card-corner-mask: var(--hero-card-image-mask);
   --hero-deficit-positive: #9dff3a;
   --hero-deficit-surplus: #ffd34d;
   --hero-deficit-neutral: #f0b8b5;
-  --hero-stat-bg: #3a1722;
-  --hero-stat-metabolism-bg: #3a1722;
+  --hero-stat-bg: rgb(58 23 34 / 0.62);
+  --hero-stat-ring: rgb(255 138 28 / 0.18);
+  --hero-stat-shadow: 0 14px 28px rgb(16 4 7 / 0.28);
+  --hero-stat-blur: 8px;
+  --hero-stat-metabolism-bg: rgb(58 23 34 / 0.6);
   --hero-stat-metabolism-value: #fff6f2;
-  --hero-stat-exercise-bg: #1f3a16;
+  --hero-stat-exercise-bg: rgb(31 58 22 / 0.68);
   --hero-stat-exercise-value: #9dff3a;
-  --hero-stat-meal-bg: #4b2812;
+  --hero-stat-meal-bg: rgb(75 40 18 / 0.72);
   --hero-stat-meal-value: #ffd34d;
   --calendar-stat-exercise-bg: #1f3a16;
   --calendar-stat-exercise-border: #9dff3a;
@@ -207,4 +260,24 @@
   --btn-sign-out-bg: #4b2812;
   --btn-sign-out-border: #ff8a1c;
   --btn-sign-out-hover-bg: #62303a;
+}
+
+@media (min-width: 768px) {
+  [data-style='eva-unit02'] {
+    --hero-card-image-top: -1.4rem;
+    --hero-card-image-right: -4.2rem;
+    --hero-card-image-size: clamp(23rem, 62%, 31rem);
+    --hero-card-image-opacity: 0.58;
+    --hero-card-image-filter: saturate(1.13) contrast(1.12) brightness(0.95);
+  }
+}
+
+@media (min-width: 1200px) {
+  [data-style='eva-unit02'] {
+    --hero-card-image-top: -1.8rem;
+    --hero-card-image-right: -4.8rem;
+    --hero-card-image-size: clamp(24rem, 58%, 32rem);
+    --hero-card-image-opacity: 0.54;
+    --hero-card-image-filter: saturate(1.11) contrast(1.1) brightness(0.92);
+  }
 }

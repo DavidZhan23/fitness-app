@@ -32,6 +32,7 @@
   --danger-strong: #e11d48;
   --btn-primary-bg: var(--accent-pop);
   --btn-primary-hover: var(--accent-pop-strong);
+  --btn-primary-text: #042f2e;
 
   /* Heatmap levels (default / 深海能量) */
   --heatmap-empty: rgb(51 65 85 / 0.6);

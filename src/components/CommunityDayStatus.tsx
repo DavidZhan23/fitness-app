@@ -42,7 +42,7 @@ export function CommunityDayStatus({
 
   if (variant === 'compact') {
     return (
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="community-day-status-compact flex flex-nowrap items-center gap-1.5 overflow-x-auto">
         {status.badge === 'champion' && (
           <CompactPill kind="champion" label="运动大王" />
         )}

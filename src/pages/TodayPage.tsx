@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { DeficitCard } from '../components/DeficitCard'
+import { HeroGreeting } from '../components/HeroGreeting'
 import { LogList } from '../components/LogList'
 import { useAuth } from '../context/AuthContext'
+import { useAppStyle } from '../context/StyleContext'
 import {
   deleteExercise,
   deleteMeal,
@@ -21,17 +23,9 @@ import { displayName } from '../lib/profileDisplay'
 import { formatDateKey } from '../lib/streaks'
 import type { DayLog, Exercise, Meal } from '../types'
 
-const DEFAULT_WELCOME_PREFIX = '欢迎回来'
-
-export function formatTodayGreeting(name: string, welcomeMessage?: string | null) {
-  const customMessage =
-    typeof welcomeMessage === 'string' ? welcomeMessage.trim() : ''
-  if (customMessage) return customMessage
-  return `${DEFAULT_WELCOME_PREFIX}，${name}。`
-}
-
 export function TodayPage() {
   const { user, profile } = useAuth()
+  const { style } = useAppStyle()
   const profileRef = useRef(profile)
   profileRef.current = profile
   const onboardingComplete = profile?.onboarding_complete
@@ -127,13 +121,14 @@ export function TodayPage() {
   const threshold = toKcal(profile?.deficit_threshold)
 
   const greeting = displayName(profile, user)
-  const welcomeText = formatTodayGreeting(greeting, profile?.welcome_message)
 
   return (
     <div className="space-y-6">
-      <p className="today-greeting">
-        <span className="today-greeting__text">{welcomeText}</span>
-      </p>
+      <HeroGreeting
+        name={greeting}
+        themeStyle={style}
+        customWelcomeMessage={profile?.welcome_message}
+      />
       <DeficitCard
         dateLabel={dateLabel}
         deficit={deficit}

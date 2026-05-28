@@ -35,6 +35,7 @@
   --danger-strong: #ff4f6d;
   --btn-primary-bg: #6b35d7;
   --btn-primary-hover: #4b20a5;
+  --btn-primary-text: var(--text-on-accent);
 
   --heatmap-empty: #27163f;
   --heatmap-exercise-1: #203d22;
@@ -61,18 +62,70 @@
   --surface-panel-soft-hover: #3e2863;
   --input-bg: #342052;
   --input-ring: #4c3471;
-  --hero-card-bg: #27163f;
+  --hero-card-bg:
+    radial-gradient(circle at 88% 20%, rgb(167 240 75 / 0.12), transparent 26%),
+    linear-gradient(135deg, #1b0e35 0%, #251348 58%, #13091f 100%);
   --hero-card-ring: #7650b8;
-  --hero-card-shadow: 0 4px 24px rgb(107 53 215 / 0.35);
+  --hero-card-shadow:
+    0 18px 38px rgb(10 4 23 / 0.46),
+    0 0 22px rgb(118 80 184 / 0.22),
+    inset 0 1px 0 rgb(184 255 44 / 0.32);
+  --hero-card-atmosphere:
+    radial-gradient(55% 80% at 76% 20%, rgb(184 255 44 / 0.08), transparent 60%),
+    linear-gradient(
+      90deg,
+      rgb(19 9 31 / 0.78) 0%,
+      rgb(27 14 53 / 0.52) 46%,
+      rgb(27 14 53 / 0.26) 72%,
+      rgb(27 14 53 / 0.12) 100%
+    );
+  --hero-card-image:
+    linear-gradient(
+      90deg,
+      #1b0e35 0%,
+      rgb(27 14 53 / 0.72) 34%,
+      rgb(27 14 53 / 0.2) 66%,
+      rgb(27 14 53 / 0.03) 100%
+    ),
+    radial-gradient(54% 54% at 68% 34%, rgb(184 255 44 / 0.18), transparent 74%),
+    url('/theme/eva-head-01-cutout.png');
+  --hero-card-image-opacity: 0.82;
+  --hero-card-image-blur: 0;
+  --hero-card-image-blend: screen;
+  --hero-card-image-filter: saturate(1.14) contrast(1.1) brightness(0.96);
+  --hero-card-image-position: 90% 40%;
+  --hero-card-image-top: -4.2rem;
+  --hero-card-image-right: -3.6rem;
+  --hero-card-image-size: clamp(21.5rem, 64%, 29.5rem);
+  --hero-card-image-mask: linear-gradient(
+    to left,
+    rgb(0 0 0 / 1) 0%,
+    rgb(0 0 0 / 0.96) 48%,
+    rgb(0 0 0 / 0.58) 76%,
+    rgb(0 0 0 / 0.08) 100%
+  );
+  /* Legacy aliases (kept for compatibility with older selectors) */
+  --hero-card-corner-art: var(--hero-card-image);
+  --hero-card-corner-opacity: var(--hero-card-image-opacity);
+  --hero-card-corner-blur: var(--hero-card-image-blur);
+  --hero-card-corner-blend: var(--hero-card-image-blend);
+  --hero-card-corner-filter: var(--hero-card-image-filter);
+  --hero-card-corner-top: var(--hero-card-image-top);
+  --hero-card-corner-right: var(--hero-card-image-right);
+  --hero-card-corner-width: var(--hero-card-image-size);
+  --hero-card-corner-mask: var(--hero-card-image-mask);
   --hero-deficit-positive: #b8ff2c;
   --hero-deficit-surplus: #ffb35c;
   --hero-deficit-neutral: #cfc0ea;
-  --hero-stat-bg: #342052;
-  --hero-stat-metabolism-bg: #342052;
+  --hero-stat-bg: rgb(52 32 82 / 0.62);
+  --hero-stat-ring: rgb(184 255 44 / 0.16);
+  --hero-stat-shadow: 0 14px 28px rgb(9 4 18 / 0.28);
+  --hero-stat-blur: 8px;
+  --hero-stat-metabolism-bg: rgb(62 40 99 / 0.6);
   --hero-stat-metabolism-value: #f8f3ff;
-  --hero-stat-exercise-bg: #28451e;
+  --hero-stat-exercise-bg: rgb(40 69 30 / 0.68);
   --hero-stat-exercise-value: #b8ff2c;
-  --hero-stat-meal-bg: #4a2a18;
+  --hero-stat-meal-bg: rgb(74 42 24 / 0.72);
   --hero-stat-meal-value: #ffb35c;
   --calendar-stat-exercise-bg: #28451e;
   --calendar-stat-exercise-border: #b8ff2c;
@@ -82,10 +135,10 @@
   --calendar-stat-deficit-value: #b8ff2c;
   --quick-action-exercise-bg: #b8ff2c;
   --quick-action-exercise-ring: #d7ff7a;
-  --quick-action-exercise-text: #1a1028;
+  --quick-action-exercise-text: #24380f;
   --quick-action-meal-bg: #ff8a1e;
   --quick-action-meal-ring: #ffb35c;
-  --quick-action-meal-text: #1a1028;
+  --quick-action-meal-text: #4a2a18;
   --achievement-exercise-border: #b8ff2c;
   --achievement-exercise-bg: #28451e;
   --achievement-exercise-icon-bg: #203d22;
@@ -207,4 +260,24 @@
   --btn-sign-out-bg: #3e2863;
   --btn-sign-out-border: #7650b8;
   --btn-sign-out-hover-bg: #4c3471;
+}
+
+@media (min-width: 768px) {
+  [data-style='eva'] {
+    --hero-card-image-top: -4.8rem;
+    --hero-card-image-right: -4.4rem;
+    --hero-card-image-size: clamp(23rem, 62%, 31rem);
+    --hero-card-image-opacity: 0.8;
+    --hero-card-image-filter: saturate(1.14) contrast(1.12) brightness(0.93);
+  }
+}
+
+@media (min-width: 1200px) {
+  [data-style='eva'] {
+    --hero-card-image-top: -5.4rem;
+    --hero-card-image-right: -5rem;
+    --hero-card-image-size: clamp(24rem, 58%, 32rem);
+    --hero-card-image-opacity: 0.76;
+    --hero-card-image-filter: saturate(1.12) contrast(1.1) brightness(0.9);
+  }
 }

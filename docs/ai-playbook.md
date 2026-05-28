@@ -19,6 +19,7 @@
 [ ] 2. 规划：补齐 milestone（Goal / 验收 / Non-goals / 风险）
 [ ] 3. 实现：最小 diff，优先复用既有模块
 [ ] 4. 本地门禁：npm run verify
+[ ] 4.1 若涉及主题/皮肤：npm run check:theme-contrast（不通过先修复）
 [ ] 5. 提交：经用户确认后提交并 push 到 main
 [ ] 6. 交付：提醒 owner 进行手动部署（npm run deploy:tencent）
 ```

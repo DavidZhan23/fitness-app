@@ -28,7 +28,7 @@ export function MetabolismSummary({
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-3xl font-bold tabular-nums leading-none text-brand">
+              <p className="bmr-value text-3xl font-bold tabular-nums leading-none">
                 {bmr > 0 ? Math.round(bmr) : '—'}
               </p>
               <p className="mt-1 text-[10px] text-muted">kcal / 日</p>
@@ -63,7 +63,7 @@ export function MetabolismSummary({
           <p className="bmr-formula-subtitle mt-0.5 text-xs">{BMR_FORMULA_NAME}</p>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-bold tabular-nums leading-none text-brand">
+          <p className="bmr-value text-3xl font-bold tabular-nums leading-none">
             {bmr > 0 ? Math.round(bmr) : '—'}
           </p>
           <p className="mt-1 text-[10px] text-muted">kcal / 日</p>
