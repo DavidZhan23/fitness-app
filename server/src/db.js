@@ -286,6 +286,13 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  try {
+    await pool.query(
+      `alter table public.profiles add column if not exists avatar_url text`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
   await runSqlFileMigrations()
 }
 

@@ -7,6 +7,7 @@ import type { CommunityMember, Profile } from '../types'
 import { CommunityDayStatus } from './CommunityDayStatus'
 import { DayLikeButton } from './DayLikeButton'
 import { FollowButton } from './FollowButton'
+import { UserAvatar } from './UserAvatar'
 
 interface CommunityMemberCardProps {
   member: CommunityMember
@@ -45,7 +46,6 @@ export function CommunityMemberCard({
         isSelf: member.isSelf,
       })
   const surplus = deficit < 0
-  const initials = member.nickname.slice(0, 1).toUpperCase()
   const todayBadge = isHiddenForViewer
     ? null
     : getTodayMemberCardBadge(isToday, {
@@ -131,12 +131,13 @@ export function CommunityMemberCard({
         }}
       >
         <div className="flex items-center gap-2.5">
-          <div
-            aria-hidden
-            className={`community-avatar ${member.isSelf ? 'community-avatar--self' : ''}`}
-          >
-            {initials}
-          </div>
+          <UserAvatar
+            variant="community"
+            size="sm"
+            nickname={member.nickname}
+            avatarUrl={member.avatarUrl}
+            isSelf={member.isSelf}
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-primary">
               {member.nickname}

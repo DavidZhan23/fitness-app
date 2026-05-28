@@ -37,6 +37,23 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByText(mealName)).toBeVisible()
   })
 
+  test('today page scrolls within app-main', async ({ page }) => {
+    await registerAndOnboard(page, uniqueE2eEmail())
+    for (let i = 0; i < 4; i++) {
+      await logExercise(page, `E2E 滚动 ${i}`, String(120 + i * 10))
+    }
+    const main = page.locator('.app-main')
+    const { scrollHeight, clientHeight } = await main.evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+    }))
+    expect(scrollHeight).toBeGreaterThan(clientHeight)
+    await main.evaluate((el) => {
+      el.scrollTop = el.scrollHeight
+    })
+    expect(await main.evaluate((el) => el.scrollTop)).toBeGreaterThan(10)
+  })
+
   test('community filter switches without full-page loading', async ({
     page,
   }) => {
@@ -67,6 +84,7 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByText('缺口连续')).toBeVisible()
 
     await nav.getByRole('link', { name: '设置' }).click()
+    await page.locator('summary').filter({ hasText: '打卡墙样式' }).click()
     const splitRadio = page.getByRole('radio', { name: /分屏版/ })
     const wallStyleSaved = page.waitForResponse(
       (resp) =>
@@ -86,5 +104,16 @@ test.describe.serial('main flow smoke', () => {
     await page.getByRole('tab', { name: '代谢墙' }).click()
     await expect(page.getByText('运动量少')).toBeHidden()
     await expect(page.getByText('盈余少')).toBeVisible()
+
+    await page.getByRole('button', { name: /日，今日$/ }).first().click()
+    await expect(page.locator('.heatmap-day--selected').first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: '今日小结' })).toBeVisible()
+  })
+
+  test('settings avatar control is available', async ({ page }) => {
+    await registerAndOnboard(page, uniqueE2eEmail())
+    const nav = mainNav(page)
+    await nav.getByRole('link', { name: '设置' }).click()
+    await expect(page.getByRole('button', { name: '更换头像' })).toBeVisible()
   })
 })

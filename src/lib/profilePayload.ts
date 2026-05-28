@@ -21,6 +21,13 @@ export function buildProfilePatchBody(
     body.nickname = nick ? nick.slice(0, 32) : null
   }
 
+  if (data.avatar_url !== undefined) {
+    body.avatar_url =
+      typeof data.avatar_url === 'string' && data.avatar_url.trim()
+        ? data.avatar_url.trim()
+        : null
+  }
+
   const w = num(data.weight_kg)
   const h = num(data.height_cm)
   const a = num(data.age)

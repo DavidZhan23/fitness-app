@@ -345,7 +345,7 @@ export const httpData = {
     year: number,
     month: number,
   ): Promise<{
-    member: { id: string; nickname: string; isSelf: boolean }
+    member: Pick<CommunityMember, 'id' | 'nickname' | 'isSelf' | 'avatarUrl'>
     year: number
     month: number
     logs: DayLog[]

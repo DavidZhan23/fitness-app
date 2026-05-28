@@ -41,14 +41,13 @@
   --heatmap-exercise-2: #14514b;
   --heatmap-exercise-3: #1d7365;
   --heatmap-exercise-4: #5ad7ea;
-  --heatmap-deficit-1: #20341c;
-  --heatmap-deficit-2: #315326;
-  --heatmap-deficit-3: #4d7c33;
-  --heatmap-deficit-4: #a6f36f;
   --heatmap-surplus-1: #37231b;
   --heatmap-surplus-2: #5a3322;
   --heatmap-surplus-3: #9e5b3e;
   --heatmap-surplus-4: #ff9f64;
+  --heatmap-day-selected-ring: #46e6d1;
+  --heatmap-day-selected-shadow: 0 0 12px rgb(70 230 209 / 0.4);
+  --heatmap-day-today-label-text: #a8fff0;
 
   --text-strong: var(--text-primary);
   --app-shell-bg: var(--surface-page);
@@ -78,9 +77,9 @@
   --calendar-stat-exercise-bg: #0e332f;
   --calendar-stat-exercise-border: #46e6d1;
   --calendar-stat-exercise-value: #5ad7ea;
-  --calendar-stat-deficit-bg: #20341c;
-  --calendar-stat-deficit-border: #6ccf4d;
-  --calendar-stat-deficit-value: #a6f36f;
+  --calendar-stat-deficit-bg: #0e332f;
+  --calendar-stat-deficit-border: #46e6d1;
+  --calendar-stat-deficit-value: #5ad7ea;
   --quick-action-exercise-bg: #0e332f;
   --quick-action-exercise-ring: #46e6d1;
   --quick-action-exercise-text: #d9fff8;
@@ -196,9 +195,16 @@
   --bmr-formula-text: #f1fff8;
   --bmr-formula-subtitle: #b8d7cc;
   --bmr-formula-legend: #b8d7cc;
-  --bmr-formula-sex-male: #0e332f;
-  --bmr-formula-sex-female: #37231b;
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
   --bmr-formula-var-bg: #183f38;
   --bmr-formula-var-text: #b8d7cc;
   --bmr-formula-constant: #46e6d1;
+
+  --settings-menu-text: var(--text-primary);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #ff9f64;
+  --btn-sign-out-bg: #183f38;
+  --btn-sign-out-border: #2f7468;
+  --btn-sign-out-hover-bg: #123a33;
 }

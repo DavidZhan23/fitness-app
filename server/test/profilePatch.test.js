@@ -36,4 +36,15 @@ describe('buildProfileUpdate', () => {
   it('rejects future birthday', () => {
     expect(parseBirthdayKey('2099-01-01')).toBeNull()
   })
+
+  it('accepts avatar data URL and clears with null', () => {
+    const tiny =
+      'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k='
+    const { updates, values } = buildProfileUpdate({ avatar_url: tiny })
+    expect(updates).toContain('avatar_url = $1')
+    expect(values[0]).toBe(tiny)
+    const cleared = buildProfileUpdate({ avatar_url: null })
+    expect(cleared.updates).toContain('avatar_url = $1')
+    expect(cleared.values[0]).toBeNull()
+  })
 })

@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "cleanup:e2e-users": "node scripts/cleanup-e2e-users.mjs",
     "preview": "vite preview",
     "prepare": "husky",
     "ai-flow": "bash scripts/ai-flow.sh",

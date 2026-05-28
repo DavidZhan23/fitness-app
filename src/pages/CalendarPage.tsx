@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PersonalDayStatus } from '../components/CommunityDayStatus'
-import { MonthHeatmap } from '../components/MonthHeatmap'
+import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
@@ -21,7 +21,13 @@ import {
   isBeforeAccountStart,
   normalizeDateKey,
 } from '../lib/streaks'
-import { resolveProfileMetabolism, toKcal } from '../lib/calories'
+import {
+  getCalendarDayDetailBackgroundClass,
+  getDeficitHeatmapCell,
+  getLiveWallLegendHighlight,
+  resolveProfileMetabolism,
+  toKcal,
+} from '../lib/calories'
 import type { DayLog, HeatmapDay } from '../types'
 
 export function CalendarPage() {
@@ -34,6 +40,7 @@ export function CalendarPage() {
   const [streakExercise, setStreakExercise] = useState(0)
   const [streakDeficit, setStreakDeficit] = useState(0)
   const scrollToDetailAfterSelect = useRef(false)
+  const [wallPane, setWallPane] = useState<MonthGridType>('exercise')
 
   const threshold = toKcal(profile?.deficit_threshold)
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
@@ -125,6 +132,24 @@ export function CalendarPage() {
     scrollToDetailAfterSelect.current = true
     const log = await httpData.fetchDayLogByDate(date)
     setSelected(log)
+    if (log) {
+      const key = normalizeDateKey(String(log.log_date))
+      const refreshed = buildMonthDayMap(
+        [log],
+        threshold,
+        todayKey,
+        accountStartKey,
+        profileBmr,
+      )
+      const cell = refreshed.get(key)
+      if (cell) {
+        setDayMap((prev) => {
+          const next = new Map(prev)
+          next.set(key, cell)
+          return next
+        })
+      }
+    }
   }
 
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))
@@ -159,6 +184,31 @@ export function CalendarPage() {
               new Date(`${selectedDateKey}T23:59:59`),
             )
       : 0
+
+  const selectedBeforeAccount =
+    selectedDateKey != null &&
+    isBeforeAccountStart(selectedDateKey, accountStartKey)
+  const liveDeficitHeatmap = getDeficitHeatmapCell(
+    selectedBeforeAccount ? 0 : selectedDeficit,
+    threshold,
+  )
+  const legendHighlight =
+    selectedDateKey && selected
+      ? getLiveWallLegendHighlight(
+          toKcal(selected.exercise_kcal),
+          liveDeficitHeatmap,
+          selectedBeforeAccount,
+        )
+      : null
+  const detailBgClass =
+    selectedDateKey && selected
+      ? getCalendarDayDetailBackgroundClass({
+          beforeAccount: selectedBeforeAccount,
+          splitExercisePane: profile?.wall_style === 'split' && wallPane === 'exercise',
+          exerciseKcal: toKcal(selected.exercise_kcal),
+          deficitHeatmap: liveDeficitHeatmap,
+        })
+      : 'heatmap-empty'
 
   if (loading) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -219,6 +269,9 @@ export function CalendarPage() {
             todayKey={todayKey}
             accountStartKey={accountStartKey}
             selectedDateKey={selectedDateKey}
+            legendHighlight={legendHighlight}
+            wallPane={wallPane}
+            onWallPaneChange={setWallPane}
             onDayClick={handleDayClick}
           />
         ) : (
@@ -229,6 +282,7 @@ export function CalendarPage() {
             todayKey={todayKey}
             accountStartKey={accountStartKey}
             selectedDateKey={selectedDateKey}
+            legendHighlight={legendHighlight}
             onDayClick={handleDayClick}
           />
         )}
@@ -237,7 +291,7 @@ export function CalendarPage() {
       {selected && (
         <section
           id="calendar-day-detail"
-          className="scroll-mt-4 surface-card p-4"
+          className={`scroll-mt-4 calendar-day-detail p-4 ${detailBgClass}`}
         >
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-medium">

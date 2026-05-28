@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
+import { RecordDeleteButton, RecordEditButton } from './RecordActionIcons'
 import type { Exercise, Meal } from '../types'
 
 type PendingDelete = {
@@ -99,7 +100,7 @@ export function LogList({
       )}
       {meals.length > 0 && (
         <section>
-          <h3 className="mb-2 text-sm font-medium text-amber-400">饮食</h3>
+          <h3 className="accent-meal mb-2 text-sm font-medium">饮食</h3>
           <ul className="space-y-2">
             {meals.map((m) => (
               <LogItem
@@ -230,22 +231,9 @@ function LogItem({
           {Math.round(savedKcal)} kcal
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          onClick={onStartEdit}
-          className="rounded-lg px-2 py-1 text-xs text-brand hover:bg-brand/10"
-        >
-          修改
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10"
-          aria-label="删除"
-        >
-          删除
-        </button>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <RecordEditButton onClick={onStartEdit} />
+        <RecordDeleteButton onClick={onDelete} />
       </div>
     </li>
   )

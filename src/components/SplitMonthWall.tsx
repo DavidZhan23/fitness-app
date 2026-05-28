@@ -13,9 +13,14 @@ export function SplitMonthWall({
   todayKey,
   accountStartKey = null,
   selectedDateKey = null,
+  legendHighlight = null,
+  wallPane: wallPaneProp,
+  onWallPaneChange,
   onDayClick,
 }: MonthHeatmapProps) {
-  const [pane, setPane] = useState<MonthGridType>('exercise')
+  const [internalPane, setInternalPane] = useState<MonthGridType>('exercise')
+  const pane = wallPaneProp ?? internalPane
+  const setPane = onWallPaneChange ?? setInternalPane
   const { weeks } = getMonthGrid(year, month)
 
   return (
@@ -47,6 +52,7 @@ export function SplitMonthWall({
           accountStartKey={accountStartKey}
           type="exercise"
           selectedDateKey={selectedDateKey}
+          legendHighlight={legendHighlight}
           onDayClick={onDayClick}
         />
       ) : (
@@ -57,6 +63,7 @@ export function SplitMonthWall({
           accountStartKey={accountStartKey}
           type="deficit"
           selectedDateKey={selectedDateKey}
+          legendHighlight={legendHighlight}
           onDayClick={onDayClick}
         />
       )}

@@ -28,7 +28,7 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/profile` | 读取资料 |
-| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换） |
+| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换）。支持 `avatar_url`：`data:image/(jpeg\|png\|webp);base64,...`（≤120KB），传 `null` 清除 |
 
 ## AI
 
@@ -92,8 +92,8 @@ Base URL：
 | GET | `/community/users/:userId/month` | 月历 |
 | POST/DELETE | `/community/users/:userId/follow` | 关注 |
 | POST/DELETE | `/community/users/:userId/likes` | 点赞日 |
-| GET | `/community/users/:userId/comments` | 评论列表 |
-| POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写） |
+| GET | `/community/users/:userId/comments` | 评论列表；每项含 `authorAvatarUrl`（作者头像 URL，可空） |
+| POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写）；响应含 `authorAvatarUrl` |
 | DELETE | `/community/comments/:commentId` | 删评论 |
 | POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |

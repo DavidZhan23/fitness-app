@@ -40,11 +40,11 @@ export function InstallGuide({ collapsible = false }: InstallGuideProps) {
   if (collapsible) {
     return (
       <details className="install-guide-card group">
-        <summary className="install-guide-card__summary cursor-pointer list-none px-4 py-3 font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
+        <summary className="install-guide-card__summary settings-menu-summary cursor-pointer list-none px-4 py-3 text-sm marker:content-none [&::-webkit-details-marker]:hidden">
           <span className="flex items-center justify-between gap-2">
             添加到手机桌面
             <span
-              className="text-muted transition group-open:rotate-90"
+              className="settings-menu-chevron transition group-open:rotate-90"
               aria-hidden
             >
               ▸
@@ -60,7 +60,9 @@ export function InstallGuide({ collapsible = false }: InstallGuideProps) {
 
   return (
     <section className="install-guide-card p-4">
-      <h2 className="install-guide-card__summary font-semibold">添加到手机桌面</h2>
+      <h2 className="install-guide-card__summary settings-menu-summary text-sm font-normal">
+        添加到手机桌面
+      </h2>
       <InstallGuideContent />
     </section>
   )

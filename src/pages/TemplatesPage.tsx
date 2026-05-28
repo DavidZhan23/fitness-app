@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { RecordDeleteButton } from '../components/RecordActionIcons'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import type { ExerciseTemplate, MealTemplate } from '../types'
@@ -174,13 +175,7 @@ export function TemplatesPage() {
               <p className="font-medium">{t.name}</p>
               <p className="text-sm text-muted tabular-nums">{Math.round(t.kcal)} kcal</p>
             </div>
-            <button
-              type="button"
-              onClick={() => deleteTemplate(t.id)}
-              className="text-danger text-xs"
-            >
-              删除
-            </button>
+            <RecordDeleteButton onClick={() => deleteTemplate(t.id)} />
           </li>
         ))}
       </ul>

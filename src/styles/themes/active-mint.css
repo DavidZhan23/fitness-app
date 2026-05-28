@@ -9,10 +9,10 @@
   --accent-pop-ring: #a9ddcf;
 
   --color-brand: #45b8a6;
-  --color-brand-dark: #249684;
+  --color-brand-dark: #1a6b5e;
   --color-surface: #eaf8f3;
   --color-card: #f6fffb;
-  --color-muted: #94aaa2;
+  --color-muted: #526b65;
   --color-tabbar: #ddf5ec;
 
   --surface-page: #eaf8f3;
@@ -21,9 +21,11 @@
   --surface-card-blue: #e3f3ff;
   --surface-card-pink: #fff6dd;
   --surface-card-border: #cbe5dc;
+  --text-ink: #2a4a42;
   --text-primary: #35524a;
-  --text-secondary: #6f8780;
-  --text-muted: #94aaa2;
+  --text-secondary: #4d6560;
+  --text-muted: #526b65;
+  --text-link: #1a6b5e;
   --text-on-accent: #f6fffb;
   --accent-exercise: #4fa8e8;
   --accent-exercise-strong: #2f86c8;
@@ -41,14 +43,13 @@
   --heatmap-exercise-2: #cde9ff;
   --heatmap-exercise-3: #9bd3f8;
   --heatmap-exercise-4: #4fa8e8;
-  --heatmap-deficit-1: #ddf5ec;
-  --heatmap-deficit-2: #bfebdd;
-  --heatmap-deficit-3: #8eddc5;
-  --heatmap-deficit-4: #45b8a6;
   --heatmap-surplus-1: #fff6dd;
   --heatmap-surplus-2: #ffecc5;
   --heatmap-surplus-3: #ffd5a8;
   --heatmap-surplus-4: #f59e7a;
+  --heatmap-day-selected-ring: #249684;
+  --heatmap-day-selected-shadow: 0 0 10px rgb(36 150 132 / 0.35);
+  --heatmap-day-today-label-text: #1a7a6a;
 
   --text-strong: var(--text-primary);
   --app-shell-bg: var(--surface-page);
@@ -78,9 +79,9 @@
   --calendar-stat-exercise-bg: #e3f3ff;
   --calendar-stat-exercise-border: #b7ddf7;
   --calendar-stat-exercise-value: #4fa8e8;
-  --calendar-stat-deficit-bg: #ddf5ec;
-  --calendar-stat-deficit-border: #a9ddcf;
-  --calendar-stat-deficit-value: #36b37e;
+  --calendar-stat-deficit-bg: #e3f3ff;
+  --calendar-stat-deficit-border: #b7ddf7;
+  --calendar-stat-deficit-value: #4fa8e8;
   --quick-action-exercise-bg: #e3f3ff;
   --quick-action-exercise-ring: #b7ddf7;
   --quick-action-exercise-text: #4fa8e8;
@@ -189,16 +190,23 @@
   --template-tab-meal-active-bg: #fff6dd;
   --template-tab-meal-active-text: #e87855;
   --template-tab-meal-active-ring: #f1ddaa;
-  --bmr-formula-panel-bg: #249684;
-  --bmr-formula-panel-border: #45b8a6;
-  --bmr-formula-card-bg: #249684;
-  --bmr-formula-card-ring: #45b8a6;
-  --bmr-formula-text: #f6fffb;
-  --bmr-formula-subtitle: #6f8780;
-  --bmr-formula-legend: #bfebdd;
-  --bmr-formula-sex-male: #cde9ff;
-  --bmr-formula-sex-female: #ffecc5;
-  --bmr-formula-var-bg: #249684;
-  --bmr-formula-var-text: #ddf5ec;
-  --bmr-formula-constant: #bfebdd;
+  --bmr-formula-panel-bg: #ddf5ec;
+  --bmr-formula-panel-border: #a9ddcf;
+  --bmr-formula-card-bg: #f6fffb;
+  --bmr-formula-card-ring: #cbe5dc;
+  --bmr-formula-text: var(--text-ink);
+  --bmr-formula-subtitle: var(--text-secondary);
+  --bmr-formula-legend: var(--text-muted);
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
+  --bmr-formula-var-bg: #cbe5dc;
+  --bmr-formula-var-text: var(--text-ink);
+  --bmr-formula-constant: var(--text-ink);
+
+  --settings-menu-text: var(--text-link);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #1a6b5e;
+  --btn-sign-out-bg: #ddf5ec;
+  --btn-sign-out-border: #a9ddcf;
+  --btn-sign-out-hover-bg: #cbe5dc;
 }

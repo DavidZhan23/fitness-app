@@ -39,14 +39,13 @@
   --heatmap-exercise-2: #0f766e;
   --heatmap-exercise-3: #14b8a6;
   --heatmap-exercise-4: #5eead4;
-  --heatmap-deficit-1: rgb(6 78 59 / 0.8);
-  --heatmap-deficit-2: #047857;
-  --heatmap-deficit-3: #10b981;
-  --heatmap-deficit-4: #6ee7b7;
   --heatmap-surplus-1: #fca5a5;
   --heatmap-surplus-2: #ef4444;
   --heatmap-surplus-3: #b91c1c;
   --heatmap-surplus-4: rgb(127 29 29 / 0.8);
+  --heatmap-day-selected-ring: #fbbf24;
+  --heatmap-day-selected-shadow: 0 0 12px rgb(251 191 36 / 0.45);
+  --heatmap-day-today-label-text: #fde68a;
 
   --text-strong: var(--text-primary);
   --app-shell-bg: var(--surface-page);
@@ -198,9 +197,16 @@
   --bmr-formula-text: #e2e8f0;
   --bmr-formula-subtitle: #94a3b8;
   --bmr-formula-legend: #94a3b8;
-  --bmr-formula-sex-male: #38bdf8;
-  --bmr-formula-sex-female: #f472b6;
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
   --bmr-formula-var-bg: rgb(51 65 85 / 0.8);
   --bmr-formula-var-text: #5eead4;
   --bmr-formula-constant: #5eead4;
+
+  --settings-menu-text: var(--text-primary);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #5eead4;
+  --btn-sign-out-bg: #1e293b;
+  --btn-sign-out-border: rgb(20 184 166 / 0.45);
+  --btn-sign-out-hover-bg: #334155;
 }
