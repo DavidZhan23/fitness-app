@@ -86,6 +86,14 @@ PW_REUSE_SERVER=1 PLAYWRIGHT_API_PORT=3001 PLAYWRIGHT_WEB_PORT=5173 REGISTRATION
 
 首次运行需安装浏览器：`npx playwright install chromium`
 
+**移动端布局检查**（改 Layout / 底栏 / 社区卡 / 打卡墙等后手动跑，不进默认 verify）：
+
+```bash
+npm run check:mobile-layout
+```
+
+详见 [ops/mobile-layout-check.md](ops/mobile-layout-check.md)。
+
 ## 6. 开始一个新功能
 
 ```bash
