@@ -90,6 +90,8 @@ export function SettingsPage() {
   const { user, profile, updateProfile, signOut } = useAuth()
   const { style, setStyle } = useAppStyle()
   const navigate = useNavigate()
+  const appreciationQrSrc = '/赞赏码.jpg'
+  const [qrLoadFailed, setQrLoadFailed] = useState(false)
   const [weight, setWeight] = useState(String(profile?.weight_kg ?? ''))
   const [height, setHeight] = useState(String(profile?.height_cm ?? ''))
   const [birthday, setBirthday] = useState(
@@ -369,92 +371,155 @@ export function SettingsPage() {
       {profile && <MetabolismSummary profile={profile} />}
 
       <section className="surface-card p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h2 className="font-semibold text-primary">打卡墙样式</h2>
-          {wallStyleSaveState === 'saving' && (
-            <span className="text-xs text-muted">保存中…</span>
-          )}
-          {wallStyleSaveState === 'saved' && (
-            <span className="text-xs text-brand">已保存</span>
-          )}
-          {wallStyleSaveState === 'error' && (
-            <span className="text-xs text-amber-400">保存失败</span>
-          )}
-        </div>
-        <fieldset className="mt-3 space-y-2">
-          <legend className="sr-only">打卡墙样式</legend>
-          <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
-            <input
-              type="radio"
-              name="wall_style"
-              value="classic"
-              checked={wallStyle === 'classic'}
-              onChange={() => setWallStyle('classic')}
-              className="mt-1"
-            />
-            <span className="text-sm">
-              <span className="font-medium text-primary">经典版</span>
-              <span className="mt-0.5 block text-xs text-muted">
-                同时展示运动和代谢
+        <details className="group">
+          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center justify-between gap-2">
+              打卡墙样式
+              <span
+                className="text-muted transition group-open:rotate-90"
+                aria-hidden
+              >
+                ▸
               </span>
             </span>
-          </label>
-          <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
-            <input
-              type="radio"
-              name="wall_style"
-              value="split"
-              checked={wallStyle === 'split'}
-              onChange={() => setWallStyle('split')}
-              className="mt-1"
-            />
-            <span className="text-sm">
-              <span className="font-medium text-primary">分屏版</span>
-              <span className="mt-0.5 block text-xs text-muted">
-                切换查看，更聚焦
-              </span>
-            </span>
-          </label>
-        </fieldset>
+          </summary>
+          <div className="mt-4 space-y-3 border-t border-slate-600/40 pt-4">
+            <div className="flex min-h-5 items-center justify-end gap-2 text-xs">
+              {wallStyleSaveState === 'saving' && (
+                <span className="text-muted">保存中…</span>
+              )}
+              {wallStyleSaveState === 'saved' && (
+                <span className="text-brand">已保存</span>
+              )}
+              {wallStyleSaveState === 'error' && (
+                <span className="text-amber-400">保存失败</span>
+              )}
+            </div>
+            <fieldset className="space-y-2">
+              <legend className="sr-only">打卡墙样式</legend>
+              <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
+                <input
+                  type="radio"
+                  name="wall_style"
+                  value="classic"
+                  checked={wallStyle === 'classic'}
+                  onChange={() => setWallStyle('classic')}
+                  className="mt-1"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-primary">经典版</span>
+                  <span className="mt-0.5 block text-xs text-muted">
+                    同时展示运动和代谢
+                  </span>
+                </span>
+              </label>
+              <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
+                <input
+                  type="radio"
+                  name="wall_style"
+                  value="split"
+                  checked={wallStyle === 'split'}
+                  onChange={() => setWallStyle('split')}
+                  className="mt-1"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-primary">分屏版</span>
+                  <span className="mt-0.5 block text-xs text-muted">
+                    切换查看，更聚焦
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+          </div>
+        </details>
       </section>
 
       <section className="surface-panel p-4">
-        <h2 className="font-semibold text-primary">风格</h2>
-        <p className="mt-1 text-sm text-muted">选择你喜欢的界面配色</p>
-        <div className="mt-3 space-y-2">
-          {styleOptions.map((item) => {
-            const active = style === item.id
-            const optionClassName = [
-              'style-option',
-              item.optionClassName,
-              active ? `${item.optionClassName}--active` : '',
-            ]
-              .filter(Boolean)
-              .join(' ')
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setStyle(item.id)}
-                className={optionClassName}
-                aria-pressed={active}
+        <details className="group">
+          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center justify-between gap-2">
+              主题风格
+              <span
+                className="text-muted transition group-open:rotate-90"
+                aria-hidden
               >
-                <span className="flex items-center justify-between gap-3">
-                  <span>
-                    <span className="block text-sm font-medium text-primary">
-                      {item.title}
+                ▸
+              </span>
+            </span>
+          </summary>
+          <div className="mt-4 border-t border-slate-600/40 pt-4">
+            <p className="text-sm text-muted">选择你喜欢的界面配色</p>
+            <div className="mt-3 space-y-2">
+              {styleOptions.map((item) => {
+                const active = style === item.id
+                const optionClassName = [
+                  'style-option',
+                  item.optionClassName,
+                  active ? `${item.optionClassName}--active` : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setStyle(item.id)}
+                    className={optionClassName}
+                    aria-pressed={active}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span>
+                        <span className="block text-sm font-medium text-primary">
+                          {item.title}
+                        </span>
+                        <span className="block text-xs text-muted">{item.description}</span>
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`h-4 w-16 shrink-0 rounded-full ring-1 ring-white/25 ${item.swatchClassName}`}
+                      />
                     </span>
-                    <span className="block text-xs text-muted">{item.description}</span>
-                  </span>
-                  <span
-                    aria-hidden
-                    className={`h-4 w-16 shrink-0 rounded-full ring-1 ring-white/25 ${item.swatchClassName}`}
-                  />
-                </span>
-              </button>
-            )
-          })}
-        </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section className="surface-panel p-4">
+        <details className="group">
+          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center justify-between gap-2">
+              我要打赏
+              <span
+                className="text-muted transition group-open:rotate-90"
+                aria-hidden
+              >
+                ▸
+              </span>
+            </span>
+          </summary>
+          <div className="mt-4 border-t border-slate-600/40 pt-4">
+            <p className="mb-3 text-sm text-muted">
+              助力开发者买token继续开发˵&gt;ㅿ&lt;˵
+            </p>
+            {!qrLoadFailed ? (
+              <img
+                src={appreciationQrSrc}
+                alt="开发者赞赏码"
+                className="w-full max-w-xs rounded-xl border border-slate-500/40"
+                onError={() => setQrLoadFailed(true)}
+              />
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-500/50 px-3 py-3 text-xs text-muted">
+                当前环境无法直接读取本地赞赏码图片。你可以把图片放到
+                <code className="mx-1 rounded bg-black/20 px-1 py-0.5">public/赞赏码.png</code>
+                后，我再帮你改成稳定展示。
+              </div>
+            )}
+          </div>
+        </details>
       </section>
 
       <InstallGuide collapsible />
