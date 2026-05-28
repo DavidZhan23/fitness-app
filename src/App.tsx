@@ -14,7 +14,7 @@ const CalendarPage = lazy(() =>
   import('./pages/CalendarPage').then((m) => ({ default: m.CalendarPage })),
 )
 const LogPage = lazy(() =>
-  import('./pages/LogPage').then((m) => ({ default: m.LogPage })),
+  import('./pages/LogPage.tsx').then((m) => ({ default: m.LogPage })),
 )
 const OnboardingPage = lazy(() =>
   import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })),

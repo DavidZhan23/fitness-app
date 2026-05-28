@@ -121,8 +121,8 @@ export function TodayPage() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted">
-        你好，<span className="font-medium text-slate-200">{greeting}</span>
+      <p className="text-sm text-muted-soft">
+        你好，<span className="font-medium text-primary">{greeting}</span>
       </p>
       <DeficitCard
         dateLabel={dateLabel}

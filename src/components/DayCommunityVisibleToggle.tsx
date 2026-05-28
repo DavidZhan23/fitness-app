@@ -20,18 +20,15 @@ export function DayCommunityVisibleToggle({
         e.stopPropagation()
         onToggle()
       }}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition disabled:opacity-50 ${
+      className={`community-visibility-toggle disabled:opacity-50 ${
         visible
-          ? 'bg-violet-500/25 text-violet-200 ring-1 ring-violet-400/40'
-          : 'bg-slate-800 text-muted ring-1 ring-slate-600'
+          ? 'community-visibility-toggle--on'
+          : 'community-visibility-toggle--off'
       }`}
       aria-pressed={visible}
       aria-label={visible ? '今日已公开，点击隐藏' : '今日已隐藏，点击公开'}
     >
-      <span
-        aria-hidden
-        className={`h-2 w-2 shrink-0 rounded-full ${visible ? 'bg-violet-400' : 'bg-slate-500'}`}
-      />
+      <span aria-hidden className="community-visibility-toggle__dot" />
       {label}
     </button>
   )

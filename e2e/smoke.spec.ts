@@ -67,8 +67,16 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByText('缺口连续')).toBeVisible()
 
     await nav.getByRole('link', { name: '设置' }).click()
-    await page.getByRole('radio', { name: /分屏版/ }).click()
-    await expect(page.getByText('已保存')).toBeVisible({ timeout: 8000 })
+    const splitRadio = page.getByRole('radio', { name: /分屏版/ })
+    const wallStyleSaved = page.waitForResponse(
+      (resp) =>
+        resp.ok() &&
+        resp.request().method() === 'PATCH' &&
+        resp.url().includes('/profile'),
+    )
+    await splitRadio.click()
+    await expect(splitRadio).toBeChecked()
+    await wallStyleSaved
 
     await nav.getByRole('link', { name: '打卡' }).click()
     await expect(page.getByRole('tab', { name: '运动墙' })).toBeVisible()

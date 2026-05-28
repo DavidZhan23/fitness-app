@@ -1,4 +1,4 @@
-description: Git workflow — confirm gate, conventional commits, push-main with manual deploy reminder
+description: Git workflow — confirm gate, conventional commits, go means commit+push branch+open PR
 alwaysApply: true
 ---
 
@@ -20,7 +20,8 @@ Before **any** `git commit` or `git push`, print this block and **stop**:
 - 改动文件：<list, N files>
 - diff 摘要：+<additions> / -<deletions> 行
 - commit message：<full conventional message>
-- push 目标：origin main
+- push 目标：origin <current-branch>
+- PR 目标：main（创建或更新 PR）
 
 回复 go 继续，或告诉我需要调整哪里。
 ```
@@ -29,11 +30,18 @@ Proceed only if the user replies `go`, `ok`, `yes`, or clear approval. Any other
 
 ## After user says go
 
-Commit and push manually with the same checks.
+Default flow (unless user explicitly says otherwise):
 
-## After push — manual deploy reminder
+1. Commit on current working branch.
+2. Push current branch to `origin/<current-branch>`.
+3. Create or update PR to `main` (`head=<current-branch>`, `base=main`).
+4. Return PR URL to user.
 
-After a successful push to `main`, remind user:
+If branch is `main`, create a new `feat/<slug>` branch first, then follow steps above.
+
+## After merge to main — manual deploy reminder
+
+After PR is merged to `main`, remind user:
 
 - owner needs to run manual deploy (`npm run deploy:tencent` or `npm run deploy:tencent:api`)
 - repo currently has no active GitHub Actions deploy pipeline

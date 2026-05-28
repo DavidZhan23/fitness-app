@@ -10,5 +10,6 @@
 | [0004](0004-date-tz-strategy.md) | 日期键时区策略（前端本地 vs 后端 Asia/Shanghai） | accepted |
 | [0005](0005-ai-provider-adapter.md) | AI 估算 provider adapter 雏形 | accepted |
 | [0006](0006-migration-single-source.md) | 迁移至 SQL migration 单一真相源（分阶段） | accepted |
+| [0007](0007-theme-tokens.md) | 主题 CSS token 与语义 utility | accepted |
 
 新决策：复制 [_template.md](_template.md)。

@@ -167,28 +167,30 @@ export function CalendarPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold">打卡墙</h1>
+        <h1 className="text-xl font-bold text-primary">打卡墙</h1>
         <p className="mt-1 text-sm text-muted">
           {/* 每月一图，运动与缺口/盈余颜色越深表示幅度越大（绿=缺口，红=盈余）； */}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="运动连续" value={streakExercise} unit="天" />
-        <StatCard label="缺口连续" value={streakDeficit} unit="天" />
+        <StatCard label="运动连续" value={streakExercise} unit="天" variant="exercise" />
+        <StatCard label="缺口连续" value={streakDeficit} unit="天" variant="deficit" />
       </div>
 
-      <section className="rounded-2xl bg-card p-4 ring-1 ring-slate-700/50">
+      <section className="surface-card p-4">
         <div className="mb-4 flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={goPrev}
-            className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-slate-200"
+            className="btn-month-nav"
           >
             ‹ 上月
           </button>
           <div className="text-center">
-            <p className="font-semibold">{formatMonthTitle(year, month)}</p>
+            <p className="font-semibold text-primary">
+              {formatMonthTitle(year, month)}
+            </p>
             {!isCurrentMonth && (
               <button
                 type="button"
@@ -203,7 +205,7 @@ export function CalendarPage() {
             type="button"
             onClick={goNext}
             disabled={isCurrentMonth}
-            className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-slate-200 disabled:opacity-40"
+            className="btn-month-nav"
           >
             下月 ›
           </button>
@@ -235,7 +237,7 @@ export function CalendarPage() {
       {selected && (
         <section
           id="calendar-day-detail"
-          className="scroll-mt-4 rounded-2xl bg-card p-4 ring-1 ring-slate-700/50"
+          className="scroll-mt-4 surface-card p-4"
         >
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-medium">
@@ -244,7 +246,7 @@ export function CalendarPage() {
             <button
               type="button"
               onClick={() => setSelected(null)}
-              className="rounded-lg px-2 py-1 text-xs text-muted hover:bg-slate-800 hover:text-slate-200"
+              className="btn-soft px-2 py-1 text-xs"
               aria-label="关闭当日详情"
             >
               关闭
@@ -303,15 +305,17 @@ function StatCard({
   label,
   value,
   unit,
+  variant,
 }: {
   label: string
   value: number
   unit: string
+  variant: 'exercise' | 'deficit'
 }) {
   return (
-    <div className="rounded-xl bg-card px-4 py-3 text-center ring-1 ring-slate-700/50">
+    <div className={`calendar-stat-card calendar-stat-card--${variant} px-4 py-3 text-center`}>
       <p className="text-xs text-muted">{label}</p>
-      <p className="text-2xl font-bold tabular-nums text-brand">
+      <p className="calendar-stat-card__value text-2xl font-bold tabular-nums">
         {value}
         <span className="ml-1 text-sm font-normal text-muted">{unit}</span>
       </p>

@@ -70,7 +70,7 @@ export function CommunityMemberCard({
 
   return (
     <article
-      className={`group relative overflow-hidden bg-card/80 ring-1 ring-slate-700/50 transition hover:ring-violet-500/40 hover:bg-slate-800/90 ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? 'hover:ring-inherit' : ''}`}
+      className={`community-member-card group relative overflow-hidden ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? '' : ''}`}
     >
       {isElite && (
         <>
@@ -133,19 +133,15 @@ export function CommunityMemberCard({
         <div className="flex items-center gap-2.5">
           <div
             aria-hidden
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-bold ${
-              member.isSelf
-                ? 'bg-violet-500/30 text-violet-200 ring-1 ring-violet-400/50'
-                : 'bg-slate-700/80 text-slate-200 ring-1 ring-slate-600'
-            }`}
+            className={`community-avatar ${member.isSelf ? 'community-avatar--self' : ''}`}
           >
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-100">
+            <p className="truncate text-sm font-semibold text-primary">
               {member.nickname}
               {member.isSelf && (
-                <span className="ml-1 text-[10px] font-normal text-violet-300">
+                <span className="ml-1 text-[10px] font-normal accent-exercise">
                   我
                 </span>
               )}
@@ -180,16 +176,14 @@ export function CommunityMemberCard({
         </div>
 
         {isHiddenForViewer ? (
-          <p className="mt-2 rounded-lg border border-dashed border-slate-600/60 bg-slate-900/40 px-2 py-2 text-center text-xs text-muted">
-            今日已隐藏
-          </p>
+          <p className="community-hidden-panel">今日已隐藏</p>
         ) : (
           <>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-muted">
-              <span className="rounded-md bg-teal-900/30 px-1.5 py-0.5 text-teal-300/90">
+              <span className="community-stat-pill community-stat-pill--exercise">
                 {formatExerciseKcalLine(exerciseKcal)}
               </span>
-              <span className="rounded-md bg-amber-900/25 px-1.5 py-0.5 text-amber-300/90">
+              <span className="community-stat-pill community-stat-pill--meal">
                 {formatMealKcalLine(mealKcal)}
               </span>
             </div>
@@ -208,7 +202,7 @@ export function CommunityMemberCard({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1.5 border-t border-slate-700/40 px-3 py-2">
+      <div className="community-member-card__footer flex min-w-0 flex-nowrap items-center justify-between gap-1.5 px-3 py-2">
         {!member.isSelf ? (
           <DayLikeButton
             userId={member.id}

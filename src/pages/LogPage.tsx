@@ -55,13 +55,13 @@ export function LogPage() {
   }
 
   return (
-    <div className="page-standalone">
+    <div className="page-standalone" data-log-kind={kind}>
       <div className="mx-auto max-w-lg space-y-6 px-4 py-4">
         <div>
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="text-sm text-muted hover:text-slate-200"
+            className="text-sm text-secondary hover:text-primary"
           >
             ← 返回
           </button>

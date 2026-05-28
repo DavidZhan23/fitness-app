@@ -19,18 +19,70 @@ const styleOptions: Array<{
   title: string
   description: string
   swatchClassName: string
+  optionClassName: string
 }> = [
   {
     id: 'default',
     title: '深海能量',
     description: '偏运动感的深色青绿系',
     swatchClassName: 'style-swatch-ocean',
+    optionClassName: 'style-option-ocean',
   },
   {
-    id: 'dream',
-    title: '粉蓝逸梦',
-    description: '少女感蓝粉系（高粉感 + 浅蓝）',
-    swatchClassName: 'style-swatch-dream',
+    id: 'abyssal-jade',
+    title: '深海能量 2',
+    description: '墨绿深海、翡翠主操、荧光青运动、珊瑚橙饮食',
+    swatchClassName: 'style-swatch-abyssal-jade',
+    optionClassName: 'style-option-abyssal-jade',
+  },
+  {
+    id: 'lavender',
+    title: '薰衣云梦',
+    description: '云雾淡紫底、奶白紫卡，薰衣草主操、紫蓝运动、玫瑰紫粉饮食',
+    swatchClassName: 'style-swatch-lavender',
+    optionClassName: 'style-option-lavender',
+  },
+  {
+    id: 'sakura',
+    title: '樱海晴梦',
+    description: '奶粉底、白粉卡，运动蓝与饮食粉分工明确',
+    swatchClassName: 'style-swatch-sakura',
+    optionClassName: 'style-option-sakura',
+  },
+  {
+    id: 'sakura-blush',
+    title: '樱粉云境',
+    description: '樱花粉底、奶粉卡，运动蓝 / 饮食莓粉',
+    swatchClassName: 'style-swatch-sakura-blush',
+    optionClassName: 'style-option-sakura-blush',
+  },
+  {
+    id: 'active-mint',
+    title: '轻氧薄荷',
+    description: '薄荷雾绿底、奶白薄荷卡，蓝管运动、珊瑚橙管饮食、绿管缺口',
+    swatchClassName: 'style-swatch-active-mint',
+    optionClassName: 'style-option-active-mint',
+  },
+  {
+    id: 'eva',
+    title: '暴走初号机',
+    description: '深黑紫机甲底 · 荧光绿运动缺口 · 插入栓橙饮食',
+    swatchClassName: 'style-swatch-eva',
+    optionClassName: 'style-option-eva',
+  },
+  {
+    id: 'eva-unit02',
+    title: '烈焰二号机',
+    description: '深黑红驾驶舱 · 二号机红主操 · 橙黄饮食 · 荧光绿运动缺口',
+    swatchClassName: 'style-swatch-eva-unit02',
+    optionClassName: 'style-option-eva-unit02',
+  },
+  {
+    id: 'gundam-hangar',
+    title: '格纳库提坦斯',
+    description: '暗色提坦斯钢蓝装甲、冷青运动缺口、琥珀饮食摄入，格纳库仪表盘感',
+    swatchClassName: 'style-swatch-gundam-hangar',
+    optionClassName: 'style-option-gundam-hangar',
   },
 ]
 
@@ -164,7 +216,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <h1 className="text-xl font-bold">设置</h1>
+      <h1 className="text-xl font-bold text-primary">设置</h1>
 
       {user?.isDeveloper && (
         <Link
@@ -177,7 +229,7 @@ export function SettingsPage() {
       )}
 
       <section className="surface-panel p-4">
-        <h2 className="font-semibold text-slate-100">个人资料</h2>
+        <h2 className="font-semibold text-primary">个人资料</h2>
 
         <div className="mt-3 flex items-center gap-3">
           <UserAvatar profile={profile} user={user} size="lg" />
@@ -314,9 +366,11 @@ export function SettingsPage() {
         </details>
       </section>
 
-      <section className="rounded-2xl bg-slate-800/80 p-4 ring-1 ring-slate-600/50">
+      {profile && <MetabolismSummary profile={profile} />}
+
+      <section className="surface-card p-4">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="font-semibold text-slate-100">打卡墙样式</h2>
+          <h2 className="font-semibold text-primary">打卡墙样式</h2>
           {wallStyleSaveState === 'saving' && (
             <span className="text-xs text-muted">保存中…</span>
           )}
@@ -329,7 +383,7 @@ export function SettingsPage() {
         </div>
         <fieldset className="mt-3 space-y-2">
           <legend className="sr-only">打卡墙样式</legend>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-600/50 px-3 py-2.5 has-[:checked]:border-violet-500/50 has-[:checked]:bg-violet-950/20">
+          <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
             <input
               type="radio"
               name="wall_style"
@@ -339,13 +393,13 @@ export function SettingsPage() {
               className="mt-1"
             />
             <span className="text-sm">
-              <span className="font-medium text-slate-100">经典版</span>
+              <span className="font-medium text-primary">经典版</span>
               <span className="mt-0.5 block text-xs text-muted">
                 同时展示运动和代谢
               </span>
             </span>
           </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-600/50 px-3 py-2.5 has-[:checked]:border-violet-500/50 has-[:checked]:bg-violet-950/20">
+          <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
             <input
               type="radio"
               name="wall_style"
@@ -355,7 +409,7 @@ export function SettingsPage() {
               className="mt-1"
             />
             <span className="text-sm">
-              <span className="font-medium text-slate-100">分屏版</span>
+              <span className="font-medium text-primary">分屏版</span>
               <span className="mt-0.5 block text-xs text-muted">
                 切换查看，更聚焦
               </span>
@@ -364,27 +418,16 @@ export function SettingsPage() {
         </fieldset>
       </section>
 
-      {profile && <MetabolismSummary profile={profile} />}
-
       <section className="surface-panel p-4">
-        <h2 className="font-semibold text-slate-100">风格</h2>
+        <h2 className="font-semibold text-primary">风格</h2>
         <p className="mt-1 text-sm text-muted">选择你喜欢的界面配色</p>
         <div className="mt-3 space-y-2">
           {styleOptions.map((item) => {
             const active = style === item.id
-            const isOcean = item.id === 'default'
-            const isDream = item.id === 'dream'
             const optionClassName = [
               'style-option',
-              isOcean ? 'style-option-ocean' : '',
-              isDream ? 'style-option-dream' : '',
-              active
-                ? isOcean
-                  ? 'style-option-ocean--active'
-                  : isDream
-                    ? 'style-option-dream--active'
-                    : 'style-option--active'
-                : '',
+              item.optionClassName,
+              active ? `${item.optionClassName}--active` : '',
             ]
               .filter(Boolean)
               .join(' ')
@@ -398,7 +441,7 @@ export function SettingsPage() {
               >
                 <span className="flex items-center justify-between gap-3">
                   <span>
-                    <span className="block text-sm font-medium text-slate-100">
+                    <span className="block text-sm font-medium text-primary">
                       {item.title}
                     </span>
                     <span className="block text-xs text-muted">{item.description}</span>
@@ -419,7 +462,7 @@ export function SettingsPage() {
       <button
         type="button"
         onClick={handleSignOut}
-        className="w-full rounded-xl border border-red-500/50 py-3 text-red-400"
+        className="btn-danger w-full py-3"
       >
         退出登录
       </button>

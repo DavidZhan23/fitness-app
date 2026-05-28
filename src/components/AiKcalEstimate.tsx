@@ -111,7 +111,7 @@ export function AiKcalEstimate({
   }
 
   return (
-    <div className="rounded-xl border border-violet-500/25 bg-violet-950/20 px-4 py-4 ring-1 ring-violet-500/15">
+    <div className="log-ai-card px-4 py-4">
       <label className="block">
         <span className="text-sm text-muted">名称</span>
         <input
@@ -130,7 +130,7 @@ export function AiKcalEstimate({
         type="button"
         disabled={disabled || loading}
         onClick={() => void handleEstimate()}
-        className="mt-3 w-full rounded-xl bg-violet-700/85 py-3 text-sm font-medium text-violet-50 transition hover:bg-violet-600/90 disabled:opacity-50"
+        className="log-ai-btn mt-3 w-full py-3 text-sm font-medium disabled:opacity-50"
       >
         {loading ? '估算中…' : 'AI 估算 kcal'}
       </button>
@@ -140,9 +140,9 @@ export function AiKcalEstimate({
           : '填写食物名称后可直接保存；需要辅助时点「AI 估算」自动填入热量。'}
       </p>
       {lastKcal != null && !error && (
-        <p className="mt-2 text-sm text-emerald-300/95">
+        <p className="mt-2 text-sm accent-exercise">
           估算约{' '}
-          <span className="font-bold tabular-nums text-emerald-300">{lastKcal}</span>{' '}
+          <span className="font-bold tabular-nums">{lastKcal}</span>{' '}
           kcal，已填入下方（可再改）
         </p>
       )}

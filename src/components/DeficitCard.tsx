@@ -27,13 +27,20 @@ export function DeficitCard({
   fullDayBmr,
 }: DeficitCardProps) {
   const positive = hasDeficitCheck(deficit, threshold)
+  const surplus = deficit < -threshold
 
   return (
     <section className="theme-hero-card p-5">
       <p className="text-sm text-muted">{dateLabel}</p>
       <div className="mt-2 flex items-baseline gap-2">
         <span
-          className="text-4xl font-bold tabular-nums !text-[#F8C2DA]"
+          className={`theme-deficit-value text-4xl font-bold tabular-nums ${
+            surplus
+              ? 'theme-deficit-value--surplus'
+              : positive
+                ? 'theme-deficit-value--positive'
+                : 'theme-deficit-value--neutral'
+          }`}
         >
           {deficit > 0 ? '+' : ''}
           {Math.round(deficit)}
@@ -49,9 +56,9 @@ export function DeficitCard({
         )}
       </p>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
-        <Stat label={metabolismLabel} value={metabolismKcal} />
-        <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} accent />
-        <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} />
+        <Stat label={metabolismLabel} value={metabolismKcal} variant="base" />
+        <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} variant="exercise" />
+        <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} variant="meal" />
       </div>
     </section>
   )
@@ -60,20 +67,16 @@ export function DeficitCard({
 function Stat({
   label,
   value,
-  accent,
+  variant,
 }: {
   label: string
   value: number
-  accent?: boolean
+  variant: 'base' | 'exercise' | 'meal'
 }) {
   return (
-    <div className="theme-hero-stat px-2 py-2">
+    <div className={`theme-hero-stat theme-hero-stat--${variant} px-2 py-2`}>
       <p className="text-xs text-muted">{label}</p>
-      <p
-        className={`mt-0.5 font-semibold tabular-nums ${
-          accent ? 'text-brand' : 'text-slate-100'
-        }`}
-      >
+      <p className="theme-hero-stat__value mt-0.5 font-semibold tabular-nums">
         {Math.round(value)} kcal
       </p>
     </div>
