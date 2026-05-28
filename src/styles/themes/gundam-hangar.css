@@ -1,6 +1,6 @@
 /* 格纳库提坦斯 / Titans Hangar */
 /*
- * 暗色提坦斯钢蓝装甲：深黑蓝底、蓝灰面板、钢蓝主操、冷青运动/缺口、琥珀饮食。
+ * 暗色提坦斯格纳库：深黑蓝底、钢蓝主操、冷青运动、暗红饮食/盈余/选中分段。
  */
 [data-style='gundam-hangar'] {
   --accent-pop: #425f8a;
@@ -19,7 +19,7 @@
   --surface-card: #182638;
   --surface-card-soft: #24364b;
   --surface-card-blue: #173442;
-  --surface-card-pink: #332719;
+  --surface-card-pink: #261318;
   --surface-card-border: #3b4f68;
   --text-primary: #eef4ff;
   --text-secondary: #b5c2d2;
@@ -28,9 +28,9 @@
   --accent-exercise: #56afc2;
   --accent-exercise-strong: #8ad2dd;
   --accent-exercise-soft: #173442;
-  --accent-meal: #b9854a;
-  --accent-meal-strong: #d2a76e;
-  --accent-meal-soft: #332719;
+  --accent-meal: #8a3d4d;
+  --accent-meal-strong: #c46878;
+  --accent-meal-soft: #261318;
   --danger: #3a1e26;
   --danger-strong: #b75663;
   --btn-primary-bg: #425f8a;
@@ -41,14 +41,13 @@
   --heatmap-exercise-2: #235264;
   --heatmap-exercise-3: #3f7d8a;
   --heatmap-exercise-4: #56afc2;
-  --heatmap-deficit-1: #173a34;
-  --heatmap-deficit-2: #24564e;
-  --heatmap-deficit-3: #3c7b70;
-  --heatmap-deficit-4: #4ea59b;
-  --heatmap-surplus-1: #332719;
-  --heatmap-surplus-2: #4a3821;
-  --heatmap-surplus-3: #80633d;
-  --heatmap-surplus-4: #b9854a;
+  --heatmap-surplus-1: #261318;
+  --heatmap-surplus-2: #3a1a22;
+  --heatmap-surplus-3: #5c2833;
+  --heatmap-surplus-4: #8a3d4d;
+  --heatmap-day-selected-ring: #eef4ff;
+  --heatmap-day-selected-shadow: 0 0 12px rgb(127 165 209 / 0.5);
+  --heatmap-day-today-label-text: #c5d8f5;
 
   --text-strong: var(--text-primary);
   --app-shell-bg: var(--surface-page);
@@ -66,40 +65,40 @@
   --hero-card-ring: #4c678a;
   --hero-card-shadow: 0 4px 24px rgb(0 0 0 / 0.36);
   --hero-deficit-positive: #8ad2dd;
-  --hero-deficit-surplus: #d2a76e;
+  --hero-deficit-surplus: #c46878;
   --hero-deficit-neutral: #b5c2d2;
   --hero-stat-bg: #24364b;
   --hero-stat-metabolism-bg: #24364b;
   --hero-stat-metabolism-value: #eef4ff;
   --hero-stat-exercise-bg: #173442;
   --hero-stat-exercise-value: #8ad2dd;
-  --hero-stat-meal-bg: #332719;
-  --hero-stat-meal-value: #d2a76e;
+  --hero-stat-meal-bg: #261318;
+  --hero-stat-meal-value: #c46878;
   --calendar-stat-exercise-bg: #173442;
   --calendar-stat-exercise-border: #3f7d8a;
   --calendar-stat-exercise-value: #8ad2dd;
-  --calendar-stat-deficit-bg: #173a34;
-  --calendar-stat-deficit-border: #3c7b70;
-  --calendar-stat-deficit-value: #8dd6c9;
+  --calendar-stat-deficit-bg: #173442;
+  --calendar-stat-deficit-border: #3f7d8a;
+  --calendar-stat-deficit-value: #8ad2dd;
   --quick-action-exercise-bg: #173442;
   --quick-action-exercise-ring: #3f7d8a;
   --quick-action-exercise-text: #8ad2dd;
-  --quick-action-meal-bg: #332719;
-  --quick-action-meal-ring: #80633d;
-  --quick-action-meal-text: #d2a76e;
+  --quick-action-meal-bg: #261318;
+  --quick-action-meal-ring: #5c2833;
+  --quick-action-meal-text: #c46878;
   --achievement-exercise-border: #3f7d8a;
   --achievement-exercise-bg: #173442;
   --achievement-exercise-icon-bg: #173442;
-  --achievement-meal-border: #80633d;
-  --achievement-meal-bg: #332719;
-  --achievement-meal-icon-bg: #332719;
+  --achievement-meal-border: #5c2833;
+  --achievement-meal-bg: #261318;
+  --achievement-meal-icon-bg: #261318;
   --community-hero-bg: #182638;
   --community-hero-border: #4c678a;
   --community-segment-bg: #121d2b;
   --community-segment-border: #2d3c50;
-  --community-segment-active-bg: #425f8a;
+  --community-segment-active-bg: #3a1a22;
   --community-segment-active-text: #eef4ff;
-  --community-segment-active-ring: #425f8a;
+  --community-segment-active-ring: #5c2833;
   --community-segment-badge-bg: #24364b;
   --community-segment-badge-text: #7fa5d1;
   --community-member-card-bg: #182638;
@@ -114,8 +113,8 @@
   --community-avatar-self-ring: #5f7fa8;
   --community-stat-exercise-bg: #173442;
   --community-stat-exercise-text: #8ad2dd;
-  --community-stat-meal-bg: #332719;
-  --community-stat-meal-text: #d2a76e;
+  --community-stat-meal-bg: #261318;
+  --community-stat-meal-text: #c46878;
   --community-card-footer-border: #3b4f68;
   --community-hidden-panel-bg: #182638;
   --community-hidden-panel-border: #3b4f68;
@@ -135,9 +134,9 @@
   --install-guide-tip-bg: #182638;
   --install-guide-tip-border: #3b4f68;
   --install-guide-tip-text: #b5c2d2;
-  --install-guide-note-bg: #332719;
-  --install-guide-note-border: #80633d;
-  --install-guide-note-text: #d2a76e;
+  --install-guide-note-bg: #261318;
+  --install-guide-note-border: #5c2833;
+  --install-guide-note-text: #c46878;
   --follow-btn-idle-bg: #425f8a;
   --follow-btn-idle-bg-hover: #2e4567;
   --follow-btn-idle-text: #eef4ff;
@@ -166,13 +165,13 @@
   --log-ai-input-bg: #101a28;
   --log-ai-input-ring: #3f7d8a;
   --log-meal-mode-bg: #121d2b;
-  --log-meal-mode-active-bg: #4a3821;
-  --log-meal-mode-active-text: #d2a76e;
+  --log-meal-mode-active-bg: #3a1a22;
+  --log-meal-mode-active-text: #c46878;
   --log-meal-mode-idle-text: #b5c2d2;
-  --log-meal-mode-idle-hover-text: #d2a76e;
-  --log-package-kcal-bg: #332719;
-  --log-package-kcal-text: #d2a76e;
-  --log-package-kcal-ring: #80633d;
+  --log-meal-mode-idle-hover-text: #c46878;
+  --log-package-kcal-bg: #261318;
+  --log-package-kcal-text: #c46878;
+  --log-package-kcal-ring: #5c2833;
   --template-add-border: #3b4f68;
   --template-add-text: #7e8da2;
   --template-add-hover-bg: #203249;
@@ -186,9 +185,9 @@
   --template-tab-exercise-active-bg: #173442;
   --template-tab-exercise-active-text: #8ad2dd;
   --template-tab-exercise-active-ring: #3f7d8a;
-  --template-tab-meal-active-bg: #332719;
-  --template-tab-meal-active-text: #d2a76e;
-  --template-tab-meal-active-ring: #80633d;
+  --template-tab-meal-active-bg: #261318;
+  --template-tab-meal-active-text: #c46878;
+  --template-tab-meal-active-ring: #5c2833;
   --bmr-formula-panel-bg: #182638;
   --bmr-formula-panel-border: #3b4f68;
   --bmr-formula-card-bg: #101a28;
@@ -196,9 +195,16 @@
   --bmr-formula-text: #eef4ff;
   --bmr-formula-subtitle: #b5c2d2;
   --bmr-formula-legend: #b5c2d2;
-  --bmr-formula-sex-male: #173442;
-  --bmr-formula-sex-female: #332719;
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
   --bmr-formula-var-bg: #24364b;
   --bmr-formula-var-text: #b5c2d2;
   --bmr-formula-constant: #8ad2dd;
+
+  --settings-menu-text: var(--text-primary);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #7fa5d1;
+  --btn-sign-out-bg: #24364b;
+  --btn-sign-out-border: #4c678a;
+  --btn-sign-out-hover-bg: #203249;
 }

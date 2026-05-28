@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { httpData } from '../lib/api'
 import type { LogItemViewerReaction } from '../types'
+import { LikeHeartButton } from './LikeHeartButton'
 
 interface LogItemReactionButtonsProps {
   targetUserId: string
@@ -21,17 +22,15 @@ export function LogItemReactionButtons({
   itemType,
   itemId,
   thumbsUp,
-  thumbsDown,
   viewerReaction,
   onChange,
 }: LogItemReactionButtonsProps) {
   const [busy, setBusy] = useState(false)
 
-  const vote = async (next: 'up' | 'down') => {
+  const toggleLike = async () => {
     if (busy) return
     setBusy(true)
-    const requested =
-      viewerReaction === next ? null : next
+    const requested = viewerReaction === 'up' ? null : 'up'
     try {
       const stats = await httpData.setCommunityLogItemReaction(
         targetUserId,
@@ -47,57 +46,15 @@ export function LogItemReactionButtons({
     }
   }
 
-  const upActive = viewerReaction === 'up'
-  const downActive = viewerReaction === 'down'
-
   return (
-    <div className="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
-        disabled={busy}
-        aria-label={upActive ? '取消赞' : '赞'}
-        aria-pressed={upActive}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          vote('up')
-        }}
-        className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1 text-base leading-none transition active:scale-95 disabled:opacity-50 ${
-          upActive
-            ? 'bg-emerald-500/20 ring-1 ring-emerald-400/50'
-            : 'hover:bg-slate-700/60'
-        }`}
-      >
-        <span aria-hidden>👍</span>
-        {thumbsUp > 0 && (
-          <span className="text-[10px] font-medium tabular-nums text-slate-300">
-            {thumbsUp}
-          </span>
-        )}
-      </button>
-      <button
-        type="button"
-        disabled={busy}
-        aria-label={downActive ? '取消踩' : '踩'}
-        aria-pressed={downActive}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          vote('down')
-        }}
-        className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1 text-base leading-none transition active:scale-95 disabled:opacity-50 ${
-          downActive
-            ? 'bg-red-500/20 ring-1 ring-red-400/50'
-            : 'hover:bg-slate-700/60'
-        }`}
-      >
-        <span aria-hidden>👎</span>
-        {thumbsDown > 0 && (
-          <span className="text-[10px] font-medium tabular-nums text-slate-300">
-            {thumbsDown}
-          </span>
-        )}
-      </button>
-    </div>
+    <LikeHeartButton
+      active={viewerReaction === 'up'}
+      count={thumbsUp}
+      disabled={busy}
+      layout="inline"
+      size="sm"
+      className="log-item-like"
+      onClick={() => void toggleLike()}
+    />
   )
 }

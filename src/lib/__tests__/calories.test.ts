@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateBmr,
   calculateTdee,
+  getCalendarDayDetailBackgroundClass,
+  getCalendarDayDetailHeatmapClass,
+  getDeficitHeatmapClass,
   getDeficitHeatmapCell,
+  getLiveWallLegendHighlight,
+  getWallLegendHighlight,
+  legendSwatchLevel,
   resolveProfileMetabolism,
 } from '../calories'
 
@@ -51,5 +57,81 @@ describe('calories', () => {
     expect(getDeficitHeatmapCell(400, 300).tone).toBe('deficit')
     expect(getDeficitHeatmapCell(-400, 300).tone).toBe('surplus')
     expect(getDeficitHeatmapCell(50, 300).tone).toBe('neutral')
+  })
+
+  it('legendSwatchLevel maps 0 to level 1 swatch', () => {
+    expect(legendSwatchLevel(0)).toBe(1)
+    expect(legendSwatchLevel(3)).toBe(3)
+  })
+
+  it('getWallLegendHighlight reflects cell and beforeAccount', () => {
+    expect(
+      getWallLegendHighlight(
+        { exerciseLevel: 2, deficitLevel: 3, deficitTone: 'deficit' },
+        false,
+      ),
+    ).toEqual({ exerciseLevel: 2, deficitLevel: 3, deficitTone: 'deficit' })
+    expect(
+      getWallLegendHighlight(
+        { exerciseLevel: 1, deficitLevel: 2, deficitTone: 'surplus' },
+        false,
+      ).deficitTone,
+    ).toBe('surplus')
+    expect(
+      getWallLegendHighlight(undefined, false),
+    ).toEqual({ exerciseLevel: 0, deficitLevel: 0, deficitTone: 'neutral' })
+    expect(getWallLegendHighlight(undefined, true)).toEqual({
+      exerciseLevel: 0,
+      deficitLevel: 0,
+      deficitTone: 'neutral',
+    })
+  })
+
+  it('getLiveWallLegendHighlight uses live exercise and deficit', () => {
+    const heatmap = getDeficitHeatmapCell(-744, 300)
+    expect(getLiveWallLegendHighlight(300, heatmap, false)).toEqual({
+      exerciseLevel: 3,
+      deficitLevel: heatmap.level,
+      deficitTone: 'surplus',
+    })
+  })
+
+  it('getCalendarDayDetailBackgroundClass follows visible wall', () => {
+    const heatmap = getDeficitHeatmapCell(-744, 300)
+    expect(
+      getCalendarDayDetailBackgroundClass({
+        beforeAccount: false,
+        splitExercisePane: true,
+        exerciseKcal: 300,
+        deficitHeatmap: heatmap,
+      }),
+    ).toBe('heatmap-exercise-3')
+    expect(
+      getCalendarDayDetailBackgroundClass({
+        beforeAccount: false,
+        splitExercisePane: false,
+        exerciseKcal: 300,
+        deficitHeatmap: heatmap,
+      }),
+    ).toBe(getDeficitHeatmapClass(heatmap.level, heatmap.tone))
+  })
+
+  it('getCalendarDayDetailHeatmapClass uses live fallback not stale cell', () => {
+    expect(
+      getCalendarDayDetailHeatmapClass(
+        { deficitLevel: 3, deficitTone: 'deficit' },
+        { level: 0, tone: 'neutral' },
+      ),
+    ).toBe('heatmap-empty')
+    expect(
+      getCalendarDayDetailHeatmapClass(
+        { deficitLevel: 2, deficitTone: 'surplus', beforeAccount: true },
+        { level: 4, tone: 'deficit' },
+      ),
+    ).toBe('heatmap-empty')
+    const fallback = getDeficitHeatmapCell(-900, 300)
+    expect(getCalendarDayDetailHeatmapClass(undefined, fallback)).toBe(
+      'heatmap-surplus-4',
+    )
   })
 })

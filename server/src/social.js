@@ -165,6 +165,7 @@ function mapDayCommentRow(r, viewerId) {
       id: r.author_id,
       nickname: r.author_nickname,
     }),
+    authorAvatarUrl: r.author_avatar_url ?? null,
     body: r.body,
     createdAt: r.created_at,
     isOwn: r.author_id === viewerId,
@@ -251,7 +252,8 @@ export async function listDayComments(targetUserId, logDate, viewerId) {
   const { rows } = await query(
     `with comment_rows as (
        select c.id, c.author_id, c.body, c.created_at, c.parent_comment_id, c.reply_to_user_id,
-              p.nickname as author_nickname, rp.nickname as reply_to_nickname,
+              p.nickname as author_nickname, p.avatar_url as author_avatar_url,
+              rp.nickname as reply_to_nickname,
               coalesce(pc.created_at, c.created_at) as root_created_at
        from day_comments c
        join profiles p on p.id = c.author_id
@@ -339,6 +341,7 @@ export async function addDayComment(
     id: row.id,
     authorId: row.author_id,
     authorNickname: publicNickname(profile),
+    authorAvatarUrl: profile.avatar_url ?? null,
     body: row.body,
     createdAt: row.created_at,
     isOwn: true,

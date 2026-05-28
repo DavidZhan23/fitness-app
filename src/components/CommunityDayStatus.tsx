@@ -250,13 +250,13 @@ function FoodKingBanner({
 
   if (compact) {
     return (
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-rose-950/80 via-orange-950/55 to-rose-900/45 px-3 py-2 ring-1 ring-rose-500/35">
-        <p className="flex items-center gap-2 text-xs font-semibold text-rose-100">
+      <div className="community-foodking-banner community-foodking-banner--compact relative overflow-hidden rounded-xl px-3 py-2">
+        <p className="community-foodking-banner__text flex items-center gap-2 text-xs font-semibold">
           <span className="text-base" aria-hidden>
             🥘
           </span>
           美食大王
-          <span className="ml-auto tabular-nums text-[10px] font-normal text-rose-200/70">
+          <span className="community-foodking-banner__meta ml-auto tabular-nums text-[10px] font-normal">
             {formatMealKcalLine(mealKcal)}
           </span>
         </p>
@@ -265,32 +265,33 @@ function FoodKingBanner({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-600/22 via-orange-700/18 to-rose-950/55 p-4 ring-1 ring-rose-400/40 shadow-lg shadow-rose-900/20">
+    <section className="community-foodking-banner relative overflow-hidden rounded-2xl p-4">
       <div
-        className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl"
+        className="community-foodking-banner__glow pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl"
         aria-hidden
       />
       <div className="relative flex items-start gap-3">
         <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500/30 text-2xl ring-1 ring-rose-400/50"
+          className="community-foodking-banner__icon-wrap flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl"
           aria-hidden
         >
           🥘
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold tracking-tight text-rose-100">
+          <p className="community-foodking-banner__title text-lg font-bold tracking-tight">
             美食大王
           </p>
-          <p className="mt-0.5 text-sm text-slate-300/90">
+          <p className="community-foodking-banner__desc mt-0.5 text-sm">
             今日饮食热量达到基础代谢的 1.2 倍，吃货实力认证！
           </p>
           <dl className="mt-3 flex flex-wrap gap-2 text-[11px]">
             <StatChip
+              kind="foodKing"
               label={MEAL_KCAL_STAT_LABEL}
               value={`${Math.round(mealKcal)} kcal`}
             />
-            <StatChip label="达标线" value={`≥${threshold}`} />
-            <StatChip label="基础代谢" value={`${Math.round(dailyBmr)}`} />
+            <StatChip kind="foodKing" label="达标线" value={`≥${threshold}`} />
+            <StatChip kind="foodKing" label="基础代谢" value={`${Math.round(dailyBmr)}`} />
           </dl>
         </div>
       </div>
@@ -341,18 +342,14 @@ function BadgeBanner({
   if (compact) {
     return (
       <div
-        className={`relative overflow-hidden rounded-xl px-3 py-2 ring-1 ${
-          isChampion
-            ? 'bg-gradient-to-r from-amber-950/80 via-orange-950/60 to-amber-900/50 ring-amber-500/35'
-            : 'bg-gradient-to-r from-violet-950/80 via-indigo-950/60 to-cyan-950/50 ring-violet-500/35'
-        }`}
+        className={`community-badge-banner community-badge-banner--compact community-badge-banner--${badge} relative overflow-hidden rounded-xl px-3 py-2`}
       >
-        <p className="flex items-center gap-2 text-xs font-semibold">
+        <p className="community-badge-banner__text flex items-center gap-2 text-xs font-semibold">
           <span className="text-base" aria-hidden>
             {isChampion ? '👑' : '🔥'}
           </span>
           {isChampion ? '运动大王' : '减脂先锋'}
-          <span className="ml-auto tabular-nums text-[10px] font-normal text-slate-400">
+          <span className="community-badge-banner__meta ml-auto tabular-nums text-[10px] font-normal">
             缺口 +{Math.round(deficit)}
           </span>
         </p>
@@ -362,48 +359,38 @@ function BadgeBanner({
 
   return (
     <section
-      className={`relative overflow-hidden rounded-2xl p-4 ring-1 ${
-        isChampion
-          ? 'bg-gradient-to-br from-amber-600/25 via-orange-700/20 to-amber-950/60 ring-amber-400/45 shadow-lg shadow-amber-900/25'
-          : 'bg-gradient-to-br from-violet-600/25 via-indigo-700/20 to-cyan-950/50 ring-violet-400/40 shadow-lg shadow-violet-900/20'
-      }`}
+      className={`community-badge-banner community-badge-banner--${badge} relative overflow-hidden rounded-2xl p-4`}
     >
       <div
-        className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl"
+        className="community-badge-banner__glow pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl"
         aria-hidden
       />
       <div className="relative flex items-start gap-3">
         <span
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${
-            isChampion
-              ? 'bg-amber-500/30 ring-1 ring-amber-400/50'
-              : 'bg-violet-500/30 ring-1 ring-violet-400/50'
-          }`}
+          className={`community-badge-banner__icon-wrap flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl`}
           aria-hidden
         >
           {isChampion ? '👑' : '🔥'}
         </span>
         <div className="min-w-0 flex-1">
-          <p
-            className={`text-lg font-bold tracking-tight ${
-              isChampion ? 'text-amber-100' : 'text-violet-100'
-            }`}
-          >
+          <p className="community-badge-banner__title text-lg font-bold tracking-tight">
             {isChampion ? '运动大王' : '减脂先锋'}
           </p>
-          <p className="mt-0.5 text-sm text-slate-300/90">
+          <p className="community-badge-banner__desc mt-0.5 text-sm">
             {isChampion
               ? '高强度训练 + 充足饮食，真正的硬核一天！'
               : '热量缺口拉满，社区里的缺口达人。'}
           </p>
           <dl className="mt-3 flex flex-wrap gap-2 text-[11px]">
-            <StatChip label="缺口" value={`+${Math.round(deficit)}`} />
+            <StatChip kind={badge} label="缺口" value={`+${Math.round(deficit)}`} />
             <StatChip
+              kind={badge}
               label={EXERCISE_KCAL_STAT_LABEL}
               value={`${Math.round(exerciseKcal)} kcal`}
             />
             {isChampion && (
               <StatChip
+                kind={badge}
                 label={MEAL_KCAL_STAT_LABEL}
                 value={`${Math.round(mealKcal)} kcal`}
               />
@@ -415,11 +402,19 @@ function BadgeBanner({
   )
 }
 
-function StatChip({ label, value }: { label: string; value: string }) {
+function StatChip({
+  kind,
+  label,
+  value,
+}: {
+  kind: 'champion' | 'elite' | 'foodKing'
+  label: string
+  value: string
+}) {
   return (
-    <span className="rounded-lg bg-black/25 px-2 py-1 text-slate-300">
-      <span className="text-muted">{label} </span>
-      <span className="font-semibold tabular-nums text-slate-100">{value}</span>
+    <span className={`community-badge-chip community-badge-chip--${kind} rounded-lg px-2 py-1`}>
+      <span className="community-badge-chip__label">{label} </span>
+      <span className="community-badge-chip__value font-semibold tabular-nums">{value}</span>
     </span>
   )
 }
@@ -433,7 +428,7 @@ function MealReminderCard({
 }) {
   if (compact) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-xs text-amber-100/95">
+      <div className="community-meal-reminder community-meal-reminder--compact">
         <span className="text-base" aria-hidden>
           🍽️
         </span>
@@ -446,17 +441,17 @@ function MealReminderCard({
   }
 
   return (
-    <section className="rounded-2xl border border-amber-500/35 bg-gradient-to-br from-amber-950/50 to-slate-900/80 p-4 ring-1 ring-amber-500/25">
+    <section className="community-meal-reminder rounded-2xl p-4">
       <div className="flex items-start gap-3">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-xl ring-1 ring-amber-400/40"
+          className="community-meal-reminder__icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl"
           aria-hidden
         >
           🍽️
         </span>
         <div>
-          <p className="font-semibold !text-[#F8C2DA]">记得记饮食</p>
-          <p className="mt-1 text-sm leading-relaxed !text-[#F8C2DA]">
+          <p className="community-meal-reminder__title font-semibold">记得记饮食</p>
+          <p className="community-meal-reminder__desc mt-1 text-sm leading-relaxed">
             今天缺口看起来不错，但饮食还是 0 千卡。
             {isSelf
               ? ' 把吃了什么记下来，缺口才算真实，也方便健友给你点赞～'
@@ -465,7 +460,7 @@ function MealReminderCard({
           {isSelf && (
             <Link
               to="/log/meal"
-              className="mt-3 inline-block rounded-lg bg-amber-600/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
+              className="community-meal-reminder__cta mt-3 inline-block rounded-lg px-3 py-1.5 text-xs font-medium"
             >
               去记饮食
             </Link>

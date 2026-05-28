@@ -1,0 +1,249 @@
+/* 木隐茶庭 / Wood Zen */
+/*
+ * 米纸原木基底 + 原木棕主操作 + 苔藓绿缺口 + 茶青运动 + 柿子橙饮食。
+ */
+[data-style='wood-zen'] {
+  --accent-pop: #a9b879;
+  --accent-pop-strong: #7d5e2e;
+  --accent-pop-soft: #efe3bf;
+  --accent-pop-ring: #d8b982;
+
+  --color-brand: #9b6f45;
+  --color-brand-dark: #6f4e2e;
+  --color-surface: #e9ddc8;
+  --color-card: #f3e8d7;
+  --color-muted: #9a8b7a;
+  --color-tabbar: #dcccb1;
+
+  --surface-page: #e9ddc8;
+  --surface-card: #f3e8d7;
+  --surface-card-soft: #f8efde;
+  --surface-card-blue: #dce8e6;
+  --surface-card-pink: #f5e2c9;
+  --surface-card-border: #d5c4a8;
+  --text-ink: #4d4033;
+  --text-primary: #4d4033;
+  --text-secondary: #7a6a5c;
+  --text-muted: #9a8b7a;
+  --text-link: #6f4e2e;
+  --text-on-accent: #fff7e8;
+  --accent-exercise: #7f9f73;
+  --accent-exercise-strong: #5f7f55;
+  --accent-exercise-soft: #e2e8d1;
+  --accent-meal: #c9854b;
+  --accent-meal-strong: #a45f2f;
+  --accent-meal-soft: #f5e2c9;
+  --danger: #f1d1c4;
+  --danger-strong: #9e4e3d;
+  --btn-primary-bg: #9b6f45;
+  --btn-primary-hover: #6f4e2e;
+
+  --heatmap-empty: #f3e8d7;
+  --heatmap-exercise-1: #e8ecd9;
+  --heatmap-exercise-2: #d6dec0;
+  --heatmap-exercise-3: #b9c99a;
+  --heatmap-exercise-4: #7f9f73;
+  --heatmap-deficit-1: #e2e8d1;
+  --heatmap-deficit-2: #d3ddbf;
+  --heatmap-deficit-3: #afc08e;
+  --heatmap-deficit-4: #6f8f5b;
+  --heatmap-surplus-1: #f5e2c9;
+  --heatmap-surplus-2: #efd3af;
+  --heatmap-surplus-3: #dfa96f;
+  --heatmap-surplus-4: #c9854b;
+  --heatmap-day-selected-ring: #9b6f45;
+  --heatmap-day-selected-shadow: 0 0 12px rgb(111 78 46 / 0.22);
+  --heatmap-day-today-label-text: #6f4e2e;
+
+  --text-strong: var(--text-primary);
+  --app-shell-bg: var(--surface-page);
+  --app-shell-overlay: transparent;
+  --tabbar-border: #c6a982;
+  --tabbar-active-bg: #f3e8d7;
+  --notify-active-ring: rgb(155 111 69 / 0.35);
+  --surface-panel-bg: var(--surface-card);
+  --surface-panel-border: var(--surface-card-border);
+  --surface-panel-soft-bg: var(--surface-card-soft);
+  --surface-panel-soft-hover: #e7d8c2;
+  --input-bg: #f8efde;
+  --input-ring: #d5c4a8;
+  --hero-card-bg: #f3e8d7;
+  --hero-card-ring: #c6a982;
+  --hero-card-shadow: 0 4px 24px rgb(111 78 46 / 0.1);
+  --hero-deficit-positive: #6f8f5b;
+  --hero-deficit-surplus: #a45f2f;
+  --hero-deficit-neutral: #7a6a5c;
+  --hero-stat-bg: #f8efde;
+  --hero-stat-metabolism-bg: #e7d8c2;
+  --hero-stat-metabolism-value: #4d4033;
+  --hero-stat-exercise-bg: #e2e8d1;
+  --hero-stat-exercise-value: #5f7f55;
+  --hero-stat-meal-bg: #f5e2c9;
+  --hero-stat-meal-value: #a45f2f;
+  --calendar-stat-exercise-bg: #e2e8d1;
+  --calendar-stat-exercise-border: #c4d1ab;
+  --calendar-stat-exercise-value: #5f7f55;
+  --calendar-stat-deficit-bg: #e2e8d1;
+  --calendar-stat-deficit-border: #b8c79c;
+  --calendar-stat-deficit-value: #4f6f3f;
+  --quick-action-exercise-bg: #e2e8d1;
+  --quick-action-exercise-ring: #c4d1ab;
+  --quick-action-exercise-text: #5f7f55;
+  --quick-action-meal-bg: #f5e2c9;
+  --quick-action-meal-ring: #e0c39b;
+  --quick-action-meal-text: #a45f2f;
+  --achievement-exercise-border: #c4d1ab;
+  --achievement-exercise-bg: #e2e8d1;
+  --achievement-exercise-icon-bg: #d6dec0;
+  --achievement-meal-border: #e0c39b;
+  --achievement-meal-bg: #f5e2c9;
+  --achievement-meal-icon-bg: #efd3af;
+  --community-hero-bg: #f3e8d7;
+  --community-hero-border: #c6a982;
+  --community-segment-bg: #e7d8c2;
+  --community-segment-border: #d5c4a8;
+  --community-segment-active-bg: #9b6f45;
+  --community-segment-active-text: #fff7e8;
+  --community-segment-active-ring: #9b6f45;
+  --community-segment-badge-bg: #efe3bf;
+  --community-segment-badge-text: #7d5e2e;
+  --community-member-card-bg: #f3e8d7;
+  --community-member-card-border: #d5c4a8;
+  --community-member-card-hover-bg: #f8efde;
+  --community-member-card-hover-ring: #c6a982;
+  --community-avatar-bg: #9b6f45;
+  --community-avatar-text: #fff7e8;
+  --community-avatar-ring: #c6a982;
+  --community-avatar-self-bg: #9b6f45;
+  --community-avatar-self-text: #fff7e8;
+  --community-avatar-self-ring: #6f4e2e;
+  --community-stat-exercise-bg: #e2e8d1;
+  --community-stat-exercise-text: #5f7f55;
+  --community-stat-meal-bg: #f5e2c9;
+  --community-stat-meal-text: #a45f2f;
+  --community-card-footer-border: #d5c4a8;
+  --community-hidden-panel-bg: #f3e8d7;
+  --community-hidden-panel-border: #d5c4a8;
+  --community-visibility-on-bg: #e2e8d1;
+  --community-visibility-on-text: #4f6f3f;
+  --community-visibility-on-ring: #b8c79c;
+  --community-visibility-on-dot: #6f8f5b;
+  --community-visibility-off-bg: #f3e8d7;
+  --community-visibility-off-ring: #d5c4a8;
+  --community-visibility-off-dot: #b9a995;
+  --community-drag-handle-bg: #e7d8c2;
+  --community-drag-handle-ring: #d5c4a8;
+  --community-drag-handle-text: #9a8b7a;
+  --community-drag-handle-hover-bg: #d8b982;
+  --community-drag-handle-active-bg: #9b6f45;
+  --community-drag-handle-active-text: #fff7e8;
+  --install-guide-tip-bg: #f3e8d7;
+  --install-guide-tip-border: #d5c4a8;
+  --install-guide-tip-text: #7a6a5c;
+  --install-guide-note-bg: #efe3bf;
+  --install-guide-note-border: #d8b982;
+  --install-guide-note-text: #7d5e2e;
+  --follow-btn-idle-bg: #9b6f45;
+  --follow-btn-idle-bg-hover: #6f4e2e;
+  --follow-btn-idle-text: #fff7e8;
+  --follow-btn-following-bg: #f8efde;
+  --follow-btn-following-text: #7a6a5c;
+  --follow-btn-following-ring: #d5c4a8;
+  --day-like-idle-bg: #f8efde;
+  --day-like-idle-text: #7d5e2e;
+  --day-like-idle-ring: #d8b982;
+  --day-like-idle-ring-hover: #c6a982;
+  --day-like-active-bg: #efe3bf;
+  --day-like-active-text: #6f4e2e;
+  --day-like-active-ring: #d8b982;
+  --log-template-chip-bg: #f3e8d7;
+  --log-template-chip-bg-hover: #e2e8d1;
+  --log-template-chip-ring: #c4d1ab;
+  --log-template-chip-text: #4d4033;
+  --log-template-chip-kcal: #7a6a5c;
+  --log-ai-card-bg: #e2e8d1;
+  --log-ai-card-ring: #c4d1ab;
+  --log-ai-card-border: #c4d1ab;
+  --log-ai-btn-bg: #7f9f73;
+  --log-ai-btn-bg-hover: #5f7f55;
+  --log-ai-btn-text: #f8efde;
+  --log-ai-input-bg: #f8efde;
+  --log-ai-input-ring: #c4d1ab;
+  --log-meal-mode-bg: #e7d8c2;
+  --log-meal-mode-active-bg: #c9854b;
+  --log-meal-mode-active-text: #fff7e8;
+  --log-meal-mode-idle-text: #7a6a5c;
+  --log-meal-mode-idle-hover-text: #a45f2f;
+  --log-package-kcal-bg: #f5e2c9;
+  --log-package-kcal-text: #a45f2f;
+  --log-package-kcal-ring: #e0c39b;
+  --template-add-border: #c6a982;
+  --template-add-text: #6f4e2e;
+  --template-add-hover-bg: #e7d8c2;
+  --template-tab-active-bg: #e7d8c2;
+  --template-tab-active-text: #6f4e2e;
+  --template-tab-active-ring: #c6a982;
+  --template-tab-inactive-bg: #f3e8d7;
+  --template-tab-inactive-text: #7a6a5c;
+  --template-tab-inactive-ring: #d5c4a8;
+  --template-tab-inactive-hover-bg: #e7d8c2;
+  --template-tab-exercise-active-bg: #e2e8d1;
+  --template-tab-exercise-active-text: #5f7f55;
+  --template-tab-exercise-active-ring: #c4d1ab;
+  --template-tab-meal-active-bg: #f5e2c9;
+  --template-tab-meal-active-text: #a45f2f;
+  --template-tab-meal-active-ring: #e0c39b;
+  --bmr-formula-panel-bg: #f3e8d7;
+  --bmr-formula-panel-border: #d5c4a8;
+  --bmr-formula-card-bg: #f8efde;
+  --bmr-formula-card-ring: #c6a982;
+  --bmr-formula-text: #4d4033;
+  --bmr-formula-subtitle: #7a6a5c;
+  --bmr-formula-legend: #9a8b7a;
+  --bmr-formula-sex-male: #5f7f55;
+  --bmr-formula-sex-female: #a45f2f;
+  --bmr-formula-var-bg: #d8b982;
+  --bmr-formula-var-text: #4d4033;
+  --bmr-formula-constant: #4d4033;
+
+  --settings-menu-text: var(--text-link);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #6f4e2e;
+  --btn-sign-out-bg: #efe3bf;
+  --btn-sign-out-border: #d8b982;
+  --btn-sign-out-hover-bg: #e7d8c2;
+
+  --wood-grain-overlay:
+    linear-gradient(
+      102deg,
+      rgb(111 78 46 / 0.16) 0%,
+      rgb(111 78 46 / 0.05) 22%,
+      transparent 42%,
+      rgb(111 78 46 / 0.12) 58%,
+      rgb(111 78 46 / 0.04) 74%,
+      transparent 100%
+    ),
+    radial-gradient(
+      120% 75% at 14% 18%,
+      rgb(111 78 46 / 0.14),
+      transparent 55%
+    ),
+    radial-gradient(
+      85% 55% at 86% 76%,
+      rgb(111 78 46 / 0.1),
+      transparent 60%
+    );
+  --wood-grain-overlay-soft:
+    linear-gradient(
+      95deg,
+      rgb(111 78 46 / 0.12) 0%,
+      transparent 32%,
+      rgb(111 78 46 / 0.1) 58%,
+      transparent 100%
+    ),
+    repeating-linear-gradient(
+      8deg,
+      rgb(111 78 46 / 0.08) 0 1px,
+      transparent 1px 8px
+    );
+}

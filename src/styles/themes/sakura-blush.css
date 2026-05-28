@@ -1,6 +1,6 @@
-/* 樱粉云境 / Sakura Blush */
+/* 樱雾漫境 / Sakura Mist */
 /*
- * 樱花粉底 + 奶粉卡；运动蓝、饮食莓粉；缺口热力薄荷绿；主操作亮蓝。
+ * 樱花粉底 + 奶粉卡；运动蓝、饮食莓粉；缺口与运动同蓝系；主操作亮蓝。
  */
 [data-style='sakura-blush'] {
   --accent-pop: #82b8f4;
@@ -9,10 +9,10 @@
   --accent-pop-ring: #a9cff8;
 
   --color-brand: #4f8fde;
-  --color-brand-dark: #4f8fde;
+  --color-brand-dark: #3d5a6e;
   --color-surface: #ffe7f0;
   --color-card: #fff0f6;
-  --color-muted: #9b8396;
+  --color-muted: #6d4a5c;
   --color-tabbar: #ffdce9;
 
   --surface-page: #ffe7f0;
@@ -21,9 +21,11 @@
   --surface-card-blue: #dcefff;
   --surface-card-pink: #ffd5e5;
   --surface-card-border: #e9bfd2;
+  --text-ink: #5d4a5c;
   --text-primary: #5d4a5c;
-  --text-secondary: #8b7288;
-  --text-muted: #a88fa3;
+  --text-secondary: #6d4a5c;
+  --text-muted: #6d4a5c;
+  --text-link: #3d5a6e;
   --text-on-accent: #ffffff;
   --accent-exercise: #82b8f4;
   --accent-exercise-strong: #4f8fde;
@@ -41,14 +43,13 @@
   --heatmap-exercise-2: #dcefff;
   --heatmap-exercise-3: #b8dafb;
   --heatmap-exercise-4: #82b8f4;
-  --heatmap-deficit-1: #effbf6;
-  --heatmap-deficit-2: #d9f5ea;
-  --heatmap-deficit-3: #beebd9;
-  --heatmap-deficit-4: #9edbc8;
   --heatmap-surplus-1: #fff6fa;
   --heatmap-surplus-2: #ffe3ee;
   --heatmap-surplus-3: #ffd5e5;
   --heatmap-surplus-4: #e879ac;
+  --heatmap-day-selected-ring: #4f8fde;
+  --heatmap-day-selected-shadow: 0 0 10px rgb(79 143 222 / 0.35);
+  --heatmap-day-today-label-text: #3b73c4;
 
   --text-strong: var(--text-primary);
   --app-shell-bg: var(--surface-page);
@@ -78,9 +79,9 @@
   --calendar-stat-exercise-bg: #dcefff;
   --calendar-stat-exercise-border: #a9cff8;
   --calendar-stat-exercise-value: #4f8fde;
-  --calendar-stat-deficit-bg: #ffe3ee;
-  --calendar-stat-deficit-border: #f2afcb;
-  --calendar-stat-deficit-value: #b75f91;
+  --calendar-stat-deficit-bg: #dcefff;
+  --calendar-stat-deficit-border: #a9cff8;
+  --calendar-stat-deficit-value: #4f8fde;
   --quick-action-exercise-bg: #f0f8ff;
   --quick-action-exercise-ring: #82b8f4;
   --quick-action-exercise-text: #4f8fde;
@@ -196,9 +197,16 @@
   --bmr-formula-text: #5d4a5c;
   --bmr-formula-subtitle: #8b7288;
   --bmr-formula-legend: #8b7288;
-  --bmr-formula-sex-male: #dcefff;
-  --bmr-formula-sex-female: #ffd5e5;
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
   --bmr-formula-var-bg: #f7a8c8;
   --bmr-formula-var-text: #6b3f5d;
   --bmr-formula-constant: #5d4a5c;
+
+  --settings-menu-text: var(--text-link);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #3d5a6e;
+  --btn-sign-out-bg: #ffdce9;
+  --btn-sign-out-border: #f2afcb;
+  --btn-sign-out-hover-bg: #ffe3ee;
 }

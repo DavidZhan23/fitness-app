@@ -5,6 +5,7 @@ import { CommunityDayStatus } from '../components/CommunityDayStatus'
 import { DayCommentSection } from '../components/DayCommentSection'
 import { DayLikeButton } from '../components/DayLikeButton'
 import { FollowButton } from '../components/FollowButton'
+import { UserAvatar } from '../components/UserAvatar'
 import { MonthHeatmap } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
@@ -23,7 +24,8 @@ import {
   getTodayMonth,
   shiftMonth,
 } from '../lib/monthCalendar'
-import { formatDateKey } from '../lib/streaks'
+import { getWallLegendHighlight } from '../lib/calories'
+import { formatDateKey, isBeforeAccountStart } from '../lib/streaks'
 import type {
   CommunityDaySnapshot,
   CommunityPublicExercise,
@@ -52,6 +54,7 @@ export function CommunityUserPage() {
   const initial = readInitialUserState(userId)
   const [view, setView] = useState(getTodayMonth)
   const [nickname, setNickname] = useState(initial.preview?.nickname ?? '')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [isSelf, setIsSelf] = useState(initial.preview?.isSelf ?? false)
   const [isFollowing, setIsFollowing] = useState(
     initial.preview?.isFollowing ?? false,
@@ -83,6 +86,7 @@ export function CommunityUserPage() {
   const applyDayData = useCallback(
     (data: Awaited<ReturnType<typeof httpData.getCommunityUser>>) => {
       setNickname(data.member.nickname)
+      setAvatarUrl(data.member.avatarUrl ?? null)
       setIsSelf(data.member.isSelf)
       setIsFollowing(data.isFollowing)
       setSnapshot(data.snapshot)
@@ -120,6 +124,7 @@ export function CommunityUserPage() {
     try {
       const data = await httpData.getCommunityUserMonth(userId, year, month)
       setNickname(data.member.nickname)
+      setAvatarUrl(data.member.avatarUrl ?? null)
       setIsSelf(data.member.isSelf)
       setAccountStartKey(data.accountStartKey)
       setDayMap(
@@ -211,6 +216,11 @@ export function CommunityUserPage() {
     { month: 'long', day: 'numeric', weekday: 'short' },
   )
 
+  const legendHighlight = getWallLegendHighlight(
+    dayMap.get(viewDate),
+    isBeforeAccountStart(viewDate, accountStartKey),
+  )
+
   if (loading && !snapshot) {
     return <p className="py-12 text-center text-muted">加载中…</p>
   }
@@ -240,13 +250,13 @@ export function CommunityUserPage() {
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div
-            className={`community-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl ${
-              isSelf ? 'community-avatar--self' : ''
-            }`}
-          >
-            {nickname.slice(0, 1).toUpperCase()}
-          </div>
+          <UserAvatar
+            variant="community"
+            size="lg"
+            nickname={nickname}
+            avatarUrl={avatarUrl}
+            isSelf={isSelf}
+          />
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold text-primary">{nickname}</h1>
             <p className="text-sm text-muted">
@@ -412,6 +422,7 @@ export function CommunityUserPage() {
                 todayKey={todayKey}
                 accountStartKey={accountStartKey}
                 selectedDateKey={viewDate}
+                legendHighlight={legendHighlight}
                 onDayClick={handleDayClick}
               />
             ) : (
@@ -422,6 +433,7 @@ export function CommunityUserPage() {
                 todayKey={todayKey}
                 accountStartKey={accountStartKey}
                 selectedDateKey={viewDate}
+                legendHighlight={legendHighlight}
                 onDayClick={handleDayClick}
               />
             )}

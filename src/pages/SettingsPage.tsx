@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
@@ -12,10 +12,19 @@ import {
   normalizeBirthdayFromApi,
 } from '../lib/birthday'
 import { useDebouncedAutosave } from '../hooks/useDebouncedAutosave'
+import { fileToAvatarDataUrl } from '../lib/avatarImage'
 import type { Sex, WallStyle } from '../types'
+
+type StyleToneGroup = 'light' | 'dark'
+
+const styleToneSections: Array<{ group: StyleToneGroup; title: string }> = [
+  { group: 'dark', title: '深色系' },
+  { group: 'light', title: '浅色系' },
+]
 
 const styleOptions: Array<{
   id: AppStyle
+  group: StyleToneGroup
   title: string
   description: string
   swatchClassName: string
@@ -23,6 +32,7 @@ const styleOptions: Array<{
 }> = [
   {
     id: 'default',
+    group: 'dark',
     title: '深海能量',
     description: '偏运动感的深色青绿系',
     swatchClassName: 'style-swatch-ocean',
@@ -30,41 +40,15 @@ const styleOptions: Array<{
   },
   {
     id: 'abyssal-jade',
+    group: 'dark',
     title: '深海能量 2',
     description: '墨绿深海、翡翠主操、荧光青运动、珊瑚橙饮食',
     swatchClassName: 'style-swatch-abyssal-jade',
     optionClassName: 'style-option-abyssal-jade',
   },
   {
-    id: 'lavender',
-    title: '薰衣云梦',
-    description: '云雾淡紫底、奶白紫卡，薰衣草主操、紫蓝运动、玫瑰紫粉饮食',
-    swatchClassName: 'style-swatch-lavender',
-    optionClassName: 'style-option-lavender',
-  },
-  {
-    id: 'sakura',
-    title: '樱海晴梦',
-    description: '奶粉底、白粉卡，运动蓝与饮食粉分工明确',
-    swatchClassName: 'style-swatch-sakura',
-    optionClassName: 'style-option-sakura',
-  },
-  {
-    id: 'sakura-blush',
-    title: '樱粉云境',
-    description: '樱花粉底、奶粉卡，运动蓝 / 饮食莓粉',
-    swatchClassName: 'style-swatch-sakura-blush',
-    optionClassName: 'style-option-sakura-blush',
-  },
-  {
-    id: 'active-mint',
-    title: '轻氧薄荷',
-    description: '薄荷雾绿底、奶白薄荷卡，蓝管运动、珊瑚橙管饮食、绿管缺口',
-    swatchClassName: 'style-swatch-active-mint',
-    optionClassName: 'style-option-active-mint',
-  },
-  {
     id: 'eva',
+    group: 'dark',
     title: '暴走初号机',
     description: '深黑紫机甲底 · 荧光绿运动缺口 · 插入栓橙饮食',
     swatchClassName: 'style-swatch-eva',
@@ -72,6 +56,7 @@ const styleOptions: Array<{
   },
   {
     id: 'eva-unit02',
+    group: 'dark',
     title: '烈焰二号机',
     description: '深黑红驾驶舱 · 二号机红主操 · 橙黄饮食 · 荧光绿运动缺口',
     swatchClassName: 'style-swatch-eva-unit02',
@@ -79,10 +64,59 @@ const styleOptions: Array<{
   },
   {
     id: 'gundam-hangar',
+    group: 'dark',
     title: '格纳库提坦斯',
-    description: '暗色提坦斯钢蓝装甲、冷青运动缺口、琥珀饮食摄入，格纳库仪表盘感',
+    description: '暗色提坦斯钢蓝格纳库、冷青运动缺口、暗红饮食与盈余，仪表盘感',
     swatchClassName: 'style-swatch-gundam-hangar',
     optionClassName: 'style-option-gundam-hangar',
+  },
+  {
+    id: 'lavender',
+    group: 'light',
+    title: '薰衣云梦',
+    description: '云雾淡紫底、奶白紫卡，薰衣草主操、紫蓝运动、玫瑰紫粉饮食',
+    swatchClassName: 'style-swatch-lavender',
+    optionClassName: 'style-option-lavender',
+  },
+  {
+    id: 'sakura',
+    group: 'light',
+    title: '碧空樱缀',
+    description: '浅蓝天底、云白蓝卡，亮蓝主操，甜樱粉点缀',
+    swatchClassName: 'style-swatch-sakura',
+    optionClassName: 'style-option-sakura',
+  },
+  {
+    id: 'sakura-blush',
+    group: 'light',
+    title: '樱雾漫境',
+    description: '樱花粉底、奶粉卡，运动蓝 / 饮食莓粉',
+    swatchClassName: 'style-swatch-sakura-blush',
+    optionClassName: 'style-option-sakura-blush',
+  },
+  {
+    id: 'active-mint',
+    group: 'light',
+    title: '轻氧薄荷',
+    description: '薄荷雾绿底、奶白薄荷卡，蓝管运动、珊瑚橙管饮食、绿管缺口',
+    swatchClassName: 'style-swatch-active-mint',
+    optionClassName: 'style-option-active-mint',
+  },
+  {
+    id: 'soy-tea',
+    group: 'light',
+    title: '豆乳清茶',
+    description: '豆乳米杏底、奶绿卡，海盐蓝运动、茶绿缺口、豆乳焦糖饮食',
+    swatchClassName: 'style-swatch-soy-tea',
+    optionClassName: 'style-option-soy-tea',
+  },
+  {
+    id: 'wood-zen',
+    group: 'light',
+    title: '木隐茶庭',
+    description: '米纸原木底、米杏卡，原木棕主操、苔绿缺口、茶青运动、柿橙饮食',
+    swatchClassName: 'style-swatch-wood-zen',
+    optionClassName: 'style-option-wood-zen',
   },
 ]
 
@@ -102,10 +136,16 @@ export function SettingsPage() {
     () => Number(profile?.activity_factor) || 1.375,
   )
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
+  const [welcomeMessage, setWelcomeMessage] = useState(
+    profile?.welcome_message ?? '',
+  )
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
   const [wallStyle, setWallStyle] = useState<WallStyle>(
     () => (profile?.wall_style === 'split' ? 'split' : 'classic'),
   )
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
 
   const todayKey = formatTodayDateKey()
   const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
@@ -118,12 +158,15 @@ export function SettingsPage() {
     setSex(profile.sex ?? 'male')
     setActivity(Number(profile.activity_factor) || 1.375)
     setNickname(profile.nickname ?? '')
+    setWelcomeMessage(profile.welcome_message ?? '')
     setThreshold(String(profile.deficit_threshold ?? 0))
     setWallStyle(profile.wall_style === 'split' ? 'split' : 'classic')
   }, [profile])
 
   const trimmedNickname = nickname.trim()
   const savedNickname = (profile?.nickname ?? '').trim()
+  const trimmedWelcomeMessage = welcomeMessage.trim()
+  const savedWelcomeMessage = (profile?.welcome_message ?? '').trim()
   const parsedWeight = parseFloat(weight)
   const parsedHeight = parseFloat(height)
   const parsedDeficit = parseInt(threshold, 10) || 0
@@ -154,6 +197,18 @@ export function SettingsPage() {
     mapError: () => '保存失败',
   })
   const nicknameSaveState = nicknameAutosave.state
+
+  const saveWelcomeMessage = useCallback(async () => {
+    await updateProfile({ welcome_message: trimmedWelcomeMessage || null })
+  }, [updateProfile, trimmedWelcomeMessage])
+
+  const welcomeMessageAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: trimmedWelcomeMessage === savedWelcomeMessage,
+    save: saveWelcomeMessage,
+    mapError: () => '保存失败',
+  })
+  const welcomeMessageSaveState = welcomeMessageAutosave.state
 
   const validateBody = useCallback(() => {
     if (!parsedWeight || !parsedHeight) return '请填写有效的体重和身高'
@@ -216,6 +271,25 @@ export function SettingsPage() {
     navigate('/login')
   }
 
+  const handleAvatarPick = () => {
+    if (!avatarBusy) avatarInputRef.current?.click()
+  }
+
+  const handleAvatarFile = async (file: File | undefined) => {
+    if (!file || avatarBusy) return
+    setAvatarBusy(true)
+    setAvatarError('')
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file)
+      await updateProfile({ avatar_url: dataUrl })
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setAvatarBusy(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="space-y-6 pb-12">
       <h1 className="text-xl font-bold text-primary">设置</h1>
@@ -233,38 +307,135 @@ export function SettingsPage() {
       <section className="surface-panel p-4">
         <h2 className="font-semibold text-primary">个人资料</h2>
 
-        <div className="mt-3 flex items-center gap-3">
-          <UserAvatar profile={profile} user={user} size="lg" />
-          <label className="min-w-0 flex-1">
-            <span className="flex items-center justify-between gap-2 text-sm text-muted">
-              <span>昵称</span>
-              {nicknameSaveState === 'saving' && (
-                <span className="text-xs text-muted">保存中…</span>
+        <div className="mt-3 flex items-start gap-3">
+          <div className="flex shrink-0 flex-col items-center">
+            <button
+              type="button"
+              disabled={avatarBusy}
+              onClick={handleAvatarPick}
+              className="profile-avatar-btn relative rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
+              aria-label="上传或更换头像"
+            >
+              <UserAvatar profile={profile} user={user} size="lg" />
+              {avatarBusy && (
+                <span
+                  className="profile-avatar-btn__busy absolute inset-0 flex items-center justify-center rounded-full text-[10px] font-medium text-primary"
+                  aria-hidden
+                >
+                  处理中…
+                </span>
               )}
-              {nicknameSaveState === 'saved' && (
-                <span className="text-xs text-brand">已保存</span>
-              )}
-              {nicknameSaveState === 'error' && (
-                <span className="text-xs text-amber-400">保存失败</span>
-              )}
-            </span>
+            </button>
             <input
-              type="text"
-              maxLength={32}
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="input mt-1"
-              placeholder="给自己起个名字，留空则显示邮箱前缀"
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => void handleAvatarFile(e.target.files?.[0])}
             />
-          </label>
+            {avatarError && (
+              <p className="mt-1 max-w-[5.5rem] text-center text-[10px] text-danger">
+                {avatarError}
+              </p>
+            )}
+          </div>
+          <div className="profile-nickname-field min-w-0 flex-1">
+            <div className="relative">
+              <input
+                type="text"
+                maxLength={32}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="input profile-nickname-field__input w-full"
+                placeholder="输入你的昵称"
+                aria-label="昵称"
+              />
+              <span
+                className="profile-nickname-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                aria-hidden
+              >
+                <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
+                  <path
+                    d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M13.5 6.5l4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </div>
+            {nicknameSaveState === 'saving' && (
+              <p className="mt-1 text-xs text-muted">保存中…</p>
+            )}
+            {nicknameSaveState === 'saved' && (
+              <p className="mt-1 text-xs text-brand">已保存</p>
+            )}
+            {nicknameSaveState === 'error' && (
+              <p className="mt-1 text-xs text-danger">保存失败</p>
+            )}
+
+            <div className="profile-welcome-field mt-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={welcomeMessage}
+                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                  className="input profile-welcome-field__input w-full"
+                  placeholder="写一句给自己打气的欢迎语吧"
+                  aria-label="欢迎语"
+                />
+                <span
+                  className="profile-welcome-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                  aria-hidden
+                >
+                  <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
+                    <path
+                      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M13.5 6.5l4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </div>
+              {welcomeMessageSaveState === 'saving' && (
+                <p className="mt-1 text-xs text-muted">保存中…</p>
+              )}
+              {welcomeMessageSaveState === 'saved' && (
+                <p className="mt-1 text-xs text-brand">已保存</p>
+              )}
+              {welcomeMessageSaveState === 'error' && (
+                <p className="mt-1 text-xs text-danger">保存失败</p>
+              )}
+            </div>
+          </div>
         </div>
 
-        <details className="group mt-3">
-          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+        {profile && (
+          <MetabolismSummary profile={profile} variant="embedded" />
+        )}
+
+        <details className="group mt-3 border-t border-slate-600/40 pt-3">
+          <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
               编辑身体资料
               <span
-                className="text-muted transition group-open:rotate-90"
+                className="settings-menu-chevron transition group-open:rotate-90"
                 aria-hidden
               >
                 ▸
@@ -368,15 +539,13 @@ export function SettingsPage() {
         </details>
       </section>
 
-      {profile && <MetabolismSummary profile={profile} />}
-
       <section className="surface-card p-4">
         <details className="group">
-          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+          <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
               打卡墙样式
               <span
-                className="text-muted transition group-open:rotate-90"
+                className="settings-menu-chevron transition group-open:rotate-90"
                 aria-hidden
               >
                 ▸
@@ -436,11 +605,11 @@ export function SettingsPage() {
 
       <section className="surface-panel p-4">
         <details className="group">
-          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+          <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
               主题风格
               <span
-                className="text-muted transition group-open:rotate-90"
+                className="settings-menu-chevron transition group-open:rotate-90"
                 aria-hidden
               >
                 ▸
@@ -448,40 +617,52 @@ export function SettingsPage() {
             </span>
           </summary>
           <div className="mt-4 border-t border-slate-600/40 pt-4">
-            <p className="text-sm text-muted">选择你喜欢的界面配色</p>
-            <div className="mt-3 space-y-2">
-              {styleOptions.map((item) => {
-                const active = style === item.id
-                const optionClassName = [
-                  'style-option',
-                  item.optionClassName,
-                  active ? `${item.optionClassName}--active` : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setStyle(item.id)}
-                    className={optionClassName}
-                    aria-pressed={active}
-                  >
-                    <span className="flex items-center justify-between gap-3">
-                      <span>
-                        <span className="block text-sm font-medium text-primary">
-                          {item.title}
-                        </span>
-                        <span className="block text-xs text-muted">{item.description}</span>
-                      </span>
-                      <span
-                        aria-hidden
-                        className={`h-4 w-16 shrink-0 rounded-full ring-1 ring-white/25 ${item.swatchClassName}`}
-                      />
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="space-y-4">
+              {styleToneSections.map((section) => (
+                <div key={section.group}>
+                  <h3 className="text-xs font-medium text-secondary">
+                    {section.title}
+                  </h3>
+                  <div className="mt-2 space-y-2">
+                    {styleOptions
+                      .filter((item) => item.group === section.group)
+                      .map((item) => {
+                        const active = style === item.id
+                        const optionClassName = [
+                          'style-option',
+                          item.optionClassName,
+                          active ? `${item.optionClassName}--active` : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setStyle(item.id)}
+                            className={optionClassName}
+                            aria-pressed={active}
+                          >
+                            <span className="flex items-center justify-between gap-3">
+                              <span>
+                                <span className="block text-sm font-medium text-primary">
+                                  {item.title}
+                                </span>
+                                <span className="block text-xs text-muted">
+                                  {item.description}
+                                </span>
+                              </span>
+                              <span
+                                aria-hidden
+                                className={`h-4 w-16 shrink-0 rounded-full ring-1 ring-white/25 ${item.swatchClassName}`}
+                              />
+                            </span>
+                          </button>
+                        )
+                      })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </details>
@@ -489,11 +670,11 @@ export function SettingsPage() {
 
       <section className="surface-panel p-4">
         <details className="group">
-          <summary className="cursor-pointer list-none text-sm text-brand marker:content-none [&::-webkit-details-marker]:hidden">
+          <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
               我要打赏
               <span
-                className="text-muted transition group-open:rotate-90"
+                className="settings-menu-chevron transition group-open:rotate-90"
                 aria-hidden
               >
                 ▸
@@ -527,7 +708,7 @@ export function SettingsPage() {
       <button
         type="button"
         onClick={handleSignOut}
-        className="btn-danger w-full py-3"
+        className="btn-sign-out w-full py-3"
       >
         退出登录
       </button>

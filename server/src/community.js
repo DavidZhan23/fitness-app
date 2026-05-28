@@ -53,6 +53,7 @@ export function toPublicMember(profile, viewerId) {
   return {
     id: profile.id,
     nickname: publicNickname(profile),
+    avatarUrl: profile.avatar_url ?? null,
     isSelf: profile.id === viewerId,
   }
 }

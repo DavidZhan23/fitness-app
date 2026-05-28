@@ -17,6 +17,8 @@ export type AppStyle =
   | 'eva'
   | 'eva-unit02'
   | 'gundam-hangar'
+  | 'soy-tea'
+  | 'wood-zen'
 
 interface StyleContextValue {
   style: AppStyle
@@ -34,14 +36,16 @@ function normalizeStyle(value: string | null): AppStyle {
   if (value === 'cream') return 'lavender'
   if (value === 'sakura') return 'sakura'
   if (value === 'sakura-blush') return 'sakura-blush'
-  // 已下线「雾海潮蓝」，旧 cookie 迁移到樱海晴梦
+  // 已下线「雾海潮蓝」，旧 cookie 迁移到碧空樱缀
   if (value === 'aqua') return 'sakura'
   if (value === 'active-mint') return 'active-mint'
   if (value === 'eva') return 'eva'
   if (value === 'eva-unit02') return 'eva-unit02'
   if (value === 'gundam-hangar') return 'gundam-hangar'
   if (value === 'abyssal-jade') return 'abyssal-jade'
-  // 旧 cookie 'dream' 自动迁移到粉主题「樱海晴梦」
+  if (value === 'soy-tea') return 'soy-tea'
+  if (value === 'wood-zen') return 'wood-zen'
+  // 旧 cookie 'dream' 自动迁移到蓝调主题「碧空樱缀」
   if (value === 'dream') return 'sakura'
   return 'default'
 }

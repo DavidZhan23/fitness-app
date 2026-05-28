@@ -17,6 +17,7 @@
 | [M-2026-05-community-profile](M-2026-05-community-profile.md) | done | PR #54（+ polish PR #61） |
 | [M-2026-05-pink-blue-light-theme](M-2026-05-pink-blue-light-theme.md) | done | `feat/style-color-tuning` |
 | [M-2026-05-macaron-themes](M-2026-05-macaron-themes.md) | done | `feat/style-color-tuning`（接续：拆出 cream / sakura） |
+| [M-2026-05-scroll-avatar-wall](M-2026-05-scroll-avatar-wall.md) | done | #50 #30 #75 #71 #78 |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）

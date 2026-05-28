@@ -8,6 +8,10 @@ export interface Profile {
   email: string | null
   /** 用户自定义昵称，展示用 */
   nickname?: string | null
+  /** 今日页欢迎语（可选；留空时回退为“欢迎回来，昵称。”） */
+  welcome_message?: string | null
+  /** 头像 data URL（JPEG/PNG/WebP base64） */
+  avatar_url?: string | null
   /** 账号注册时间，用于打卡墙「注册日前不计缺口」 */
   created_at?: string
   weight_kg: number | null
@@ -30,6 +34,7 @@ export interface Profile {
 export interface CommunityMember {
   id: string
   nickname: string
+  avatarUrl?: string | null
   isSelf: boolean
   today: CommunityDaySnapshot
   isFollowing: boolean
@@ -58,6 +63,7 @@ export interface DayComment {
   id: string
   authorId: string
   authorNickname: string
+  authorAvatarUrl?: string | null
   body: string
   createdAt: string
   isOwn: boolean
@@ -70,7 +76,7 @@ export interface DayComment {
 }
 
 export interface CommunityUserDetail {
-  member: { id: string; nickname: string; isSelf: boolean }
+  member: Pick<CommunityMember, 'id' | 'nickname' | 'isSelf' | 'avatarUrl'>
   date: string
   snapshot: CommunityDaySnapshot
   exercises: CommunityPublicExercise[]

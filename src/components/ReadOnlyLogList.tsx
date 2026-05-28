@@ -95,7 +95,7 @@ export function ReadOnlyLogList({
       )}
       {meals.length > 0 && (
         <section>
-          <h3 className="mb-2 text-sm font-medium text-amber-400">饮食</h3>
+          <h3 className="accent-meal mb-2 text-sm font-medium">饮食</h3>
           <ul className="space-y-2">
             {meals.map((m) => (
               <li

@@ -7,9 +7,11 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 | `default.css` | `:root` | 深海能量 |
 | `abyssal-jade.css` | `[data-style='abyssal-jade']` | 深海能量 2 |
 | `lavender.css` | `[data-style='lavender']` | 薰衣云梦 |
-| `sakura.css` | `[data-style='sakura']` | 樱海晴梦 |
-| `sakura-blush.css` | `[data-style='sakura-blush']` | 樱粉云境 |
+| `sakura.css` | `[data-style='sakura']` | 碧空樱缀 |
+| `sakura-blush.css` | `[data-style='sakura-blush']` | 樱雾漫境 |
 | `active-mint.css` | `[data-style='active-mint']` | 轻氧薄荷 |
+| `soy-tea.css` | `[data-style='soy-tea']` | 豆乳清茶 |
+| `wood-zen.css` | `[data-style='wood-zen']` | 木隐茶庭 |
 | `eva.css` | `[data-style='eva']` | 暴走初号机 |
 | `eva-unit02.css` | `[data-style='eva-unit02']` | 烈焰二号机 |
 | `gundam-hangar.css` | `[data-style='gundam-hangar']` | 格纳库提坦斯 |

@@ -141,7 +141,7 @@ export const EXERCISE_LEVEL_CLASSES = [
   'heatmap-exercise-4',
 ] as const
 
-/** 代谢缺口（绿/蓝由主题 token 决定） */
+/** 代谢缺口（与运动墙同色阶，CSS 将 heatmap-deficit-* 别名到 heatmap-exercise-*） */
 export const DEFICIT_LEVEL_CLASSES = [
   'heatmap-empty',
   'heatmap-deficit-1',
@@ -166,6 +166,85 @@ export function getDeficitHeatmapClass(
   const palette =
     tone === 'surplus' ? DEFICIT_SURPLUS_LEVEL_CLASSES : DEFICIT_LEVEL_CLASSES
   return palette[level]
+}
+
+export type CalendarDayDetailHeatmapCell = {
+  deficitLevel: 0 | 1 | 2 | 3 | 4
+  deficitTone: DeficitHeatmapTone
+  beforeAccount?: boolean
+}
+
+export type WallLegendHighlight = {
+  exerciseLevel: 0 | 1 | 2 | 3 | 4
+  deficitLevel: 0 | 1 | 2 | 3 | 4
+  deficitTone: DeficitHeatmapTone
+}
+
+/** 图例展示档位：level 0 → 高亮「少」档（level 1） */
+export function legendSwatchLevel(level: 0 | 1 | 2 | 3 | 4): 1 | 2 | 3 | 4 {
+  return (level === 0 ? 1 : level) as 1 | 2 | 3 | 4
+}
+
+export function getWallLegendHighlight(
+  cell:
+    | {
+        exerciseLevel: 0 | 1 | 2 | 3 | 4
+        deficitLevel: 0 | 1 | 2 | 3 | 4
+        deficitTone: DeficitHeatmapTone
+        beforeAccount?: boolean
+      }
+    | undefined,
+  beforeAccount: boolean,
+): WallLegendHighlight {
+  if (beforeAccount) {
+    return { exerciseLevel: 0, deficitLevel: 0, deficitTone: 'neutral' }
+  }
+  return {
+    exerciseLevel: cell?.exerciseLevel ?? 0,
+    deficitLevel: cell?.deficitLevel ?? 0,
+    deficitTone: cell?.deficitTone ?? 'neutral',
+  }
+}
+
+/** 打卡墙「当日小结」背景：与当前可见墙选中日格子同色阶 */
+export function getCalendarDayDetailBackgroundClass(options: {
+  beforeAccount: boolean
+  /** 分屏模式且当前为运动墙 */
+  splitExercisePane: boolean
+  exerciseKcal: number
+  deficitHeatmap: { level: 0 | 1 | 2 | 3 | 4; tone: DeficitHeatmapTone }
+}): string {
+  if (options.beforeAccount) return 'heatmap-empty'
+  if (options.splitExercisePane) {
+    const level = getExerciseIntensityLevel(options.exerciseKcal)
+    return EXERCISE_LEVEL_CLASSES[legendSwatchLevel(level)]
+  }
+  const { level, tone } = options.deficitHeatmap
+  return getDeficitHeatmapClass(level, tone)
+}
+
+export function getLiveWallLegendHighlight(
+  exerciseKcal: number,
+  deficitHeatmap: { level: 0 | 1 | 2 | 3 | 4; tone: DeficitHeatmapTone },
+  beforeAccount: boolean,
+): WallLegendHighlight {
+  if (beforeAccount) {
+    return { exerciseLevel: 0, deficitLevel: 0, deficitTone: 'neutral' }
+  }
+  return {
+    exerciseLevel: getExerciseIntensityLevel(exerciseKcal),
+    deficitLevel: deficitHeatmap.level,
+    deficitTone: deficitHeatmap.tone,
+  }
+}
+
+/** @deprecated 使用 getCalendarDayDetailBackgroundClass；代谢色阶以 fallback（实时缺口）为准 */
+export function getCalendarDayDetailHeatmapClass(
+  cell: CalendarDayDetailHeatmapCell | undefined,
+  fallback: { level: 0 | 1 | 2 | 3 | 4; tone: DeficitHeatmapTone },
+): string {
+  if (cell?.beforeAccount) return 'heatmap-empty'
+  return getDeficitHeatmapClass(fallback.level, fallback.tone)
 }
 
 /** 运动/饮食热量展示（社区、今日、打卡等统一文案） */

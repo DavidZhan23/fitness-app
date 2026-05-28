@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
+import { RecordDeleteButton } from './RecordActionIcons'
+import { LikeHeartButton } from './LikeHeartButton'
+import { UserAvatar } from './UserAvatar'
+import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import type { DayComment } from '../types'
 
@@ -51,6 +55,7 @@ export function DayCommentSection({
   comments: initialComments,
   onCommentsChange,
 }: DayCommentSectionProps) {
+  const { profile } = useAuth()
   const [comments, setComments] = useState(initialComments)
   const [body, setBody] = useState('')
   const [replyTo, setReplyTo] = useState<{
@@ -62,6 +67,8 @@ export function DayCommentSection({
   const [pendingDelete, setPendingDelete] = useState<DayComment | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [likingCommentId, setLikingCommentId] = useState<string | null>(null)
+  const commentRefs = useRef(new Map<string, HTMLLIElement>())
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const threads = useMemo(() => buildThreads(comments), [comments])
 
@@ -71,6 +78,28 @@ export function DayCommentSection({
     setReplyTo(null)
     setError('')
   }, [initialComments, userId, date])
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv || !replyTo) return
+
+    const syncKeyboardOffset = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      document.documentElement.style.setProperty(
+        '--comment-compose-kb',
+        `${kb}px`,
+      )
+    }
+
+    syncKeyboardOffset()
+    vv.addEventListener('resize', syncKeyboardOffset)
+    vv.addEventListener('scroll', syncKeyboardOffset)
+    return () => {
+      vv.removeEventListener('resize', syncKeyboardOffset)
+      vv.removeEventListener('scroll', syncKeyboardOffset)
+      document.documentElement.style.removeProperty('--comment-compose-kb')
+    }
+  }, [replyTo])
 
   const updateComments = (next: DayComment[]) => {
     setComments(next)
@@ -134,6 +163,12 @@ export function DayCommentSection({
       commentId: comment.id,
       nickname: comment.authorNickname,
     })
+    requestAnimationFrame(() => {
+      commentRefs.current
+        .get(comment.id)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      inputRef.current?.focus({ preventScroll: true })
+    })
   }
 
   const toggleCommentLike = async (comment: DayComment) => {
@@ -160,56 +195,57 @@ export function DayCommentSection({
   const renderComment = (c: DayComment, isReply: boolean) => (
     <li
       key={c.id}
-      className={`rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-700/50 ${
-        isReply ? 'ml-4 border-l-2 border-violet-500/25 pl-3' : ''
-      }`}
+      ref={(el) => {
+        if (el) commentRefs.current.set(c.id, el)
+        else commentRefs.current.delete(c.id)
+      }}
+      className={`community-comment-row ${isReply ? 'community-comment-row--reply' : ''}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-muted">
-            <span className="font-medium text-violet-200/90">
+      <UserAvatar
+        size="sm"
+        nickname={c.authorNickname}
+        avatarUrl={c.authorAvatarUrl}
+        className="community-comment-row__avatar"
+      />
+      <div className="community-comment-row__main min-w-0 flex-1">
+        <div className="community-comment-row__head flex items-start gap-2">
+          <p className="min-w-0 flex-1 text-xs leading-snug">
+            <span className="community-comment-author font-medium">
               {c.authorNickname}
             </span>
             {c.replyToNickname && (
-              <span className="text-slate-400">
-                {' '}
-                回复{' '}
-                <span className="text-violet-200/80">@{c.replyToNickname}</span>
-              </span>
+              <>
+                <span className="text-muted"> 回复 </span>
+                <span className="community-comment-reply-to">
+                  @{c.replyToNickname}
+                </span>
+              </>
             )}
-            <span className="mx-1.5">·</span>
-            {formatTime(c.createdAt)}
+            <span className="text-muted"> · {formatTime(c.createdAt)}</span>
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-slate-100">{c.body}</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <button
-            type="button"
+          <LikeHeartButton
+            active={c.viewerLiked}
+            count={c.likeCount}
             disabled={likingCommentId === c.id}
+            size="sm"
+            layout="column"
+            className="community-comment-row__like shrink-0"
             onClick={() => void toggleCommentLike(c)}
-            className={`text-xs ${
-              c.viewerLiked
-                ? 'text-amber-300 hover:text-amber-200'
-                : 'text-muted hover:text-slate-200'
-            } disabled:opacity-40`}
-          >
-            👍 {c.likeCount}
-          </button>
+          />
+        </div>
+        <p className="community-comment-row__body mt-1 text-sm leading-relaxed text-primary">
+          {c.body}
+        </p>
+        <div className="community-comment-actions mt-1.5 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => startReply(c)}
-            className="text-xs text-violet-300/90 hover:text-violet-200"
+            className="community-comment-action text-xs"
           >
             回复
           </button>
           {c.isOwn && (
-            <button
-              type="button"
-              onClick={() => setPendingDelete(c)}
-              className="text-xs text-muted hover:text-red-400"
-            >
-              删除
-            </button>
+            <RecordDeleteButton onClick={() => setPendingDelete(c)} />
           )}
         </div>
       </div>
@@ -217,7 +253,11 @@ export function DayCommentSection({
   )
 
   return (
-    <section className="space-y-3">
+    <section
+      className={`community-comment-section space-y-3${
+        replyTo ? ' community-comment-section--replying' : ''
+      }`}
+    >
       <ConfirmDialog
         open={pendingDelete != null}
         title="永久删除这条评论？"
@@ -228,19 +268,22 @@ export function DayCommentSection({
         }}
         onConfirm={() => void confirmDelete()}
       />
-      <h2 className="text-sm font-medium text-slate-200">
+      <h2 className="text-sm font-medium text-primary">
         评论 {countAll(comments) > 0 && `(${countAll(comments)})`}
       </h2>
 
       {threads.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-600 py-6 text-center text-sm text-muted">
+        <p
+          className="rounded-xl border border-dashed py-6 text-center text-sm text-muted"
+          style={{ borderColor: 'var(--surface-card-border)' }}
+        >
           还没有评论，写一句鼓励吧
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="community-comment-list divide-y divide-[var(--surface-card-border)]">
           {threads.map(({ root, replies }) => (
-            <li key={root.id} className="space-y-2">
-              <ul className="space-y-2">
+            <li key={root.id} className="community-comment-thread py-3 first:pt-0">
+              <ul className="space-y-3">
                 {renderComment(root, false)}
                 {replies.map((r) => renderComment(r, true))}
               </ul>
@@ -249,23 +292,20 @@ export function DayCommentSection({
         </ul>
       )}
 
-      {replyTo && (
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-violet-950/40 px-3 py-2 text-xs text-violet-200/90 ring-1 ring-violet-500/25">
-          <span>
-            正在回复 <span className="font-medium">@{replyTo.nickname}</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => setReplyTo(null)}
-            className="shrink-0 text-muted hover:text-slate-200"
-          >
-            取消
-          </button>
-        </div>
-      )}
-
-      <div className="flex gap-2">
+      <div
+        id="day-comment-compose"
+        className={`community-comment-compose scroll-mt-4 flex items-center gap-2${
+          replyTo ? ' community-comment-compose--dock' : ''
+        }`}
+      >
+        <UserAvatar
+          size="sm"
+          profile={profile}
+          isSelf
+          className="shrink-0"
+        />
         <input
+          ref={inputRef}
           type="text"
           value={body}
           maxLength={280}
@@ -275,23 +315,28 @@ export function DayCommentSection({
           disabled={sending}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              setReplyTo(null)
+              return
+            }
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
-              send()
+              void send()
             }
           }}
-          className="input min-h-0 flex-1 py-2.5 text-sm"
+          className="input min-h-0 flex-1 rounded-full py-2.5 text-sm"
         />
         <button
           type="button"
           disabled={sending || !body.trim()}
-          onClick={send}
-          className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-500 disabled:opacity-40 active:scale-95"
+          onClick={() => void send()}
+          className="btn-primary shrink-0 rounded-full px-4 py-2.5 text-sm font-medium disabled:opacity-40 active:scale-95"
         >
           {sending ? '…' : replyTo ? '回复' : '发送'}
         </button>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </section>
   )
 }

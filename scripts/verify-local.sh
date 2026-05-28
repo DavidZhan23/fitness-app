@@ -112,6 +112,13 @@ if [ "$SKIP_E2E" = true ]; then
   echo "⚠ skipped by --skip-e2e"
 else
   run_step "e2e tests" npm run test:e2e
+  echo ""
+  echo "==> e2e user cleanup (keep max ${E2E_USER_RETAIN_MAX:-5})"
+  if node scripts/cleanup-e2e-users.mjs; then
+    echo "✔ e2e user cleanup"
+  else
+    echo "⚠ e2e user cleanup failed (non-blocking)"
+  fi
 fi
 
 run_step "server syntax (entry)" node --check server/src/index.js

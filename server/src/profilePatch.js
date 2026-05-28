@@ -2,8 +2,14 @@
 
 import { formatDateKeyInTz } from './dateKey.js'
 
+const AVATAR_DATA_URL_MAX = 120_000
+
+const AVATAR_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,/
+
 const ALLOWED = [
   'nickname',
+  'welcome_message',
+  'avatar_url',
   'community_visible',
   'wall_style',
   'weight_kg',
@@ -56,6 +62,11 @@ export function buildProfileUpdate(body) {
   if (body.nickname !== undefined) {
     const raw = typeof body.nickname === 'string' ? body.nickname.trim() : ''
     push('nickname', raw ? raw.slice(0, 32) : null)
+  }
+  if (body.welcome_message !== undefined) {
+    const raw =
+      typeof body.welcome_message === 'string' ? body.welcome_message.trim() : ''
+    push('welcome_message', raw ? raw.slice(0, 30) : null)
   }
   if (body.weight_kg !== undefined) {
     const w = num(body.weight_kg)
@@ -111,6 +122,19 @@ export function buildProfileUpdate(body) {
   }
   if (body.wall_style === 'classic' || body.wall_style === 'split') {
     push('wall_style', body.wall_style)
+  }
+  if (body.avatar_url !== undefined) {
+    if (body.avatar_url === null || body.avatar_url === '') {
+      push('avatar_url', null)
+    } else if (typeof body.avatar_url === 'string') {
+      const url = body.avatar_url.trim()
+      if (
+        AVATAR_DATA_URL_RE.test(url) &&
+        url.length <= AVATAR_DATA_URL_MAX
+      ) {
+        push('avatar_url', url)
+      }
+    }
   }
 
   return { updates, values, allowed: ALLOWED }
