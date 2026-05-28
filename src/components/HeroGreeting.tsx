@@ -30,6 +30,7 @@ export function HeroGreeting({
     typeof customWelcomeMessage === 'string' ? customWelcomeMessage.trim() : ''
   const title = customTitle || config.titleTemplate
   const templateParts = customTitle ? null : splitTemplate(title)
+  const subtitleParts = splitTemplate(config.subtitle)
   const titleLength = Array.from(title).length
   const nameLength = Array.from(name.trim()).length
   const allowWrap = nameLength >= 10 || titleLength >= 18
@@ -69,7 +70,15 @@ export function HeroGreeting({
         )}
       </FluidText>
       <FluidText as="p" variant="body" className="hero-greeting__subtitle">
-        {config.subtitle}
+        {subtitleParts ? (
+          <>
+            {subtitleParts.before}
+            <span className="hero-greeting__name">{name}</span>
+            {subtitleParts.after}
+          </>
+        ) : (
+          config.subtitle
+        )}
       </FluidText>
     </header>
   )

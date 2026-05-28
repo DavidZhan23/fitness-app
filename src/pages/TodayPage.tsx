@@ -125,21 +125,23 @@ export function TodayPage() {
 
   return (
     <PageShell>
-      <HeroGreeting
-        name={greeting}
-        themeStyle={style}
-        customWelcomeMessage={profile?.welcome_message}
-      />
-      <DeficitCard
-        dateLabel={dateLabel}
-        deficit={deficit}
-        metabolismKcal={metabolismKcal}
-        metabolismLabel={getMetabolismStatLabel(today, today)}
-        exerciseKcal={exerciseKcal}
-        mealKcal={mealKcal}
-        threshold={threshold}
-        fullDayBmr={fullDayBmr}
-      />
+      <div className="today-hero-block">
+        <HeroGreeting
+          name={greeting}
+          themeStyle={style}
+          customWelcomeMessage={profile?.welcome_message}
+        />
+        <DeficitCard
+          dateLabel={dateLabel}
+          deficit={deficit}
+          metabolismKcal={metabolismKcal}
+          metabolismLabel={getMetabolismStatLabel(today, today)}
+          exerciseKcal={exerciseKcal}
+          mealKcal={mealKcal}
+          threshold={threshold}
+          fullDayBmr={fullDayBmr}
+        />
+      </div>
 
       <PersonalDayStatus
         deficit={deficit}

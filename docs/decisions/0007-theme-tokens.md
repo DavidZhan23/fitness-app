@@ -13,7 +13,7 @@ We want a path toward uploading a color palette from a developer console without
 
 ## Decision
 
-1. **Theme = one set of CSS custom properties** defined on `:root` (default / 深海能量) and overridden per light theme. **Palette source files** live under [`src/styles/themes/`](../../src/styles/themes/) (`default.css`, `abyssal-jade.css`, `lavender.css`, `sakura.css`, `sakura-blush.css`, `active-mint.css`, `soy-tea.css`, `wood-zen.css`, `eva.css`, `eva-unit02.css`, `gundam-hangar.css`), aggregated by `src/styles/themes/index.css` and imported from `src/index.css` before semantic utilities:
+1. **Theme = one set of CSS custom properties** defined on `:root` (default / 深海能量) and overridden per light theme. **Palette source files** live under [`src/styles/themes/`](../../src/styles/themes/) (`default.css`, `lavender.css`, `sakura.css`, `sakura-blush.css`, `active-mint.css`, `soy-tea.css`, `wood-zen.css`, `eva.css`, `eva-unit02.css`, `gundam-hangar.css`, `jojo-stardust-duel.css`), aggregated by `src/styles/themes/index.css` and imported from `src/index.css` before semantic utilities:
    - `[data-style='lavender']` — **薰衣云梦** (Lavender Cloud): 云雾淡紫底 `#F8F2FF`、奶白紫卡 `#FFFBFF`；主操作薰衣草紫 `#B89AF4`；运动紫蓝、饮食玫瑰紫粉。
    - `[data-style='sakura']` — **碧空樱缀** (Sky Sakura Trim): 浅蓝天底 `#EEF6FC`、云白蓝卡 `#F7FBFF`；运动亮蓝、饮食甜粉；樱粉点缀（`--accent-pop`）；主操作 `#84BDF5`。
    - `[data-style='sakura-blush']` — **樱雾漫境** (Sakura Mist): 樱花粉底 `#FFE7F0`、奶粉卡 `#FFF0F6`；运动亮蓝、饮食莓粉；主操作 `#82B8F4`。
@@ -23,8 +23,8 @@ We want a path toward uploading a color palette from a developer console without
    - `[data-style='eva']` — **暴走初号机** (EVA Berserk Unit-01): 深黑紫机甲底 `#160B24`、初号机紫主操 `#6B35D7`、荧光绿运动、插入栓橙饮食；BMR 公式条 `#160B24`。
    - `[data-style='eva-unit02']` — **烈焰二号机** (EVA Unit-02 Asuka Overdrive): 深黑红驾驶舱 `#17080C`、二号机红主操 `#D7192A`、荧光绿运动、明日香橙黄饮食；Hero 橙顶能量线；底栏红胶囊 + 橙边（`index.css` 覆盖）；BMR 公式条 `#A80F1F`。
    - `[data-style='gundam-hangar']` — **格纳库提坦斯** (Titans Hangar): 深黑蓝底 `#0E1624`、装甲面板 `#182638` / `#203249`；钢蓝主操 `#425F8A`、高亮 `#7FA5D1`；冷青运动、暗红饮食/盈余；代谢墙缺口格与运动墙同色阶；打卡墙 Tab / 社区分段选中为暗红；BMR 公式条 `#101A28`；底栏选中钢蓝胶囊 `#203249` + 浅字（`index.css` 覆盖）。
-   - `[data-style='abyssal-jade']` — **深海能量 2** (Abyssal Jade): 深墨绿底 `#061B17`、深海绿卡 `#0C2A25` / `#123A33`；翡翠主操 `#35D6A4`、荧光青运动 `#46E6D1` / `#5AD7EA`、珊瑚橙饮食 `#FF9F64`；与格纳库蓝黑工业风刻意区分；底栏选中墨绿胶囊 + 翡翠边（`index.css` 覆盖）；记饮食页珊瑚 AI/chip 局部覆盖。
-   - Tokens include surfaces, text, accent families (exercise / meal), **`--accent-pop*`** (醒目点缀：薰衣=薰衣草紫、碧空樱缀=樱粉、樱雾漫境=蓝、轻氧薄荷=薄荷青、豆乳清茶=奶绿、木隐茶庭=竹叶黄绿、暴走初号机=初号机紫、烈焰二号机=二号机红、格纳库=钢蓝、深海能量2=翡翠绿、深海=运动色), danger, and heatmap level colors (`--heatmap-*`).
+   - `[data-style='jojo-stardust-duel']` — **时停入侵** (Time Stop Intrusion): 实色黑蓝底 `#070a12` / `#11182a`；承太郎钴蓝主操 `#3151c9`、运动蓝紫 `#476cff` / `#9b8cff`；DIO 金黄绿入侵 `#fff35a` / `#d6d930`（饮食/盈余/关注/今日标记）；热力图运动蓝紫阶、盈余金黄绿阶；Hero 联名图可选；底栏钴蓝胶囊 + 酸性黄图标（`index.css` 覆盖）。
+   - Tokens include surfaces, text, accent families (exercise / meal), **`--accent-pop*`** (醒目点缀：薰衣=薰衣草紫、碧空樱缀=樱粉、樱雾漫境=蓝、轻氧薄荷=薄荷青、豆乳清茶=奶绿、木隐茶庭=竹叶黄绿、暴走初号机=初号机紫、烈焰二号机=二号机红、格纳库=钢蓝、深海=运动色), danger, and heatmap level colors (`--heatmap-*`).
 
 1b. **Readable text contrast (light themes, 2026-05-28)**
 

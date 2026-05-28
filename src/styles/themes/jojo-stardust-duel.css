@@ -1,0 +1,341 @@
+/* 时停入侵 / Time Stop Intrusion */
+/*
+ * JOJO 承太郎 × DIO 耐看版：
+ * 承太郎主场 = 实色黑蓝 / 深海军蓝 / 钴蓝紫；
+ * 白金之星 = 蓝紫、紫罗兰、银白高光；
+ * DIO / The World = 金黄绿、橄榄金、酸性黄，作为“入侵色”打破承太郎的秩序。
+ *
+ * 热力图限定：
+ * - 缺口：深蓝 → 钴蓝 → 紫罗兰（#131B40 → #9A82F7）
+ * - 盈余：橄榄金 → 金黄（#4A4610 → #F7DB69）
+ */
+[data-style='jojo-stardust-duel'] {
+  --accent-pop: #3151c9;
+  --accent-pop-strong: #1d2f88;
+  --accent-pop-soft: #101b3d;
+  --accent-pop-ring: #7c6cff;
+
+  --color-brand: #3151c9;
+  --color-brand-dark: #182767;
+  --color-surface: #070a12;
+  --color-card: #11182a;
+  --color-muted: #7f8aa8;
+  --color-tabbar: #090e1a;
+
+  --surface-page: #070a12;
+  --surface-card: #11182a;
+  --surface-card-soft: #17213a;
+  --surface-card-blue: #101b3d;
+  --surface-card-pink: #2d2f08;
+  --surface-card-border: #2c3a69;
+
+  --text-primary: #f4f6ff;
+  --text-secondary: #c2c9e6;
+  --text-muted: #7f8aa8;
+  --text-on-accent: #f8f9ff;
+
+  /* 承太郎 / 白金之星：运动蓝紫，更实色、更冷硬 */
+  --accent-exercise: #476cff;
+  --accent-exercise-strong: #9b8cff;
+  --accent-exercise-soft: #101b3d;
+
+  /* DIO / The World：饮食金黄绿，不走普通荧光绿 */
+  --accent-meal: #d6d930;
+  --accent-meal-strong: #fff35a;
+  --accent-meal-soft: #2d2f08;
+
+  --danger: #3a1020;
+  --danger-strong: #ff5f86;
+
+  --btn-primary-bg: #3151c9;
+  --btn-primary-hover: #476cff;
+  --btn-primary-text: #f8f9ff;
+
+  /*
+   * 热力图限定：
+   * 缺口 = 承太郎 / 白金之星蓝紫（图1 四阶）
+   * 盈余 = DIO / The World 金黄（图1 四阶）
+   */
+  --heatmap-empty: #11182a;
+
+  --heatmap-exercise-1: #131b40;
+  --heatmap-exercise-2: #243194;
+  --heatmap-exercise-3: #4d51d4;
+  --heatmap-exercise-4: #9a82f7;
+
+  --heatmap-surplus-1: #4a4610;
+  --heatmap-surplus-2: #917b12;
+  --heatmap-surplus-3: #e9bc37;
+  --heatmap-surplus-4: #f7db69;
+
+  --heatmap-day-selected-ring: #f7db69;
+  --heatmap-day-selected-shadow:
+    0 0 14px rgb(247 219 105 / 0.48),
+    0 0 24px rgb(71 108 255 / 0.22);
+  --heatmap-day-today-label-text: #f7db69;
+
+  --text-strong: var(--text-primary);
+  --app-shell-bg: var(--surface-page);
+
+  /*
+   * 背景：承太郎黑蓝主场，右上角 DIO 金绿入侵。
+   */
+  --app-shell-overlay:
+    radial-gradient(circle at 16% 8%, rgb(71 108 255 / 0.12), transparent 34%),
+    radial-gradient(circle at 92% 12%, rgb(255 243 90 / 0.13), transparent 26%),
+    linear-gradient(160deg, rgb(7 10 18 / 1) 0%, rgb(10 14 28 / 1) 54%, rgb(19 22 8 / 0.72) 100%);
+
+  --tabbar-border: #243052;
+  --tabbar-active-bg: #101b3d;
+  --notify-active-ring: rgb(255 243 90 / 0.42);
+
+  --surface-panel-bg: var(--surface-card);
+  --surface-panel-border: var(--surface-card-border);
+  --surface-panel-soft-bg: #17213a;
+  --surface-panel-soft-hover: #101b3d;
+  --input-bg: #0b1020;
+  --input-ring: #2c3a69;
+
+  /*
+   * Hero：左侧冷硬黑蓝，右侧 DIO 金绿径向入侵。
+   */
+  --hero-card-bg:
+    radial-gradient(circle at 88% 18%, rgb(255 243 90 / 0.2), transparent 25%),
+    radial-gradient(circle at 72% 72%, rgb(214 217 48 / 0.11), transparent 28%),
+    radial-gradient(circle at 24% 14%, rgb(141 124 255 / 0.17), transparent 34%),
+    linear-gradient(136deg, #050713 0%, #0e1735 44%, #171a07 100%);
+
+  --hero-card-ring: #7c6cff;
+  --hero-card-shadow:
+    0 22px 46px rgb(1 3 10 / 0.62),
+    0 0 28px rgb(49 81 201 / 0.32),
+    0 0 28px rgb(255 243 90 / 0.13),
+    inset 0 1px 0 rgb(225 222 255 / 0.32);
+
+  --hero-card-atmosphere:
+    linear-gradient(
+      180deg,
+      rgb(5 7 19 / 0.94) 0%,
+      rgb(5 7 19 / 0.72) 28%,
+      rgb(5 7 19 / 0.28) 48%,
+      transparent 66%
+    ),
+    linear-gradient(
+      90deg,
+      rgb(5 7 19 / 0.72) 0%,
+      rgb(14 23 53 / 0.38) 45%,
+      rgb(24 26 7 / 0.16) 76%,
+      rgb(255 243 90 / 0.06) 100%
+    );
+
+  --hero-card-image: url('/theme/jojo-stardust-duel-deficit.jpg');
+  --hero-card-image-opacity: 1;
+  --hero-card-image-blur: 0;
+  --hero-card-image-blend: normal;
+  --hero-card-image-filter: saturate(1.06) contrast(1.05) brightness(0.94);
+  --hero-card-image-position: 72% center;
+  --hero-card-image-top: 0;
+  --hero-card-image-right: 0;
+  --hero-card-image-size: 100%;
+  --hero-card-image-mask: none;
+
+  /* Legacy aliases */
+  --hero-card-corner-art: var(--hero-card-image);
+  --hero-card-corner-opacity: var(--hero-card-image-opacity);
+  --hero-card-corner-blur: var(--hero-card-image-blur);
+  --hero-card-corner-blend: var(--hero-card-image-blend);
+  --hero-card-corner-filter: var(--hero-card-image-filter);
+  --hero-card-corner-top: var(--hero-card-image-top);
+  --hero-card-corner-right: var(--hero-card-image-right);
+  --hero-card-corner-width: var(--hero-card-image-size);
+  --hero-card-corner-mask: var(--hero-card-image-mask);
+
+  --hero-deficit-positive: #9b8cff;
+  --hero-deficit-surplus: #fff35a;
+  --hero-deficit-neutral: #c2c9e6;
+
+  --hero-stat-bg: rgb(17 24 42 / 0.78);
+  --hero-stat-ring: rgb(124 108 255 / 0.24);
+  --hero-stat-shadow: 0 16px 32px rgb(1 3 10 / 0.4);
+  --hero-stat-blur: 10px;
+
+  --hero-stat-metabolism-bg: rgb(23 33 58 / 0.76);
+  --hero-stat-metabolism-value: #f4f6ff;
+
+  --hero-stat-exercise-bg: rgb(16 27 61 / 0.84);
+  --hero-stat-exercise-value: #9b8cff;
+
+  --hero-stat-meal-bg: rgb(45 47 8 / 0.86);
+  --hero-stat-meal-value: #fff35a;
+
+  --calendar-stat-exercise-bg: #101b3d;
+  --calendar-stat-exercise-border: #476cff;
+  --calendar-stat-exercise-value: #9b8cff;
+
+  --calendar-stat-deficit-bg: #2d2f08;
+  --calendar-stat-deficit-border: #a5aa1e;
+  --calendar-stat-deficit-value: #fff35a;
+
+  --quick-action-exercise-bg: #476cff;
+  --quick-action-exercise-ring: #9b8cff;
+  --quick-action-exercise-text: #f8f9ff;
+
+  --quick-action-meal-bg: #d6d930;
+  --quick-action-meal-ring: #fff35a;
+  --quick-action-meal-text: #101405;
+
+  --achievement-exercise-border: #476cff;
+  --achievement-exercise-bg: #101b3d;
+  --achievement-exercise-icon-bg: #17213a;
+
+  --achievement-meal-border: #a5aa1e;
+  --achievement-meal-bg: #2d2f08;
+  --achievement-meal-icon-bg: #3e430b;
+
+  --community-hero-bg:
+    radial-gradient(circle at 88% 12%, rgb(255 243 90 / 0.17), transparent 28%),
+    linear-gradient(135deg, #11182a 0%, #101b3d 52%, #2d2f08 100%);
+  --community-hero-border: #7c6cff;
+
+  --community-segment-bg: #090e1a;
+  --community-segment-border: #243052;
+  --community-segment-active-bg: #101b3d;
+  --community-segment-active-text: #f4f6ff;
+  --community-segment-active-ring: #fff35a;
+  --community-segment-badge-bg: #17213a;
+  --community-segment-badge-text: #fff35a;
+
+  --community-member-card-bg: #11182a;
+  --community-member-card-border: #2c3a69;
+  --community-member-card-hover-bg: #17213a;
+  --community-member-card-hover-ring: #7c6cff;
+
+  --community-avatar-bg: #3151c9;
+  --community-avatar-text: #f8f9ff;
+  --community-avatar-ring: #9b8cff;
+
+  --community-avatar-self-bg: #d6d930;
+  --community-avatar-self-text: #101405;
+  --community-avatar-self-ring: #fff35a;
+
+  --community-stat-exercise-bg: #101b3d;
+  --community-stat-exercise-text: #9b8cff;
+
+  --community-stat-meal-bg: #2d2f08;
+  --community-stat-meal-text: #fff35a;
+
+  --community-card-footer-border: #2c3a69;
+  --community-hidden-panel-bg: #11182a;
+  --community-hidden-panel-border: #2c3a69;
+
+  --community-visibility-on-bg: #2d2f08;
+  --community-visibility-on-text: #fff35a;
+  --community-visibility-on-ring: #fff35a;
+  --community-visibility-on-dot: #fff35a;
+
+  --community-visibility-off-bg: #101b3d;
+  --community-visibility-off-ring: #476cff;
+  --community-visibility-off-dot: #9b8cff;
+
+  --community-drag-handle-bg: #090e1a;
+  --community-drag-handle-ring: #243052;
+  --community-drag-handle-text: #5e6b91;
+  --community-drag-handle-hover-bg: #101b3d;
+  --community-drag-handle-active-bg: #3151c9;
+  --community-drag-handle-active-text: #f8f9ff;
+
+  --install-guide-tip-bg: #11182a;
+  --install-guide-tip-border: #2c3a69;
+  --install-guide-tip-text: #c2c9e6;
+
+  --install-guide-note-bg: #2d2f08;
+  --install-guide-note-border: #a5aa1e;
+  --install-guide-note-text: #fff35a;
+
+  --follow-btn-idle-bg: #d6d930;
+  --follow-btn-idle-bg-hover: #fff35a;
+  --follow-btn-idle-text: #101405;
+
+  --follow-btn-following-bg: #11182a;
+  --follow-btn-following-text: #c2c9e6;
+  --follow-btn-following-ring: #2c3a69;
+
+  --day-like-idle-bg: #11182a;
+  --day-like-idle-text: #c2c9e6;
+  --day-like-idle-ring: #2c3a69;
+  --day-like-idle-ring-hover: #7c6cff;
+
+  --day-like-active-bg: #351421;
+  --day-like-active-text: #ff6d8f;
+  --day-like-active-ring: #ff6d8f;
+
+  /* 记运动默认：承太郎 / 白金之星蓝紫 */
+  --log-template-chip-bg: #11182a;
+  --log-template-chip-bg-hover: #101b3d;
+  --log-template-chip-ring: #2c3a69;
+  --log-template-chip-text: #c2c9e6;
+  --log-template-chip-kcal: #7f8aa8;
+
+  --log-ai-card-bg: #101b3d;
+  --log-ai-card-ring: #476cff;
+  --log-ai-card-border: #476cff;
+  --log-ai-btn-bg: #3151c9;
+  --log-ai-btn-bg-hover: #476cff;
+  --log-ai-btn-text: #f8f9ff;
+  --log-ai-input-bg: #0b1020;
+  --log-ai-input-ring: #476cff;
+
+  /* 饮食页：DIO / The World 金黄绿 */
+  --log-meal-mode-bg: #090e1a;
+  --log-meal-mode-active-bg: #2d2f08;
+  --log-meal-mode-active-text: #fff35a;
+  --log-meal-mode-idle-text: #c2c9e6;
+  --log-meal-mode-idle-hover-text: #fff35a;
+
+  --log-package-kcal-bg: #2d2f08;
+  --log-package-kcal-text: #fff35a;
+  --log-package-kcal-ring: #a5aa1e;
+
+  --template-add-border: #2c3a69;
+  --template-add-text: #9b8cff;
+  --template-add-hover-bg: #101b3d;
+
+  --template-tab-active-bg: #101b3d;
+  --template-tab-active-text: #f4f6ff;
+  --template-tab-active-ring: #fff35a;
+
+  --template-tab-inactive-bg: #11182a;
+  --template-tab-inactive-text: #c2c9e6;
+  --template-tab-inactive-ring: #2c3a69;
+  --template-tab-inactive-hover-bg: #17213a;
+
+  --template-tab-exercise-active-bg: #101b3d;
+  --template-tab-exercise-active-text: #9b8cff;
+  --template-tab-exercise-active-ring: #476cff;
+
+  --template-tab-meal-active-bg: #2d2f08;
+  --template-tab-meal-active-text: #fff35a;
+  --template-tab-meal-active-ring: #fff35a;
+
+  --bmr-formula-panel-bg: #11182a;
+  --bmr-formula-panel-border: #2c3a69;
+  --bmr-formula-card-bg: #0b1020;
+  --bmr-formula-card-ring: #7c6cff;
+  --bmr-formula-text: #f4f6ff;
+  --bmr-formula-subtitle: #c2c9e6;
+  --bmr-formula-legend: #c2c9e6;
+
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
+  --bmr-formula-var-bg: #17213a;
+  --bmr-formula-var-text: #c2c9e6;
+  --bmr-formula-constant: #fff35a;
+
+  --settings-menu-text: var(--text-primary);
+  --settings-menu-chevron: var(--text-muted);
+
+  --btn-sign-out-text: #fff35a;
+  --btn-sign-out-bg: #2d2f08;
+  --btn-sign-out-border: #a5aa1e;
+  --btn-sign-out-hover-bg: #3e430b;
+}
