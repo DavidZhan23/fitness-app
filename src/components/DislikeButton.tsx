@@ -1,6 +1,6 @@
-import { ReactionHeartIcon } from './reactionIcons'
+import { ReactionThumbsDownIcon } from './reactionIcons'
 
-interface LikeHeartButtonProps {
+interface DislikeButtonProps {
   active: boolean
   count?: number
   disabled?: boolean
@@ -11,7 +11,7 @@ interface LikeHeartButtonProps {
   'aria-label'?: string
 }
 
-export function LikeHeartButton({
+export function DislikeButton({
   active,
   count = 0,
   disabled = false,
@@ -20,8 +20,8 @@ export function LikeHeartButton({
   className = '',
   onClick,
   'aria-label': ariaLabel,
-}: LikeHeartButtonProps) {
-  const label = ariaLabel ?? (active ? '取消赞' : '赞')
+}: DislikeButtonProps) {
+  const label = ariaLabel ?? (active ? '取消踩' : '踩')
 
   return (
     <button
@@ -34,9 +34,18 @@ export function LikeHeartButton({
         e.stopPropagation()
         onClick()
       }}
-      className={`like-heart ${active ? 'like-heart--active' : ''} like-heart--${size} like-heart--${layout} ${className}`.trim()}
+      className={[
+        'like-heart',
+        'like-heart--dislike',
+        active ? 'like-heart--dislike-active' : '',
+        `like-heart--${size}`,
+        `like-heart--${layout}`,
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <ReactionHeartIcon filled={active} className="like-heart__icon" />
+      <ReactionThumbsDownIcon filled={active} className="like-heart__icon" />
       {count > 0 && (
         <span className="like-heart__count tabular-nums">{count}</span>
       )}

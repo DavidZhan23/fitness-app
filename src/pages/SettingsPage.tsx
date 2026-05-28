@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AvatarCropEditor } from '../components/AvatarCropEditor'
 import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
 import { UserAvatar } from '../components/UserAvatar'
@@ -12,7 +13,11 @@ import {
   normalizeBirthdayFromApi,
 } from '../lib/birthday'
 import { useDebouncedAutosave } from '../hooks/useDebouncedAutosave'
-import { fileToAvatarDataUrl } from '../lib/avatarImage'
+import {
+  fileToCroppedAvatarDataUrl,
+  loadImage,
+  type AvatarCropRect,
+} from '../lib/avatarImage'
 import type { Sex, WallStyle } from '../types'
 
 type StyleToneGroup = 'light' | 'dark'
@@ -147,6 +152,16 @@ export function SettingsPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [avatarError, setAvatarError] = useState('')
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false)
+  const [isAvatarCropOpen, setIsAvatarCropOpen] = useState(false)
+  const [cropImageUrl, setCropImageUrl] = useState<string | null>(null)
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [cropImageSize, setCropImageSize] = useState({ width: 1, height: 1 })
+  const [cropRect, setCropRect] = useState<AvatarCropRect>({
+    x: 0,
+    y: 0,
+    size: 1,
+  })
   const themeDetailsRef = useRef<HTMLDetailsElement>(null)
 
   const todayKey = formatTodayDateKey()
@@ -187,6 +202,32 @@ export function SettingsPage() {
       document.removeEventListener('pointerdown', handleOutsidePointer)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isAvatarPreviewOpen && !isAvatarCropOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isAvatarPreviewOpen, isAvatarCropOpen])
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (isAvatarCropOpen) {
+        setIsAvatarCropOpen(false)
+        return
+      }
+      if (isAvatarPreviewOpen) {
+        setIsAvatarPreviewOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isAvatarCropOpen, isAvatarPreviewOpen])
 
   const trimmedNickname = nickname.trim()
   const savedNickname = (profile?.nickname ?? '').trim()
@@ -302,18 +343,60 @@ export function SettingsPage() {
     if (!avatarBusy) avatarInputRef.current?.click()
   }
 
+  const clearCropState = useCallback(() => {
+    if (cropImageUrl) URL.revokeObjectURL(cropImageUrl)
+    setCropImageUrl(null)
+    setCropFile(null)
+    setCropRect({ x: 0, y: 0, size: 1 })
+    setCropImageSize({ width: 1, height: 1 })
+  }, [cropImageUrl])
+
   const handleAvatarFile = async (file: File | undefined) => {
     if (!file || avatarBusy) return
+    setAvatarError('')
+    try {
+      const image = await loadImage(file)
+      const objectUrl = URL.createObjectURL(file)
+      const defaultSize = Math.max(1, Math.min(image.width, image.height))
+      clearCropState()
+      setCropFile(file)
+      setCropImageUrl(objectUrl)
+      setCropImageSize({ width: image.width, height: image.height })
+      setCropRect({
+        size: defaultSize,
+        x: (image.width - defaultSize) / 2,
+        y: (image.height - defaultSize) / 2,
+      })
+      setIsAvatarPreviewOpen(false)
+      setIsAvatarCropOpen(true)
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : '上传失败')
+    }
+    if (avatarInputRef.current) avatarInputRef.current.value = ''
+  }
+
+  const closeCropModal = useCallback(() => {
+    setIsAvatarCropOpen(false)
+    clearCropState()
+  }, [clearCropState])
+
+  useEffect(() => {
+    if (isAvatarCropOpen || !cropImageUrl) return
+    clearCropState()
+  }, [clearCropState, cropImageUrl, isAvatarCropOpen])
+
+  const handleConfirmAvatarCrop = async () => {
+    if (!cropFile || avatarBusy) return
     setAvatarBusy(true)
     setAvatarError('')
     try {
-      const dataUrl = await fileToAvatarDataUrl(file)
+      const dataUrl = await fileToCroppedAvatarDataUrl(cropFile, cropRect)
       await updateProfile({ avatar_url: dataUrl })
+      closeCropModal()
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : '上传失败')
     } finally {
       setAvatarBusy(false)
-      if (avatarInputRef.current) avatarInputRef.current.value = ''
     }
   }
 
@@ -339,9 +422,9 @@ export function SettingsPage() {
             <button
               type="button"
               disabled={avatarBusy}
-              onClick={handleAvatarPick}
+              onClick={() => setIsAvatarPreviewOpen(true)}
               className="profile-avatar-btn relative rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
-              aria-label="上传或更换头像"
+              aria-label="查看头像"
             >
               <UserAvatar profile={profile} user={user} size="lg" />
               {avatarBusy && (
@@ -740,6 +823,76 @@ export function SettingsPage() {
       >
         退出登录
       </button>
+
+      {isAvatarPreviewOpen && (
+        <div className="settings-avatar-modal" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="settings-avatar-modal__backdrop"
+            aria-label="关闭头像预览"
+            onClick={() => setIsAvatarPreviewOpen(false)}
+          />
+          <div className="settings-avatar-modal__panel">
+            <button
+              type="button"
+              className="settings-avatar-modal__close"
+              onClick={() => setIsAvatarPreviewOpen(false)}
+              aria-label="关闭头像预览"
+            >
+              ×
+            </button>
+            <div className="settings-avatar-modal__preview">
+              <UserAvatar profile={profile} user={user} size="lg" className="h-44 w-44 text-5xl" />
+            </div>
+            <button
+              type="button"
+              className="btn-primary settings-avatar-modal__pick"
+              onClick={handleAvatarPick}
+              disabled={avatarBusy}
+            >
+              更换头像
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isAvatarCropOpen && cropImageUrl && (
+        <div className="settings-avatar-crop-modal" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="settings-avatar-crop-modal__backdrop"
+            aria-label="关闭头像裁剪"
+            onClick={closeCropModal}
+          />
+          <div className="settings-avatar-crop-modal__panel">
+            <h3 className="text-base font-semibold text-primary">裁剪头像</h3>
+            <p className="mt-1 text-xs text-muted">
+              拖动移动图片；双指捏合或触控板两指缩放（滚轮也可缩放）。
+            </p>
+            <div className="settings-avatar-crop-modal__stage mt-3">
+              <AvatarCropEditor
+                imageUrl={cropImageUrl}
+                imageWidth={cropImageSize.width}
+                imageHeight={cropImageSize.height}
+                onCropRectChange={setCropRect}
+              />
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button type="button" className="btn-secondary" onClick={closeCropModal}>
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => void handleConfirmAvatarCrop()}
+                disabled={avatarBusy}
+              >
+                {avatarBusy ? '保存中…' : '确认上传'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

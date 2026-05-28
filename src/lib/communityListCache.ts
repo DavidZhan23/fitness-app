@@ -27,7 +27,9 @@ export interface CommunityUserPreview {
   isSelf: boolean
   isFollowing: boolean
   todayLikeCount: number
+  todayDislikeCount: number
   viewerLikedToday: boolean
+  viewerDislikedToday: boolean
   today: CommunityDaySnapshot
   savedAt: number
 }
@@ -185,7 +187,12 @@ function patchMemberFollowStatus(
 function patchMemberLikeStats(
   members: CommunityMember[],
   userId: string,
-  stats: { likeCount: number; viewerLiked: boolean },
+  stats: {
+    likeCount: number
+    dislikeCount: number
+    viewerLiked: boolean
+    viewerDisliked: boolean
+  },
 ): CommunityMember[] {
   const hasMember = members.some((m) => m.id === userId)
   if (!hasMember) return members
@@ -194,7 +201,9 @@ function patchMemberLikeStats(
       ? {
           ...m,
           todayLikeCount: stats.likeCount,
+          todayDislikeCount: stats.dislikeCount,
           viewerLikedToday: stats.viewerLiked,
+          viewerDislikedToday: stats.viewerDisliked,
         }
       : m,
   )
@@ -314,7 +323,12 @@ export function syncSelfDayVisibleInCommunityListCache(
 /** 点赞/取消点赞后同步各 tab 缓存中的今日点赞状态，避免切换列表出现旧数据 */
 export function syncLikeStatsInCommunityListCache(
   userId: string,
-  stats: { likeCount: number; viewerLiked: boolean },
+  stats: {
+    likeCount: number
+    dislikeCount: number
+    viewerLiked: boolean
+    viewerDisliked: boolean
+  },
   opts: {
     activeFilter: CommunityFilter
     activeMembers: CommunityMember[]
@@ -358,7 +372,9 @@ export function saveCommunityUserPreview(member: CommunityMember) {
     isSelf: member.isSelf,
     isFollowing: member.isFollowing,
     todayLikeCount: member.todayLikeCount,
+    todayDislikeCount: member.todayDislikeCount,
     viewerLikedToday: member.viewerLikedToday,
+    viewerDislikedToday: member.viewerDislikedToday,
     today: member.today,
     savedAt: Date.now(),
   }

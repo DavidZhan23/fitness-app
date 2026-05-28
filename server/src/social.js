@@ -66,6 +66,11 @@ export async function likeDay(likerId, targetUserId, likeDate) {
   }
   await assertCanInteract(likerId, targetUserId)
   await query(
+    `delete from day_dislikes
+     where liker_id = $1 and target_user_id = $2 and like_date = $3::date`,
+    [likerId, targetUserId, likeDate],
+  )
+  await query(
     `insert into day_likes (liker_id, target_user_id, like_date)
      values ($1, $2, $3::date)
      on conflict (liker_id, target_user_id, like_date) do nothing`,
@@ -84,10 +89,46 @@ export async function unlikeDay(likerId, targetUserId, likeDate) {
   return getDayLikeStats(targetUserId, likeDate, likerId)
 }
 
+export async function dislikeDay(likerId, targetUserId, likeDate) {
+  if (likerId === targetUserId) {
+    const err = new Error('不能给自己的打卡点踩')
+    err.status = 400
+    throw err
+  }
+  await assertCanInteract(likerId, targetUserId)
+  await query(
+    `delete from day_likes
+     where liker_id = $1 and target_user_id = $2 and like_date = $3::date`,
+    [likerId, targetUserId, likeDate],
+  )
+  await query(
+    `insert into day_dislikes (liker_id, target_user_id, like_date)
+     values ($1, $2, $3::date)
+     on conflict (liker_id, target_user_id, like_date) do nothing`,
+    [likerId, targetUserId, likeDate],
+  )
+  return getDayLikeStats(targetUserId, likeDate, likerId)
+}
+
+export async function undislikeDay(likerId, targetUserId, likeDate) {
+  await assertCanInteract(likerId, targetUserId)
+  await query(
+    `delete from day_dislikes
+     where liker_id = $1 and target_user_id = $2 and like_date = $3::date`,
+    [likerId, targetUserId, likeDate],
+  )
+  return getDayLikeStats(targetUserId, likeDate, likerId)
+}
+
 export async function getDayLikeStats(targetUserId, likeDate, viewerId) {
-  const [counts, viewer] = await Promise.all([
+  const [likeCounts, dislikeCounts, viewerLike, viewerDislike] = await Promise.all([
     query(
       `select count(*)::int as c from day_likes
+       where target_user_id = $1 and like_date = $2::date`,
+      [targetUserId, likeDate],
+    ),
+    query(
+      `select count(*)::int as c from day_dislikes
        where target_user_id = $1 and like_date = $2::date`,
       [targetUserId, likeDate],
     ),
@@ -98,10 +139,19 @@ export async function getDayLikeStats(targetUserId, likeDate, viewerId) {
           [viewerId, targetUserId, likeDate],
         )
       : Promise.resolve({ rows: [] }),
+    viewerId
+      ? query(
+          `select 1 from day_dislikes
+           where liker_id = $1 and target_user_id = $2 and like_date = $3::date`,
+          [viewerId, targetUserId, likeDate],
+        )
+      : Promise.resolve({ rows: [] }),
   ])
   return {
-    likeCount: counts.rows[0]?.c ?? 0,
-    viewerLiked: viewer.rows.length > 0,
+    likeCount: likeCounts.rows[0]?.c ?? 0,
+    dislikeCount: dislikeCounts.rows[0]?.c ?? 0,
+    viewerLiked: viewerLike.rows.length > 0,
+    viewerDisliked: viewerDislike.rows.length > 0,
   }
 }
 
@@ -117,7 +167,7 @@ export async function enrichMembersSocial(members, viewerId, likeDate) {
   if (members.length === 0) return members
 
   const targetIds = members.map((m) => m.id)
-  const [followRows, likeCountRows, viewerLikeRows] = await Promise.all([
+  const [followRows, likeCountRows, dislikeCountRows, viewerLikeRows, viewerDislikeRows] = await Promise.all([
     query(`select followee_id from follows where follower_id = $1`, [viewerId]),
     query(
       `select target_user_id, count(*)::int as c
@@ -127,7 +177,19 @@ export async function enrichMembersSocial(members, viewerId, likeDate) {
       [likeDate, targetIds],
     ),
     query(
+      `select target_user_id, count(*)::int as c
+       from day_dislikes
+       where like_date = $1::date and target_user_id = any($2::uuid[])
+       group by target_user_id`,
+      [likeDate, targetIds],
+    ),
+    query(
       `select target_user_id from day_likes
+       where liker_id = $1 and like_date = $2::date and target_user_id = any($3::uuid[])`,
+      [viewerId, likeDate, targetIds],
+    ),
+    query(
+      `select target_user_id from day_dislikes
        where liker_id = $1 and like_date = $2::date and target_user_id = any($3::uuid[])`,
       [viewerId, likeDate, targetIds],
     ),
@@ -137,15 +199,23 @@ export async function enrichMembersSocial(members, viewerId, likeDate) {
   const likeCountMap = new Map(
     likeCountRows.rows.map((r) => [r.target_user_id, r.c]),
   )
+  const dislikeCountMap = new Map(
+    dislikeCountRows.rows.map((r) => [r.target_user_id, r.c]),
+  )
   const viewerLikedSet = new Set(
     viewerLikeRows.rows.map((r) => r.target_user_id),
+  )
+  const viewerDislikedSet = new Set(
+    viewerDislikeRows.rows.map((r) => r.target_user_id),
   )
 
   return members.map((m) => ({
     ...m,
     isFollowing: followingSet.has(m.id),
     todayLikeCount: likeCountMap.get(m.id) ?? 0,
+    todayDislikeCount: dislikeCountMap.get(m.id) ?? 0,
     viewerLikedToday: viewerLikedSet.has(m.id),
+    viewerDislikedToday: viewerDislikedSet.has(m.id),
   }))
 }
 

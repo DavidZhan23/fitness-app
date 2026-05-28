@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
+import { WallDayDetailCard } from '../components/WallDayDetailCard'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import { calculateSpreadDeficit } from '../lib/metabolism'
@@ -44,7 +44,7 @@ export function CalendarPage() {
 
   const threshold = toKcal(profile?.deficit_threshold)
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
-  const { bmr: profileBmr } = resolveProfileMetabolism(profile)
+  const { bmr: profileBmr, tdee: profileTdee } = resolveProfileMetabolism(profile)
   const { year, month } = view
   const selectedDateKey = selected
     ? normalizeDateKey(String(selected.log_date))
@@ -289,55 +289,18 @@ export function CalendarPage() {
       </section>
 
       {selected && (
-        <section
-          id="calendar-day-detail"
-          className={`scroll-mt-4 calendar-day-detail p-4 ${detailBgClass}`}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-medium">
-              {selectedDateKey === todayKey ? '今日小结' : '当日小结'}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="btn-soft px-2 py-1 text-xs"
-              aria-label="关闭当日详情"
-            >
-              关闭
-            </button>
-          </div>
-          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(7.5rem,9.5rem)] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:gap-4">
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-              <Item
-                label="基础代谢 (BMR)"
-                value={resolveProfileMetabolism(profile).bmr}
-              />
-              <Item label="运动消耗" value={toKcal(selected.exercise_kcal)} />
-              <Item
-                label="全日总消耗 (TDEE)"
-                value={
-                  toKcal(selected.tdee_snapshot) ||
-                  resolveProfileMetabolism(profile).tdee
-                }
-              />
-              <Item label="饮食摄入" value={toKcal(selected.meal_kcal)} />
-              <Item label="热量缺口" value={selectedDeficit} highlight />
-            </dl>
-            {selectedDateKey &&
-              !isBeforeAccountStart(selectedDateKey, accountStartKey) && (
-              <PersonalDayStatus
-                variant="side"
-                deficit={selectedDeficit}
-                exerciseKcal={toKcal(selected.exercise_kcal)}
-                mealKcal={toKcal(selected.meal_kcal)}
-                dailyBmr={profileBmr}
-              />
-            )}
-          </div>
-          <p className="mt-2 text-xs text-muted">
-            基础代谢 (BMR) 按时间逐分钟累计，不是一次性算进全天
-          </p>
-        </section>
+        <WallDayDetailCard
+          dateKey={selectedDateKey ?? todayKey}
+          todayKey={todayKey}
+          bmr={profileBmr}
+          tdee={toKcal(selected.tdee_snapshot) || profileTdee}
+          exerciseKcal={toKcal(selected.exercise_kcal)}
+          mealKcal={toKcal(selected.meal_kcal)}
+          deficit={selectedDeficit}
+          dailyBmr={profileBmr}
+          detailBgClass={detailBgClass}
+          onClose={() => setSelected(null)}
+        />
       )}
 
       <p className="text-center text-xs text-muted">
@@ -377,25 +340,3 @@ function StatCard({
   )
 }
 
-function Item({
-  label,
-  value,
-  highlight,
-}: {
-  label: string
-  value: number
-  highlight?: boolean
-}) {
-  return (
-    <div>
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd
-        className={`mt-0.5 font-semibold tabular-nums ${
-          highlight ? 'text-emerald-400' : ''
-        }`}
-      >
-        {Math.round(value)} kcal
-      </dd>
-    </div>
-  )
-}

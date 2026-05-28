@@ -39,7 +39,9 @@ export interface CommunityMember {
   today: CommunityDaySnapshot
   isFollowing: boolean
   todayLikeCount: number
+  todayDislikeCount: number
   viewerLikedToday: boolean
+  viewerDislikedToday: boolean
 }
 
 export type CommunityInboxItemKind = 'like' | 'comment_on_card' | 'reply'
@@ -83,7 +85,9 @@ export interface CommunityUserDetail {
   meals: CommunityPublicMeal[]
   isFollowing: boolean
   likeCount: number
+  dislikeCount: number
   viewerLiked: boolean
+  viewerDisliked: boolean
   comments: DayComment[]
 }
 

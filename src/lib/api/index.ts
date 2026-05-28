@@ -295,7 +295,12 @@ export const httpData = {
   async likeCommunityDay(
     userId: string,
     date: string,
-  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+  ): Promise<{
+    likeCount: number
+    dislikeCount: number
+    viewerLiked: boolean
+    viewerDisliked: boolean
+  }> {
     return apiFetch(`/community/users/${userId}/likes`, {
       method: 'POST',
       body: JSON.stringify({ date }),
@@ -305,9 +310,44 @@ export const httpData = {
   async unlikeCommunityDay(
     userId: string,
     date: string,
-  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+  ): Promise<{
+    likeCount: number
+    dislikeCount: number
+    viewerLiked: boolean
+    viewerDisliked: boolean
+  }> {
     return apiFetch(
       `/community/users/${userId}/likes?date=${encodeURIComponent(date)}`,
+      { method: 'DELETE' },
+    )
+  },
+
+  async dislikeCommunityDay(
+    userId: string,
+    date: string,
+  ): Promise<{
+    likeCount: number
+    dislikeCount: number
+    viewerLiked: boolean
+    viewerDisliked: boolean
+  }> {
+    return apiFetch(`/community/users/${userId}/dislikes`, {
+      method: 'POST',
+      body: JSON.stringify({ date }),
+    })
+  },
+
+  async undislikeCommunityDay(
+    userId: string,
+    date: string,
+  ): Promise<{
+    likeCount: number
+    dislikeCount: number
+    viewerLiked: boolean
+    viewerDisliked: boolean
+  }> {
+    return apiFetch(
+      `/community/users/${userId}/dislikes?date=${encodeURIComponent(date)}`,
       { method: 'DELETE' },
     )
   },

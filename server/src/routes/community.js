@@ -12,6 +12,7 @@ import { saveCommunityMemberOrder } from '../communityOrder.js'
 import { setLogItemReaction } from '../logItemReactions.js'
 import {
   addDayComment,
+  dislikeDay,
   deleteDayComment,
   enrichMembersSocial,
   followUser,
@@ -23,6 +24,7 @@ import {
   unfollowUser,
   unlikeDayComment,
   unlikeDay,
+  undislikeDay,
 } from '../social.js'
 import {
   getCommunityInboxUnread,
@@ -182,6 +184,32 @@ router.delete(
       return res.status(400).json({ error: '请提供 date' })
     }
     const data = await unlikeDay(req.userId, req.params.userId, date)
+    res.json(data)
+  }),
+)
+
+router.post(
+  '/community/users/:userId/dislikes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { date } = req.body
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: '请提供 date' })
+    }
+    const data = await dislikeDay(req.userId, req.params.userId, date)
+    res.json(data)
+  }),
+)
+
+router.delete(
+  '/community/users/:userId/dislikes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const date = req.query.date
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: '请提供 date' })
+    }
+    const data = await undislikeDay(req.userId, req.params.userId, date)
     res.json(data)
   }),
 )
