@@ -23,9 +23,9 @@
   --surface-card-border: #d5c4a8;
   --text-ink: #4d4033;
   --text-primary: #4d4033;
-  --text-secondary: #7a6a5c;
-  --text-muted: #9a8b7a;
-  --text-link: #6f4e2e;
+  --text-secondary: #6b5d51;
+  --text-muted: #87796b;
+  --text-link: #5e4125;
   --text-on-accent: #fff7e8;
   --accent-exercise: #7f9f73;
   --accent-exercise-strong: #5f7f55;
@@ -37,6 +37,7 @@
   --danger-strong: #9e4e3d;
   --btn-primary-bg: #9b6f45;
   --btn-primary-hover: #6f4e2e;
+  --btn-primary-text: #000000;
 
   --heatmap-empty: #f3e8d7;
   --heatmap-exercise-1: #e8ecd9;

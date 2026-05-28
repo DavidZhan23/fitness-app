@@ -64,26 +64,25 @@ export function DayLikeButton({
       : '点赞'
 
   if (compact) {
+    const compactAriaLabel = disabled
+      ? `点赞，当前 ${likeCount} 赞`
+      : viewerLiked
+        ? `取消点赞，当前 ${likeCount} 赞`
+        : `点赞，当前 ${likeCount} 赞`
     return (
       <button
         type="button"
         disabled={disabled || busy}
         onClick={toggle}
         aria-pressed={viewerLiked}
-        className={`day-like-btn day-like-btn--compact inline-flex max-w-full shrink items-center gap-px rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:cursor-default disabled:opacity-60 ${
+        aria-label={compactAriaLabel}
+        className={`day-like-btn day-like-btn--compact day-like-btn--compact-minimal day-like-btn--icon inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base leading-none transition active:scale-95 disabled:cursor-default disabled:opacity-60 ${
           viewerLiked ? 'day-like-btn--liked' : 'day-like-btn--idle'
         }`}
       >
-        <span
-          className={`text-[10px] leading-none ${viewerLiked ? 'scale-110' : ''}`}
-          aria-hidden
-        >
-          {viewerLiked ? '♥' : '♡'}
+        <span className={`${viewerLiked ? 'scale-110' : ''}`} aria-hidden>
+          ♡
         </span>
-        <span className="truncate">{label}</span>
-        {likeCount > 0 && (
-          <span className="tabular-nums text-muted">({likeCount})</span>
-        )}
       </button>
     )
   }

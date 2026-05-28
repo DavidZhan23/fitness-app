@@ -35,6 +35,7 @@
   --danger-strong: #ff5c73;
   --btn-primary-bg: #35d6a4;
   --btn-primary-hover: #12b886;
+  --btn-primary-text: var(--text-on-accent);
 
   --heatmap-empty: #0c2a25;
   --heatmap-exercise-1: #0e332f;

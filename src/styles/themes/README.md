@@ -32,3 +32,4 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 ## Related docs
 
 - [`docs/decisions/0007-theme-tokens.md`](../../../docs/decisions/0007-theme-tokens.md)
+- [`docs/ops/theme-cutout-workflow.md`](../../../docs/ops/theme-cutout-workflow.md)

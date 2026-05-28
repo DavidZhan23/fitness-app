@@ -35,6 +35,7 @@
   --danger-strong: #b75663;
   --btn-primary-bg: #425f8a;
   --btn-primary-hover: #5f7fa8;
+  --btn-primary-text: var(--text-on-accent);
 
   --heatmap-empty: #182638;
   --heatmap-exercise-1: #173442;
@@ -61,18 +62,70 @@
   --surface-panel-soft-hover: #203249;
   --input-bg: #101a28;
   --input-ring: #3b4f68;
-  --hero-card-bg: #182638;
+  --hero-card-bg:
+    radial-gradient(circle at 88% 16%, rgb(114 151 198 / 0.18), transparent 30%),
+    linear-gradient(136deg, #070d1a 0%, #101b2d 44%, #0b1320 100%);
   --hero-card-ring: #4c678a;
-  --hero-card-shadow: 0 4px 24px rgb(0 0 0 / 0.36);
-  --hero-deficit-positive: #8ad2dd;
-  --hero-deficit-surplus: #c46878;
-  --hero-deficit-neutral: #b5c2d2;
-  --hero-stat-bg: #24364b;
-  --hero-stat-metabolism-bg: #24364b;
+  --hero-card-shadow:
+    0 20px 42px rgb(1 5 11 / 0.52),
+    0 0 28px rgb(88 122 170 / 0.24),
+    inset 0 1px 0 rgb(163 206 255 / 0.38);
+  --hero-card-atmosphere:
+    radial-gradient(56% 82% at 78% 20%, rgb(132 175 221 / 0.1), transparent 62%),
+    linear-gradient(
+      90deg,
+      rgb(7 13 26 / 0.88) 0%,
+      rgb(10 21 38 / 0.68) 44%,
+      rgb(11 19 32 / 0.34) 72%,
+      rgb(11 19 32 / 0.14) 100%
+    );
+  --hero-card-image:
+    linear-gradient(
+      90deg,
+      #070d1a 0%,
+      rgb(7 13 26 / 0.62) 26%,
+      rgb(9 17 31 / 0.22) 54%,
+      rgb(16 27 45 / 0.02) 100%
+    ),
+    radial-gradient(56% 56% at 69% 34%, rgb(127 165 209 / 0.15), transparent 74%),
+    url('/theme/gundam-head-01-cutout.png');
+  --hero-card-image-opacity: 0.82;
+  --hero-card-image-blur: 0;
+  --hero-card-image-blend: normal;
+  --hero-card-image-filter: saturate(1.06) contrast(1.2) brightness(0.84);
+  --hero-card-image-position: 88% 42%;
+  --hero-card-image-top: -1rem;
+  --hero-card-image-right: -1.2rem;
+  --hero-card-image-size: clamp(20rem, 58%, 28rem);
+  --hero-card-image-mask: linear-gradient(
+    to left,
+    rgb(0 0 0 / 1) 0%,
+    rgb(0 0 0 / 0.98) 58%,
+    rgb(0 0 0 / 0.72) 80%,
+    rgb(0 0 0 / 0.08) 100%
+  );
+  /* Legacy aliases (kept for compatibility with older selectors) */
+  --hero-card-corner-art: var(--hero-card-image);
+  --hero-card-corner-opacity: var(--hero-card-image-opacity);
+  --hero-card-corner-blur: var(--hero-card-image-blur);
+  --hero-card-corner-blend: var(--hero-card-image-blend);
+  --hero-card-corner-filter: var(--hero-card-image-filter);
+  --hero-card-corner-top: var(--hero-card-image-top);
+  --hero-card-corner-right: var(--hero-card-image-right);
+  --hero-card-corner-width: var(--hero-card-image-size);
+  --hero-card-corner-mask: var(--hero-card-image-mask);
+  --hero-deficit-positive: #98e0ec;
+  --hero-deficit-surplus: #d57888;
+  --hero-deficit-neutral: #c4d0de;
+  --hero-stat-bg: rgb(29 46 66 / 0.72);
+  --hero-stat-ring: rgb(111 147 194 / 0.26);
+  --hero-stat-shadow: 0 16px 30px rgb(2 8 16 / 0.34);
+  --hero-stat-blur: 10px;
+  --hero-stat-metabolism-bg: rgb(39 60 84 / 0.74);
   --hero-stat-metabolism-value: #eef4ff;
-  --hero-stat-exercise-bg: #173442;
+  --hero-stat-exercise-bg: rgb(23 52 66 / 0.78);
   --hero-stat-exercise-value: #8ad2dd;
-  --hero-stat-meal-bg: #261318;
+  --hero-stat-meal-bg: rgb(38 19 24 / 0.78);
   --hero-stat-meal-value: #c46878;
   --calendar-stat-exercise-bg: #173442;
   --calendar-stat-exercise-border: #3f7d8a;
@@ -207,4 +260,24 @@
   --btn-sign-out-bg: #24364b;
   --btn-sign-out-border: #4c678a;
   --btn-sign-out-hover-bg: #203249;
+}
+
+@media (min-width: 768px) {
+  [data-style='gundam-hangar'] {
+    --hero-card-image-top: -1.6rem;
+    --hero-card-image-right: -2rem;
+    --hero-card-image-size: clamp(21.5rem, 58%, 29.5rem);
+    --hero-card-image-opacity: 0.8;
+    --hero-card-image-filter: saturate(1.05) contrast(1.18) brightness(0.82);
+  }
+}
+
+@media (min-width: 1200px) {
+  [data-style='gundam-hangar'] {
+    --hero-card-image-top: -2.2rem;
+    --hero-card-image-right: -2.8rem;
+    --hero-card-image-size: clamp(22.5rem, 56%, 31rem);
+    --hero-card-image-opacity: 0.76;
+    --hero-card-image-filter: saturate(1.03) contrast(1.16) brightness(0.8);
+  }
 }

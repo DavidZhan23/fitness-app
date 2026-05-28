@@ -48,7 +48,7 @@ export function FollowButton({
         type="button"
         disabled={busy}
         onClick={toggle}
-        className={`follow-btn follow-btn--compact shrink-0 rounded-full px-1 py-px text-[9px] font-medium leading-none transition active:scale-95 disabled:opacity-50 ${
+        className={`follow-btn follow-btn--compact shrink-0 rounded-full px-2.5 py-1 text-xs font-medium leading-none transition active:scale-95 disabled:opacity-50 ${
           following ? 'follow-btn--following' : 'follow-btn--idle'
         }`}
       >

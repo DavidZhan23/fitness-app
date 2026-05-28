@@ -214,7 +214,7 @@ function LogItem({
             type="button"
             onClick={() => void handleSave()}
             disabled={saving}
-            className="rounded-lg bg-brand-dark px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+            className="btn-primary rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-70"
           >
             {saving ? '保存中…' : '保存'}
           </button>

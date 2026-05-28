@@ -31,22 +31,6 @@ const styleOptions: Array<{
   optionClassName: string
 }> = [
   {
-    id: 'default',
-    group: 'dark',
-    title: '深海能量',
-    description: '偏运动感的深色青绿系',
-    swatchClassName: 'style-swatch-ocean',
-    optionClassName: 'style-option-ocean',
-  },
-  {
-    id: 'abyssal-jade',
-    group: 'dark',
-    title: '深海能量 2',
-    description: '墨绿深海、翡翠主操、荧光青运动、珊瑚橙饮食',
-    swatchClassName: 'style-swatch-abyssal-jade',
-    optionClassName: 'style-option-abyssal-jade',
-  },
-  {
     id: 'eva',
     group: 'dark',
     title: '暴走初号机',
@@ -69,6 +53,22 @@ const styleOptions: Array<{
     description: '暗色提坦斯钢蓝格纳库、冷青运动缺口、暗红饮食与盈余，仪表盘感',
     swatchClassName: 'style-swatch-gundam-hangar',
     optionClassName: 'style-option-gundam-hangar',
+  },
+  {
+    id: 'default',
+    group: 'dark',
+    title: '深海能量',
+    description: '偏运动感的深色青绿系',
+    swatchClassName: 'style-swatch-ocean',
+    optionClassName: 'style-option-ocean',
+  },
+  {
+    id: 'abyssal-jade',
+    group: 'dark',
+    title: '深海能量 2',
+    description: '墨绿深海、翡翠主操、荧光青运动、珊瑚橙饮食',
+    swatchClassName: 'style-swatch-abyssal-jade',
+    optionClassName: 'style-option-abyssal-jade',
   },
   {
     id: 'lavender',
@@ -125,6 +125,7 @@ export function SettingsPage() {
   const { style, setStyle } = useAppStyle()
   const navigate = useNavigate()
   const appreciationQrSrc = '/赞赏码.jpg'
+  const pageRef = useRef<HTMLDivElement>(null)
   const [qrLoadFailed, setQrLoadFailed] = useState(false)
   const [weight, setWeight] = useState(String(profile?.weight_kg ?? ''))
   const [height, setHeight] = useState(String(profile?.height_cm ?? ''))
@@ -146,6 +147,7 @@ export function SettingsPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [avatarError, setAvatarError] = useState('')
+  const themeDetailsRef = useRef<HTMLDetailsElement>(null)
 
   const todayKey = formatTodayDateKey()
   const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
@@ -162,6 +164,29 @@ export function SettingsPage() {
     setThreshold(String(profile.deficit_threshold ?? 0))
     setWallStyle(profile.wall_style === 'split' ? 'split' : 'classic')
   }, [profile])
+
+  useEffect(() => {
+    const handleOutsidePointer = (event: PointerEvent) => {
+      const root = pageRef.current
+      if (!root) return
+      const target = event.target
+      if (!(target instanceof Node)) return
+      const openDetails = Array.from(
+        root.querySelectorAll<HTMLDetailsElement>('details[open]'),
+      )
+      if (openDetails.length === 0) return
+      const hitOpenDetails = openDetails.some((details) => details.contains(target))
+      if (hitOpenDetails) return
+      openDetails.forEach((details) => {
+        details.open = false
+      })
+    }
+
+    document.addEventListener('pointerdown', handleOutsidePointer)
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer)
+    }
+  }, [])
 
   const trimmedNickname = nickname.trim()
   const savedNickname = (profile?.nickname ?? '').trim()
@@ -253,6 +278,8 @@ export function SettingsPage() {
 
   const savedWallStyle: WallStyle =
     profile?.wall_style === 'split' ? 'split' : 'classic'
+  const currentStyleTitle =
+    styleOptions.find((item) => item.id === style)?.title ?? '深海能量'
 
   const saveWallStyle = useCallback(async () => {
     await updateProfile({ wall_style: wallStyle })
@@ -291,7 +318,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 pb-12">
+    <div ref={pageRef} className="space-y-6 pb-12">
       <h1 className="text-xl font-bold text-primary">设置</h1>
 
       {user?.isDeveloper && (
@@ -435,7 +462,7 @@ export function SettingsPage() {
             <span className="flex items-center justify-between gap-2">
               编辑身体资料
               <span
-                className="settings-menu-chevron transition group-open:rotate-90"
+                className="settings-menu-chevron transition-transform duration-[450ms] ease-out group-open:rotate-90"
                 aria-hidden
               >
                 ▸
@@ -540,76 +567,77 @@ export function SettingsPage() {
       </section>
 
       <section className="surface-card p-4">
-        <details className="group">
-          <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
-            <span className="flex items-center justify-between gap-2">
-              打卡墙样式
-              <span
-                className="settings-menu-chevron transition group-open:rotate-90"
-                aria-hidden
-              >
-                ▸
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-primary">打卡墙样式</h2>
+          <div className="text-xs">
+            {wallStyleSaveState === 'saving' && (
+              <span className="text-muted">保存中…</span>
+            )}
+            {wallStyleSaveState === 'saved' && (
+              <span className="text-brand">已保存</span>
+            )}
+            {wallStyleSaveState === 'error' && (
+              <span className="text-amber-400">保存失败</span>
+            )}
+          </div>
+        </div>
+        <fieldset className="mt-2 space-y-2">
+          <legend className="sr-only">打卡墙样式</legend>
+          <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
+            <input
+              type="radio"
+              name="wall_style"
+              value="classic"
+              checked={wallStyle === 'classic'}
+              onChange={() => setWallStyle('classic')}
+              className="mt-1"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-primary">经典版</span>
+              <span className="mt-0.5 block text-xs text-muted">
+                同时展示运动和代谢
               </span>
             </span>
-          </summary>
-          <div className="mt-4 space-y-3 border-t border-slate-600/40 pt-4">
-            <div className="flex min-h-5 items-center justify-end gap-2 text-xs">
-              {wallStyleSaveState === 'saving' && (
-                <span className="text-muted">保存中…</span>
-              )}
-              {wallStyleSaveState === 'saved' && (
-                <span className="text-brand">已保存</span>
-              )}
-              {wallStyleSaveState === 'error' && (
-                <span className="text-amber-400">保存失败</span>
-              )}
-            </div>
-            <fieldset className="space-y-2">
-              <legend className="sr-only">打卡墙样式</legend>
-              <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
-                <input
-                  type="radio"
-                  name="wall_style"
-                  value="classic"
-                  checked={wallStyle === 'classic'}
-                  onChange={() => setWallStyle('classic')}
-                  className="mt-1"
-                />
-                <span className="text-sm">
-                  <span className="font-medium text-primary">经典版</span>
-                  <span className="mt-0.5 block text-xs text-muted">
-                    同时展示运动和代谢
-                  </span>
-                </span>
-              </label>
-              <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
-                <input
-                  type="radio"
-                  name="wall_style"
-                  value="split"
-                  checked={wallStyle === 'split'}
-                  onChange={() => setWallStyle('split')}
-                  className="mt-1"
-                />
-                <span className="text-sm">
-                  <span className="font-medium text-primary">分屏版</span>
-                  <span className="mt-0.5 block text-xs text-muted">
-                    切换查看，更聚焦
-                  </span>
-                </span>
-              </label>
-            </fieldset>
-          </div>
-        </details>
+          </label>
+          <label className="wall-style-option flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5">
+            <input
+              type="radio"
+              name="wall_style"
+              value="split"
+              checked={wallStyle === 'split'}
+              onChange={() => setWallStyle('split')}
+              className="mt-1"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-primary">分屏版</span>
+              <span className="mt-0.5 block text-xs text-muted">
+                切换查看，更聚焦
+              </span>
+            </span>
+          </label>
+        </fieldset>
       </section>
 
       <section className="surface-panel p-4">
-        <details className="group">
+        <details
+          className="group"
+          onToggle={(event) => {
+            const details = event.currentTarget
+            if (!details.open) return
+            requestAnimationFrame(() => {
+              themeDetailsRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              })
+            })
+          }}
+          ref={themeDetailsRef}
+        >
           <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
-              主题风格
+              主题风格 · {currentStyleTitle}
               <span
-                className="settings-menu-chevron transition group-open:rotate-90"
+                className="settings-menu-chevron transition-transform duration-[450ms] ease-out group-open:rotate-90"
                 aria-hidden
               >
                 ▸
@@ -674,7 +702,7 @@ export function SettingsPage() {
             <span className="flex items-center justify-between gap-2">
               我要打赏
               <span
-                className="settings-menu-chevron transition group-open:rotate-90"
+                className="settings-menu-chevron transition-transform duration-[450ms] ease-out group-open:rotate-90"
                 aria-hidden
               >
                 ▸

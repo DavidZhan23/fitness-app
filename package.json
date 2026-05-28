@@ -23,7 +23,8 @@
     "deploy:tencent": "bash scripts/deploy-tencent.sh",
     "deploy:tencent:api": "bash scripts/deploy-tencent.sh --api",
     "changelog:dedupe": "node scripts/dedupe-changelog.mjs",
-    "check:milestones": "node scripts/check-milestone-status.mjs"
+    "check:milestones": "node scripts/check-milestone-status.mjs",
+    "check:theme-contrast": "node scripts/check-theme-contrast.mjs"
   },
   "dependencies": {
     "react": "^19.2.6",
@@ -45,6 +46,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
