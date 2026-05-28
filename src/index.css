@@ -24,6 +24,8 @@
     constant(safe-area-inset-bottom, 0px)
   );
   --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
+  --day-like-liked-icon: var(--danger-strong);
+  --day-like-disliked-icon: #e06752;
 }
 
 
@@ -447,21 +449,73 @@ button {
 
 .day-like-btn--liked {
   background: var(--day-like-active-bg);
-  color: var(--day-like-active-text);
+  color: var(--day-like-liked-icon);
   box-shadow: inset 0 0 0 1px var(--day-like-active-ring);
 }
 
-.day-like-btn--compact-minimal.day-like-btn--idle,
-.day-like-btn--compact-minimal.day-like-btn--liked {
+.day-like-btn--disliked {
+  background: color-mix(in oklab, var(--day-like-disliked-icon) 18%, transparent);
+  color: var(--day-like-disliked-icon);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--day-like-disliked-icon) 45%, transparent);
+}
+
+.day-like-btn--compact-minimal.day-like-btn--idle {
   background: transparent;
-  color: var(--text-muted);
+  color: var(--day-like-idle-text, var(--text-muted));
   box-shadow: none;
 }
 
-.day-like-btn--compact-minimal.day-like-btn--idle:hover,
-.day-like-btn--compact-minimal.day-like-btn--liked:hover {
-  background: color-mix(in oklab, var(--text-muted) 12%, transparent);
+.day-like-btn--compact-minimal.day-like-btn--disliked {
+  background: transparent;
+  color: var(--day-like-disliked-icon);
   box-shadow: none;
+}
+
+.day-like-btn--compact-minimal.day-like-btn--liked {
+  background: transparent;
+  color: var(--day-like-liked-icon);
+  box-shadow: none;
+}
+
+.day-like-btn--compact-minimal.day-like-btn--idle:hover {
+  background: color-mix(in oklab, var(--day-like-idle-text, var(--text-muted)) 12%, transparent);
+  box-shadow: none;
+}
+
+.day-like-btn--compact-minimal.day-like-btn--disliked:hover {
+  background: color-mix(in oklab, var(--day-like-disliked-icon) 14%, transparent);
+  box-shadow: none;
+}
+
+.day-like-btn--compact-minimal.day-like-btn--liked:hover {
+  background: color-mix(in oklab, var(--day-like-liked-icon) 14%, transparent);
+  box-shadow: none;
+}
+
+.reaction-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.reaction-icon--stats {
+  width: 1rem;
+  height: 1rem;
+}
+
+.day-like-btn .reaction-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.day-like-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.day-like-pair--compact {
+  gap: 0.125rem;
 }
 
 .log-template-chip {
@@ -1938,6 +1992,48 @@ button {
   color: var(--hero-deficit-neutral, var(--text-secondary));
 }
 
+.theme-deficit-main {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.25rem, 1.5vw, 0.75rem);
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.theme-deficit-value {
+  font-size: clamp(3rem, 13vw, 3.9rem);
+  line-height: 0.95;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.theme-deficit-unit {
+  font-size: clamp(0.95rem, 4.8vw, 1.55rem);
+  line-height: 1.1;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.theme-deficit-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.4rem, 2vw, 0.75rem);
+}
+
+.theme-deficit-stat,
+.theme-deficit-stat__label,
+.theme-deficit-stat__value {
+  min-width: 0;
+}
+
+.theme-deficit-stat__label,
+.theme-deficit-stat__value {
+  overflow-wrap: anywhere;
+}
+
 .theme-hero-stat {
   border-radius: 1rem;
   background: var(--hero-stat-bg);
@@ -2201,6 +2297,113 @@ button {
   text-wrap: balance;
 }
 
+@media (max-width: 390px) {
+  .hero-greeting {
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-greeting__title {
+    font-size: min(var(--hero-greeting-title-size, 2.5rem), clamp(2rem, 10vw, 2.6rem));
+    line-height: 1.02;
+    max-width: 100%;
+    white-space: normal;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  .theme-deficit-card {
+    padding: 1rem;
+  }
+
+  .theme-deficit-unit {
+    font-size: clamp(0.85rem, 4.3vw, 1.2rem);
+  }
+
+  .theme-hero-stat {
+    min-height: 5rem;
+  }
+
+  .theme-hero-stat__label {
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .hero-greeting__title {
+    font-size: min(var(--hero-greeting-title-size, 2.25rem), clamp(1.78rem, 9.5vw, 2.28rem));
+    letter-spacing: 0.01em;
+  }
+
+  .theme-deficit-card {
+    padding: 0.9rem;
+  }
+
+  .theme-deficit-value {
+    font-size: clamp(2.5rem, 12.4vw, 3.25rem);
+  }
+
+  .theme-deficit-stats {
+    gap: 0.4rem;
+  }
+}
+
+@media (max-height: 720px) {
+  .hero-greeting {
+    margin-bottom: 1rem;
+  }
+
+  .theme-deficit-card {
+    padding: 0.95rem;
+  }
+}
+
+@media (max-width: 390px) and (max-height: 720px) {
+  .hero-greeting__title {
+    font-size: min(var(--hero-greeting-title-size, 2.2rem), clamp(1.72rem, 8.8vw, 2.15rem));
+    line-height: 1;
+  }
+
+  .theme-deficit-main {
+    gap: 0.3rem;
+  }
+
+  .theme-deficit-value {
+    font-size: clamp(2.35rem, 11.8vw, 3rem);
+  }
+
+  .theme-deficit-unit {
+    font-size: clamp(0.8rem, 3.8vw, 1.05rem);
+  }
+
+  .theme-hero-stat {
+    min-height: 4.6rem;
+  }
+}
+
+@media (max-width: 360px) and (max-height: 680px) {
+  .hero-greeting__title {
+    font-size: min(var(--hero-greeting-title-size, 2rem), clamp(1.56rem, 8.2vw, 1.95rem));
+  }
+
+  .theme-deficit-stats {
+    gap: 0.32rem;
+  }
+
+  .theme-hero-stat__value {
+    font-size: clamp(0.84rem, 2.9vw, 1.02rem);
+  }
+}
+
+@media (max-width: 340px) {
+  .theme-deficit-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .theme-deficit-stats .theme-deficit-stat:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
 .accent-exercise {
   color: var(--accent-exercise-strong);
 }
@@ -2258,6 +2461,113 @@ button {
 .profile-avatar-btn__busy {
   background: color-mix(in oklab, var(--surface-page) 55%, transparent);
   backdrop-filter: blur(1px);
+}
+
+.settings-avatar-modal,
+.settings-avatar-crop-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.settings-avatar-modal__backdrop,
+.settings-avatar-crop-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgb(0 0 0 / 0.48);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.settings-avatar-modal__panel,
+.settings-avatar-crop-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 28rem);
+  border-radius: 1rem;
+  border: 1px solid var(--surface-card-border);
+  background: var(--surface-card);
+  box-shadow: 0 24px 56px rgb(0 0 0 / 0.28);
+}
+
+.settings-avatar-modal__panel {
+  padding: 1rem 1rem 1.25rem;
+}
+
+.settings-avatar-modal__close {
+  margin-left: auto;
+  display: grid;
+  height: 2rem;
+  width: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--surface-card-border);
+  background: var(--surface-panel-soft-bg);
+  color: var(--text-secondary);
+}
+
+.settings-avatar-modal__preview {
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.settings-avatar-modal__pick {
+  margin-top: 1rem;
+  width: 100%;
+  padding-block: 0.7rem;
+}
+
+.settings-avatar-crop-modal__panel {
+  padding: 1rem;
+}
+
+.settings-avatar-crop-modal__stage {
+  border-radius: 0.875rem;
+  border: 1px solid var(--surface-panel-border);
+  background: var(--surface-panel-soft-bg);
+  padding: 0.75rem;
+}
+
+.settings-avatar-crop-modal__viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: min(58vh, 22rem);
+  overflow: hidden;
+  border-radius: 0.75rem;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.settings-avatar-crop-modal__viewport:active {
+  cursor: grabbing;
+}
+
+.settings-avatar-crop-modal__image-layer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.settings-avatar-crop-modal__frame {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgb(255 255 255 / 0.92);
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 0.44);
 }
 
 .profile-nickname-field__input {
@@ -2476,22 +2786,31 @@ button {
 
 /* Achievement side cards (calendar detail) */
 .achievement-card {
+  --achievement-card-bg: color-mix(in oklab, var(--surface-card) 72%, transparent);
+  --achievement-card-border: color-mix(in oklab, var(--surface-card-border) 86%, transparent);
+  --achievement-card-title: var(--text-primary);
+  --achievement-card-desc: var(--text-secondary);
+  --achievement-card-icon-bg: color-mix(in oklab, var(--surface-card-soft) 78%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.375rem;
   border-radius: 0.75rem;
   padding: 0.75rem;
+  border: 1px solid var(--achievement-card-border);
+  background: var(--achievement-card-bg);
 }
 
 .achievement-card--exercise {
-  border: 1px solid var(--achievement-exercise-border);
-  background: var(--achievement-exercise-bg);
+  --achievement-card-bg: var(--achievement-exercise-bg);
+  --achievement-card-border: var(--achievement-exercise-border);
+  --achievement-card-icon-bg: var(--achievement-exercise-icon-bg);
 }
 
 .achievement-card--meal {
-  border: 1px solid var(--achievement-meal-border);
-  background: var(--achievement-meal-bg);
+  --achievement-card-bg: var(--achievement-meal-bg);
+  --achievement-card-border: var(--achievement-meal-border);
+  --achievement-card-icon-bg: var(--achievement-meal-icon-bg);
 }
 
 .achievement-card__icon {
@@ -2506,25 +2825,42 @@ button {
 }
 
 .achievement-card--exercise .achievement-card__icon {
-  background: var(--achievement-exercise-icon-bg);
+  background: var(--achievement-card-icon-bg);
 }
 
 .achievement-card--meal .achievement-card__icon {
-  background: var(--achievement-meal-icon-bg);
+  background: var(--achievement-card-icon-bg);
 }
 
 .achievement-card__title {
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--text-primary);
+  color: var(--achievement-card-title);
 }
 
 .achievement-card__desc {
   text-align: center;
   font-size: 0.6875rem;
   line-height: 1.375;
-  color: var(--text-secondary);
+  color: var(--achievement-card-desc);
+}
+
+/* 壁纸详情卡：称号填充色随热力图背景微调，避免“糊成一块” */
+.calendar-day-detail.heatmap-exercise-3 .achievement-card,
+.calendar-day-detail.heatmap-exercise-4 .achievement-card,
+.calendar-day-detail.heatmap-deficit-3 .achievement-card,
+.calendar-day-detail.heatmap-deficit-4 .achievement-card {
+  --achievement-card-bg: color-mix(in oklab, var(--surface-card) 92%, transparent);
+  --achievement-card-border: color-mix(in oklab, var(--surface-card-border) 96%, transparent);
+  --achievement-card-title: color-mix(in oklab, var(--text-primary) 95%, #fff);
+  --achievement-card-desc: color-mix(in oklab, var(--text-secondary) 90%, #fff);
+}
+
+.calendar-day-detail.heatmap-surplus-3 .achievement-card,
+.calendar-day-detail.heatmap-surplus-4 .achievement-card {
+  --achievement-card-bg: color-mix(in oklab, var(--surface-card-soft) 94%, transparent);
+  --achievement-card-border: color-mix(in oklab, var(--surface-card-border) 96%, transparent);
 }
 
 /* Cross-theme text utilities: unify Tailwind leftovers to semantic text tokens */
@@ -3070,7 +3406,7 @@ button {
   padding: 0.125rem;
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--day-like-idle-text, var(--text-muted));
   line-height: 1;
   transition:
     color 0.15s ease,
@@ -3094,11 +3430,19 @@ button {
 }
 
 .like-heart--active {
-  color: var(--accent-meal-strong);
+  color: var(--day-like-liked-icon);
 }
 
-.like-heart:hover:not(:disabled) {
-  color: var(--accent-meal-strong);
+.like-heart--dislike-active {
+  color: var(--day-like-disliked-icon);
+}
+
+.like-heart:not(.like-heart--dislike):hover:not(:disabled) {
+  color: var(--day-like-liked-icon);
+}
+
+.like-heart--dislike:hover:not(:disabled) {
+  color: var(--day-like-disliked-icon);
 }
 
 .like-heart:active:not(:disabled) {
@@ -3116,8 +3460,21 @@ button {
 }
 
 .log-item-like:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--accent-meal-soft) 65%, transparent);
+  background: color-mix(in oklab, var(--danger-strong) 12%, transparent);
   border-radius: 0.5rem;
+}
+
+.log-item-dislike:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--day-like-disliked-icon) 12%, transparent);
+  border-radius: 0.5rem;
+}
+
+.log-item-like-stats {
+  color: var(--day-like-liked-icon);
+}
+
+.log-item-dislike-stats {
+  color: var(--day-like-disliked-icon);
 }
 
 /* 回复态：触控端输入条贴底栏，随软键盘 visualViewport 上移 */

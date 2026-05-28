@@ -16,7 +16,12 @@ interface CommunityMemberCardProps {
   onFollowChange?: (userId: string, following: boolean) => void
   onLikeChange?: (
     userId: string,
-    stats: { likeCount: number; viewerLiked: boolean },
+    stats: {
+      likeCount: number
+      dislikeCount: number
+      viewerLiked: boolean
+      viewerDisliked: boolean
+    },
   ) => void
   isDragging?: boolean
   sortLocked?: boolean
@@ -56,6 +61,10 @@ export function CommunityMemberCard({
       })
   const isChampion = todayBadge === 'champion'
   const isElite = todayBadge === 'elite'
+  const todayLikeCount = member.todayLikeCount ?? 0
+  const todayDislikeCount = member.todayDislikeCount ?? 0
+  const viewerLikedToday = member.viewerLikedToday ?? false
+  const viewerDislikedToday = member.viewerDislikedToday ?? false
 
   const roundClass = roundedLeft ? 'rounded-2xl' : 'rounded-r-2xl rounded-l-none'
   const fxClass = isChampion
@@ -153,8 +162,14 @@ export function CommunityMemberCard({
               </p>
             )}
             {!isToday && <p className="text-[10px] text-muted">{member.today.date}</p>}
-            {member.todayLikeCount > 0 && (
-              <p className="text-[10px] text-muted">已收获 {member.todayLikeCount} 赞</p>
+            {(todayLikeCount > 0 || todayDislikeCount > 0) && (
+              <p className="text-[10px] text-muted">
+                {todayLikeCount > 0 && `已收获 ${todayLikeCount} 赞`}
+                {todayLikeCount > 0 && todayDislikeCount > 0 && (
+                  <span className="mx-1">·</span>
+                )}
+                {todayDislikeCount > 0 && `已收获 ${todayDislikeCount} 踩`}
+              </p>
             )}
           </div>
           <div className="community-member-card__top-actions shrink-0">
@@ -209,9 +224,9 @@ export function CommunityMemberCard({
       <div className="community-member-card__footer-row flex min-w-0 flex-nowrap items-end justify-between gap-1.5 px-3 py-2">
         {member.isSelf ? (
           <span className="truncate text-[11px] text-muted">
-            {member.todayLikeCount > 0
-              ? `今日 ${member.todayLikeCount} 赞`
-              : '今日暂无点赞'}
+            {todayLikeCount > 0 || todayDislikeCount > 0
+              ? `今日 ${todayLikeCount} 赞 / ${todayDislikeCount} 踩`
+              : '今日暂无赞踩'}
           </span>
         ) : (
           <>
@@ -229,8 +244,10 @@ export function CommunityMemberCard({
               <DayLikeButton
                 userId={member.id}
                 date={todayKey}
-                likeCount={member.todayLikeCount}
-                viewerLiked={member.viewerLikedToday}
+                likeCount={todayLikeCount}
+                dislikeCount={todayDislikeCount}
+                viewerLiked={viewerLikedToday}
+                viewerDisliked={viewerDislikedToday}
                 compact
                 onChange={(stats) => onLikeChange?.(member.id, stats)}
               />

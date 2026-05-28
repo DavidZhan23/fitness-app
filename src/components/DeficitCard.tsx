@@ -30,11 +30,11 @@ export function DeficitCard({
   const surplus = deficit < -threshold
 
   return (
-    <section className="theme-hero-card p-6">
+    <section className="theme-hero-card theme-deficit-card p-6">
       <p className="text-base text-muted">{dateLabel}</p>
-      <div className="mt-3 flex items-baseline gap-3">
+      <div className="theme-deficit-main mt-3">
         <span
-          className={`theme-deficit-value text-[3.9rem] font-bold tabular-nums leading-none ${
+          className={`theme-deficit-value font-bold tabular-nums ${
             surplus
               ? 'theme-deficit-value--surplus'
               : positive
@@ -45,7 +45,7 @@ export function DeficitCard({
           {deficit > 0 ? '+' : ''}
           {Math.round(deficit)}
         </span>
-        <span className="text-[1.55rem] leading-none text-muted">kcal 缺口</span>
+        <span className="theme-deficit-unit text-muted">kcal 缺口</span>
       </div>
       <p className="mt-2 text-base text-muted">
         {positive ? '已达成代谢缺口' : '摄入偏多，继续加油'}
@@ -55,7 +55,7 @@ export function DeficitCard({
           </span>
         )}
       </p>
-      <div className="mt-5 grid grid-cols-3 gap-3 text-center text-base">
+      <div className="theme-deficit-stats mt-5 text-center text-base">
         <Stat label={metabolismLabel} value={metabolismKcal} variant="base" />
         <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} variant="exercise" />
         <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} variant="meal" />
@@ -74,10 +74,10 @@ function Stat({
   variant: 'base' | 'exercise' | 'meal'
 }) {
   return (
-    <div className={`theme-hero-stat theme-hero-stat--${variant} px-2 py-2.5`}>
-      <p className="theme-hero-stat__label text-base text-muted">{label}</p>
+    <div className={`theme-hero-stat theme-deficit-stat theme-hero-stat--${variant} px-2 py-2.5`}>
+      <p className="theme-hero-stat__label theme-deficit-stat__label text-base text-muted">{label}</p>
       <span className="theme-hero-stat__divider" aria-hidden />
-      <p className="theme-hero-stat__value mt-1 tabular-nums">
+      <p className="theme-hero-stat__value theme-deficit-stat__value mt-1 tabular-nums">
         {Math.round(value)} kcal
       </p>
     </div>

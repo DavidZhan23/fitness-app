@@ -154,7 +154,7 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       subtitle: '目标：今日缺口达成。',
       fontFamily:
         '"Orbitron", "Rajdhani", "DIN Alternate", "Arial Narrow", "PingFang SC", sans-serif',
-      titleSize: 'clamp(40px, 6.4vw, 56px)',
+      titleSize: 'clamp(34px, 5.8vw, 50px)',
       fontWeight: '900',
       lineHeight: '1.02',
       letterSpacing: '0.02em',
@@ -172,7 +172,7 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       subtitle: '今天也要漂亮地赢下来。',
       fontFamily:
         '"Orbitron", "Rajdhani", "DIN Alternate", "Arial Narrow", "PingFang SC", sans-serif',
-      titleSize: 'clamp(40px, 6.4vw, 56px)',
+      titleSize: 'clamp(34px, 5.8vw, 50px)',
       fontWeight: '900',
       lineHeight: '1.03',
       letterSpacing: '0.02em',
@@ -190,7 +190,7 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       subtitle: '今日任务：稳定执行。',
       fontFamily:
         '"Roboto Condensed", "SFMono-Regular", "Menlo", "PingFang SC", sans-serif',
-      titleSize: 'clamp(39px, 6.1vw, 54px)',
+      titleSize: 'clamp(33px, 5.6vw, 48px)',
       fontWeight: '820',
       lineHeight: '1.05',
       letterSpacing: '0.03em',

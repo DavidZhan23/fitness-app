@@ -20,7 +20,12 @@ interface CommunityMemberListProps {
   onFollowChange?: (userId: string, following: boolean) => void
   onLikeChange?: (
     userId: string,
-    stats: { likeCount: number; viewerLiked: boolean },
+    stats: {
+      likeCount: number
+      dislikeCount: number
+      viewerLiked: boolean
+      viewerDisliked: boolean
+    },
   ) => void
   /** 点开名片前保存列表滚动位置 */
   onBeforeOpenMember?: () => void

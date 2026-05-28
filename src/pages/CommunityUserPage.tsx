@@ -8,6 +8,7 @@ import { UserAvatar } from '../components/UserAvatar'
 import { MonthHeatmap } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
+import { WallDayDetailCard } from '../components/WallDayDetailCard'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
@@ -22,7 +23,12 @@ import {
   getTodayMonth,
   shiftMonth,
 } from '../lib/monthCalendar'
-import { getWallLegendHighlight } from '../lib/calories'
+import {
+  getCalendarDayDetailBackgroundClass,
+  getDeficitHeatmapCell,
+  getWallLegendHighlight,
+} from '../lib/calories'
+import { computeCommunityDeficit } from '../lib/communityDeficit'
 import { formatDateKey, isBeforeAccountStart } from '../lib/streaks'
 import type {
   CommunityDaySnapshot,
@@ -30,6 +36,7 @@ import type {
   CommunityPublicMeal,
   DayComment,
   DayLog,
+  WallStyle,
 } from '../types'
 
 function readInitialUserState(userId: string | undefined) {
@@ -71,6 +78,8 @@ export function CommunityUserPage() {
   const [loading, setLoading] = useState(initial.loading)
   const [dayLoading, setDayLoading] = useState(false)
   const [monthLoading, setMonthLoading] = useState(false)
+  const [showWallDetail, setShowWallDetail] = useState(false)
+  const [wallPane, setWallPane] = useState<'exercise' | 'deficit'>('exercise')
   const [error, setError] = useState('')
 
   const { year, month } = view
@@ -197,7 +206,11 @@ export function CommunityUserPage() {
   }
 
   const handleDayClick = (date: string) => {
-    if (date === viewDate) return
+    if (date === viewDate) {
+      setShowWallDetail(true)
+      return
+    }
+    setShowWallDetail(true)
     loadDay(date, true)
   }
 
@@ -210,6 +223,7 @@ export function CommunityUserPage() {
     dayMap.get(viewDate),
     isBeforeAccountStart(viewDate, accountStartKey),
   )
+  const wallStyle: WallStyle = profile?.wall_style === 'split' ? 'split' : 'classic'
 
   if (loading && !snapshot) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -225,6 +239,18 @@ export function CommunityUserPage() {
       </div>
     )
   }
+
+  const communityDeficit = computeCommunityDeficit(snapshot, {
+    viewerProfile: profile,
+    isSelf,
+  })
+  const deficitHeatmap = getDeficitHeatmapCell(communityDeficit, snapshot.threshold)
+  const detailBgClass = getCalendarDayDetailBackgroundClass({
+    beforeAccount: isBeforeAccountStart(viewDate, accountStartKey),
+    splitExercisePane: wallStyle === 'split' && wallPane === 'exercise',
+    exerciseKcal: snapshot.exerciseKcal,
+    deficitHeatmap,
+  })
 
   return (
     <div className="space-y-5 pb-4">
@@ -371,7 +397,7 @@ export function CommunityUserPage() {
           <p className="py-8 text-center text-xs text-muted">加载打卡墙…</p>
         ) : (
           <>
-            {profile?.wall_style === 'split' ? (
+            {wallStyle === 'split' ? (
               <SplitMonthWall
                 year={year}
                 month={month}
@@ -380,6 +406,8 @@ export function CommunityUserPage() {
                 accountStartKey={accountStartKey}
                 selectedDateKey={viewDate}
                 legendHighlight={legendHighlight}
+                wallPane={wallPane}
+                onWallPaneChange={setWallPane}
                 onDayClick={handleDayClick}
               />
             ) : (
@@ -397,6 +425,22 @@ export function CommunityUserPage() {
             <p className="mt-3 text-center text-xs text-muted">
               点击日期查看该日记录与评论
             </p>
+            {showWallDetail && (
+              <div className="mt-4">
+                <WallDayDetailCard
+                  dateKey={viewDate}
+                  todayKey={todayKey}
+                  bmr={snapshot.dailyBmr}
+                  tdee={snapshot.dailyBmr + snapshot.exerciseKcal}
+                  exerciseKcal={snapshot.exerciseKcal}
+                  mealKcal={snapshot.mealKcal}
+                  deficit={communityDeficit}
+                  dailyBmr={snapshot.dailyBmr}
+                  detailBgClass={detailBgClass}
+                  onClose={() => setShowWallDetail(false)}
+                />
+              </div>
+            )}
           </>
         )}
       </section>

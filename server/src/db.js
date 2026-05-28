@@ -147,6 +147,15 @@ export async function runMigrations() {
         unique (liker_id, target_user_id, like_date)
       )`)
     await pool.query(`
+      create table if not exists public.day_dislikes (
+        id uuid primary key default gen_random_uuid(),
+        liker_id uuid not null references public.users (id) on delete cascade,
+        target_user_id uuid not null references public.users (id) on delete cascade,
+        like_date date not null,
+        created_at timestamptz not null default now(),
+        unique (liker_id, target_user_id, like_date)
+      )`)
+    await pool.query(`
       create table if not exists public.day_comments (
         id uuid primary key default gen_random_uuid(),
         author_id uuid not null references public.users (id) on delete cascade,

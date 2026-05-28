@@ -12,7 +12,9 @@ function selfMember(dayCommunityVisible?: boolean): CommunityMember {
     isSelf: true,
     isFollowing: false,
     todayLikeCount: 0,
+    todayDislikeCount: 0,
     viewerLikedToday: false,
+    viewerDislikedToday: false,
     today: {
       date: '2026-05-26',
       deficit: 0,

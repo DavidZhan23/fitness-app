@@ -307,7 +307,12 @@ export function CommunityPage() {
 
   const handleLikeChange = (
     userId: string,
-    stats: { likeCount: number; viewerLiked: boolean },
+    stats: {
+      likeCount: number
+      dislikeCount: number
+      viewerLiked: boolean
+      viewerDisliked: boolean
+    },
   ) => {
     setMembers((prev) => {
       const next = prev.map((m) =>
@@ -315,7 +320,9 @@ export function CommunityPage() {
           ? {
               ...m,
               todayLikeCount: stats.likeCount,
+              todayDislikeCount: stats.dislikeCount,
               viewerLikedToday: stats.viewerLiked,
+              viewerDislikedToday: stats.viewerDisliked,
             }
           : m,
       )
