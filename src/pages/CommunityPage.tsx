@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CommunityMemberList } from '../components/CommunityMemberList'
 import {
   CommunitySegment,
@@ -47,8 +47,9 @@ function readInitialCommunityState() {
 }
 
 export function CommunityPage() {
+  const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
-  const { markRead, refresh: refreshInbox } = useCommunityInbox()
+  const { refresh: refreshInbox } = useCommunityInbox()
   const [inboxHint, setInboxHint] = useState<CommunityInboxSummary | null>(null)
   const [inboxHintDismissed, setInboxHintDismissed] = useState(false)
   const todayKey = formatDateKey()
@@ -206,7 +207,6 @@ export function CommunityPage() {
         /* ignore */
       } finally {
         if (!cancelled) {
-          await markRead()
           void refreshProfile()
           void refreshInbox()
         }
@@ -215,13 +215,7 @@ export function CommunityPage() {
     return () => {
       cancelled = true
     }
-  }, [markRead, refreshProfile, refreshInbox])
-
-  const scrollToSelfCard = useCallback(() => {
-    document
-      .getElementById('community-member-self')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [])
+  }, [refreshProfile, refreshInbox])
 
   const didInitialLoad = useRef(false)
   /* 有缓存时先展示列表并恢复滚动，再静默拉取最新今日数据（成就特效） */
@@ -409,9 +403,8 @@ export function CommunityPage() {
         inboxHint.count > 0 && (
           <CommunityInboxHint
             summary={inboxHint}
-            selfUserId={user.id}
             onDismiss={() => setInboxHintDismissed(true)}
-            onGoToSelfCard={scrollToSelfCard}
+            onOpenInbox={() => void navigate('/community/inbox')}
           />
         )}
 
