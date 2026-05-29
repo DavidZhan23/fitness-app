@@ -19,12 +19,27 @@ fi
 BRANCH="feat/${SLUG}"
 MILESTONE="docs/milestones/${SLUG}.md"
 
+if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+  echo "Error: working tree has uncommitted changes. Commit or stash before starting a feature."
+  exit 1
+fi
+
+echo "Syncing latest main from origin..."
+git fetch origin
+if ! git show-ref --verify --quiet refs/heads/main; then
+  git checkout -b main origin/main
+else
+  git checkout main
+fi
+git pull --ff-only origin main
+
 if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
   echo "Branch $BRANCH already exists."
   git checkout "$BRANCH"
+  echo "Tip: rebase onto main if needed: git fetch origin && git rebase origin/main"
 else
   git checkout -b "$BRANCH"
-  echo "Created and checked out $BRANCH"
+  echo "Created and checked out $BRANCH (from up-to-date main)"
 fi
 
 if [ ! -f "$MILESTONE" ]; then

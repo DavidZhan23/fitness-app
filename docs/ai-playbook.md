@@ -15,6 +15,7 @@
 ## 标准流程（Agent 检查清单）
 
 ```text
+[ ] 0. 开分支：先同步最新 main（bash scripts/new-feature.sh <slug>，勿从旧 feature 分支直接拉新分支）
 [ ] 1. 澄清：≤5 问/轮，先收敛边界再写代码
 [ ] 2. 规划：补齐 milestone（Goal / 验收 / Non-goals / 风险）
 [ ] 3. 实现：最小 diff，优先复用既有模块

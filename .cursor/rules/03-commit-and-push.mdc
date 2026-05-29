@@ -39,6 +39,23 @@ Default flow (unless user explicitly says otherwise):
 
 If branch is `main`, create a new `feat/<slug>` branch first, then follow steps above.
 
+## Before a new feature branch
+
+**Always sync `main` before creating a branch** (avoid stacking on stale feature lines and losing others’ merges).
+
+- Prefer: `bash scripts/new-feature.sh <slug>` — fetches `origin`, fast-forwards local `main`, then creates `feat/<slug>`.
+- Manual equivalent:
+
+```bash
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+git checkout -b feat/<slug>
+```
+
+- Do not `git checkout -b feat/...` from another long-lived feature branch unless the user explicitly asks.
+- Require a clean working tree before branching; stash or commit first.
+
 ## After merge to main — manual deploy reminder
 
 After PR is merged to `main`, remind user:
