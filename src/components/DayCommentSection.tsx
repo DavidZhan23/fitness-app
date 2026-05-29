@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { ConfirmDialog } from './ConfirmDialog'
 import { RecordDeleteButton } from './RecordActionIcons'
 import { LikeHeartButton } from './LikeHeartButton'
@@ -49,6 +50,34 @@ function countAll(comments: DayComment[]) {
   return comments.length
 }
 
+function prefetchCommunityUserPage() {
+  void import('../pages/CommunityUserPage')
+}
+
+function CommentProfileLink({
+  userId,
+  label,
+  className = '',
+  children,
+}: {
+  userId: string
+  label: string
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <Link
+      to={`/community/${userId}`}
+      className={`community-comment-profile-link ${className}`.trim()}
+      aria-label={label}
+      onMouseEnter={prefetchCommunityUserPage}
+      onFocus={prefetchCommunityUserPage}
+    >
+      {children}
+    </Link>
+  )
+}
+
 export function DayCommentSection({
   userId,
   date,
@@ -56,13 +85,9 @@ export function DayCommentSection({
   onCommentsChange,
 }: DayCommentSectionProps) {
   const { profile } = useAuth()
-  const isAppleTouch = useMemo(() => {
-    if (typeof navigator === 'undefined') return false
-    const ua = navigator.userAgent
-    return (
-      /iPhone|iPad|iPod/i.test(ua) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    )
+  const isTouchCoarse = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(hover: none) and (pointer: coarse)').matches
   }, [])
   const [comments, setComments] = useState(initialComments)
   const [body, setBody] = useState('')
@@ -80,7 +105,7 @@ export function DayCommentSection({
   const composeRef = useRef<HTMLDivElement>(null)
 
   const threads = useMemo(() => buildThreads(comments), [comments])
-  const enableDock = Boolean(replyTo && !isAppleTouch)
+  const enableDock = Boolean(replyTo && !isTouchCoarse)
 
   useEffect(() => {
     setComments(initialComments)
@@ -177,11 +202,9 @@ export function DayCommentSection({
       const input = inputRef.current
       const compose = composeRef.current
       if (!input) return
-      if (isAppleTouch) {
+      if (isTouchCoarse) {
         compose?.scrollIntoView({ block: 'nearest' })
-        window.setTimeout(() => {
-          input.focus()
-        }, 60)
+        input.focus()
         return
       }
       commentRefs.current
@@ -216,6 +239,8 @@ export function DayCommentSection({
     }
   }
 
+  const authorProfileLabel = (nickname: string) => `查看 ${nickname} 的主页`
+
   const renderComment = (c: DayComment, isReply: boolean) => (
     <li
       key={c.id}
@@ -225,24 +250,37 @@ export function DayCommentSection({
       }}
       className={`community-comment-row ${isReply ? 'community-comment-row--reply' : ''}`}
     >
-      <UserAvatar
-        size="sm"
-        nickname={c.authorNickname}
-        avatarUrl={c.authorAvatarUrl}
-        className="community-comment-row__avatar"
-      />
+      <CommentProfileLink
+        userId={c.authorId}
+        label={authorProfileLabel(c.authorNickname)}
+        className="community-comment-row__avatar shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
+        <UserAvatar
+          size="sm"
+          nickname={c.authorNickname}
+          avatarUrl={c.authorAvatarUrl}
+        />
+      </CommentProfileLink>
       <div className="community-comment-row__main min-w-0 flex-1">
         <div className="community-comment-row__head flex items-start gap-2">
           <p className="min-w-0 flex-1 text-xs leading-snug">
-            <span className="community-comment-author font-medium">
+            <CommentProfileLink
+              userId={c.authorId}
+              label={authorProfileLabel(c.authorNickname)}
+              className="community-comment-author font-medium hover:underline"
+            >
               {c.authorNickname}
-            </span>
-            {c.replyToNickname && (
+            </CommentProfileLink>
+            {c.replyToNickname && c.replyToUserId && (
               <>
                 <span className="text-muted"> 回复 </span>
-                <span className="community-comment-reply-to">
+                <CommentProfileLink
+                  userId={c.replyToUserId}
+                  label={authorProfileLabel(c.replyToNickname)}
+                  className="community-comment-reply-to hover:underline"
+                >
                   @{c.replyToNickname}
-                </span>
+                </CommentProfileLink>
               </>
             )}
             <span className="text-muted"> · {formatTime(c.createdAt)}</span>

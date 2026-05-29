@@ -19,7 +19,9 @@ export function sortMembersByCustomOrder(members, orderMap) {
     if (ai != null && bi != null) return ai - bi
     if (ai != null) return -1
     if (bi != null) return 1
-    return a.nickname.localeCompare(b.nickname, 'zh-CN')
+    const nameCmp = a.nickname.localeCompare(b.nickname, 'zh-CN')
+    if (nameCmp !== 0) return nameCmp
+    return a.id.localeCompare(b.id)
   })
 
   return self ? [self, ...others] : others

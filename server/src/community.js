@@ -178,10 +178,9 @@ export async function listCommunityMembers(viewerId, clientToday, filter = 'all'
   const viewerProfile = await loadProfile(viewerId)
 
   const { rows } = await query(
+    // TODO: cursor pagination when public member count grows; do not reintroduce a fixed LIMIT.
     `select * from profiles
-     where community_visible = true and onboarding_complete = true
-     order by updated_at desc nulls last, created_at desc
-     limit 80`,
+     where community_visible = true and onboarding_complete = true`,
   )
 
   let profiles = rows

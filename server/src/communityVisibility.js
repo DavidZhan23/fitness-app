@@ -41,8 +41,8 @@ export async function recentDaysHaveLog(profile, today) {
 }
 
 /**
- * 同步社区公开状态：昨日与今日均无记录 → 自动未公开；
- * 任一日有记录 → 自动恢复/保持已公开。
+ * 同步社区公开状态：有近日记录时自动开启 community_visible；
+ * 关闭公开仅由用户在设置中手动操作。
  */
 export async function syncCommunityVisibility(userId, clientToday) {
   const today = resolveToday(clientToday)
@@ -62,22 +62,14 @@ export async function syncCommunityVisibility(userId, clientToday) {
     return { community_visible: Boolean(profile.community_visible), changed: false }
   }
 
-  if (!profile.community_visible) {
-    return { community_visible: false, changed: false }
-  }
-
-  await query(
-    `update profiles set community_visible = false, updated_at = now() where id = $1`,
-    [userId],
-  )
-  return { community_visible: false, changed: true }
+  return { community_visible: Boolean(profile.community_visible), changed: false }
 }
 
 export async function syncCommunityVisibilityAfterLogChange(userId, clientToday) {
   return syncCommunityVisibility(userId, clientToday)
 }
 
-/** 社区列表：无近日记录则未公开；当前用户始终保留在列表中 */
+/** 社区列表：为每位候选 profile 附加 today snapshot（只读，不改 community_visible） */
 export async function applyYesterdayVisibilityRules(profiles, viewerId, today) {
   const members = []
   const seen = new Set()
@@ -87,28 +79,6 @@ export async function applyYesterdayVisibilityRules(profiles, viewerId, today) {
     seen.add(profile.id)
 
     const todaySnap = await computeDaySnapshot(profile, today, new Date(), viewerId)
-    const hasLog = await recentDaysHaveLog(profile, today)
-
-    if (hasLog) {
-      if (!profile.community_visible) {
-        await query(
-          `update profiles set community_visible = true, updated_at = now() where id = $1`,
-          [profile.id],
-        )
-        profile.community_visible = true
-      }
-    } else if (profile.community_visible) {
-      await query(
-        `update profiles set community_visible = false, updated_at = now() where id = $1`,
-        [profile.id],
-      )
-      profile.community_visible = false
-    }
-
-    if (!hasLog && profile.id !== viewerId) {
-      continue
-    }
-
     members.push({ ...profile, todaySnap })
   }
 
