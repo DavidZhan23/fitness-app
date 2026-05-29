@@ -37,10 +37,13 @@ export function CommunityDayStatus({
     mealKcal: snapshot.mealKcal,
     dailyBmr: snapshot.dailyBmr,
   })
+  const showMealReminder = status.needsMealLog && isSelf
 
-  if (!status.needsMealLog && !status.badge && !status.foodKing) return null
+  if (!showMealReminder && !status.badge && !status.foodKing) return null
 
   if (variant === 'compact') {
+    if (!status.badge && !status.foodKing) return null
+
     return (
       <div className="community-day-status-compact flex flex-nowrap items-center gap-1.5 overflow-x-auto">
         {status.badge === 'champion' && (
@@ -51,9 +54,6 @@ export function CommunityDayStatus({
         )}
         {status.foodKing && (
           <CompactPill kind="foodKing" label="美食大王" />
-        )}
-        {status.needsMealLog && (
-          <CompactPill kind="meal" label="记得记饮食" />
         )}
       </div>
     )
@@ -78,7 +78,7 @@ export function CommunityDayStatus({
             compact
           />
         )}
-        {status.needsMealLog && (
+        {showMealReminder && (
           <MealReminderCard isSelf={isSelf} compact />
         )}
       </div>
@@ -109,7 +109,7 @@ export function CommunityDayStatus({
           dailyBmr={snapshot.dailyBmr}
         />
       )}
-      {status.needsMealLog && <MealReminderCard isSelf={isSelf} />}
+      {showMealReminder && <MealReminderCard isSelf={isSelf} />}
     </div>
   )
 }

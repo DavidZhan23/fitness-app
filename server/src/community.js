@@ -55,6 +55,7 @@ export function toPublicMember(profile, viewerId) {
     nickname: publicNickname(profile),
     avatarUrl: profile.avatar_url ?? null,
     isSelf: profile.id === viewerId,
+    wallStyle: profile.wall_style === 'split' ? 'split' : 'classic',
   }
 }
 

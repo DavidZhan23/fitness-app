@@ -106,7 +106,7 @@ test.describe.serial('main flow smoke', () => {
 
     await page.getByRole('button', { name: /日，今日$/ }).first().click()
     await expect(page.locator('.heatmap-day--selected').first()).toBeVisible()
-    await expect(page.getByRole('heading', { name: '今日小结' })).toBeVisible()
+    await expect(page.getByTestId('day-badge-popover')).toBeVisible()
   })
 
   test('settings avatar control is available', async ({ page }) => {

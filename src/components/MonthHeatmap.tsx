@@ -26,7 +26,14 @@ export interface MonthHeatmapProps {
   legendHighlight?: WallLegendHighlight | null
   wallPane?: MonthGridType
   onWallPaneChange?: (pane: MonthGridType) => void
-  onDayClick?: (date: string) => void
+  onDayClick?: (date: string, gridType?: MonthGridType) => void
+  anchorGrid?: MonthGridType | null
+  onSelectedCellAnchorChange?: (
+    el: HTMLElement | null,
+    gridType: MonthGridType,
+  ) => void
+  /** 社区公开：代谢墙不显示 meal 提醒角标 */
+  honorsOnly?: boolean
 }
 
 export function MonthHeatmap({
@@ -37,7 +44,10 @@ export function MonthHeatmap({
   accountStartKey = null,
   selectedDateKey = null,
   legendHighlight = null,
+  anchorGrid = null,
+  onSelectedCellAnchorChange,
   onDayClick,
+  honorsOnly = false,
 }: MonthHeatmapProps) {
   const { weeks } = getMonthGrid(year, month)
 
@@ -51,7 +61,10 @@ export function MonthHeatmap({
         type="exercise"
         selectedDateKey={selectedDateKey}
         legendHighlight={legendHighlight}
+        anchorGrid={anchorGrid}
+        onSelectedCellAnchorChange={onSelectedCellAnchorChange}
         onDayClick={onDayClick}
+        honorsOnly={honorsOnly}
       />
       <MonthGrid
         weeks={weeks}
@@ -61,7 +74,10 @@ export function MonthHeatmap({
         type="deficit"
         selectedDateKey={selectedDateKey}
         legendHighlight={legendHighlight}
+        anchorGrid={anchorGrid}
+        onSelectedCellAnchorChange={onSelectedCellAnchorChange}
         onDayClick={onDayClick}
+        honorsOnly={honorsOnly}
       />
     </div>
   )
@@ -77,7 +93,14 @@ export interface MonthGridProps {
   selectedDateKey?: string | null
   legendHighlight?: WallLegendHighlight | null
   type: MonthGridType
-  onDayClick?: (date: string) => void
+  anchorGrid?: MonthGridType | null
+  onSelectedCellAnchorChange?: (
+    el: HTMLElement | null,
+    gridType: MonthGridType,
+  ) => void
+  onDayClick?: (date: string, gridType?: MonthGridType) => void
+  /** 社区公开：代谢墙不显示 meal 提醒角标 */
+  honorsOnly?: boolean
 }
 
 export function MonthGrid({
@@ -88,7 +111,10 @@ export function MonthGrid({
   selectedDateKey,
   legendHighlight = null,
   type,
+  anchorGrid = null,
+  onSelectedCellAnchorChange,
   onDayClick,
+  honorsOnly = false,
 }: MonthGridProps) {
   return (
     <div>
@@ -123,10 +149,13 @@ export function MonthGrid({
               ? EXERCISE_LEVEL_CLASSES[level]
               : getDeficitHeatmapClass(level, cell?.deficitTone ?? 'neutral')
 
-          const badgeLabel =
-            type === 'deficit' && cell?.dayBadge
-              ? heatmapBadgeLabel(cell.dayBadge)
-              : null
+          const rawGridBadge =
+            type === 'exercise'
+              ? cell?.exerciseDayBadge
+              : cell?.deficitDayBadge
+          const gridBadge =
+            honorsOnly && rawGridBadge === 'meal' ? null : rawGridBadge
+          const badgeLabel = gridBadge ? heatmapBadgeLabel(gridBadge) : null
 
           const titleText = beforeAccount
             ? `${formatTooltipDate(dateKey)} 注册之前不统计`
@@ -142,14 +171,24 @@ export function MonthGrid({
             ? `${dayNum}日，今日`
             : `${dayNum}日`
 
+          const isAnchorCell =
+            isSelected && anchorGrid === type && onSelectedCellAnchorChange
+
           return (
             <button
               key={dateKey}
+              ref={
+                isAnchorCell
+                  ? (el) => onSelectedCellAnchorChange?.(el, type)
+                  : undefined
+              }
               type="button"
               disabled={isFuture}
+              data-heatmap-day={dateKey}
+              data-heatmap-grid={type}
               title={isToday ? `${titleText} · 今日` : titleText}
               aria-label={ariaLabel}
-              onClick={() => !isFuture && onDayClick?.(dateKey)}
+              onClick={() => !isFuture && onDayClick?.(dateKey, type)}
               className={`relative flex aspect-square items-center justify-center rounded-md text-[11px] font-medium tabular-nums transition-transform active:scale-95 ${cellClass} ${
                 isFuture ? 'cursor-not-allowed opacity-30' : ''
               } ${isSelected ? 'heatmap-day--selected' : ''} ${
@@ -162,12 +201,12 @@ export function MonthGrid({
                 </span>
               )}
               {dayNum}
-              {type === 'deficit' && cell?.dayBadge && (
+              {gridBadge && (
                 <span
                   className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-bl-md rounded-tr-md bg-slate-950/75 text-[8px] leading-none"
                   aria-hidden
                 >
-                  {heatmapBadgeEmoji(cell.dayBadge)}
+                  {heatmapBadgeEmoji(gridBadge)}
                 </span>
               )}
             </button>
