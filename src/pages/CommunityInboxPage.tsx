@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FollowButton } from '../components/FollowButton'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
 import type { CommunityInboxItem, CommunityInboxListResponse } from '../types'
@@ -28,6 +29,7 @@ function itemTitle(item: CommunityInboxItem) {
   if (item.kind === 'like') return '赞了你的今日名片'
   if (item.kind === 'dislike') return '踩了你的今日名片'
   if (item.kind === 'comment_on_card') return '在你的名片下留言'
+  if (item.kind === 'follow') return '关注了你'
   return '回复了你的留言'
 }
 
@@ -37,6 +39,7 @@ function itemToneClass(item: CommunityInboxItem) {
   if (item.kind === 'comment_on_card') {
     return 'bg-violet-900/30 ring-violet-500/30 text-violet-200'
   }
+  if (item.kind === 'follow') return 'bg-sky-900/30 ring-sky-500/30 text-sky-200'
   return 'bg-rose-900/30 ring-rose-500/30 text-rose-200'
 }
 
@@ -44,11 +47,45 @@ function itemEmoji(item: CommunityInboxItem) {
   if (item.kind === 'like') return '👍'
   if (item.kind === 'dislike') return '👎'
   if (item.kind === 'comment_on_card') return '💬'
+  if (item.kind === 'follow') return '👤'
   return '↩️'
 }
 
-function isCommentLike(item: CommunityInboxItem) {
-  return item.kind === 'comment_on_card' || item.kind === 'reply'
+function inboxItemHref(item: CommunityInboxItem) {
+  if (item.kind === 'like' || item.kind === 'dislike') {
+    return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}`
+  }
+  if (item.kind === 'comment_on_card' || item.kind === 'reply') {
+    return `/community/${item.targetUserId}#day-comments`
+  }
+  return `/community/${item.actorId}`
+}
+
+function InboxItemBody({ item }: { item: CommunityInboxItem }) {
+  return (
+    <>
+      <span
+        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ring-1 ${itemToneClass(item)}`}
+        aria-hidden
+      >
+        {itemEmoji(item)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-xs leading-snug text-primary">
+          <span className="font-medium">{item.actorNickname}</span>{' '}
+          {itemTitle(item)}
+          <span className="ml-1.5 text-muted">
+            {formatWhen(item.createdAt, item.logDate)}
+          </span>
+        </span>
+        {item.bodyPreview && (
+          <span className="mt-0.5 block truncate text-[11px] text-muted">
+            「{item.bodyPreview}」
+          </span>
+        )}
+      </span>
+    </>
+  )
 }
 
 export function CommunityInboxPage() {
@@ -61,6 +98,14 @@ export function CommunityInboxPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const markedRef = useRef(false)
+
+  const handleFollowBack = useCallback((itemId: string) => {
+    setItems((prev) =>
+      prev.map((x) =>
+        x.id === itemId ? { ...x, viewerFollowsActor: true } : x,
+      ),
+    )
+  }, [])
 
   const applyData = useCallback((data: CommunityInboxListResponse, append: boolean) => {
     setTotal(data.total)
@@ -94,8 +139,56 @@ export function CommunityInboxPage() {
   )
 
   useEffect(() => {
+    markedRef.current = false
     void load(mode)
   }, [load, mode])
+
+  const renderFollowActions = (item: CommunityInboxItem) => (
+    <div className="flex shrink-0 flex-col items-end gap-1.5">
+      <Link
+        to={`/community/${item.actorId}`}
+        className="text-[10px] text-muted hover:text-primary"
+      >
+        查看主页
+      </Link>
+      <FollowButton
+        userId={item.actorId}
+        isFollowing={item.viewerFollowsActor ?? false}
+        compact
+        idleLabel="回关"
+        onChange={(following) => {
+          if (following) handleFollowBack(item.id)
+        }}
+      />
+    </div>
+  )
+
+  const renderRow = (item: CommunityInboxItem) => {
+    if (item.kind === 'follow') {
+      return (
+        <div className="block px-3 py-2.5">
+          <span className="flex items-start gap-2.5">
+            <InboxItemBody item={item} />
+            {renderFollowActions(item)}
+          </span>
+        </div>
+      )
+    }
+
+    return (
+      <Link
+        to={inboxItemHref(item)}
+        className="block px-3 py-2.5 transition hover:opacity-90"
+      >
+        <span className="flex items-start gap-2.5">
+          <InboxItemBody item={item} />
+          <span className="shrink-0 self-center text-[10px] text-muted">
+            查看 →
+          </span>
+        </span>
+      </Link>
+    )
+  }
 
   return (
     <div className="space-y-4 pb-2">
@@ -155,53 +248,14 @@ export function CommunityInboxPage() {
         </p>
       ) : (
         <ul className="space-y-2">
-          {items.map((item, idx) => {
-            const canJump = isCommentLike(item)
-            const row = (
-              <span className="flex items-start gap-2.5">
-                <span
-                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ring-1 ${itemToneClass(item)}`}
-                  aria-hidden
-                >
-                  {itemEmoji(item)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="text-xs leading-snug text-primary">
-                    <span className="font-medium">{item.actorNickname}</span>{' '}
-                    {itemTitle(item)}
-                    <span className="ml-1.5 text-muted">
-                      {formatWhen(item.createdAt, item.logDate)}
-                    </span>
-                  </span>
-                  {item.bodyPreview && (
-                    <span className="mt-0.5 block truncate text-[11px] text-muted">
-                      「{item.bodyPreview}」
-                    </span>
-                  )}
-                </span>
-                <span className="shrink-0 text-[10px] text-muted">
-                  {canJump ? '查看 →' : '互动记录'}
-                </span>
-              </span>
-            )
-            return (
-              <li
-                key={`${item.kind}-${item.createdAt}-${idx}`}
-                className="rounded-xl border border-[var(--surface-card-border)] px-3 py-2.5"
-              >
-                {canJump ? (
-                  <Link
-                    to={`/community/${item.targetUserId}#day-comments`}
-                    className="block transition hover:opacity-90"
-                  >
-                    {row}
-                  </Link>
-                ) : (
-                  row
-                )}
-              </li>
-            )
-          })}
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="rounded-xl border border-[var(--surface-card-border)]"
+            >
+              {renderRow(item)}
+            </li>
+          ))}
         </ul>
       )}
 

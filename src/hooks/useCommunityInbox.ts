@@ -9,17 +9,23 @@ const INBOX_DEFER_MS = 2_000
 export function useCommunityInbox() {
   const { user } = useAuth()
   const [unreadCount, setUnreadCount] = useState(0)
+  const [interactionCount, setInteractionCount] = useState(0)
+  const [followersOnMe, setFollowersOnMe] = useState(0)
 
   const refresh = useCallback(async () => {
     if (!user) {
       setUnreadCount(0)
+      setInteractionCount(0)
+      setFollowersOnMe(0)
       await syncAppIconBadge(0)
       return
     }
     try {
-      const { count } = await httpData.getCommunityInboxUnread()
-      setUnreadCount(count)
-      await syncAppIconBadge(count)
+      const data = await httpData.getCommunityInboxUnread()
+      setUnreadCount(data.count)
+      setInteractionCount(data.interactionCount)
+      setFollowersOnMe(data.followersOnMe)
+      await syncAppIconBadge(data.count)
     } catch {
       /* 网络抖动时保留上次数字 */
     }
@@ -30,6 +36,8 @@ export function useCommunityInbox() {
     try {
       await httpData.markCommunityInboxRead()
       setUnreadCount(0)
+      setInteractionCount(0)
+      setFollowersOnMe(0)
       await syncAppIconBadge(0)
     } catch {
       /* ignore */
@@ -39,6 +47,8 @@ export function useCommunityInbox() {
   useEffect(() => {
     if (!user) {
       setUnreadCount(0)
+      setInteractionCount(0)
+      setFollowersOnMe(0)
       void syncAppIconBadge(0)
       return
     }
@@ -58,5 +68,11 @@ export function useCommunityInbox() {
     }
   }, [refresh, user])
 
-  return { unreadCount, refresh, markRead }
+  return {
+    unreadCount,
+    interactionCount,
+    followersOnMe,
+    refresh,
+    markRead,
+  }
 }
