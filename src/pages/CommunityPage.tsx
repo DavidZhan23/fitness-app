@@ -371,7 +371,7 @@ export function CommunityPage() {
             </p>
           </div>
           <p className="flex flex-nowrap items-center gap-2">
-            <span className="community-badge community-badge--exercise inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 font-semibold">
+            <span className="community-pill community-pill--elite inline-flex shrink-0 items-center gap-1">
               <span aria-hidden>🔥</span>
               减脂先锋
             </span>
@@ -383,7 +383,7 @@ export function CommunityPage() {
             </span>
           </p>
           <p className="flex flex-nowrap items-center gap-2">
-            <span className="community-badge community-badge--exercise inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 font-semibold">
+            <span className="community-pill community-pill--champion inline-flex shrink-0 items-center gap-1">
               <span aria-hidden>👑</span>
               运动大王
             </span>
@@ -395,7 +395,7 @@ export function CommunityPage() {
             </span>
           </p>
           <p className="flex flex-nowrap items-center gap-2">
-            <span className="community-badge community-badge--meal inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 font-semibold">
+            <span className="community-pill community-pill--foodKing inline-flex shrink-0 items-center gap-1">
               <span aria-hidden>🥘</span>
               美食大王
             </span>

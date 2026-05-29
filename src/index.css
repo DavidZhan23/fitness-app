@@ -4381,9 +4381,9 @@ button {
 }
 
 [data-style='sakura-blush'] .community-pill--elite {
-  background: #e6f8f2;
-  color: #3e9a7a;
-  box-shadow: inset 0 0 0 1px #9edbc8;
+  background: var(--accent-exercise-soft);
+  color: var(--accent-exercise-strong);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-exercise) 50%, transparent);
 }
 
 [data-style='active-mint'] .community-pill--elite {
@@ -4399,9 +4399,9 @@ button {
 }
 
 [data-style='wood-zen'] .community-pill--elite {
-  background: #efe3bf;
-  color: #7d5e2e;
-  box-shadow: inset 0 0 0 1px #d8b982;
+  background: var(--accent-exercise-soft);
+  color: var(--accent-exercise-strong);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-exercise) 50%, transparent);
 }
 
 [data-style='eva'] .community-pill--elite {
