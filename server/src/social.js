@@ -58,6 +58,36 @@ export async function unfollowUser(followerId, followeeId) {
   return { following: false }
 }
 
+export async function listCommunityFollowers(viewerId) {
+  const { rows } = await query(
+    `select f.follower_id, f.created_at,
+            p.nickname, p.avatar_url, p.community_visible, p.onboarding_complete,
+            exists(
+              select 1 from follows f2
+              where f2.follower_id = $1 and f2.followee_id = f.follower_id
+            ) as viewer_follows_back
+     from follows f
+     join profiles p on p.id = f.follower_id
+     where f.followee_id = $1
+     order by f.created_at desc`,
+    [viewerId],
+  )
+
+  const followers = rows.map((r) => ({
+    id: r.follower_id,
+    nickname: publicNickname({
+      id: r.follower_id,
+      nickname: r.nickname,
+    }),
+    avatarUrl: r.avatar_url ?? null,
+    followedAt: r.created_at,
+    isFollowing: Boolean(r.viewer_follows_back),
+    canViewProfile: Boolean(r.community_visible && r.onboarding_complete),
+  }))
+
+  return { total: followers.length, followers }
+}
+
 export async function likeDay(likerId, targetUserId, likeDate) {
   if (likerId === targetUserId) {
     const err = new Error('不能给自己的打卡点赞')

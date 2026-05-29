@@ -5,6 +5,7 @@ import {
 import type {
   CommunityInboxListResponse,
   CommunityInboxSummary,
+  CommunityFollowersResponse,
   CommunityMember,
   CommunityUserDetail,
   DayComment,
@@ -251,6 +252,10 @@ export const httpData = {
     return apiFetch(
       `/community/members?today=${encodeURIComponent(clientToday)}&filter=${filter}`,
     )
+  },
+
+  async listCommunityFollowers(): Promise<CommunityFollowersResponse> {
+    return apiFetch('/community/followers')
   },
 
   async saveCommunityMemberOrder(memberIds: string[]): Promise<{ ok: boolean }> {
