@@ -56,6 +56,14 @@ export function DayCommentSection({
   onCommentsChange,
 }: DayCommentSectionProps) {
   const { profile } = useAuth()
+  const isAppleTouch = useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent
+    return (
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    )
+  }, [])
   const [comments, setComments] = useState(initialComments)
   const [body, setBody] = useState('')
   const [replyTo, setReplyTo] = useState<{
@@ -69,8 +77,10 @@ export function DayCommentSection({
   const [likingCommentId, setLikingCommentId] = useState<string | null>(null)
   const commentRefs = useRef(new Map<string, HTMLLIElement>())
   const inputRef = useRef<HTMLInputElement>(null)
+  const composeRef = useRef<HTMLDivElement>(null)
 
   const threads = useMemo(() => buildThreads(comments), [comments])
+  const enableDock = Boolean(replyTo && !isAppleTouch)
 
   useEffect(() => {
     setComments(initialComments)
@@ -81,7 +91,7 @@ export function DayCommentSection({
 
   useEffect(() => {
     const vv = window.visualViewport
-    if (!vv || !replyTo) return
+    if (!vv || !enableDock) return
 
     const syncKeyboardOffset = () => {
       const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
@@ -99,7 +109,7 @@ export function DayCommentSection({
       vv.removeEventListener('scroll', syncKeyboardOffset)
       document.documentElement.style.removeProperty('--comment-compose-kb')
     }
-  }, [replyTo])
+  }, [enableDock])
 
   const updateComments = (next: DayComment[]) => {
     setComments(next)
@@ -164,10 +174,24 @@ export function DayCommentSection({
       nickname: comment.authorNickname,
     })
     requestAnimationFrame(() => {
+      const input = inputRef.current
+      const compose = composeRef.current
+      if (!input) return
+      if (isAppleTouch) {
+        compose?.scrollIntoView({ block: 'nearest' })
+        window.setTimeout(() => {
+          input.focus()
+        }, 60)
+        return
+      }
       commentRefs.current
         .get(comment.id)
         ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-      inputRef.current?.focus({ preventScroll: true })
+      try {
+        input.focus({ preventScroll: true })
+      } catch {
+        input.focus()
+      }
     })
   }
 
@@ -252,10 +276,58 @@ export function DayCommentSection({
     </li>
   )
 
+  const compose = (
+    <div
+      ref={composeRef}
+      id="day-comment-compose"
+      className={`community-comment-compose scroll-mt-4 flex items-center gap-2${
+        enableDock ? ' community-comment-compose--dock' : ''
+      }`}
+    >
+      <UserAvatar
+        size="sm"
+        profile={profile}
+        isSelf
+        className="shrink-0"
+      />
+      <input
+        ref={inputRef}
+        type="text"
+        value={body}
+        maxLength={280}
+        placeholder={
+          replyTo ? `回复 @${replyTo.nickname}…` : '写一句鼓励…'
+        }
+        disabled={sending}
+        onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            setReplyTo(null)
+            return
+          }
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            void send()
+          }
+        }}
+        className="input min-h-0 flex-1 rounded-full py-2.5 text-sm"
+      />
+      <button
+        type="button"
+        disabled={sending || !body.trim()}
+        onClick={() => void send()}
+        className="btn-primary shrink-0 rounded-full px-4 py-2.5 text-sm font-medium disabled:opacity-40 active:scale-95"
+      >
+        {sending ? '…' : replyTo ? '回复' : '发送'}
+      </button>
+    </div>
+  )
+
   return (
     <section
       className={`community-comment-section space-y-3${
-        replyTo ? ' community-comment-section--replying' : ''
+        enableDock ? ' community-comment-section--replying' : ''
       }`}
     >
       <ConfirmDialog
@@ -292,50 +364,7 @@ export function DayCommentSection({
         </ul>
       )}
 
-      <div
-        id="day-comment-compose"
-        className={`community-comment-compose scroll-mt-4 flex items-center gap-2${
-          replyTo ? ' community-comment-compose--dock' : ''
-        }`}
-      >
-        <UserAvatar
-          size="sm"
-          profile={profile}
-          isSelf
-          className="shrink-0"
-        />
-        <input
-          ref={inputRef}
-          type="text"
-          value={body}
-          maxLength={280}
-          placeholder={
-            replyTo ? `回复 @${replyTo.nickname}…` : '写一句鼓励…'
-          }
-          disabled={sending}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.preventDefault()
-              setReplyTo(null)
-              return
-            }
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              void send()
-            }
-          }}
-          className="input min-h-0 flex-1 rounded-full py-2.5 text-sm"
-        />
-        <button
-          type="button"
-          disabled={sending || !body.trim()}
-          onClick={() => void send()}
-          className="btn-primary shrink-0 rounded-full px-4 py-2.5 text-sm font-medium disabled:opacity-40 active:scale-95"
-        >
-          {sending ? '…' : replyTo ? '回复' : '发送'}
-        </button>
-      </div>
+      {compose}
       {error && <p className="text-xs text-danger">{error}</p>}
     </section>
   )
