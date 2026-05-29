@@ -45,3 +45,4 @@ alwaysApply: true
 - Repo: `DavidZhan23/fitness-app` (public)
 - Default owner: **@DavidZhan23**
 - Current delivery flow: local verify → direct push `main` → owner manual deploy
+- **New branches:** sync latest `main` first (`git fetch` + `git pull --ff-only origin main`), then `feat/<slug>` — use `bash scripts/new-feature.sh <slug>` (see `.cursor/rules/03-commit-and-push.mdc`)

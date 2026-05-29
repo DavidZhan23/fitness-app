@@ -343,11 +343,6 @@ export function CommunityPage() {
   return (
     <PageShell className="pb-2">
       <header className="community-hero relative overflow-hidden px-4 py-5">
-        <div
-          className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-40 blur-2xl"
-          style={{ background: 'var(--accent-exercise)' }}
-          aria-hidden
-        />
         <div className="relative flex items-start justify-between gap-3">
           <h1 className="text-xl font-bold tracking-tight text-primary">社区</h1>
           {user && (

@@ -109,7 +109,7 @@ npm run check:site-responsive
 bash scripts/new-feature.sh <slug>
 ```
 
-会创建 `feat/<slug>` 与 [milestones/_TEMPLATE.md](milestones/_TEMPLATE.md) 结构的规格文档（可用于大功能拆分）。
+会先 `git fetch` 并以 `origin/main` 快进到本地 `main`，再创建 `feat/<slug>`（工作区须干净）。会同时生成 [milestones/_TEMPLATE.md](milestones/_TEMPLATE.md) 结构的规格文档（可用于大功能拆分）。
 
 ## 查看文档里的流程图
 

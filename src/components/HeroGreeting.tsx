@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { AppStyle } from '../context/StyleContext'
 import { FluidText } from './ui/responsive'
+import { shouldAllowHeroGreetingWrap } from '../lib/heroGreetingWrap'
 import { getHeroGreetingConfig } from '../lib/themeMeta'
 
 const NAME_PLACEHOLDER = '{name}'
@@ -31,9 +32,7 @@ export function HeroGreeting({
   const title = customTitle || config.titleTemplate
   const templateParts = customTitle ? null : splitTemplate(title)
   const subtitleParts = splitTemplate(config.subtitle)
-  const titleLength = Array.from(title).length
-  const nameLength = Array.from(name.trim()).length
-  const allowWrap = nameLength >= 10 || titleLength >= 18
+  const allowWrap = shouldAllowHeroGreetingWrap({ customTitle, title })
 
   const vars = {
     '--hero-greeting-font-family': config.fontFamily,

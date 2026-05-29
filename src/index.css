@@ -169,6 +169,15 @@ body {
   padding-block: max(0.75rem, var(--safe-top));
 }
 
+@media (min-width: 640px) {
+  .page-standalone .responsive-page-shell--standalone {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 32rem;
+    margin-inline: auto;
+  }
+}
+
 .responsive-page-shell--flush {
   padding-inline: 0;
 }
@@ -997,12 +1006,6 @@ button {
 [data-style='wood-zen'] #calendar-day-detail > * {
   position: relative;
   z-index: 1;
-}
-
-[data-style='wood-zen'] .community-badge-banner__glow,
-[data-style='wood-zen'] .community-foodking-banner__glow {
-  position: absolute;
-  z-index: 0;
 }
 
 /* 暴走初号机：记饮食页插入栓橙 chip / AI */
@@ -2623,6 +2626,7 @@ button {
 
 .hero-greeting--allow-wrap .hero-greeting__title {
   white-space: normal;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
@@ -3012,7 +3016,13 @@ button {
 .community-hero {
   border-radius: 1rem;
   border: 1px solid var(--community-hero-border);
-  background: var(--community-hero-bg);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in oklab, var(--accent-exercise) 40%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--community-hero-bg);
   color: var(--text-primary);
 }
 
@@ -3849,8 +3859,19 @@ button {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-meal) 48%, transparent);
 }
 
-.community-foodking-banner__glow {
-  background: color-mix(in oklab, var(--accent-meal-soft) 40%, white);
+.community-foodking-banner:not(.community-foodking-banner--compact)::after {
+  pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 100% 0%,
+    color-mix(in oklab, var(--accent-meal-soft) 40%, white) 0%,
+    transparent 58%
+  );
+  opacity: 0.75;
 }
 
 .community-foodking-banner__icon-wrap {
@@ -3924,8 +3945,19 @@ button {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--surface-card-border) 92%, transparent);
 }
 
-.community-badge-banner__glow {
-  background: color-mix(in oklab, var(--surface-card) 45%, white);
+.community-badge-banner:not(.community-badge-banner--compact)::after {
+  pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 100% 0%,
+    color-mix(in oklab, var(--surface-card) 45%, white) 0%,
+    transparent 58%
+  );
+  opacity: 0.75;
 }
 
 .community-badge-banner__icon-wrap {
