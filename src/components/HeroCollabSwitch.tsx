@@ -15,24 +15,32 @@ export function HeroCollabSwitch({
 }: HeroCollabSwitchProps) {
   const stateLabel = enabled ? 'ON' : 'OFF'
 
+  const toggle = () => onChange(!enabled)
+
   return (
-    <button
-      type="button"
+    <span
       role="switch"
+      tabIndex={0}
       aria-checked={enabled}
       aria-label={`${label}：${enabled ? '已开启' : '已关闭'}`}
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        onChange(!enabled)
+        toggle()
       }}
-      className={`hero-collab-switch hero-collab-switch--${styleId} inline-flex h-3.5 shrink-0 items-center rounded-full px-1.5 py-0 ring-1 ring-white/15 transition-colors ${
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        event.stopPropagation()
+        toggle()
+      }}
+      className={`hero-collab-switch hero-collab-switch--${styleId} inline-flex h-3.5 shrink-0 cursor-pointer items-center rounded-full px-1.5 py-0 ring-1 ring-white/15 transition-colors ${
         enabled ? 'hero-collab-switch--on' : 'hero-collab-switch--off'
       }`}
     >
       <span className="text-[0.4375rem] font-medium leading-none tracking-tight">
         {stateLabel}
       </span>
-    </button>
+    </span>
   )
 }
