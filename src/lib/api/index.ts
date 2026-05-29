@@ -3,6 +3,7 @@ import {
   DEFAULT_MEAL_TEMPLATES,
 } from '../defaultTemplates'
 import type {
+  CommunityInboxListResponse,
   CommunityInboxSummary,
   CommunityMember,
   CommunityUserDetail,
@@ -144,6 +145,18 @@ export const httpData = {
 
   async markCommunityInboxRead(): Promise<{ ok: boolean; count: number }> {
     return apiFetch('/community/inbox/mark-read', { method: 'POST' })
+  },
+
+  async getCommunityInboxList(
+    mode: 'unread' | 'history',
+    opts?: { limit?: number; offset?: number },
+  ): Promise<CommunityInboxListResponse> {
+    const q = new URLSearchParams({
+      mode,
+      limit: String(opts?.limit ?? 20),
+      offset: String(opts?.offset ?? 0),
+    })
+    return apiFetch(`/community/inbox?${q.toString()}`)
   },
 
   async estimateKcal(

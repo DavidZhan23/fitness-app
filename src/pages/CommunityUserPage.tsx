@@ -10,7 +10,6 @@ import { SplitMonthWall } from '../components/SplitMonthWall'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { WallDayDetailCard } from '../components/WallDayDetailCard'
 import { useAuth } from '../context/AuthContext'
-import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
 import {
   loadCommunityListCache,
@@ -52,7 +51,6 @@ function readInitialUserState(userId: string | undefined) {
 
 export function CommunityUserPage() {
   const { profile } = useAuth()
-  const { markRead } = useCommunityInbox()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
@@ -176,10 +174,6 @@ export function CommunityUserPage() {
     if (loading || error) return
     void loadMonth()
   }, [year, month, loading, error, loadMonth])
-
-  useEffect(() => {
-    if (isSelf) void markRead()
-  }, [isSelf, markRead])
 
   useEffect(() => {
     if (loading || error) return
