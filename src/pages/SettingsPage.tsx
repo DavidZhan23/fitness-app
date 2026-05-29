@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AvatarCropEditor } from '../components/AvatarCropEditor'
+import { PageShell } from '../components/ui/responsive'
+import { HeroCollabSwitch } from '../components/HeroCollabSwitch'
 import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
 import { UserAvatar } from '../components/UserAvatar'
@@ -18,6 +20,7 @@ import {
   loadImage,
   type AvatarCropRect,
 } from '../lib/avatarImage'
+import { getHeroCollabConfig } from '../lib/themeMeta'
 import type { Sex, WallStyle } from '../types'
 
 type StyleToneGroup = 'light' | 'dark'
@@ -60,20 +63,20 @@ const styleOptions: Array<{
     optionClassName: 'style-option-gundam-hangar',
   },
   {
+    id: 'jojo-stardust-duel',
+    group: 'dark',
+    title: '时停入侵',
+    description: '承太郎钴蓝主场 · DIO 金黄绿入侵 · 黑蓝热力图',
+    swatchClassName: 'style-swatch-jojo-stardust-duel',
+    optionClassName: 'style-option-jojo-stardust-duel',
+  },
+  {
     id: 'default',
     group: 'dark',
     title: '深海能量',
     description: '偏运动感的深色青绿系',
     swatchClassName: 'style-swatch-ocean',
     optionClassName: 'style-option-ocean',
-  },
-  {
-    id: 'abyssal-jade',
-    group: 'dark',
-    title: '深海能量 2',
-    description: '墨绿深海、翡翠主操、荧光青运动、珊瑚橙饮食',
-    swatchClassName: 'style-swatch-abyssal-jade',
-    optionClassName: 'style-option-abyssal-jade',
   },
   {
     id: 'lavender',
@@ -127,7 +130,7 @@ const styleOptions: Array<{
 
 export function SettingsPage() {
   const { user, profile, updateProfile, signOut } = useAuth()
-  const { style, setStyle } = useAppStyle()
+  const { style, setStyle, isHeroCollabEnabled, setHeroCollabEnabled } = useAppStyle()
   const navigate = useNavigate()
   const appreciationQrSrc = '/赞赏码.jpg'
   const pageRef = useRef<HTMLDivElement>(null)
@@ -401,7 +404,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div ref={pageRef} className="space-y-6 pb-12">
+    <div ref={pageRef}>
+      <PageShell>
       <h1 className="text-xl font-bold text-primary">设置</h1>
 
       {user?.isDeveloper && (
@@ -739,6 +743,7 @@ export function SettingsPage() {
                       .filter((item) => item.group === section.group)
                       .map((item) => {
                         const active = style === item.id
+                        const collabConfig = getHeroCollabConfig(item.id)
                         const optionClassName = [
                           'style-option',
                           item.optionClassName,
@@ -756,10 +761,22 @@ export function SettingsPage() {
                           >
                             <span className="flex items-center justify-between gap-3">
                               <span>
-                                <span className="block text-sm font-medium text-primary">
-                                  {item.title}
+                                <span className="flex items-center gap-1.5">
+                                  <span className="text-sm font-medium text-primary">
+                                    {item.title}
+                                  </span>
+                                  {collabConfig ? (
+                                    <HeroCollabSwitch
+                                      styleId={item.id}
+                                      enabled={isHeroCollabEnabled(item.id)}
+                                      label={collabConfig.label}
+                                      onChange={(next) =>
+                                        setHeroCollabEnabled(item.id, next)
+                                      }
+                                    />
+                                  ) : null}
                                 </span>
-                                <span className="block text-xs text-muted">
+                                <span className="mt-0.5 block text-xs text-muted">
                                   {item.description}
                                 </span>
                               </span>
@@ -823,6 +840,7 @@ export function SettingsPage() {
       >
         退出登录
       </button>
+      </PageShell>
 
       {isAvatarPreviewOpen && (
         <div className="settings-avatar-modal" role="dialog" aria-modal="true">

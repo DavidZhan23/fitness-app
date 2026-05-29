@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test'
 
 const OVERFLOW_TOLERANCE_PX = 1
 const VIEWPORT_EDGE_TOLERANCE_PX = 2
+const TABBAR_CONTENT_GAP_PX = 8
 
 export type OverflowLayer = 'documentElement' | 'body' | 'app-main' | 'page-standalone'
 
@@ -60,6 +61,81 @@ export async function assertStandaloneNoHorizontalOverflow(
     'body',
     'page-standalone',
   ])
+}
+
+export async function assertLayoutShell(page: Page, routeLabel: string) {
+  await assertNoHorizontalOverflow(page, routeLabel)
+  await assertTabbarInViewport(page)
+}
+
+/** Detect visible descendants wider than the viewport (overflow-x:hidden can hide these). */
+export async function assertNoDescendantWiderThanViewport(
+  page: Page,
+  rootSelector: string,
+  routeLabel: string,
+) {
+  const viewport = page.viewportSize()
+  expect(viewport).not.toBeNull()
+  const maxRight = viewport!.width + VIEWPORT_EDGE_TOLERANCE_PX
+
+  const offenders = await page.evaluate(
+    ({ selector, maxRight: limit }) => {
+      const root = document.querySelector(selector)
+      if (!root) return [] as string[]
+      const issues: string[] = []
+      const nodes = root.querySelectorAll('*')
+      nodes.forEach((el) => {
+        if (!(el instanceof HTMLElement)) return
+        const style = getComputedStyle(el)
+        if (style.display === 'none' || style.visibility === 'hidden') return
+        const rect = el.getBoundingClientRect()
+        if (rect.width < 1 || rect.height < 1) return
+        if (rect.right > limit) {
+          const tag = `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).split(/\s+/).slice(0, 2).join('.')}` : ''}`
+          issues.push(
+            `${tag}: right=${rect.right.toFixed(1)} > viewport ${limit}`,
+          )
+        }
+      })
+      return issues.slice(0, 8)
+    },
+    { selector: rootSelector, maxRight },
+  )
+
+  expect(
+    offenders,
+    `${routeLabel}: elements wider than viewport\n${offenders.join('\n')}`,
+  ).toEqual([])
+}
+
+/**
+ * Scroll .app-main to the bottom, then assert content sits above the fixed tabbar.
+ */
+export async function assertContentClearOfTabbar(
+  page: Page,
+  locator: Locator,
+  label: string,
+  gapPx = TABBAR_CONTENT_GAP_PX,
+) {
+  const main = page.locator('.app-main')
+  await expect(main, `${label}: .app-main`).toBeVisible()
+  await main.evaluate((el) => {
+    el.scrollTop = el.scrollHeight - el.clientHeight
+  })
+
+  await expect(locator, `${label} should be visible`).toBeVisible()
+
+  const tabbar = await page.locator('.app-tabbar').boundingBox()
+  const box = await locator.boundingBox()
+  expect(tabbar, `${label}: .app-tabbar bounding box`).not.toBeNull()
+  expect(box, `${label} content bounding box`).not.toBeNull()
+
+  const contentBottom = box!.y + box!.height
+  const maxBottom = tabbar!.y - gapPx
+  expect(
+    contentBottom,
+    `${label} bottom ${contentBottom.toFixed(1)} should be <= tabbar top ${tabbar!.y.toFixed(1)} - ${gapPx} (max ${maxBottom.toFixed(1)})`,
+  ).toBeLessThanOrEqual(maxBottom + OVERFLOW_TOLERANCE_PX)
 }
 
 export async function assertTabbarInViewport(page: Page) {

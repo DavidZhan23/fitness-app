@@ -23,7 +23,12 @@
     env(safe-area-inset-bottom, 0px),
     constant(safe-area-inset-bottom, 0px)
   );
-  --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
+  --tabbar-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad) + 1px);
+  --tabbar-total-h: var(--tabbar-h);
+  --page-bottom-gutter: 0.5rem;
+  --content-bottom-safe: calc(
+    var(--tabbar-row-h) + var(--tabbar-bottom-pad) + 1px + var(--page-bottom-gutter)
+  );
   --day-like-liked-icon: var(--danger-strong);
   --day-like-disliked-icon: #e06752;
 }
@@ -36,7 +41,6 @@
       env(safe-area-inset-bottom, 0px),
       constant(safe-area-inset-bottom, 0px)
     );
-    --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
   }
 
   @media (display-mode: standalone) {
@@ -46,7 +50,6 @@
         constant(safe-area-inset-bottom, 0px),
         2.125rem
       );
-      --tabbar-total-h: calc(var(--tabbar-row-h) + var(--tabbar-bottom-pad));
     }
   }
 }
@@ -93,8 +96,15 @@ body {
   width: 100%;
   height: 100%;
   height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
   background: var(--app-shell-bg);
+}
+
+@supports (height: 100dvh) {
+  .app-shell {
+    min-height: 100dvh;
+  }
 }
 
 .app-shell::before {
@@ -122,15 +132,295 @@ body {
   padding-top: max(0.75rem, var(--safe-top));
   padding-left: max(1rem, var(--safe-left));
   padding-right: max(1rem, var(--safe-right));
-  padding-bottom: calc(var(--tabbar-total-h) + 1.5rem);
+  padding-bottom: 0;
 }
 
 .app-main__inner {
   margin: 0 auto;
   width: 100%;
   max-width: 32rem;
-  /* 长页（设置等）滚到底时，末项与底栏之间留出可扫过的空白 */
-  padding: 0 0 2.5rem;
+}
+
+/* 滚动末端占位（Tab 页）；勿再叠 padding / BottomNavSpacer。height 不用含 max() 的变量，避免解析为 0 */
+.app-main__tabbar-pad {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: content-box;
+  height: calc(var(--tabbar-row-h) + var(--page-bottom-gutter) + 1px);
+  padding-bottom: var(--tabbar-bottom-pad);
+  pointer-events: none;
+}
+
+/* --- Responsive foundation (add-only in Phase 1; Pass 2 may remove duplicate legacy @media) --- */
+
+.responsive-page-shell {
+  --responsive-page-gap: clamp(1rem, 3vw, 1.5rem);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--responsive-page-gap);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-page-shell--standalone {
+  padding-inline: max(1rem, var(--safe-left)) max(1rem, var(--safe-right));
+  padding-block: max(0.75rem, var(--safe-top));
+}
+
+.responsive-page-shell--flush {
+  padding-inline: 0;
+}
+
+/* Tab 页底栏占位由 .app-main padding-bottom 承担；勿与 --content-bottom-safe 叠用 */
+.responsive-bottom-nav-spacer {
+  flex-shrink: 0;
+  width: 100%;
+  height: 0;
+  min-height: 0;
+}
+
+.responsive-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: clamp(0.25rem, 1.5vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.4rem, 2vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-grid-2 > *,
+.responsive-grid-3 > * {
+  min-width: 0;
+}
+
+.responsive-text {
+  max-width: 100%;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.responsive-fluid-title {
+  max-width: 100%;
+  font-size: min(
+    var(--hero-greeting-title-size, clamp(2rem, 6vw, 3.25rem)),
+    clamp(1.75rem, 10vw, 3.25rem)
+  );
+  line-height: 1.08;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.responsive-fluid-metric {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(1.85rem, 9vw, 2.75rem);
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+
+.responsive-compact-y {
+  margin-block: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.hero-greeting.responsive-compact-y {
+  margin-block-start: clamp(0.75rem, 2vw, 1.25rem);
+  margin-block-end: 0;
+}
+
+.responsive-truncate {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.responsive-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.responsive-action-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-action-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.responsive-action-row__end {
+  flex-shrink: 0;
+}
+
+.responsive-chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.35rem, 1.5vw, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-chip-wrap > * {
+  flex-shrink: 0;
+}
+
+.responsive-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2.5vw, 1rem);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-form .input,
+.responsive-form input,
+.responsive-form select,
+.responsive-form textarea,
+.responsive-form button {
+  max-width: 100%;
+}
+
+.responsive-segmented {
+  display: grid;
+  grid-template-columns: repeat(var(--responsive-segmented-columns), minmax(0, 1fr));
+  gap: clamp(0.35rem, 1.5vw, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-segmented > * {
+  min-width: 0;
+}
+
+.responsive-list-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.125rem, 0.5vw, 0.35rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.25rem, 1.2vw, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-grid > * {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  min-height: 2.75rem;
+}
+
+.responsive-calendar-grid--compact {
+  gap: clamp(0.125rem, 0.5vw, 0.35rem);
+}
+
+.responsive-calendar-grid--compact > * {
+  aspect-ratio: 1 / 0.92;
+  min-height: 2.25rem;
+  font-size: clamp(0.65rem, 2.8vw, 0.8rem);
+}
+
+.responsive-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.35rem, 1.5vw, 0.65rem);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.responsive-calendar-legend.flex-col {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.responsive-calendar-legend > * {
+  flex-shrink: 0;
+}
+
+@media (max-width: 390px) {
+  .responsive-card {
+    padding: clamp(0.9rem, 3vw, 1.25rem);
+  }
+
+  .responsive-page-shell {
+    --responsive-page-gap: 1.25rem;
+  }
+
+  .responsive-fluid-title {
+    line-height: 1.02;
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
+
+@media (max-width: 360px) {
+  .responsive-card {
+    padding: 0.85rem;
+  }
+
+  .responsive-fluid-metric {
+    font-size: clamp(1.75rem, 8.5vw, 2.5rem);
+  }
+
+  .responsive-grid-3 {
+    gap: 0.4rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .responsive-compact-y {
+    margin-block: 0.75rem;
+  }
+
+  .responsive-page-shell {
+    --responsive-page-gap: 1rem;
+  }
 }
 
 .app-tabbar {
@@ -141,6 +431,7 @@ body {
   z-index: 50;
   box-sizing: border-box;
   margin: 0;
+  min-height: var(--tabbar-h);
   padding-left: max(0.5rem, var(--safe-left));
   padding-right: max(0.5rem, var(--safe-right));
   padding-bottom: var(--tabbar-bottom-pad);
@@ -204,14 +495,14 @@ body {
   color: #7fa5d1;
 }
 
-[data-style='abyssal-jade'] .app-tabbar__link--active {
-  color: #46e6d1;
-  background-color: #123a33;
-  box-shadow: inset 0 0 0 1px #35d6a4;
+[data-style='jojo-stardust-duel'] .app-tabbar__link--active {
+  color: #f4f6ff;
+  background-color: #101b3d;
+  box-shadow: inset 0 0 0 1px #7c6cff;
 }
 
-[data-style='abyssal-jade'] .app-tabbar__link--active .app-tabbar__icon {
-  color: #46e6d1;
+[data-style='jojo-stardust-duel'] .app-tabbar__link--active .app-tabbar__icon {
+  color: #fff35a;
 }
 
 [data-style='eva-unit02'] .app-tabbar__link--active {
@@ -740,17 +1031,17 @@ button {
   background: #173442;
 }
 
-/* 深海能量 2：记饮食页珊瑚 chip / AI */
-[data-style='abyssal-jade'] .page-standalone[data-log-kind='meal'] {
-  --log-template-chip-bg: #0c2a25;
-  --log-template-chip-bg-hover: #37231b;
-  --log-template-chip-ring: #9e5b3e;
-  --log-template-chip-text: #b8d7cc;
+/* 时停入侵：记饮食页金黄绿 chip / 记运动蓝紫 hover */
+[data-style='jojo-stardust-duel'] .page-standalone[data-log-kind='meal'] {
+  --log-template-chip-bg: #11182a;
+  --log-template-chip-bg-hover: #2d2f08;
+  --log-template-chip-ring: #a5aa1e;
+  --log-template-chip-text: #c2c9e6;
 }
 
-[data-style='abyssal-jade'] .page-standalone[data-log-kind='exercise'] .log-template-chip:hover {
-  color: #5ad7ea;
-  background: #0e332f;
+[data-style='jojo-stardust-duel'] .page-standalone[data-log-kind='exercise'] .log-template-chip:hover {
+  color: #9b8cff;
+  background: #101b3d;
 }
 
 /* 烈焰二号机：记饮食页橙黄 chip / AI */
@@ -902,8 +1193,7 @@ button {
 [data-style='eva'] .style-option-ocean,
 [data-style='eva-unit02'] .style-option-ocean,
 [data-style='gundam-hangar'] .style-option-ocean,
-[data-style='soy-tea'] .style-option-ocean,
-[data-style='abyssal-jade'] .style-option-ocean {
+[data-style='jojo-stardust-duel'] .style-option-ocean {
   border-color: rgb(20 184 166 / 0.5);
   background: #d7f3ee;
 }
@@ -916,8 +1206,7 @@ button {
 [data-style='eva'] .style-option-ocean:hover,
 [data-style='eva-unit02'] .style-option-ocean:hover,
 [data-style='gundam-hangar'] .style-option-ocean:hover,
-[data-style='soy-tea'] .style-option-ocean:hover,
-[data-style='abyssal-jade'] .style-option-ocean:hover {
+[data-style='jojo-stardust-duel'] .style-option-ocean:hover {
   background: #c8eee7;
 }
 
@@ -929,8 +1218,7 @@ button {
 [data-style='eva'] .style-option-ocean--active,
 [data-style='eva-unit02'] .style-option-ocean--active,
 [data-style='gundam-hangar'] .style-option-ocean--active,
-[data-style='soy-tea'] .style-option-ocean--active,
-[data-style='abyssal-jade'] .style-option-ocean--active {
+[data-style='jojo-stardust-duel'] .style-option-ocean--active {
   border-color: #0f766e;
   background: #bde9e2;
   box-shadow: 0 0 0 1px rgb(15 118 110 / 0.52);
@@ -975,8 +1263,7 @@ button {
 [data-style='eva'] .style-option-lavender,
 [data-style='eva-unit02'] .style-option-lavender,
 [data-style='gundam-hangar'] .style-option-lavender,
-[data-style='soy-tea'] .style-option-lavender,
-[data-style='abyssal-jade'] .style-option-lavender {
+[data-style='jojo-stardust-duel'] .style-option-lavender {
   border-color: #cdb8f4;
   background: #f6edff;
 }
@@ -989,8 +1276,7 @@ button {
 [data-style='eva'] .style-option-lavender--active,
 [data-style='eva-unit02'] .style-option-lavender--active,
 [data-style='gundam-hangar'] .style-option-lavender--active,
-[data-style='soy-tea'] .style-option-lavender--active,
-[data-style='abyssal-jade'] .style-option-lavender--active {
+[data-style='jojo-stardust-duel'] .style-option-lavender--active {
   border-color: #cdb8f4;
   background: #f6edff;
   box-shadow: 0 0 0 1px rgb(184 154 244 / 0.55);
@@ -1035,8 +1321,7 @@ button {
 [data-style='eva'] .style-option-sakura,
 [data-style='eva-unit02'] .style-option-sakura,
 [data-style='gundam-hangar'] .style-option-sakura,
-[data-style='soy-tea'] .style-option-sakura,
-[data-style='abyssal-jade'] .style-option-sakura {
+[data-style='jojo-stardust-duel'] .style-option-sakura {
   border-color: #b7d8fa;
   background: #e8f2fc;
 }
@@ -1049,8 +1334,7 @@ button {
 [data-style='eva'] .style-option-sakura--active,
 [data-style='eva-unit02'] .style-option-sakura--active,
 [data-style='gundam-hangar'] .style-option-sakura--active,
-[data-style='soy-tea'] .style-option-sakura--active,
-[data-style='abyssal-jade'] .style-option-sakura--active {
+[data-style='jojo-stardust-duel'] .style-option-sakura--active {
   border-color: #84bdf5;
   background: #d7ecff;
   box-shadow: 0 0 0 1px rgb(94 151 232 / 0.55);
@@ -1095,8 +1379,7 @@ button {
 [data-style='eva'] .style-option-sakura-blush,
 [data-style='eva-unit02'] .style-option-sakura-blush,
 [data-style='gundam-hangar'] .style-option-sakura-blush,
-[data-style='soy-tea'] .style-option-sakura-blush,
-[data-style='abyssal-jade'] .style-option-sakura-blush {
+[data-style='jojo-stardust-duel'] .style-option-sakura-blush {
   border-color: #f2afcb;
   background: #ffe3ee;
 }
@@ -1109,8 +1392,7 @@ button {
 [data-style='eva'] .style-option-sakura-blush--active,
 [data-style='eva-unit02'] .style-option-sakura-blush--active,
 [data-style='gundam-hangar'] .style-option-sakura-blush--active,
-[data-style='soy-tea'] .style-option-sakura-blush--active,
-[data-style='abyssal-jade'] .style-option-sakura-blush--active {
+[data-style='jojo-stardust-duel'] .style-option-sakura-blush--active {
   border-color: #f7a8c8;
   background: #ffd5e5;
   box-shadow: 0 0 0 1px rgb(247 168 200 / 0.55);
@@ -1154,8 +1436,7 @@ button {
 [data-style='eva'] .style-option-active-mint,
 [data-style='eva-unit02'] .style-option-active-mint,
 [data-style='gundam-hangar'] .style-option-active-mint,
-[data-style='soy-tea'] .style-option-active-mint,
-[data-style='abyssal-jade'] .style-option-active-mint {
+[data-style='jojo-stardust-duel'] .style-option-active-mint {
   border-color: #a9ddcf;
   background: #ddf5ec;
 }
@@ -1166,8 +1447,7 @@ button {
 [data-style='eva'] .style-option-active-mint--active,
 [data-style='eva-unit02'] .style-option-active-mint--active,
 [data-style='gundam-hangar'] .style-option-active-mint--active,
-[data-style='soy-tea'] .style-option-active-mint--active,
-[data-style='abyssal-jade'] .style-option-active-mint--active {
+[data-style='jojo-stardust-duel'] .style-option-active-mint--active {
   border-color: #45b8a6;
   background: #ddf5ec;
   box-shadow: 0 0 0 1px rgb(69 184 166 / 0.55);
@@ -1235,7 +1515,7 @@ button {
 [data-style='eva'] .style-option-wood-zen,
 [data-style='eva-unit02'] .style-option-wood-zen,
 [data-style='gundam-hangar'] .style-option-wood-zen,
-[data-style='abyssal-jade'] .style-option-wood-zen {
+[data-style='jojo-stardust-duel'] .style-option-wood-zen {
   border-color: #c6a982;
   background: #e9ddc8;
 }
@@ -1248,7 +1528,7 @@ button {
 [data-style='eva'] .style-option-wood-zen--active,
 [data-style='eva-unit02'] .style-option-wood-zen--active,
 [data-style='gundam-hangar'] .style-option-wood-zen--active,
-[data-style='abyssal-jade'] .style-option-wood-zen--active {
+[data-style='jojo-stardust-duel'] .style-option-wood-zen--active {
   border-color: #9b6f45;
   background: #f3e8d7;
   box-shadow: 0 0 0 1px rgb(155 111 69 / 0.45);
@@ -1283,7 +1563,7 @@ button {
 [data-style='eva'] .style-option-soy-tea,
 [data-style='eva-unit02'] .style-option-soy-tea,
 [data-style='gundam-hangar'] .style-option-soy-tea,
-[data-style='abyssal-jade'] .style-option-soy-tea {
+[data-style='jojo-stardust-duel'] .style-option-soy-tea {
   border-color: #bad9b7;
   background: #e4eee6;
 }
@@ -1295,7 +1575,7 @@ button {
 [data-style='eva'] .style-option-soy-tea--active,
 [data-style='eva-unit02'] .style-option-soy-tea--active,
 [data-style='gundam-hangar'] .style-option-soy-tea--active,
-[data-style='abyssal-jade'] .style-option-soy-tea--active {
+[data-style='jojo-stardust-duel'] .style-option-soy-tea--active {
   border-color: #798c76;
   background: #e4eee6;
   box-shadow: 0 0 0 1px rgb(121 140 118 / 0.45);
@@ -1346,8 +1626,7 @@ button {
 [data-style='eva'] .style-option-eva,
 [data-style='eva-unit02'] .style-option-eva,
 [data-style='gundam-hangar'] .style-option-eva,
-[data-style='soy-tea'] .style-option-eva,
-[data-style='abyssal-jade'] .style-option-eva {
+[data-style='jojo-stardust-duel'] .style-option-eva {
   border-color: #7650b8;
   background: #27163f;
 }
@@ -1359,8 +1638,7 @@ button {
 [data-style='soy-tea'] .style-option-eva--active,
 [data-style='eva-unit02'] .style-option-eva--active,
 [data-style='gundam-hangar'] .style-option-eva--active,
-[data-style='soy-tea'] .style-option-eva--active,
-[data-style='abyssal-jade'] .style-option-eva--active {
+[data-style='jojo-stardust-duel'] .style-option-eva--active {
   border-color: #b8ff2c;
   background: #3e2863;
   box-shadow: 0 0 0 1px rgb(184 255 44 / 0.45);
@@ -1410,8 +1688,7 @@ button {
 [data-style='eva'] .style-option-eva-unit02,
 [data-style='eva-unit02'] .style-option-eva-unit02,
 [data-style='gundam-hangar'] .style-option-eva-unit02,
-[data-style='soy-tea'] .style-option-eva-unit02,
-[data-style='abyssal-jade'] .style-option-eva-unit02 {
+[data-style='jojo-stardust-duel'] .style-option-eva-unit02 {
   border-color: #d7192a;
   background: #2b1119;
 }
@@ -1422,8 +1699,7 @@ button {
 [data-style='active-mint'] .style-option-eva-unit02--active,
 [data-style='eva'] .style-option-eva-unit02--active,
 [data-style='gundam-hangar'] .style-option-eva-unit02--active,
-[data-style='soy-tea'] .style-option-eva-unit02--active,
-[data-style='abyssal-jade'] .style-option-eva-unit02--active {
+[data-style='jojo-stardust-duel'] .style-option-eva-unit02--active {
   border-color: #ff8a1c;
   background: #4a1620;
   box-shadow: 0 0 0 1px rgb(215 25 42 / 0.55);
@@ -1473,8 +1749,7 @@ button {
 [data-style='eva'] .style-option-gundam-hangar,
 [data-style='eva-unit02'] .style-option-gundam-hangar,
 [data-style='gundam-hangar'] .style-option-gundam-hangar,
-[data-style='soy-tea'] .style-option-gundam-hangar,
-[data-style='abyssal-jade'] .style-option-gundam-hangar {
+[data-style='jojo-stardust-duel'] .style-option-gundam-hangar {
   border-color: #5c2833;
   background: #182638;
 }
@@ -1486,8 +1761,8 @@ button {
 [data-style='soy-tea'] .style-option-gundam-hangar--active,
 [data-style='eva'] .style-option-gundam-hangar--active,
 [data-style='eva-unit02'] .style-option-gundam-hangar--active,
-[data-style='soy-tea'] .style-option-gundam-hangar--active,
-[data-style='abyssal-jade'] .style-option-gundam-hangar--active {
+[data-style='gundam-hangar'] .style-option-gundam-hangar--active,
+[data-style='jojo-stardust-duel'] .style-option-gundam-hangar--active {
   border-color: #c46878;
   background: #261318;
   box-shadow: 0 0 0 1px rgb(196 104 120 / 0.55);
@@ -1499,68 +1774,66 @@ button {
   box-shadow: 0 0 0 1px rgb(196 104 120 / 0.55);
 }
 
-/* 深海能量 2：墨绿翡翠预览选项 */
-.style-option-abyssal-jade {
-  border-color: #35d6a4;
-  background: #0c2a25;
+/* 时停入侵：黑蓝底 + 金黄绿 active 预览选项 */
+.style-option-jojo-stardust-duel {
+  border-color: #476cff;
+  background: #11182a;
 }
 
-.style-option-abyssal-jade:hover {
-  background: #123a33;
+.style-option-jojo-stardust-duel:hover {
+  background: #101b3d;
 }
 
-.style-option-abyssal-jade--active {
-  border-color: #35d6a4;
-  background: #123a33;
-  box-shadow: 0 0 0 1px rgb(53 214 164 / 0.55);
+.style-option-jojo-stardust-duel--active {
+  border-color: #fff35a;
+  background: #101b3d;
+  box-shadow: 0 0 0 1px rgb(255 243 90 / 0.55);
 }
 
-[data-style='default'] .style-option-abyssal-jade {
-  border-color: rgb(53 214 164 / 0.65);
-  background: rgb(12 42 37 / 0.45);
+[data-style='default'] .style-option-jojo-stardust-duel {
+  border-color: rgb(71 108 255 / 0.65);
+  background: rgb(17 24 42 / 0.45);
 }
 
-[data-style='default'] .style-option-abyssal-jade:hover {
-  background: rgb(18 58 51 / 0.55);
+[data-style='default'] .style-option-jojo-stardust-duel:hover {
+  background: rgb(16 27 61 / 0.55);
 }
 
-[data-style='default'] .style-option-abyssal-jade--active {
-  border-color: #35d6a4;
-  background: rgb(18 58 51 / 0.65);
-  box-shadow: 0 0 0 1px rgb(53 214 164 / 0.5);
+[data-style='default'] .style-option-jojo-stardust-duel--active {
+  border-color: #fff35a;
+  background: rgb(45 47 8 / 0.65);
+  box-shadow: 0 0 0 1px rgb(255 243 90 / 0.5);
 }
 
-[data-style='lavender'] .style-option-abyssal-jade,
-[data-style='sakura'] .style-option-abyssal-jade,
-[data-style='sakura-blush'] .style-option-abyssal-jade,
-[data-style='active-mint'] .style-option-abyssal-jade,
-[data-style='soy-tea'] .style-option-abyssal-jade,
-[data-style='eva'] .style-option-abyssal-jade,
-[data-style='eva-unit02'] .style-option-abyssal-jade,
-[data-style='gundam-hangar'] .style-option-abyssal-jade,
-[data-style='soy-tea'] .style-option-abyssal-jade,
-[data-style='abyssal-jade'] .style-option-abyssal-jade {
-  border-color: #35d6a4;
-  background: #0c2a25;
+[data-style='lavender'] .style-option-jojo-stardust-duel,
+[data-style='sakura'] .style-option-jojo-stardust-duel,
+[data-style='sakura-blush'] .style-option-jojo-stardust-duel,
+[data-style='active-mint'] .style-option-jojo-stardust-duel,
+[data-style='eva'] .style-option-jojo-stardust-duel,
+[data-style='eva-unit02'] .style-option-jojo-stardust-duel,
+[data-style='gundam-hangar'] .style-option-jojo-stardust-duel,
+[data-style='jojo-stardust-duel'] .style-option-jojo-stardust-duel {
+  border-color: #476cff;
+  background: #11182a;
 }
 
-[data-style='lavender'] .style-option-abyssal-jade--active,
-[data-style='sakura'] .style-option-abyssal-jade--active,
-[data-style='sakura-blush'] .style-option-abyssal-jade--active,
-[data-style='active-mint'] .style-option-abyssal-jade--active,
-[data-style='eva'] .style-option-abyssal-jade--active,
-[data-style='eva-unit02'] .style-option-abyssal-jade--active,
-[data-style='soy-tea'] .style-option-abyssal-jade--active,
-[data-style='gundam-hangar'] .style-option-abyssal-jade--active {
-  border-color: #35d6a4;
-  background: #123a33;
-  box-shadow: 0 0 0 1px rgb(53 214 164 / 0.55);
+[data-style='lavender'] .style-option-jojo-stardust-duel--active,
+[data-style='sakura'] .style-option-jojo-stardust-duel--active,
+[data-style='sakura-blush'] .style-option-jojo-stardust-duel--active,
+[data-style='active-mint'] .style-option-jojo-stardust-duel--active,
+[data-style='soy-tea'] .style-option-jojo-stardust-duel--active,
+[data-style='eva'] .style-option-jojo-stardust-duel--active,
+[data-style='eva-unit02'] .style-option-jojo-stardust-duel--active,
+[data-style='gundam-hangar'] .style-option-jojo-stardust-duel--active {
+  border-color: #fff35a;
+  background: #101b3d;
+  box-shadow: 0 0 0 1px rgb(255 243 90 / 0.55);
 }
 
-[data-style='abyssal-jade'] .style-option-abyssal-jade--active {
-  border-color: #35d6a4;
-  background: #123a33;
-  box-shadow: 0 0 0 1px rgb(53 214 164 / 0.55);
+[data-style='jojo-stardust-duel'] .style-option-jojo-stardust-duel--active {
+  border-color: #fff35a;
+  background: #101b3d;
+  box-shadow: 0 0 0 1px rgb(255 243 90 / 0.55);
 }
 
 /* 主题预览卡文字：与卡片背景绑定，不随当前 data-style 全局字色变化 */
@@ -1684,14 +1957,14 @@ button {
   color: #b5c2d2;
 }
 
-.style-option-abyssal-jade .text-primary,
-.style-option-abyssal-jade--active .text-primary {
-  color: #f1fff8;
+.style-option-jojo-stardust-duel .text-primary,
+.style-option-jojo-stardust-duel--active .text-primary {
+  color: #f4f6ff;
 }
 
-.style-option-abyssal-jade .text-muted,
-.style-option-abyssal-jade--active .text-muted {
-  color: #b8d7cc;
+.style-option-jojo-stardust-duel .text-muted,
+.style-option-jojo-stardust-duel--active .text-muted {
+  color: #c2c9e6;
 }
 
 /* 风格预览色条：避免被浅色主题全局重映射盖成灰 */
@@ -1711,7 +1984,7 @@ button {
 [data-style='eva'] .style-swatch-ocean,
 [data-style='eva-unit02'] .style-swatch-ocean,
 [data-style='gundam-hangar'] .style-swatch-ocean,
-[data-style='abyssal-jade'] .style-swatch-ocean {
+[data-style='jojo-stardust-duel'] .style-swatch-ocean {
   background: linear-gradient(90deg, #0f766e 0%, #14b8a6 42%, #06b6d4 100%);
   background-color: transparent;
 }
@@ -1806,26 +2079,54 @@ button {
   background-color: transparent;
 }
 
-.style-swatch-abyssal-jade {
-  background: linear-gradient(135deg, #061b17 0%, #35d6a4 50%, #a6f36f 100%);
-  box-shadow: inset 0 0 0 1px rgb(53 214 164 / 0.55);
+.style-swatch-jojo-stardust-duel {
+  background: linear-gradient(135deg, #3151c9 0%, #070a12 48%, #fff35a 100%);
+  box-shadow: inset 0 0 0 1px rgb(124 108 255 / 0.55);
 }
 
-[data-style='default'] .style-swatch-abyssal-jade {
-  background: linear-gradient(135deg, #061b17 0%, #35d6a4 50%, #a6f36f 100%);
+[data-style='default'] .style-swatch-jojo-stardust-duel {
+  background: linear-gradient(135deg, #3151c9 0%, #070a12 48%, #fff35a 100%);
   background-color: transparent;
 }
 
-[data-style='lavender'] .style-swatch-abyssal-jade,
-[data-style='sakura'] .style-swatch-abyssal-jade,
-[data-style='sakura-blush'] .style-swatch-abyssal-jade,
-[data-style='active-mint'] .style-swatch-abyssal-jade,
-[data-style='eva'] .style-swatch-abyssal-jade,
-[data-style='eva-unit02'] .style-swatch-abyssal-jade,
-[data-style='gundam-hangar'] .style-swatch-abyssal-jade,
-[data-style='abyssal-jade'] .style-swatch-abyssal-jade {
-  background: linear-gradient(135deg, #061b17 0%, #35d6a4 50%, #a6f36f 100%);
-  background-color: transparent;
+.hero-collab-switch--eva.hero-collab-switch--on {
+  background: #6b35d7;
+  color: #fff;
+}
+
+.hero-collab-switch--eva.hero-collab-switch--off {
+  background: rgb(107 53 215 / 0.22);
+  color: #c8b8ff;
+}
+
+.hero-collab-switch--eva-unit02.hero-collab-switch--on {
+  background: #d7192a;
+  color: #fff;
+}
+
+.hero-collab-switch--eva-unit02.hero-collab-switch--off {
+  background: rgb(215 25 42 / 0.22);
+  color: #ffc9a3;
+}
+
+.hero-collab-switch--gundam-hangar.hero-collab-switch--on {
+  background: #425f8a;
+  color: #fff;
+}
+
+.hero-collab-switch--gundam-hangar.hero-collab-switch--off {
+  background: rgb(66 95 138 / 0.24);
+  color: #9eb4d0;
+}
+
+.hero-collab-switch--jojo-stardust-duel.hero-collab-switch--on {
+  background: #3151c9;
+  color: #fff;
+}
+
+.hero-collab-switch--jojo-stardust-duel.hero-collab-switch--off {
+  background: rgb(49 81 201 / 0.22);
+  color: #c2c9e6;
 }
 
 [data-style='eva'] .theme-hero-card {
@@ -1853,16 +2154,39 @@ button {
     inset 0 1px 0 rgb(201 225 255 / 0.34);
 }
 
-[data-style='gundam-hangar'] .theme-hero-card::before {
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgb(198 222 255 / 0.045) 0,
-      rgb(198 222 255 / 0.045) 1px,
-      transparent 1px,
-      transparent 5px
-    ),
-    var(--hero-card-atmosphere, transparent);
+[data-hero-collab='off'] .theme-hero-card::after {
+  opacity: 0;
+}
+
+/* 时停入侵：联名 ON 时整卡 cover 对峙底图；OFF 靠 --hero-card-bg 渐变（全局 opacity:0 隐藏 ::after） */
+[data-style='jojo-stardust-duel'][data-hero-collab='off'] .theme-hero-card::before {
+  background: transparent;
+}
+
+[data-style='jojo-stardust-duel'][data-hero-collab='on'] .theme-hero-card::after {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  opacity: 1;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 72% center;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+[data-style='gundam-hangar'][data-hero-collab='on'] .theme-hero-card::after {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  opacity: 1;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: var(--hero-card-image-position, center);
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 [data-style='gundam-hangar'] .theme-hero-card .text-muted {
@@ -1879,6 +2203,23 @@ button {
 
 [data-style='gundam-hangar'] .theme-hero-stat__divider {
   border-top-color: color-mix(in oklab, #99b2ce 58%, transparent);
+  opacity: 0.78;
+}
+
+[data-style='jojo-stardust-duel'] .theme-hero-card .text-muted {
+  color: #7f8aa8;
+}
+
+[data-style='jojo-stardust-duel'] .theme-deficit-value {
+  text-shadow: 0 0 14px rgb(49 81 201 / 0.22);
+}
+
+[data-style='jojo-stardust-duel'] .theme-hero-stat__label {
+  color: #7f8aa8;
+}
+
+[data-style='jojo-stardust-duel'] .theme-hero-stat__divider {
+  border-top-color: color-mix(in oklab, #9b8cff 52%, transparent);
   opacity: 0.78;
 }
 
@@ -1995,14 +2336,15 @@ button {
 .theme-deficit-main {
   display: flex;
   align-items: baseline;
-  gap: clamp(0.25rem, 1.5vw, 0.75rem);
+  gap: clamp(0.2rem, 1vw, 0.5rem);
   flex-wrap: wrap;
   min-width: 0;
-  max-width: 100%;
+  max-width: min(50%, 100%);
+  width: fit-content;
 }
 
 .theme-deficit-value {
-  font-size: clamp(3rem, 13vw, 3.9rem);
+  font-size: clamp(1.85rem, 9vw, 2.75rem);
   line-height: 0.95;
   min-width: 0;
   max-width: 100%;
@@ -2010,7 +2352,7 @@ button {
 }
 
 .theme-deficit-unit {
-  font-size: clamp(0.95rem, 4.8vw, 1.55rem);
+  font-size: clamp(0.75rem, 3.2vw, 1rem);
   line-height: 1.1;
   min-width: 0;
   max-width: 100%;
@@ -2248,10 +2590,21 @@ button {
 }
 
 .hero-greeting {
-  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--hero-greeting-stack-gap, clamp(0.5rem, 1.5vw, 0.75rem));
+  margin-bottom: 0;
   border-radius: 1rem;
   background: var(--hero-greeting-background, transparent);
   padding: 0.125rem 0;
+}
+
+/* 今日页首屏：标题↔小字、小字↔缺口卡 共用同一间距 */
+.today-hero-block {
+  --hero-greeting-stack-gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--hero-greeting-stack-gap);
 }
 
 .hero-greeting__title {
@@ -2290,7 +2643,7 @@ button {
 }
 
 .hero-greeting__subtitle {
-  margin-top: 0.5rem;
+  margin: 0;
   font-size: clamp(0.9rem, 2.6vw, 1.05rem);
   line-height: 1.45;
   color: var(--hero-greeting-subtitle-color, var(--text-muted));
@@ -2298,10 +2651,6 @@ button {
 }
 
 @media (max-width: 390px) {
-  .hero-greeting {
-    margin-bottom: 1.25rem;
-  }
-
   .hero-greeting__title {
     font-size: min(var(--hero-greeting-title-size, 2.5rem), clamp(2rem, 10vw, 2.6rem));
     line-height: 1.02;
@@ -2311,12 +2660,8 @@ button {
     overflow-wrap: anywhere;
   }
 
-  .theme-deficit-card {
-    padding: 1rem;
-  }
-
   .theme-deficit-unit {
-    font-size: clamp(0.85rem, 4.3vw, 1.2rem);
+    font-size: clamp(0.7rem, 3vw, 0.92rem);
   }
 
   .theme-hero-stat {
@@ -2334,26 +2679,8 @@ button {
     letter-spacing: 0.01em;
   }
 
-  .theme-deficit-card {
-    padding: 0.9rem;
-  }
-
   .theme-deficit-value {
-    font-size: clamp(2.5rem, 12.4vw, 3.25rem);
-  }
-
-  .theme-deficit-stats {
-    gap: 0.4rem;
-  }
-}
-
-@media (max-height: 720px) {
-  .hero-greeting {
-    margin-bottom: 1rem;
-  }
-
-  .theme-deficit-card {
-    padding: 0.95rem;
+    font-size: clamp(1.7rem, 8.2vw, 2.35rem);
   }
 }
 
@@ -2364,15 +2691,16 @@ button {
   }
 
   .theme-deficit-main {
-    gap: 0.3rem;
+    gap: 0.25rem;
+    max-width: min(50%, 100%);
   }
 
   .theme-deficit-value {
-    font-size: clamp(2.35rem, 11.8vw, 3rem);
+    font-size: clamp(1.65rem, 7.8vw, 2.2rem);
   }
 
   .theme-deficit-unit {
-    font-size: clamp(0.8rem, 3.8vw, 1.05rem);
+    font-size: clamp(0.68rem, 2.9vw, 0.88rem);
   }
 
   .theme-hero-stat {
@@ -3025,21 +3353,21 @@ button {
   color: #b5c2d2;
 }
 
-[data-style='abyssal-jade'] .wall-style-option input[type='radio'] {
-  accent-color: #35d6a4;
+[data-style='jojo-stardust-duel'] .wall-style-option input[type='radio'] {
+  accent-color: #7c6cff;
 }
 
-[data-style='abyssal-jade'] .wall-style-option:has(:checked) {
-  border-color: #35d6a4;
-  background: #123a33;
+[data-style='jojo-stardust-duel'] .wall-style-option:has(:checked) {
+  border-color: #7c6cff;
+  background: #101b3d;
 }
 
-[data-style='abyssal-jade'] .wall-style-option:has(:checked) .text-primary {
-  color: #f1fff8;
+[data-style='jojo-stardust-duel'] .wall-style-option:has(:checked) .text-primary {
+  color: #f4f6ff;
 }
 
-[data-style='abyssal-jade'] .wall-style-option:has(:checked) .text-muted {
-  color: #b8d7cc;
+[data-style='jojo-stardust-duel'] .wall-style-option:has(:checked) .text-muted {
+  color: #c2c9e6;
 }
 
 [data-style='eva-unit02'] .wall-style-option input[type='radio'] {
@@ -3085,6 +3413,12 @@ button {
   background: var(--accent-meal-soft);
   color: var(--accent-meal-strong);
   box-shadow: inset 0 0 0 1px var(--accent-meal);
+}
+
+[data-style='jojo-stardust-duel'] .wall-pane-tab--active {
+  background: var(--accent-exercise-soft);
+  color: var(--accent-exercise-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-exercise);
 }
 
 .template-tab--active-exercise {
@@ -3772,16 +4106,16 @@ button {
   box-shadow: inset 0 0 0 1px #3c7b70;
 }
 
+[data-style='jojo-stardust-duel'] .community-pill--champion {
+  background: #101b3d;
+  color: #9b8cff;
+  box-shadow: inset 0 0 0 1px #7c6cff;
+}
+
 [data-style='eva-unit02'] .community-pill--champion {
   background: #1f3a16;
   color: #c8ff7a;
   box-shadow: inset 0 0 0 1px #9dff3a;
-}
-
-[data-style='abyssal-jade'] .community-pill--champion {
-  background: #20341c;
-  color: #a6f36f;
-  box-shadow: inset 0 0 0 1px #6ccf4d;
 }
 
 [data-style='lavender'] .community-pill--elite {
@@ -3832,16 +4166,16 @@ button {
   box-shadow: inset 0 0 0 1px #3f7d8a;
 }
 
+[data-style='jojo-stardust-duel'] .community-pill--elite {
+  background: #101b3d;
+  color: #9b8cff;
+  box-shadow: inset 0 0 0 1px #476cff;
+}
+
 [data-style='eva-unit02'] .community-pill--elite {
   background: #223b18;
   color: #9dff3a;
   box-shadow: inset 0 0 0 1px #55d52a;
-}
-
-[data-style='abyssal-jade'] .community-pill--elite {
-  background: #0e332f;
-  color: #5ad7ea;
-  box-shadow: inset 0 0 0 1px #46e6d1;
 }
 
 [data-style='lavender'] .community-pill--foodKing {
@@ -3892,10 +4226,10 @@ button {
   box-shadow: inset 0 0 0 1px #5c2833;
 }
 
-[data-style='abyssal-jade'] .community-pill--foodKing {
-  background: #37231b;
-  color: #ffd8bf;
-  box-shadow: inset 0 0 0 1px #ff9f64;
+[data-style='jojo-stardust-duel'] .community-pill--foodKing {
+  background: #2d2f08;
+  color: #fff35a;
+  box-shadow: inset 0 0 0 1px #a5aa1e;
 }
 
 [data-style='eva-unit02'] .community-pill--foodKing {
@@ -3958,16 +4292,16 @@ button {
   box-shadow: inset 0 0 0 1px var(--accent-meal);
 }
 
+[data-style='jojo-stardust-duel'] .community-pill--meal {
+  background: var(--accent-meal-soft);
+  color: var(--accent-meal-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-meal);
+}
+
 [data-style='eva-unit02'] .community-pill--meal {
   background: #4b2812;
   color: #ffd34d;
   box-shadow: inset 0 0 0 1px #ff8a1c;
-}
-
-[data-style='abyssal-jade'] .community-pill--meal {
-  background: var(--accent-meal-soft);
-  color: var(--accent-meal);
-  box-shadow: inset 0 0 0 1px var(--accent-meal);
 }
 
 [data-style='lavender'] .text-red-400,
@@ -3981,7 +4315,7 @@ button {
 }
 
 [data-style='gundam-hangar'] .text-red-400,
-[data-style='abyssal-jade'] .text-red-400,
+[data-style='jojo-stardust-duel'] .text-red-400,
 [data-style='eva-unit02'] .text-red-400 {
   color: var(--danger-strong);
 }

@@ -5,7 +5,6 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 | File | Selector | 设置页名称 |
 |------|----------|------------|
 | `default.css` | `:root` | 深海能量 |
-| `abyssal-jade.css` | `[data-style='abyssal-jade']` | 深海能量 2 |
 | `lavender.css` | `[data-style='lavender']` | 薰衣云梦 |
 | `sakura.css` | `[data-style='sakura']` | 碧空樱缀 |
 | `sakura-blush.css` | `[data-style='sakura-blush']` | 樱雾漫境 |
@@ -15,6 +14,7 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 | `eva.css` | `[data-style='eva']` | 暴走初号机 |
 | `eva-unit02.css` | `[data-style='eva-unit02']` | 烈焰二号机 |
 | `gundam-hangar.css` | `[data-style='gundam-hangar']` | 格纳库提坦斯 |
+| `jojo-stardust-duel.css` | `[data-style='jojo-stardust-duel']` | 时停入侵 |
 
 ## Edit workflow
 

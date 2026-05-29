@@ -1,12 +1,12 @@
 /* Theme color palettes — one file per style; imported before semantic utilities in src/index.css */
 @import './default.css';
-@import './abyssal-jade.css';
 @import './lavender.css';
 @import './sakura.css';
 @import './sakura-blush.css';
 @import './active-mint.css';
 @import './eva.css';
 @import './gundam-hangar.css';
+@import './jojo-stardust-duel.css';
 @import './eva-unit02.css';
 @import './soy-tea.css';
 @import './wood-zen.css';

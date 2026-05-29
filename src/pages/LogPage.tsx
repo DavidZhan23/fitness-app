@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TemplatePicker } from '../components/TemplatePicker'
+import { FluidText, PageShell } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { LogEntryForm } from '../features/log/LogEntryForm'
 import { submitLog } from '../features/log/submitLog'
@@ -56,7 +57,7 @@ export function LogPage() {
 
   return (
     <div className="page-standalone" data-log-kind={kind}>
-      <div className="mx-auto max-w-lg space-y-6 px-4 py-4">
+      <PageShell variant="standalone">
         <div>
           <button
             type="button"
@@ -65,9 +66,9 @@ export function LogPage() {
           >
             ← 返回
           </button>
-          <h1 className="mt-2 text-xl font-bold">
+          <FluidText as="h1" variant="title" className="mt-2 text-xl font-bold">
             {isExercise ? '记运动' : '记饮食'}
-          </h1>
+          </FluidText>
         </div>
 
         <TemplatePicker
@@ -110,7 +111,7 @@ export function LogPage() {
           onAiOutcome={aiFallbackTracker.markAiOutcome}
           onSubmit={handleSubmit}
         />
-      </div>
+      </PageShell>
     </div>
   )
 }

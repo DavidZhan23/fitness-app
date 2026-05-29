@@ -3,6 +3,12 @@ import {
   MEAL_KCAL_STAT_LABEL,
   hasDeficitCheck,
 } from '../lib/calories'
+import {
+  FluidText,
+  MetricRow,
+  ResponsiveCard,
+  StatsGrid,
+} from './ui/responsive'
 
 interface DeficitCardProps {
   dateLabel: string
@@ -30,11 +36,13 @@ export function DeficitCard({
   const surplus = deficit < -threshold
 
   return (
-    <section className="theme-hero-card theme-deficit-card p-6">
-      <p className="text-base text-muted">{dateLabel}</p>
-      <div className="theme-deficit-main mt-3">
+    <ResponsiveCard className="theme-hero-card theme-deficit-card p-6">
+      <FluidText as="p" variant="body" className="text-base text-muted">
+        {dateLabel}
+      </FluidText>
+      <MetricRow className="theme-deficit-main mt-3">
         <span
-          className={`theme-deficit-value font-bold tabular-nums ${
+          className={`theme-deficit-value responsive-fluid-metric font-bold tabular-nums ${
             surplus
               ? 'theme-deficit-value--surplus'
               : positive
@@ -45,22 +53,24 @@ export function DeficitCard({
           {deficit > 0 ? '+' : ''}
           {Math.round(deficit)}
         </span>
-        <span className="theme-deficit-unit text-muted">kcal 缺口</span>
-      </div>
-      <p className="mt-2 text-base text-muted">
+        <FluidText as="span" variant="body" className="theme-deficit-unit text-muted">
+          kcal 缺口
+        </FluidText>
+      </MetricRow>
+      <FluidText as="p" variant="body" className="mt-2 text-base text-muted">
         {positive ? '已达成代谢缺口' : '摄入偏多，继续加油'}
         {fullDayBmr != null && fullDayBmr > 0 && (
           <span className="block mt-0.5">
             {/* 基础代谢 BMR 按分钟累计（全日约 {Math.round(fullDayBmr)} kcal） */}
           </span>
         )}
-      </p>
-      <div className="theme-deficit-stats mt-5 text-center text-base">
+      </FluidText>
+      <StatsGrid className="theme-deficit-stats mt-5 text-center text-base">
         <Stat label={metabolismLabel} value={metabolismKcal} variant="base" />
         <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} variant="exercise" />
         <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} variant="meal" />
-      </div>
-    </section>
+      </StatsGrid>
+    </ResponsiveCard>
   )
 }
 
@@ -75,11 +85,21 @@ function Stat({
 }) {
   return (
     <div className={`theme-hero-stat theme-deficit-stat theme-hero-stat--${variant} px-2 py-2.5`}>
-      <p className="theme-hero-stat__label theme-deficit-stat__label text-base text-muted">{label}</p>
+      <FluidText
+        as="p"
+        variant="body"
+        className="theme-hero-stat__label theme-deficit-stat__label responsive-wrap text-base text-muted"
+      >
+        {label}
+      </FluidText>
       <span className="theme-hero-stat__divider" aria-hidden />
-      <p className="theme-hero-stat__value theme-deficit-stat__value mt-1 tabular-nums">
+      <FluidText
+        as="p"
+        variant="body"
+        className="theme-hero-stat__value theme-deficit-stat__value mt-1 tabular-nums"
+      >
         {Math.round(value)} kcal
-      </p>
+      </FluidText>
     </div>
   )
 }

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { RecordDeleteButton } from '../components/RecordActionIcons'
+import {
+  ActionRow,
+  FluidText,
+  PageShell,
+  ResponsiveForm,
+  ResponsiveListCard,
+  SegmentedControl,
+} from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import type { ExerciseTemplate, MealTemplate } from '../types'
@@ -74,10 +82,17 @@ export function TemplatesPage() {
   const list = tab === 'exercise' ? exercises : meals
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold text-primary">我的模板</h1>
+    <PageShell>
+      <FluidText as="h1" variant="title" className="text-xl font-bold text-primary">
+        我的模板
+      </FluidText>
 
-      <div className="flex gap-2" role="tablist" aria-label="模板类型">
+      <SegmentedControl
+        columns={2}
+        className="template-tab-row"
+        role="tablist"
+        aria-label="模板类型"
+      >
         <TabButton
           kind="exercise"
           active={tab === 'exercise'}
@@ -98,12 +113,12 @@ export function TemplatesPage() {
         >
           饮食
         </TabButton>
-      </div>
+      </SegmentedControl>
 
       {adding ? (
-        <form
+        <ResponsiveForm
           onSubmit={submitAdd}
-          className="surface-card space-y-3 rounded-xl border border-dashed p-3"
+          className="surface-card rounded-xl border border-dashed p-3"
           style={{ borderColor: 'var(--template-add-border)' }}
         >
           <p className="text-sm font-medium text-primary">新建{tab === 'exercise' ? '运动' : '饮食'}模板</p>
@@ -154,7 +169,7 @@ export function TemplatesPage() {
               {saving ? '保存中…' : '保存'}
             </button>
           </div>
-        </form>
+        </ResponsiveForm>
       ) : (
         <button
           type="button"
@@ -167,19 +182,24 @@ export function TemplatesPage() {
 
       <ul className="space-y-2">
         {list.map((t) => (
-          <li
-            key={t.id}
-            className="surface-card flex items-center justify-between rounded-xl px-3 py-2.5"
-          >
-            <div>
-              <p className="font-medium">{t.name}</p>
-              <p className="text-sm text-muted tabular-nums">{Math.round(t.kcal)} kcal</p>
-            </div>
-            <RecordDeleteButton onClick={() => deleteTemplate(t.id)} />
+          <li key={t.id}>
+            <ResponsiveListCard className="surface-card rounded-xl px-3 py-2.5">
+              <ActionRow>
+                <div className="responsive-action-row__main">
+                  <p className="responsive-truncate font-medium">{t.name}</p>
+                  <p className="text-sm text-muted tabular-nums">
+                    {Math.round(t.kcal)} kcal
+                  </p>
+                </div>
+                <div className="responsive-action-row__end">
+                  <RecordDeleteButton onClick={() => deleteTemplate(t.id)} />
+                </div>
+              </ActionRow>
+            </ResponsiveListCard>
           </li>
         ))}
       </ul>
-    </div>
+    </PageShell>
   )
 }
 
@@ -200,7 +220,7 @@ function TabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`template-tab flex-1 rounded-lg py-2 text-sm font-medium ${
+      className={`template-tab rounded-lg py-2 text-sm font-medium ${
         active
           ? kind === 'exercise'
             ? 'template-tab--active-exercise'

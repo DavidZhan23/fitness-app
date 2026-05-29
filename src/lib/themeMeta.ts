@@ -2,6 +2,15 @@ import type { AppStyle } from '../context/StyleContext'
 
 export type HeroGreetingLayout = 'single-line' | 'two-line'
 
+export type HeroCollabLayout = 'cover' | 'corner'
+
+export interface HeroCollabConfig {
+  label: string
+  imageUrl: string
+  layout: HeroCollabLayout
+  defaultEnabled: boolean
+}
+
 export interface HeroGreetingConfig {
   titleTemplate: string
   subtitle: string
@@ -20,6 +29,7 @@ export interface HeroGreetingConfig {
 
 interface ThemeMeta {
   heroGreeting: HeroGreetingConfig
+  heroCollab?: HeroCollabConfig
 }
 
 const fallbackHeroGreeting: HeroGreetingConfig = {
@@ -56,24 +66,6 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       layout: 'single-line',
       background: 'transparent',
       textShadow: '0 0 12px rgba(20, 184, 166, 0.22)',
-    },
-  },
-  'abyssal-jade': {
-    heroGreeting: {
-      titleTemplate: '能量已唤醒，{name}。',
-      subtitle: '保持下潜，稳定燃烧。',
-      fontFamily:
-        '"Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
-      titleSize: 'clamp(38px, 6.2vw, 56px)',
-      fontWeight: '790',
-      lineHeight: '1.05',
-      letterSpacing: '0.012em',
-      titleColor: '#f1fff8',
-      nameColor: '#35d6a4',
-      subtitleColor: '#8ab9ac',
-      layout: 'single-line',
-      background: 'transparent',
-      textShadow: '0 0 12px rgba(53, 214, 164, 0.35)',
     },
   },
   lavender: {
@@ -149,6 +141,12 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
     },
   },
   eva: {
+    heroCollab: {
+      label: '展示联名角色',
+      imageUrl: '/theme/eva-head-01-cutout.png',
+      layout: 'corner',
+      defaultEnabled: true,
+    },
     heroGreeting: {
       titleTemplate: '同步率上升，{name}。',
       subtitle: '目标：今日缺口达成。',
@@ -167,6 +165,12 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
     },
   },
   'eva-unit02': {
+    heroCollab: {
+      label: '展示联名角色',
+      imageUrl: '/theme/eva-head-02-cutout.png',
+      layout: 'corner',
+      defaultEnabled: true,
+    },
     heroGreeting: {
       titleTemplate: '启动战斗模式，{name}。',
       subtitle: '今天也要漂亮地赢下来。',
@@ -185,6 +189,12 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
     },
   },
   'gundam-hangar': {
+    heroCollab: {
+      label: '展示联名角色',
+      imageUrl: '/theme/gundam-hangar-hero.jpg',
+      layout: 'cover',
+      defaultEnabled: true,
+    },
     heroGreeting: {
       titleTemplate: '系统就绪，{name}。',
       subtitle: '今日任务：稳定执行。',
@@ -200,6 +210,30 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       layout: 'single-line',
       background: 'transparent',
       textShadow: 'none',
+    },
+  },
+  'jojo-stardust-duel': {
+    heroCollab: {
+      label: '展示联名底图',
+      imageUrl: '/theme/jojo-stardust-duel-deficit.jpg',
+      layout: 'cover',
+      defaultEnabled: false,
+    },
+    heroGreeting: {
+      titleTemplate: 'The World——时间暂停。',
+      subtitle: '而现在，轮到{name}让时间开始流动。',
+      fontFamily:
+        '"Orbitron", "Rajdhani", "DIN Alternate", "Arial Narrow", "PingFang SC", sans-serif',
+      titleSize: 'clamp(38px, 6vw, 54px)',
+      fontWeight: '900',
+      lineHeight: '1.04',
+      letterSpacing: '0.02em',
+      titleColor: '#f4f6ff',
+      nameColor: '#9b8cff',
+      subtitleColor: '#c2c9e6',
+      layout: 'single-line',
+      background: 'transparent',
+      textShadow: '0 0 12px rgb(49 81 201 / 0.22)',
     },
   },
   'soy-tea': {
@@ -242,5 +276,13 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
 
 export function getHeroGreetingConfig(style: AppStyle): HeroGreetingConfig {
   return themeMeta[style]?.heroGreeting ?? fallbackHeroGreeting
+}
+
+export function getHeroCollabConfig(style: AppStyle): HeroCollabConfig | undefined {
+  return themeMeta[style]?.heroCollab
+}
+
+export function styleSupportsHeroCollab(style: AppStyle): boolean {
+  return getHeroCollabConfig(style) != null
 }
 

@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
 import { AiKcalEstimate } from '../../components/AiKcalEstimate'
+import { ResponsiveForm } from '../../components/ui/responsive'
 import { KJ_PER_KCAL } from '../../lib/calories'
 import type { MealInputMode } from '../../hooks/useLogForm'
 
@@ -26,7 +27,7 @@ interface LogEntryFormProps {
 
 export function LogEntryForm(props: LogEntryFormProps) {
   return (
-    <form onSubmit={props.onSubmit} className="space-y-4 pb-8">
+    <ResponsiveForm onSubmit={props.onSubmit} className="pb-8">
       <AiKcalEstimate
         kind={props.kind}
         name={props.name}
@@ -130,6 +131,6 @@ export function LogEntryForm(props: LogEntryFormProps) {
       >
         {props.loading ? '保存中…' : '保存'}
       </button>
-    </form>
+    </ResponsiveForm>
   )
 }
