@@ -1,4 +1,4 @@
-import { ReactionHeartIcon } from './reactionIcons'
+import { ReactionThumbsUpIcon } from './reactionIcons'
 
 interface LikeHeartButtonProps {
   active: boolean
@@ -36,7 +36,7 @@ export function LikeHeartButton({
       }}
       className={`like-heart ${active ? 'like-heart--active' : ''} like-heart--${size} like-heart--${layout} ${className}`.trim()}
     >
-      <ReactionHeartIcon filled={active} className="like-heart__icon" />
+      <ReactionThumbsUpIcon filled={active} className="like-heart__icon" />
       {count > 0 && (
         <span className="like-heart__count tabular-nums">{count}</span>
       )}
