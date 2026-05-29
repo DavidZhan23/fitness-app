@@ -52,7 +52,7 @@ function isCommentLike(item: CommunityInboxItem) {
 }
 
 export function CommunityInboxPage() {
-  const { markRead, refresh } = useCommunityInbox()
+  const { markRead } = useCommunityInbox()
   const [mode, setMode] = useState<InboxMode>('unread')
   const [items, setItems] = useState<CommunityInboxItem[]>([])
   const [total, setTotal] = useState(0)
@@ -69,20 +69,19 @@ export function CommunityInboxPage() {
   }, [])
 
   const load = useCallback(
-    async (nextMode: InboxMode, append = false) => {
+    async (nextMode: InboxMode, append = false, offset = 0) => {
       if (append) setLoadingMore(true)
       else setLoading(true)
       setError('')
       try {
         const data = await httpData.getCommunityInboxList(nextMode, {
           limit: PAGE_SIZE,
-          offset: append ? items.length : 0,
+          offset,
         })
         applyData(data, append)
         if (nextMode === 'unread' && !markedRef.current) {
           markedRef.current = true
           await markRead()
-          await refresh()
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载互动失败')
@@ -91,7 +90,7 @@ export function CommunityInboxPage() {
         else setLoading(false)
       }
     },
-    [applyData, items.length, markRead, refresh],
+    [applyData, markRead],
   )
 
   useEffect(() => {
@@ -136,16 +135,6 @@ export function CommunityInboxPage() {
           历史互动
         </button>
       </div>
-
-      {mode === 'unread' && (
-        <button
-          type="button"
-          onClick={() => setMode('history')}
-          className="rounded-xl px-3 py-2 text-xs text-violet-200 ring-1 ring-violet-400/30 transition hover:bg-violet-500/15"
-        >
-          查看历史互动
-        </button>
-      )}
 
       {loading ? (
         <p className="py-10 text-center text-sm text-muted">加载互动中…</p>
@@ -222,7 +211,7 @@ export function CommunityInboxPage() {
           {hasMore && (
             <button
               type="button"
-              onClick={() => void load(mode, true)}
+              onClick={() => void load(mode, true, items.length)}
               disabled={loadingMore}
               className="rounded-lg px-2.5 py-1 text-xs text-violet-200 ring-1 ring-violet-400/30 transition hover:bg-violet-500/15 disabled:opacity-50"
             >

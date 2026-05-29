@@ -5,7 +5,6 @@ import {
   CommunitySegment,
   type CommunityFilter,
 } from '../components/CommunitySegment'
-import { CommunityInboxHint } from '../components/CommunityInboxHint'
 import { DayCommunityVisibleToggle } from '../components/DayCommunityVisibleToggle'
 import { useAuth } from '../context/AuthContext'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
@@ -24,7 +23,7 @@ import {
 } from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
 import { PageShell } from '../components/ui/responsive'
-import type { CommunityInboxSummary, CommunityMember } from '../types'
+import type { CommunityMember } from '../types'
 
 function readInitialCommunityState() {
   const cached = loadCommunityListCache()
@@ -49,9 +48,7 @@ function readInitialCommunityState() {
 export function CommunityPage() {
   const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
-  const { refresh: refreshInbox } = useCommunityInbox()
-  const [inboxHint, setInboxHint] = useState<CommunityInboxSummary | null>(null)
-  const [inboxHintDismissed, setInboxHintDismissed] = useState(false)
+  const { unreadCount, refresh: refreshInbox } = useCommunityInbox()
   const todayKey = formatDateKey()
   const initial = useRef(readInitialCommunityState()).current
   const initialFilter = useRef(initial.filter)
@@ -199,10 +196,7 @@ export function CommunityPage() {
     let cancelled = false
     ;(async () => {
       try {
-        const summary = await httpData.getCommunityInboxUnread()
-        if (!cancelled && summary.count > 0) {
-          setInboxHint(summary)
-        }
+        await httpData.getCommunityInboxUnread()
       } catch {
         /* ignore */
       } finally {
@@ -338,7 +332,25 @@ export function CommunityPage() {
     <PageShell className="pb-2">
       <header className="community-hero relative overflow-hidden px-4 py-5">
         <div className="relative flex items-start justify-between gap-3">
-          <h1 className="text-xl font-bold tracking-tight text-primary">社区</h1>
+          <button
+            type="button"
+            onClick={() => void navigate('/community/inbox')}
+            className="group inline-flex min-w-0 flex-col items-start rounded-xl px-1 py-0.5 text-left transition hover:bg-violet-500/10"
+            aria-label="查看互动消息"
+          >
+            <span className="text-xl font-bold tracking-tight text-primary">社区</span>
+            <span className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] text-muted group-hover:text-violet-200">
+              <span aria-hidden>💬</span>
+              <span>互动消息中心</span>
+              {unreadCount > 0 ? (
+                <span className="rounded-full bg-rose-500/85 px-1.5 py-0.5 text-[10px] tabular-nums text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              ) : (
+                <span className="text-[10px] opacity-80">查看历史互动</span>
+              )}
+            </span>
+          </button>
           {user && (
             <DayCommunityVisibleToggle
               visible={selfDayVisible}
@@ -396,17 +408,6 @@ export function CommunityPage() {
           </p>
         </div>
       </header>
-
-      {inboxHint &&
-        !inboxHintDismissed &&
-        user &&
-        inboxHint.count > 0 && (
-          <CommunityInboxHint
-            summary={inboxHint}
-            onDismiss={() => setInboxHintDismissed(true)}
-            onOpenInbox={() => void navigate('/community/inbox')}
-          />
-        )}
 
       {!visible && (
         <p className="rounded-xl border border-dashed border-[#F8C2DA]/78 bg-[#FCE1F0]/20 px-3 py-2.5 text-sm leading-relaxed !text-[#F8C2DA]">
