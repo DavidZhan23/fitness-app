@@ -266,10 +266,6 @@ function FoodKingBanner({
 
   return (
     <section className="community-foodking-banner relative overflow-hidden rounded-2xl p-4">
-      <div
-        className="community-foodking-banner__glow pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl"
-        aria-hidden
-      />
       <div className="relative flex items-start gap-3">
         <span
           className="community-foodking-banner__icon-wrap flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl"
@@ -361,10 +357,6 @@ function BadgeBanner({
     <section
       className={`community-badge-banner community-badge-banner--${badge} relative overflow-hidden rounded-2xl p-4`}
     >
-      <div
-        className="community-badge-banner__glow pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl"
-        aria-hidden
-      />
       <div className="relative flex items-start gap-3">
         <span
           className={`community-badge-banner__icon-wrap flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl`}
