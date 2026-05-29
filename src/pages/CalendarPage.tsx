@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { DayBadgePopover } from '../components/DayBadgePopover'
 import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
-import { WallDayDetailCard } from '../components/WallDayDetailCard'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
@@ -23,7 +23,6 @@ import {
   normalizeDateKey,
 } from '../lib/streaks'
 import {
-  getCalendarDayDetailBackgroundClass,
   getDeficitHeatmapCell,
   getLiveWallLegendHighlight,
   resolveProfileMetabolism,
@@ -37,10 +36,11 @@ export function CalendarPage() {
   const [view, setView] = useState(getTodayMonth)
   const [dayMap, setDayMap] = useState(() => new Map())
   const [selected, setSelected] = useState<DayLog | null>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const [anchorGrid, setAnchorGrid] = useState<MonthGridType>('deficit')
   const [loading, setLoading] = useState(true)
   const [streakExercise, setStreakExercise] = useState(0)
   const [streakDeficit, setStreakDeficit] = useState(0)
-  const scrollToDetailAfterSelect = useRef(false)
   const [wallPane, setWallPane] = useState<MonthGridType>('exercise')
 
   const threshold = toKcal(profile?.deficit_threshold)
@@ -113,45 +113,58 @@ export function CalendarPage() {
     load()
   }, [load])
 
-  useEffect(() => {
-    if (!selected || !scrollToDetailAfterSelect.current) return
-    scrollToDetailAfterSelect.current = false
-    const id = window.setTimeout(() => {
-      document
-        .getElementById('calendar-day-detail')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 80)
-    return () => window.clearTimeout(id)
-  }, [selected, selectedDateKey])
+  const handleSelectedCellAnchorChange = useCallback(
+    (el: HTMLElement | null, _gridType: MonthGridType) => {
+      setAnchorEl(el)
+    },
+    [],
+  )
 
-  const handleDayClick = async (date: string) => {
-    if (!user) return
-    if (selectedDateKey === date) {
-      setSelected(null)
-      return
-    }
-    scrollToDetailAfterSelect.current = true
-    const log = await httpData.fetchDayLogByDate(date)
-    setSelected(log)
-    if (log) {
-      const key = normalizeDateKey(String(log.log_date))
-      const refreshed = buildMonthDayMap(
-        [log],
-        threshold,
-        todayKey,
-        accountStartKey,
-        profileBmr,
-      )
-      const cell = refreshed.get(key)
-      if (cell) {
-        setDayMap((prev) => {
-          const next = new Map(prev)
-          next.set(key, cell)
-          return next
-        })
+  const handleDayClick = useCallback(
+    async (date: string, gridType: MonthGridType = 'deficit') => {
+      if (!user) return
+      if (selectedDateKey === date && anchorGrid === gridType) {
+        setSelected(null)
+        setAnchorEl(null)
+        return
       }
-    }
-  }
+
+      setAnchorGrid(gridType)
+      if (selectedDateKey !== date) {
+        setSelected(null)
+      }
+
+      const log = await httpData.fetchDayLogByDate(date)
+      setSelected(log)
+      if (log) {
+        const key = normalizeDateKey(String(log.log_date))
+        const refreshed = buildMonthDayMap(
+          [log],
+          threshold,
+          todayKey,
+          accountStartKey,
+          profileBmr,
+        )
+        const cell = refreshed.get(key)
+        if (cell) {
+          setDayMap((prev) => {
+            const next = new Map(prev)
+            next.set(key, cell)
+            return next
+          })
+        }
+      }
+    },
+    [
+      user,
+      selectedDateKey,
+      anchorGrid,
+      threshold,
+      todayKey,
+      accountStartKey,
+      profileBmr,
+    ],
+  )
 
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))
   const goNext = () => {
@@ -166,6 +179,7 @@ export function CalendarPage() {
     setView(next)
   }
   const goToday = () => setView(getTodayMonth())
+
   const selectedDeficit =
     selected && selectedDateKey
       ? isBeforeAccountStart(selectedDateKey, accountStartKey)
@@ -201,18 +215,24 @@ export function CalendarPage() {
           selectedBeforeAccount,
         )
       : null
-  const detailBgClass =
-    selectedDateKey && selected
-      ? getCalendarDayDetailBackgroundClass({
-          beforeAccount: selectedBeforeAccount,
-          splitExercisePane: profile?.wall_style === 'split' && wallPane === 'exercise',
-          exerciseKcal: toKcal(selected.exercise_kcal),
-          deficitHeatmap: liveDeficitHeatmap,
-        })
-      : 'heatmap-empty'
+
+  const popoverOpen = Boolean(selected && anchorEl && selectedDateKey)
 
   if (loading) {
     return <p className="py-12 text-center text-muted">加载中…</p>
+  }
+
+  const heatmapProps = {
+    year,
+    month,
+    dayMap,
+    todayKey,
+    accountStartKey,
+    selectedDateKey,
+    legendHighlight,
+    anchorGrid,
+    onSelectedCellAnchorChange: handleSelectedCellAnchorChange,
+    onDayClick: handleDayClick,
   }
 
   return (
@@ -264,45 +284,35 @@ export function CalendarPage() {
 
         {profile?.wall_style === 'split' ? (
           <SplitMonthWall
-            year={year}
-            month={month}
-            dayMap={dayMap}
-            todayKey={todayKey}
-            accountStartKey={accountStartKey}
-            selectedDateKey={selectedDateKey}
-            legendHighlight={legendHighlight}
+            {...heatmapProps}
             wallPane={wallPane}
             onWallPaneChange={setWallPane}
-            onDayClick={handleDayClick}
           />
         ) : (
-          <MonthHeatmap
-            year={year}
-            month={month}
-            dayMap={dayMap}
-            todayKey={todayKey}
-            accountStartKey={accountStartKey}
-            selectedDateKey={selectedDateKey}
-            legendHighlight={legendHighlight}
-            onDayClick={handleDayClick}
-          />
+          <MonthHeatmap {...heatmapProps} />
         )}
       </section>
 
-      {selected && (
-        <WallDayDetailCard
-          dateKey={selectedDateKey ?? todayKey}
-          todayKey={todayKey}
-          bmr={profileBmr}
-          tdee={toKcal(selected.tdee_snapshot) || profileTdee}
-          exerciseKcal={toKcal(selected.exercise_kcal)}
-          mealKcal={toKcal(selected.meal_kcal)}
-          deficit={selectedDeficit}
-          dailyBmr={profileBmr}
-          detailBgClass={detailBgClass}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      <DayBadgePopover
+        open={popoverOpen}
+        anchorEl={anchorEl}
+        anchorGrid={anchorGrid}
+        dateKey={selectedDateKey ?? todayKey}
+        todayKey={todayKey}
+        deficit={selectedDeficit}
+        exerciseKcal={selected ? toKcal(selected.exercise_kcal) : 0}
+        mealKcal={selected ? toKcal(selected.meal_kcal) : 0}
+        bmr={profileBmr}
+        tdee={
+          selected
+            ? toKcal(selected.tdee_snapshot) || profileTdee
+            : profileTdee
+        }
+        onClose={() => {
+          setSelected(null)
+          setAnchorEl(null)
+        }}
+      />
 
       <p className="text-center text-xs text-muted">
         打卡墙样式可在{' '}
@@ -340,4 +350,3 @@ function StatCard({
     </div>
   )
 }
-

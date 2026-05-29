@@ -90,6 +90,66 @@ export function resolveHeatmapDayBadge(input: {
   return null
 }
 
+export type ExerciseGridDayBadge = 'champion' | 'elite'
+export type DeficitGridDayBadge = 'foodKing' | 'meal'
+
+/** Popover：当天所有达成称号（顺序固定） */
+export function listDayBadges(input: {
+  deficit: number
+  exerciseKcal: number
+  mealKcal: number
+  dailyBmr: number
+}): HeatmapDayBadge[] {
+  const { needsMealLog, badge, foodKing } = evaluateCommunityDayStatus(input)
+  const out: HeatmapDayBadge[] = []
+  if (badge === 'champion') out.push('champion')
+  else if (badge === 'elite') out.push('elite')
+  if (foodKing) out.push('foodKing')
+  if (needsMealLog) out.push('meal')
+  return out
+}
+
+export type PublicHonorBadge = 'champion' | 'elite' | 'foodKing'
+
+/** 社区公开列表：仅荣誉称号，不含 meal 提醒 */
+export function listPublicHonorBadges(input: {
+  deficit: number
+  exerciseKcal: number
+  mealKcal: number
+  dailyBmr: number
+}): PublicHonorBadge[] {
+  const { badge, foodKing } = evaluateCommunityDayStatus(input)
+  const out: PublicHonorBadge[] = []
+  if (badge === 'champion') out.push('champion')
+  else if (badge === 'elite') out.push('elite')
+  if (foodKing) out.push('foodKing')
+  return out
+}
+
+/** 运动墙格子角标（互斥：champion > elite） */
+export function resolveExerciseGridBadge(input: {
+  deficit: number
+  exerciseKcal: number
+  mealKcal: number
+  dailyBmr: number
+}): ExerciseGridDayBadge | null {
+  const { badge } = evaluateCommunityDayStatus(input)
+  return badge
+}
+
+/** 代谢墙格子角标（互斥：foodKing > meal） */
+export function resolveDeficitGridBadge(input: {
+  deficit: number
+  exerciseKcal: number
+  mealKcal: number
+  dailyBmr: number
+}): DeficitGridDayBadge | null {
+  const { needsMealLog, foodKing } = evaluateCommunityDayStatus(input)
+  if (foodKing) return 'foodKing'
+  if (needsMealLog) return 'meal'
+  return null
+}
+
 export function heatmapBadgeLabel(badge: HeatmapDayBadge): string {
   switch (badge) {
     case 'champion':

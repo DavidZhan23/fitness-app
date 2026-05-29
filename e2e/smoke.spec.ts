@@ -9,6 +9,7 @@ import {
   logMeal,
   openCommunity,
   switchCommunityFilter,
+  communityPageMarker,
 } from './helpers/flows'
 
 test.describe.serial('main flow smoke', () => {
@@ -64,9 +65,7 @@ test.describe.serial('main flow smoke', () => {
     await switchCommunityFilter(page, '关注')
     await switchCommunityFilter(page, '全部')
 
-    await expect(
-      page.getByRole('heading', { name: '社区', exact: true }),
-    ).toBeVisible()
+    await expect(communityPageMarker(page)).toBeVisible()
     await expect(page.getByText('加载社区…')).toBeHidden()
     await expect(page.getByLabel('更新中')).toBeHidden()
   })
@@ -106,7 +105,7 @@ test.describe.serial('main flow smoke', () => {
 
     await page.getByRole('button', { name: /日，今日$/ }).first().click()
     await expect(page.locator('.heatmap-day--selected').first()).toBeVisible()
-    await expect(page.getByRole('heading', { name: '今日小结' })).toBeVisible()
+    await expect(page.getByTestId('day-badge-popover')).toBeVisible()
   })
 
   test('settings avatar control is available', async ({ page }) => {

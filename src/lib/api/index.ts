@@ -398,7 +398,10 @@ export const httpData = {
     year: number,
     month: number,
   ): Promise<{
-    member: Pick<CommunityMember, 'id' | 'nickname' | 'isSelf' | 'avatarUrl'>
+    member: Pick<
+      CommunityMember,
+      'id' | 'nickname' | 'isSelf' | 'avatarUrl' | 'wallStyle'
+    >
     year: number
     month: number
     logs: DayLog[]

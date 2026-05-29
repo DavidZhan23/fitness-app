@@ -71,3 +71,16 @@
 - 录屏/截图：
 - 结论（可发布 / 阻断发布）：
 
+## 六、验收记录
+
+### 2026-05-28 · `main` @ `ae8f65e` · 精简版 v2 Phase 0
+
+| 项 | 结果 |
+|----|------|
+| 代码基线 | `DayCommentSection`：`composeRef`、iOS 内联 compose、`enableDock = replyTo && !isAppleTouch`、非 iOS dock + `visualViewport` — 与 PR #84 一致 |
+| 自动化 | `npm run typecheck` 通过 |
+| 真机 P0/P1 | **待 Owner** 按第二、三节在 iPhone（PWA + Safari）执行；建议顺带 Android 触控 + 桌面 Chrome |
+| 失败步骤 | （无报告） |
+| Phase 1 | **未触发**（无失败证据，不提交预防性 v2 代码） |
+| 结论 | 自动化预检通过；真机签字前默认不阻断；若真机 P0 失败再开 `feat/ios-comment-reply-fix` 对症补丁 |
+

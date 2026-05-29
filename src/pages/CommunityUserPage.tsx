@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
+import { DayBadgePopover } from '../components/DayBadgePopover'
 import { DayCommentSection } from '../components/DayCommentSection'
 import { FollowButton } from '../components/FollowButton'
 import { UserAvatar } from '../components/UserAvatar'
-import { MonthHeatmap } from '../components/MonthHeatmap'
+import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
-import { WallDayDetailCard } from '../components/WallDayDetailCard'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import {
@@ -22,12 +22,7 @@ import {
   getTodayMonth,
   shiftMonth,
 } from '../lib/monthCalendar'
-import {
-  getCalendarDayDetailBackgroundClass,
-  getDeficitHeatmapCell,
-  getWallLegendHighlight,
-} from '../lib/calories'
-import { computeCommunityDeficit } from '../lib/communityDeficit'
+import { getWallLegendHighlight } from '../lib/calories'
 import { formatDateKey, isBeforeAccountStart } from '../lib/streaks'
 import type {
   CommunityDaySnapshot,
@@ -49,6 +44,17 @@ function readInitialUserState(userId: string | undefined) {
   return { preview, loading: !preview }
 }
 
+function resolveWallStyle(
+  isSelf: boolean,
+  memberWallStyle: WallStyle | undefined,
+  viewerWallStyle: WallStyle | undefined,
+): WallStyle {
+  if (isSelf) {
+    return viewerWallStyle === 'split' ? 'split' : 'classic'
+  }
+  return memberWallStyle === 'split' ? 'split' : 'classic'
+}
+
 export function CommunityUserPage() {
   const { profile } = useAuth()
   const { userId } = useParams<{ userId: string }>()
@@ -62,6 +68,9 @@ export function CommunityUserPage() {
   const [isFollowing, setIsFollowing] = useState(
     initial.preview?.isFollowing ?? false,
   )
+  const [memberWallStyle, setMemberWallStyle] = useState<WallStyle | undefined>(
+    undefined,
+  )
   const [viewDate, setViewDate] = useState(
     initial.preview?.today.date ?? todayKey,
   )
@@ -73,10 +82,14 @@ export function CommunityUserPage() {
   const [comments, setComments] = useState<DayComment[]>([])
   const [dayMap, setDayMap] = useState(() => new Map())
   const [accountStartKey, setAccountStartKey] = useState<string | null>(null)
+  const [ownerDailyBmr, setOwnerDailyBmr] = useState(0)
+  const [monthThreshold, setMonthThreshold] = useState(0)
   const [loading, setLoading] = useState(initial.loading)
   const [dayLoading, setDayLoading] = useState(false)
   const [monthLoading, setMonthLoading] = useState(false)
-  const [showWallDetail, setShowWallDetail] = useState(false)
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const [anchorGrid, setAnchorGrid] = useState<MonthGridType>('deficit')
+  const [popoverActive, setPopoverActive] = useState(false)
   const [wallPane, setWallPane] = useState<'exercise' | 'deficit'>('exercise')
   const [error, setError] = useState('')
 
@@ -90,6 +103,7 @@ export function CommunityUserPage() {
       setAvatarUrl(data.member.avatarUrl ?? null)
       setIsSelf(data.member.isSelf)
       setIsFollowing(data.isFollowing)
+      setMemberWallStyle(data.member.wallStyle)
       setSnapshot(data.snapshot)
       setExercises(data.exercises)
       setMeals(data.meals)
@@ -125,7 +139,10 @@ export function CommunityUserPage() {
       setNickname(data.member.nickname)
       setAvatarUrl(data.member.avatarUrl ?? null)
       setIsSelf(data.member.isSelf)
+      setMemberWallStyle(data.member.wallStyle)
       setAccountStartKey(data.accountStartKey)
+      setOwnerDailyBmr(data.dailyBmr)
+      setMonthThreshold(data.threshold)
       setDayMap(
         buildMonthDayMap(
           data.logs as DayLog[],
@@ -176,6 +193,10 @@ export function CommunityUserPage() {
   }, [year, month, loading, error, loadMonth])
 
   useEffect(() => {
+    setPopoverActive(false)
+  }, [year, month])
+
+  useEffect(() => {
     if (loading || error) return
     if (window.location.hash !== '#day-comments') return
     const id = window.setTimeout(() => {
@@ -185,6 +206,34 @@ export function CommunityUserPage() {
     }, 80)
     return () => window.clearTimeout(id)
   }, [loading, error, viewDate])
+
+  const handleSelectedCellAnchorChange = useCallback(
+    (el: HTMLElement | null, _gridType: MonthGridType) => {
+      setAnchorEl(el)
+    },
+    [],
+  )
+
+  const handleDayClick = useCallback(
+    (date: string, gridType: MonthGridType = 'deficit') => {
+      if (viewDate === date && anchorGrid === gridType && popoverActive) {
+        setPopoverActive(false)
+        return
+      }
+
+      setAnchorGrid(gridType)
+      setPopoverActive(true)
+      if (viewDate !== date) {
+        setViewDate(date)
+        void loadDay(date, true)
+      }
+    },
+    [viewDate, anchorGrid, popoverActive, loadDay],
+  )
+
+  const closePopover = useCallback(() => {
+    setPopoverActive(false)
+  }, [])
 
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))
   const goNext = () => {
@@ -199,15 +248,6 @@ export function CommunityUserPage() {
     setView(next)
   }
 
-  const handleDayClick = (date: string) => {
-    if (date === viewDate) {
-      setShowWallDetail(true)
-      return
-    }
-    setShowWallDetail(true)
-    loadDay(date, true)
-  }
-
   const dateLabel = new Date(viewDate + 'T12:00:00').toLocaleDateString(
     'zh-CN',
     { month: 'long', day: 'numeric', weekday: 'short' },
@@ -217,7 +257,29 @@ export function CommunityUserPage() {
     dayMap.get(viewDate),
     isBeforeAccountStart(viewDate, accountStartKey),
   )
-  const wallStyle: WallStyle = profile?.wall_style === 'split' ? 'split' : 'classic'
+  const wallStyle = resolveWallStyle(
+    isSelf,
+    memberWallStyle,
+    profile?.wall_style,
+  )
+
+  const selectedCell = dayMap.get(viewDate)
+  const popoverFromSnapshot =
+    snapshot && !selectedCell && snapshot.date === viewDate ? snapshot : null
+  const popoverOpen = Boolean(
+    popoverActive &&
+      anchorEl &&
+      viewDate &&
+      (selectedCell || popoverFromSnapshot),
+  )
+  const popoverBmr = ownerDailyBmr || snapshot?.dailyBmr || 0
+  const popoverThreshold = monthThreshold || snapshot?.threshold || 0
+  const popoverDeficit =
+    selectedCell?.deficit ?? popoverFromSnapshot?.deficit ?? 0
+  const popoverExerciseKcal =
+    selectedCell?.exerciseKcal ?? popoverFromSnapshot?.exerciseKcal ?? 0
+  const popoverMealKcal =
+    selectedCell?.mealKcal ?? popoverFromSnapshot?.mealKcal ?? 0
 
   if (loading && !snapshot) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -234,17 +296,19 @@ export function CommunityUserPage() {
     )
   }
 
-  const communityDeficit = computeCommunityDeficit(snapshot, {
-    viewerProfile: profile,
-    isSelf,
-  })
-  const deficitHeatmap = getDeficitHeatmapCell(communityDeficit, snapshot.threshold)
-  const detailBgClass = getCalendarDayDetailBackgroundClass({
-    beforeAccount: isBeforeAccountStart(viewDate, accountStartKey),
-    splitExercisePane: wallStyle === 'split' && wallPane === 'exercise',
-    exerciseKcal: snapshot.exerciseKcal,
-    deficitHeatmap,
-  })
+  const heatmapProps = {
+    year,
+    month,
+    dayMap,
+    todayKey,
+    accountStartKey,
+    selectedDateKey: viewDate,
+    legendHighlight,
+    anchorGrid,
+    onSelectedCellAnchorChange: handleSelectedCellAnchorChange,
+    onDayClick: handleDayClick,
+    honorsOnly: !isSelf,
+  }
 
   return (
     <div className="space-y-5 pb-4">
@@ -393,51 +457,35 @@ export function CommunityUserPage() {
           <>
             {wallStyle === 'split' ? (
               <SplitMonthWall
-                year={year}
-                month={month}
-                dayMap={dayMap}
-                todayKey={todayKey}
-                accountStartKey={accountStartKey}
-                selectedDateKey={viewDate}
-                legendHighlight={legendHighlight}
+                {...heatmapProps}
                 wallPane={wallPane}
                 onWallPaneChange={setWallPane}
-                onDayClick={handleDayClick}
               />
             ) : (
-              <MonthHeatmap
-                year={year}
-                month={month}
-                dayMap={dayMap}
-                todayKey={todayKey}
-                accountStartKey={accountStartKey}
-                selectedDateKey={viewDate}
-                legendHighlight={legendHighlight}
-                onDayClick={handleDayClick}
-              />
+              <MonthHeatmap {...heatmapProps} />
             )}
             <p className="mt-3 text-center text-xs text-muted">
-              点击日期查看该日记录与评论
+              点击格子查看当日称号与数据
             </p>
-            {showWallDetail && (
-              <div className="mt-4">
-                <WallDayDetailCard
-                  dateKey={viewDate}
-                  todayKey={todayKey}
-                  bmr={snapshot.dailyBmr}
-                  tdee={snapshot.dailyBmr + snapshot.exerciseKcal}
-                  exerciseKcal={snapshot.exerciseKcal}
-                  mealKcal={snapshot.mealKcal}
-                  deficit={communityDeficit}
-                  dailyBmr={snapshot.dailyBmr}
-                  detailBgClass={detailBgClass}
-                  onClose={() => setShowWallDetail(false)}
-                />
-              </div>
-            )}
           </>
         )}
       </section>
+
+      <DayBadgePopover
+        open={popoverOpen}
+        anchorEl={anchorEl}
+        anchorGrid={anchorGrid}
+        dateKey={viewDate}
+        todayKey={todayKey}
+        deficit={popoverDeficit}
+        exerciseKcal={popoverExerciseKcal}
+        mealKcal={popoverMealKcal}
+        bmr={popoverBmr}
+        tdee={popoverBmr + popoverExerciseKcal}
+        deficitThreshold={popoverThreshold}
+        honorsOnly={!isSelf}
+        onClose={closePopover}
+      />
 
       {isSelf && (
         <Link

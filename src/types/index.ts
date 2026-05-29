@@ -36,6 +36,8 @@ export interface CommunityMember {
   nickname: string
   avatarUrl?: string | null
   isSelf: boolean
+  /** 主人打卡墙布局；社区 API 返回 */
+  wallStyle?: WallStyle
   today: CommunityDaySnapshot
   isFollowing: boolean
   todayLikeCount: number
@@ -92,7 +94,10 @@ export interface DayComment {
 }
 
 export interface CommunityUserDetail {
-  member: Pick<CommunityMember, 'id' | 'nickname' | 'isSelf' | 'avatarUrl'>
+  member: Pick<
+    CommunityMember,
+    'id' | 'nickname' | 'isSelf' | 'avatarUrl' | 'wallStyle'
+  >
   date: string
   snapshot: CommunityDaySnapshot
   exercises: CommunityPublicExercise[]
