@@ -33,6 +33,11 @@ const CommunityUserPage = lazy(() =>
     default: m.CommunityUserPage,
   })),
 )
+const CommunityInboxPage = lazy(() =>
+  import('./pages/CommunityInboxPage').then((m) => ({
+    default: m.CommunityInboxPage,
+  })),
+)
 const DeveloperReportsPage = lazy(() =>
   import('./pages/DeveloperReportsPage').then((m) => ({
     default: m.DeveloperReportsPage,
@@ -80,6 +85,7 @@ export default function App() {
                 <Route index element={<TodayPage />} />
                 <Route path="calendar" element={<CalendarPage />} />
                 <Route path="community" element={<CommunityPage />} />
+                <Route path="community/inbox" element={<CommunityInboxPage />} />
                 <Route path="community/:userId" element={<CommunityUserPage />} />
                 <Route path="templates" element={<TemplatesPage />} />
                 <Route path="settings" element={<SettingsPage />} />

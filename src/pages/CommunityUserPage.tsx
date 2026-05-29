@@ -10,7 +10,6 @@ import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { ReadOnlyLogList } from '../components/ReadOnlyLogList'
 import { useAuth } from '../context/AuthContext'
-import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
 import {
   loadCommunityListCache,
@@ -58,7 +57,6 @@ function resolveWallStyle(
 
 export function CommunityUserPage() {
   const { profile } = useAuth()
-  const { markRead } = useCommunityInbox()
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
@@ -197,10 +195,6 @@ export function CommunityUserPage() {
   useEffect(() => {
     setPopoverActive(false)
   }, [year, month])
-
-  useEffect(() => {
-    if (isSelf) void markRead()
-  }, [isSelf, markRead])
 
   useEffect(() => {
     if (loading || error) return

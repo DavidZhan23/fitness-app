@@ -28,6 +28,7 @@ import {
 } from '../social.js'
 import {
   getCommunityInboxUnread,
+  listCommunityInbox,
   markCommunityInboxRead,
 } from '../communityInbox.js'
 
@@ -38,6 +39,18 @@ router.get(
   authMiddleware,
   asyncHandler(async (req, res) => {
     const data = await getCommunityInboxUnread(req.userId)
+    res.json(data)
+  }),
+)
+
+router.get(
+  '/community/inbox',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const mode = req.query.mode === 'history' ? 'history' : 'unread'
+    const limit = Number(req.query.limit)
+    const offset = Number(req.query.offset)
+    const data = await listCommunityInbox(req.userId, { mode, limit, offset })
     res.json(data)
   }),
 )

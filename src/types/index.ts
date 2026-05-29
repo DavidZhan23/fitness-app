@@ -46,21 +46,35 @@ export interface CommunityMember {
   viewerDislikedToday: boolean
 }
 
-export type CommunityInboxItemKind = 'like' | 'comment_on_card' | 'reply'
+export type CommunityInboxItemKind =
+  | 'like'
+  | 'dislike'
+  | 'comment_on_card'
+  | 'reply'
+
+export interface CommunityInboxItem {
+  kind: CommunityInboxItemKind
+  actorNickname: string
+  logDate: string
+  targetUserId: string
+  bodyPreview: string | null
+  createdAt: string
+}
 
 export interface CommunityInboxSummary {
   count: number
   likesOnMyCard: number
+  dislikesOnMyCard: number
   commentsOnMyCard: number
   repliesToMe: number
-  items: {
-    kind: CommunityInboxItemKind
-    actorNickname: string
-    logDate: string
-    targetUserId: string
-    bodyPreview: string | null
-    createdAt: string
-  }[]
+  items: CommunityInboxItem[]
+}
+
+export interface CommunityInboxListResponse {
+  mode: 'unread' | 'history'
+  total: number
+  hasMore: boolean
+  items: CommunityInboxItem[]
 }
 
 export interface DayComment {
