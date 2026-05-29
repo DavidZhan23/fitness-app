@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
 import { DayBadgePopover } from '../components/DayBadgePopover'
@@ -14,6 +14,7 @@ import { httpData } from '../lib/api'
 import {
   loadCommunityListCache,
   loadCommunityUserPreview,
+  scrollCommunityMainToTop,
   syncFollowStatusInCommunityListCache,
 } from '../lib/communityListCache'
 import { buildMonthDayMap } from '../lib/monthData'
@@ -58,6 +59,7 @@ function resolveWallStyle(
 export function CommunityUserPage() {
   const { profile } = useAuth()
   const { userId } = useParams<{ userId: string }>()
+  const location = useLocation()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
   const initial = readInitialUserState(userId)
@@ -170,6 +172,11 @@ export function CommunityUserPage() {
       setLoading(false)
     }
   }, [userId, todayKey, loadDay])
+
+  useEffect(() => {
+    if (location.hash === '#day-comments') return
+    scrollCommunityMainToTop()
+  }, [userId, location.hash])
 
   useEffect(() => {
     if (!userId) return

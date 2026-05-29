@@ -425,3 +425,9 @@ export function restoreCommunityMainScroll(scrollY: number) {
 export function getCommunityMainElement() {
   return document.querySelector('.app-main')
 }
+
+export function scrollCommunityMainToTop() {
+  const el = getCommunityMainElement()
+  if (!el) return
+  el.scrollTop = 0
+}
