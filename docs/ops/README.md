@@ -9,6 +9,7 @@
 | 腾讯云方案概览 | [tencent-cloud.md](tencent-cloud.md) |
 | 服务器 `.env`、DeepSeek Key | [修改服务器env.md](修改服务器env.md) |
 | 安卓 / iPhone PWA 安装 | [安卓安装与PWA说明.md](安卓安装与PWA说明.md) |
+| iOS 社区评论回复防回归 | [iOS-社区评论回复防回归清单.md](iOS-社区评论回复防回归清单.md) |
 
 ## 交付与部署
 
