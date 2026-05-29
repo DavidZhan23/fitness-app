@@ -98,8 +98,9 @@ Base URL：
 | DELETE | `/community/comments/:commentId` | 删评论 |
 | POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |
-| GET | `/community/inbox/unread` | 未读 |
-| POST | `/community/inbox/mark-read` | 标已读 |
+| GET | `/community/inbox/unread` | 未读摘要：`count`（全部）、`interactionCount`（赞/踩/留言/回复）、`followersOnMe`（新关注）；`items[]` 含 `id`、`kind`（含 `follow`）、`actorId`、`actorNickname`、`createdAt`；follow 项另含 `viewerFollowsActor`、可选 `actorCanViewProfile` |
+| GET | `/community/inbox` | `?mode=unread\|history&limit&offset`；列表项字段同 unread `items` |
+| POST | `/community/inbox/mark-read` | 标已读（更新 `community_notify_seen_at`） |
 
 ## 错误
 

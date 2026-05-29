@@ -66,18 +66,26 @@ export type CommunityInboxItemKind =
   | 'dislike'
   | 'comment_on_card'
   | 'reply'
+  | 'follow'
 
 export interface CommunityInboxItem {
+  id: string
   kind: CommunityInboxItemKind
+  actorId: string
   actorNickname: string
   logDate: string
   targetUserId: string
   bodyPreview: string | null
   createdAt: string
+  /** follow 消息：我是否已回关对方 */
+  viewerFollowsActor?: boolean
+  actorCanViewProfile?: boolean
 }
 
 export interface CommunityInboxSummary {
   count: number
+  interactionCount: number
+  followersOnMe: number
   likesOnMyCard: number
   dislikesOnMyCard: number
   commentsOnMyCard: number
