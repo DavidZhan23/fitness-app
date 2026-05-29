@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { httpData } from '../lib/api'
-import { ReactionHeartIcon, ReactionThumbsDownIcon } from './reactionIcons'
+import { ReactionThumbsDownIcon, ReactionThumbsUpIcon } from './reactionIcons'
 
 interface DayLikeButtonProps {
   userId: string
@@ -150,7 +150,7 @@ export function DayLikeButton({
             viewerLiked ? 'day-like-btn--liked' : 'day-like-btn--idle'
           }`}
         >
-          <ReactionHeartIcon
+          <ReactionThumbsUpIcon
             filled={viewerLiked}
             className={`reaction-icon ${viewerLiked ? 'scale-110' : ''}`}
           />
@@ -194,7 +194,7 @@ export function DayLikeButton({
             viewerLiked ? 'day-like-btn--liked' : 'day-like-btn--idle'
           }`}
         >
-          <ReactionHeartIcon
+          <ReactionThumbsUpIcon
             filled={viewerLiked}
             className={`reaction-icon transition ${viewerLiked ? 'scale-110' : ''}`}
           />
