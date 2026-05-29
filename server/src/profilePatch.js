@@ -9,6 +9,7 @@ const AVATAR_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,/
 const ALLOWED = [
   'nickname',
   'welcome_message',
+  'welcome_subtitle',
   'avatar_url',
   'community_visible',
   'wall_style',
@@ -68,6 +69,11 @@ export function buildProfileUpdate(body) {
       typeof body.welcome_message === 'string' ? body.welcome_message.trim() : ''
     push('welcome_message', raw ? raw.slice(0, 30) : null)
   }
+  if (body.welcome_subtitle !== undefined) {
+    const raw =
+      typeof body.welcome_subtitle === 'string' ? body.welcome_subtitle.trim() : ''
+    push('welcome_subtitle', raw ? raw.slice(0, 40) : null)
+  }
   if (body.weight_kg !== undefined) {
     const w = num(body.weight_kg)
     if (w != null && w > 0) push('weight_kg', w)
@@ -115,7 +121,11 @@ export function buildProfileUpdate(body) {
     if (d != null) push('deficit_threshold', Math.round(d))
   }
   if (body.onboarding_complete !== undefined) {
-    push('onboarding_complete', Boolean(body.onboarding_complete))
+    const completing = Boolean(body.onboarding_complete)
+    push('onboarding_complete', completing)
+    if (completing && body.community_visible === undefined) {
+      push('community_visible', true)
+    }
   }
   if (body.community_visible !== undefined) {
     push('community_visible', Boolean(body.community_visible))

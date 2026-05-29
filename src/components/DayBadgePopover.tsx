@@ -14,12 +14,13 @@ import {
   heatmapBadgeLabel,
   listDayBadges,
   listPublicHonorBadges,
-  resolveHeatmapDayBadge,
   type HeatmapDayBadge,
 } from '../lib/communityBadges'
-
-const VIEWPORT_MARGIN = 12
-const GAP = 8
+import {
+  computeDayBadgePopoverPosition,
+  domRectToRect,
+  resolveAvoidRectFromAnchor,
+} from '../lib/dayBadgePopoverPosition'
 
 const BADGE_BLURBS: Record<HeatmapDayBadge, string> = {
   champion: '高强度训练 + 充足饮食，硬核一天',
@@ -65,43 +66,6 @@ function deficitToneClass(
   return 'theme-deficit-value--neutral'
 }
 
-function clamp(value: number, min: number, max: number): number {
-  if (max < min) return min
-  return Math.min(Math.max(value, min), max)
-}
-
-function computePopoverPosition(
-  anchorRect: DOMRect,
-  popoverWidth: number,
-  popoverHeight: number,
-): { left: number; top: number } {
-  const vv = window.visualViewport
-  const viewportWidth = vv?.width ?? window.innerWidth
-  const viewportHeight = vv?.height ?? window.innerHeight
-  const offsetLeft = vv?.offsetLeft ?? 0
-  const offsetTop = vv?.offsetTop ?? 0
-
-  let preferredLeft = anchorRect.right + GAP
-  let preferredTop = anchorRect.top
-
-  if (preferredLeft + popoverWidth > offsetLeft + viewportWidth - VIEWPORT_MARGIN) {
-    preferredLeft = anchorRect.left - GAP - popoverWidth
-  }
-  if (preferredTop + popoverHeight > offsetTop + viewportHeight - VIEWPORT_MARGIN) {
-    preferredTop = anchorRect.bottom - popoverHeight
-  }
-
-  const minLeft = offsetLeft + VIEWPORT_MARGIN
-  const maxLeft = offsetLeft + viewportWidth - popoverWidth - VIEWPORT_MARGIN
-  const minTop = offsetTop + VIEWPORT_MARGIN
-  const maxTop = offsetTop + viewportHeight - popoverHeight - VIEWPORT_MARGIN
-
-  return {
-    left: clamp(preferredLeft, minLeft, maxLeft),
-    top: clamp(preferredTop, minTop, maxTop),
-  }
-}
-
 export function DayBadgePopover({
   open,
   anchorEl,
@@ -130,9 +94,8 @@ export function DayBadgePopover({
   const badgeInput = { deficit, exerciseKcal, mealKcal, dailyBmr: bmr }
   const honorBadges = honorsOnly ? listPublicHonorBadges(badgeInput) : null
   const allBadges = honorBadges ?? listDayBadges(badgeInput)
-  const primaryBadge = honorsOnly
-    ? (honorBadges?.[0] ?? null)
-    : resolveHeatmapDayBadge(badgeInput)
+  const primaryBadge: HeatmapDayBadge | null =
+    honorBadges?.[0] ?? allBadges.find((badge) => badge !== 'meal') ?? null
   const deficitClass = deficitToneClass(deficit, threshold)
 
   const updatePosition = useCallback(() => {
@@ -140,11 +103,19 @@ export function DayBadgePopover({
       setPosition(null)
       return
     }
-    const anchorRect = anchorEl.getBoundingClientRect()
+    const anchorRect = domRectToRect(anchorEl.getBoundingClientRect())
+    const avoidRect = resolveAvoidRectFromAnchor(anchorEl)
     const { width, height } = popoverRef.current.getBoundingClientRect()
     const w = width > 0 ? width : popoverRef.current.offsetWidth
     const h = height > 0 ? height : popoverRef.current.offsetHeight
-    setPosition(computePopoverPosition(anchorRect, w, h))
+    setPosition(
+      computeDayBadgePopoverPosition({
+        anchorRect,
+        avoidRect,
+        popoverWidth: w,
+        popoverHeight: h,
+      }),
+    )
   }, [open, anchorEl])
 
   useLayoutEffect(() => {

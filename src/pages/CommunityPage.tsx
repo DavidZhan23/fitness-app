@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { CommunityFollowerList } from '../components/CommunityFollowerList'
+import { Link } from 'react-router-dom'
 import { CommunityMemberList } from '../components/CommunityMemberList'
 import {
   CommunitySegment,
@@ -24,7 +23,7 @@ import {
 } from '../lib/communityListCache'
 import { formatDateKey } from '../lib/streaks'
 import { PageShell } from '../components/ui/responsive'
-import type { CommunityFollower, CommunityMember } from '../types'
+import type { CommunityMember } from '../types'
 
 function readInitialCommunityState() {
   const cached = loadCommunityListCache()
@@ -40,7 +39,9 @@ function readInitialCommunityState() {
   return {
     fromCache: true as const,
     filter:
-      cached.activeFilter === 'followers' ? 'all' : cached.activeFilter,
+      (cached.activeFilter as string) === 'followers'
+        ? 'all'
+        : cached.activeFilter,
     members: cached.members,
     followingCount: cached.followingCount,
     scrollY: cached.scrollY,
@@ -48,7 +49,6 @@ function readInitialCommunityState() {
 }
 
 export function CommunityPage() {
-  const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
   const { unreadCount, refresh: refreshInbox } = useCommunityInbox()
   const todayKey = formatDateKey()
@@ -62,11 +62,7 @@ export function CommunityPage() {
   const [members, setMembers] = useState<CommunityMember[]>(initial.members)
   const [followingCount, setFollowingCount] = useState(initial.followingCount)
   const [followerCount, setFollowerCount] = useState(0)
-  const [followers, setFollowers] = useState<CommunityFollower[]>([])
-  const [loading, setLoading] = useState(
-    !initial.fromCache && initial.filter !== 'followers',
-  )
-  const [followersLoading, setFollowersLoading] = useState(false)
+  const [loading, setLoading] = useState(!initial.fromCache)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [togglingDayVisible, setTogglingDayVisible] = useState(false)
@@ -78,8 +74,6 @@ export function CommunityPage() {
   listStateRef.current = { filter, members, followingCount }
   const membersRef = useRef(members)
   membersRef.current = members
-  const followersRef = useRef(followers)
-  followersRef.current = followers
   const selfDayVisibleRef = useRef(selfDayVisible)
   selfDayVisibleRef.current = selfDayVisible
   const loadGenRef = useRef(0)
@@ -137,37 +131,9 @@ export function CommunityPage() {
     [todayKey],
   )
 
-  const loadFollowers = useCallback(async (opts?: { silent?: boolean }) => {
-    const gen = ++loadGenRef.current
-    const hasFollowers = followersRef.current.length > 0
-    const blockUi = !opts?.silent && !hasFollowers
-    if (blockUi) setFollowersLoading(true)
-    else if (!opts?.silent) setRefreshing(true)
-    setError('')
-    try {
-      const data = await httpData.listCommunityFollowers()
-      if (gen !== loadGenRef.current) return
-      setFollowers(data.followers)
-      setFollowerCount(data.total)
-    } catch (err) {
-      if (gen === loadGenRef.current && blockUi) {
-        setError(err instanceof Error ? err.message : '加载失败')
-      }
-    } finally {
-      if (gen === loadGenRef.current) {
-        if (blockUi) setFollowersLoading(false)
-        setRefreshing(false)
-      }
-    }
-  }, [])
-
   const load = useCallback(
     async (opts?: { silent?: boolean }) => {
       const requestFilter = filter
-      if (requestFilter === 'followers') {
-        await loadFollowers(opts)
-        return
-      }
       const gen = ++loadGenRef.current
       const hasMembers = membersRef.current.length > 0
       const blockUi = !opts?.silent && !hasMembers
@@ -206,7 +172,7 @@ export function CommunityPage() {
         }
       }
     },
-    [todayKey, filter, loadFollowers],
+    [todayKey, filter],
   )
 
   const prefetchFollowerCount = useCallback(async () => {
@@ -263,16 +229,12 @@ export function CommunityPage() {
     if (didInitialLoad.current) return
     didInitialLoad.current = true
     void prefetchFollowerCount()
-    if (initial.filter === 'followers') {
-      void loadFollowers()
-      return
-    }
     if (initial.fromCache) {
       void load({ silent: true })
     } else {
       void load()
     }
-  }, [load, loadFollowers, initial.fromCache, initial.filter, prefetchFollowerCount])
+  }, [load, initial.fromCache, prefetchFollowerCount])
 
   useEffect(() => {
     if (filter === initialFilter.current) return
@@ -290,14 +252,6 @@ export function CommunityPage() {
         scrollY: scrollYRef.current,
       })
       setFilter(next)
-      if (next === 'followers') {
-        setLoading(false)
-        setError('')
-        if (followersRef.current.length === 0) {
-          void loadFollowers()
-        }
-        return
-      }
       const cachedMembers = loadCommunityFilterCache(next)
       if (cachedMembers) {
         setMembers(
@@ -313,7 +267,7 @@ export function CommunityPage() {
         void load({ silent: false })
       }
     },
-    [filter, load, loadFollowers],
+    [filter, load],
   )
 
   const prevVisible = useRef(profile?.community_visible)
@@ -334,9 +288,6 @@ export function CommunityPage() {
     const nextFollowingCount = Math.max(
       0,
       listStateRef.current.followingCount + (following ? 1 : -1),
-    )
-    setFollowers((prev) =>
-      prev.map((f) => (f.id === userId ? { ...f, isFollowing: following } : f)),
     )
     setMembers((prev) => {
       const next = prev.map((m) =>
@@ -390,15 +341,11 @@ export function CommunityPage() {
 
   const visible = Boolean(profile?.community_visible)
   const othersCount = members.filter((m) => !m.isSelf).length
-  const showMemberList = filter !== 'followers'
-  const listLoading =
-    filter === 'followers'
-      ? followersLoading && followers.length === 0
-      : loading && members.length === 0
+  const listLoading = loading && members.length === 0
 
   return (
     <PageShell className="pb-2">
-      <header className="community-hero relative overflow-hidden px-4 py-3">
+      <header className="community-hero community-hero--compact relative overflow-hidden px-4">
         <div className="relative flex items-center justify-between gap-3">
           <h1 className="text-xl font-bold tracking-tight text-primary">社区</h1>
           {user && (
@@ -411,93 +358,95 @@ export function CommunityPage() {
             />
           )}
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void navigate('/community/inbox')}
-            className="community-hub-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-primary ring-1 ring-[var(--surface-card-border)] transition hover:bg-violet-500/10"
-            aria-label="查看互动消息"
+        <nav className="community-hub-row" aria-label="社区快捷入口">
+          <Link
+            to="/community/inbox"
+            className="community-hub-link"
+            aria-label={
+              unreadCount > 0
+                ? `查看互动消息，${unreadCount > 99 ? '99+' : unreadCount} 条未读`
+                : '查看互动消息'
+            }
           >
-            <span aria-hidden>💬</span>
             <span>互动消息</span>
             {unreadCount > 0 && (
-              <span className="rounded-full bg-rose-500/85 px-1.5 py-0.5 text-[10px] tabular-nums text-white">
+              <span className="community-hub-count">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleFilterChange('followers')}
-            className={`community-hub-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
-              filter === 'followers'
-                ? 'bg-violet-500/15 text-violet-100 ring-violet-400/35'
-                : 'text-primary ring-[var(--surface-card-border)] hover:bg-violet-500/10'
-            }`}
-            aria-label="查看关注我的人"
+          </Link>
+          <span className="community-hub-sep" aria-hidden>
+            ·
+          </span>
+          <Link
+            to="/community/followers"
+            className="community-hub-link"
+            aria-label={
+              followerCount > 0
+                ? `查看新增关注，${followerCount > 99 ? '99+' : followerCount} 人`
+                : '查看新增关注'
+            }
           >
-            <span>关注我</span>
+            <span>新增关注</span>
             {followerCount > 0 && (
-              <span className="rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[10px] tabular-nums text-violet-100">
+              <span className="community-hub-count">
                 {followerCount > 99 ? '99+' : followerCount}
               </span>
             )}
-          </button>
-        </div>
-        <details className="community-hero-rules mt-2.5 text-sm">
-          <summary className="cursor-pointer list-none text-xs font-medium text-muted hover:text-primary [&::-webkit-details-marker]:hidden">
-            称号规则
-            <span className="ml-0.5" aria-hidden>
-              ›
-            </span>
-          </summary>
-          <div className="mt-2 space-y-2 leading-relaxed">
-            <p className="text-[11px] text-muted">
-              按住左侧 ⋮⋮ 可拖动排序；点击名片查看详情
-            </p>
-            <p className="flex flex-nowrap items-center gap-2">
-              <span className="community-pill community-pill--elite inline-flex shrink-0 items-center gap-1">
-                <span aria-hidden>🔥</span>
-                减脂先锋
-              </span>
-              <span
-                className="min-w-0 flex-1 truncate text-muted-soft"
-                title="当日热量缺口≥500kcal，且已记录饮食"
-              >
-                热量缺口≥500kcal
-              </span>
-            </p>
-            <p className="flex flex-nowrap items-center gap-2">
-              <span className="community-pill community-pill--champion inline-flex shrink-0 items-center gap-1">
-                <span aria-hidden>👑</span>
-                运动大王
-              </span>
-              <span
-                className="min-w-0 flex-1 truncate text-muted-soft"
-                title="缺口≥800、运动≥500"
-              >
-                缺口≥800、运动≥600、饮食≥1k(kcal)
-              </span>
-            </p>
-            <p className="flex flex-nowrap items-center gap-2">
-              <span className="community-pill community-pill--foodKing inline-flex shrink-0 items-center gap-1">
-                <span aria-hidden>🥘</span>
-                美食大王
-              </span>
-              <span
-                className="min-w-0 flex-1 truncate text-muted-soft"
-                title="当日饮食热量 ≥ 基础代谢 × 1.2"
-              >
-                饮食 ≥ 基础代谢 × 1.2
-              </span>
-            </p>
-          </div>
-        </details>
+          </Link>
+        </nav>
+        <p className="community-hero-rules-hint">
+          按住左侧 ⋮⋮ 可拖动排序；点击名片查看详情
+        </p>
       </header>
 
+      <section
+        className="community-title-rules px-4 py-2.5"
+        aria-label="称号规则"
+      >
+        <div className="space-y-2 leading-relaxed">
+          <p className="flex flex-nowrap items-center gap-2">
+            <span className="community-pill community-pill--elite inline-flex shrink-0 items-center gap-1">
+              <span aria-hidden>🔥</span>
+              减脂先锋
+            </span>
+            <span
+              className="community-title-rules__desc min-w-0 flex-1 truncate"
+              title="当日热量缺口≥500kcal，且已记录饮食"
+            >
+              热量缺口≥500kcal
+            </span>
+          </p>
+          <p className="flex flex-nowrap items-center gap-2">
+            <span className="community-pill community-pill--champion inline-flex shrink-0 items-center gap-1">
+              <span aria-hidden>👑</span>
+              运动大王
+            </span>
+            <span
+              className="community-title-rules__desc min-w-0 flex-1 truncate"
+              title="缺口≥800、运动≥500"
+            >
+              缺口≥800、运动≥600、饮食≥1k(kcal)
+            </span>
+          </p>
+          <p className="flex flex-nowrap items-center gap-2">
+            <span className="community-pill community-pill--foodKing inline-flex shrink-0 items-center gap-1">
+              <span aria-hidden>🥘</span>
+              美食大王
+            </span>
+            <span
+              className="community-title-rules__desc min-w-0 flex-1 truncate"
+              title="当日饮食热量 ≥ 基础代谢 × 1.2"
+            >
+              饮食 ≥ 基础代谢 × 1.2
+            </span>
+          </p>
+        </div>
+      </section>
+
       {!visible && (
-        <p className="rounded-xl border border-dashed border-[#F8C2DA]/78 bg-[#FCE1F0]/20 px-3 py-2.5 text-sm leading-relaxed !text-[#F8C2DA]">
-          公开由设置中的「社区公开」控制；记录一笔运动/饮食可自动打开公开。
+        <p className="community-visibility-hint">
+          完成资料设置后会在社区公开；记录运动/饮食可保持活跃状态。
         </p>
       )}
 
@@ -505,7 +454,6 @@ export function CommunityPage() {
         value={filter}
         refreshing={refreshing}
         followingCount={followingCount}
-        followerCount={followerCount}
         onChange={handleFilterChange}
       />
 
@@ -526,26 +474,13 @@ export function CommunityPage() {
         </p>
       )}
 
-      {!listLoading && !error && filter === 'followers' && followers.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-600 py-12 text-center">
-          <p className="text-muted">还没有人关注你</p>
-          <button
-            type="button"
-            onClick={() => handleFilterChange('all')}
-            className="mt-3 text-sm text-[#80B2E5] hover:text-[#ACD1EE]"
-          >
-            去社区看看 →
-          </button>
-        </div>
-      )}
-
       {!listLoading && !error && members.length === 0 && filter === 'following' && (
-        <div className="rounded-2xl border border-dashed border-slate-600 py-12 text-center">
-          <p className="text-muted">还没有关注任何人</p>
+        <div className="community-empty">
+          <p className="community-empty__title">还没有关注任何人</p>
           <button
             type="button"
             onClick={() => handleFilterChange('all')}
-            className="mt-3 text-sm text-[#80B2E5] hover:text-[#ACD1EE]"
+            className="community-empty__action"
           >
             去发现健友 →
           </button>
@@ -553,20 +488,13 @@ export function CommunityPage() {
       )}
 
       {!listLoading && !error && members.length === 0 && filter === 'all' && (
-        <div className="rounded-2xl border border-dashed border-slate-600 py-12 text-center">
-          <p className="text-muted">还没有人公开社区动态</p>
-          <p className="mt-1 text-sm text-muted">成为第一个分享的人吧</p>
+        <div className="community-empty">
+          <p className="community-empty__title">还没有人公开社区动态</p>
+          <p className="community-empty__desc">成为第一个分享的人吧</p>
         </div>
       )}
 
-      {!error && filter === 'followers' && followers.length > 0 && (
-        <CommunityFollowerList
-          followers={followers}
-          onFollowChange={handleFollowChange}
-        />
-      )}
-
-      {!error && showMemberList && members.length > 0 && (
+      {!error && members.length > 0 && (
         <>
           {filter === 'following' && (
             <p className="text-xs text-muted">

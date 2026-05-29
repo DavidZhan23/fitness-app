@@ -44,6 +44,7 @@ function mapInboxRow(r) {
     kind: r.kind,
     actorId: r.actor_id,
     actorNickname: publicNicknameById(r.actor_id, r.actor_nickname),
+    actorAvatarUrl: r.actor_avatar_url ?? null,
     logDate: r.log_date,
     targetUserId: r.target_user_id,
     bodyPreview: r.body_preview || null,
@@ -66,6 +67,8 @@ function buildSinceClauses(since, params) {
       sinceClauseDislike: '',
       sinceClauseComment: '',
       sinceClauseReply: '',
+      sinceClauseCommentLike: '',
+      sinceClauseCommentDislike: '',
       sinceClauseFollow: '',
     }
   }
@@ -76,6 +79,8 @@ function buildSinceClauses(since, params) {
     sinceClauseDislike: ` and dd.created_at > ${p}`,
     sinceClauseComment: ` and c.created_at > ${p}`,
     sinceClauseReply: ` and c.created_at > ${p}`,
+    sinceClauseCommentLike: ` and l.created_at > ${p}`,
+    sinceClauseCommentDislike: ` and d.created_at > ${p}`,
     sinceClauseFollow: ` and f.created_at > ${p}`,
   }
 }
@@ -94,6 +99,8 @@ async function loadInboxItems(userId, opts = {}) {
     sinceClauseDislike,
     sinceClauseComment,
     sinceClauseReply,
+    sinceClauseCommentLike,
+    sinceClauseCommentDislike,
     sinceClauseFollow,
   } = buildSinceClauses(since, params)
 
@@ -109,6 +116,7 @@ async function loadInboxItems(userId, opts = {}) {
               dl.created_at, dl.like_date::text as log_date,
               dl.target_user_id, dl.liker_id as actor_id,
               null::text as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
               null::boolean as viewer_follows_actor,
               null::boolean as actor_can_view_profile
        from day_likes dl
@@ -120,6 +128,7 @@ async function loadInboxItems(userId, opts = {}) {
               dd.created_at, dd.like_date::text as log_date,
               dd.target_user_id, dd.liker_id as actor_id,
               null::text as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
               null::boolean as viewer_follows_actor,
               null::boolean as actor_can_view_profile
        from day_dislikes dd
@@ -131,6 +140,7 @@ async function loadInboxItems(userId, opts = {}) {
               c.created_at, c.log_date::text,
               c.target_user_id, c.author_id as actor_id,
               left(trim(c.body), 72) as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
               null::boolean as viewer_follows_actor,
               null::boolean as actor_can_view_profile
        from day_comments c
@@ -143,17 +153,45 @@ async function loadInboxItems(userId, opts = {}) {
               c.created_at, c.log_date::text,
               c.target_user_id, c.author_id as actor_id,
               left(trim(c.body), 72) as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
               null::boolean as viewer_follows_actor,
               null::boolean as actor_can_view_profile
        from day_comments c
        join profiles p on p.id = c.author_id
        where c.reply_to_user_id = $1 and c.author_id <> $1${sinceClauseReply}
        union all
+       select 'comment_like' as kind,
+              ('comment_like:' || l.comment_id::text || ':' || l.liker_id::text) as inbox_id,
+              l.created_at, c.log_date::text,
+              c.target_user_id, l.liker_id as actor_id,
+              left(trim(c.body), 72) as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
+              null::boolean as viewer_follows_actor,
+              null::boolean as actor_can_view_profile
+       from day_comment_likes l
+       join day_comments c on c.id = l.comment_id
+       join profiles p on p.id = l.liker_id
+       where c.author_id = $1 and l.liker_id <> $1${sinceClauseCommentLike}
+       union all
+       select 'comment_dislike' as kind,
+              ('comment_dislike:' || d.comment_id::text || ':' || d.disliker_id::text) as inbox_id,
+              d.created_at, c.log_date::text,
+              c.target_user_id, d.disliker_id as actor_id,
+              left(trim(c.body), 72) as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
+              null::boolean as viewer_follows_actor,
+              null::boolean as actor_can_view_profile
+       from day_comment_dislikes d
+       join day_comments c on c.id = d.comment_id
+       join profiles p on p.id = d.disliker_id
+       where c.author_id = $1 and d.disliker_id <> $1${sinceClauseCommentDislike}
+       union all
        select 'follow' as kind,
               ('follow:' || f.follower_id::text || ':' || f.followee_id::text || ':' || f.created_at::text) as inbox_id,
               f.created_at, f.created_at::date::text as log_date,
               f.followee_id as target_user_id, f.follower_id as actor_id,
               null::text as body_preview, p.nickname as actor_nickname,
+              p.avatar_url as actor_avatar_url,
               exists(
                 select 1 from follows f2
                 where f2.follower_id = $1 and f2.followee_id = f.follower_id
@@ -178,6 +216,8 @@ async function loadInboxTotal(userId, since = null) {
   let dislikeSince = ''
   let commentSince = ''
   let replySince = ''
+  let commentLikeSince = ''
+  let commentDislikeSince = ''
   let followSince = ''
   if (since) {
     params.push(since)
@@ -186,6 +226,8 @@ async function loadInboxTotal(userId, since = null) {
     dislikeSince = ` and created_at > ${p}`
     commentSince = ` and created_at > ${p}`
     replySince = ` and created_at > ${p}`
+    commentLikeSince = ` and l.created_at > ${p}`
+    commentDislikeSince = ` and d.created_at > ${p}`
     followSince = ` and f.created_at > ${p}`
   }
   const { rows } = await query(
@@ -203,6 +245,14 @@ async function loadInboxTotal(userId, since = null) {
        select count(*)::int from day_comments
        where reply_to_user_id = $1 and author_id <> $1${replySince}
      ) + (
+       select count(*)::int from day_comment_likes l
+       join day_comments c on c.id = l.comment_id
+       where c.author_id = $1 and l.liker_id <> $1${commentLikeSince}
+     ) + (
+       select count(*)::int from day_comment_dislikes d
+       join day_comments c on c.id = d.comment_id
+       where c.author_id = $1 and d.disliker_id <> $1${commentDislikeSince}
+     ) + (
        select count(*)::int from follows f
        where f.followee_id = $1 and f.follower_id <> $1${followSince}
      ) as total`,
@@ -215,8 +265,16 @@ export async function getCommunityInboxUnread(userId) {
   const { isFirstVisit, seenAt } = await resolveSeenAt(userId)
   if (isFirstVisit) return emptyInbox()
 
-  const [likeCount, dislikeCount, commentCount, replyCount, followCount, items] =
-    await Promise.all([
+  const [
+    likeCount,
+    dislikeCount,
+    commentCount,
+    replyCount,
+    commentLikeCount,
+    commentDislikeCount,
+    followCount,
+    items,
+  ] = await Promise.all([
       query(
         `select count(*)::int as c from day_likes
          where target_user_id = $1 and liker_id <> $1 and created_at > $2`,
@@ -239,6 +297,18 @@ export async function getCommunityInboxUnread(userId) {
         [userId, seenAt],
       ),
       query(
+        `select count(*)::int as c from day_comment_likes l
+         join day_comments c on c.id = l.comment_id
+         where c.author_id = $1 and l.liker_id <> $1 and l.created_at > $2`,
+        [userId, seenAt],
+      ),
+      query(
+        `select count(*)::int as c from day_comment_dislikes d
+         join day_comments c on c.id = d.comment_id
+         where c.author_id = $1 and d.disliker_id <> $1 and d.created_at > $2`,
+        [userId, seenAt],
+      ),
+      query(
         `select count(*)::int as c from follows
          where followee_id = $1 and follower_id <> $1 and created_at > $2`,
         [userId, seenAt],
@@ -250,9 +320,16 @@ export async function getCommunityInboxUnread(userId) {
   const dislikesOnMyCard = dislikeCount.rows[0]?.c ?? 0
   const commentsOnMyCard = commentCount.rows[0]?.c ?? 0
   const repliesToMe = replyCount.rows[0]?.c ?? 0
+  const commentsLikedOnMe = commentLikeCount.rows[0]?.c ?? 0
+  const commentsDislikedOnMe = commentDislikeCount.rows[0]?.c ?? 0
   const followersOnMe = followCount.rows[0]?.c ?? 0
   const interactionCount =
-    likesOnMyCard + dislikesOnMyCard + commentsOnMyCard + repliesToMe
+    likesOnMyCard +
+    dislikesOnMyCard +
+    commentsOnMyCard +
+    repliesToMe +
+    commentsLikedOnMe +
+    commentsDislikedOnMe
   const count = interactionCount + followersOnMe
 
   return {

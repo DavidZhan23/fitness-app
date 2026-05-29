@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ConfirmDialog } from './ConfirmDialog'
 import { RecordDeleteButton } from './RecordActionIcons'
+import { DislikeButton } from './DislikeButton'
 import { LikeHeartButton } from './LikeHeartButton'
 import { UserAvatar } from './UserAvatar'
 import { useAuth } from '../context/AuthContext'
@@ -99,10 +100,33 @@ export function DayCommentSection({
   const [error, setError] = useState('')
   const [pendingDelete, setPendingDelete] = useState<DayComment | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [likingCommentId, setLikingCommentId] = useState<string | null>(null)
+  const [reactingCommentId, setReactingCommentId] = useState<string | null>(null)
   const commentRefs = useRef(new Map<string, HTMLLIElement>())
   const inputRef = useRef<HTMLInputElement>(null)
   const composeRef = useRef<HTMLDivElement>(null)
+  const touchScrollTimeoutRef = useRef<number[]>([])
+
+  const clearTouchScrollTimeouts = () => {
+    for (const id of touchScrollTimeoutRef.current) clearTimeout(id)
+    touchScrollTimeoutRef.current = []
+  }
+
+  const scrollComposeIntoView = (block: ScrollLogicalPosition = 'end') => {
+    composeRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block,
+      inline: 'nearest',
+    })
+  }
+
+  const scheduleTouchComposeScroll = () => {
+    clearTouchScrollTimeouts()
+    requestAnimationFrame(() => scrollComposeIntoView('end'))
+    for (const delay of [250, 500]) {
+      const id = window.setTimeout(() => scrollComposeIntoView('end'), delay)
+      touchScrollTimeoutRef.current.push(id)
+    }
+  }
 
   const threads = useMemo(() => buildThreads(comments), [comments])
   const enableDock = Boolean(replyTo && !isTouchCoarse)
@@ -135,6 +159,8 @@ export function DayCommentSection({
       document.documentElement.style.removeProperty('--comment-compose-kb')
     }
   }, [enableDock])
+
+  useEffect(() => () => clearTouchScrollTimeouts(), [])
 
   const updateComments = (next: DayComment[]) => {
     setComments(next)
@@ -200,10 +226,9 @@ export function DayCommentSection({
     })
     requestAnimationFrame(() => {
       const input = inputRef.current
-      const compose = composeRef.current
       if (!input) return
       if (isTouchCoarse) {
-        compose?.scrollIntoView({ block: 'nearest' })
+        scheduleTouchComposeScroll()
         input.focus()
         return
       }
@@ -218,24 +243,58 @@ export function DayCommentSection({
     })
   }
 
+  const applyCommentReaction = (
+    commentId: string,
+    stats: {
+      likeCount: number
+      dislikeCount: number
+      viewerLiked: boolean
+      viewerDisliked: boolean
+    },
+  ) => {
+    const next = comments.map((x) =>
+      x.id === commentId
+        ? {
+            ...x,
+            likeCount: stats.likeCount,
+            dislikeCount: stats.dislikeCount,
+            viewerLiked: stats.viewerLiked,
+            viewerDisliked: stats.viewerDisliked,
+          }
+        : x,
+    )
+    updateComments(next)
+  }
+
   const toggleCommentLike = async (comment: DayComment) => {
-    if (likingCommentId) return
-    setLikingCommentId(comment.id)
+    if (reactingCommentId) return
+    setReactingCommentId(comment.id)
     setError('')
     try {
       const stats = comment.viewerLiked
         ? await httpData.unlikeCommunityComment(comment.id)
         : await httpData.likeCommunityComment(comment.id)
-      const next = comments.map((x) =>
-        x.id === comment.id
-          ? { ...x, likeCount: stats.likeCount, viewerLiked: stats.viewerLiked }
-          : x,
-      )
-      updateComments(next)
+      applyCommentReaction(comment.id, stats)
     } catch (err) {
       setError(err instanceof Error ? err.message : '点赞失败')
     } finally {
-      setLikingCommentId(null)
+      setReactingCommentId(null)
+    }
+  }
+
+  const toggleCommentDislike = async (comment: DayComment) => {
+    if (reactingCommentId) return
+    setReactingCommentId(comment.id)
+    setError('')
+    try {
+      const stats = comment.viewerDisliked
+        ? await httpData.undislikeCommunityComment(comment.id)
+        : await httpData.dislikeCommunityComment(comment.id)
+      applyCommentReaction(comment.id, stats)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '点踩失败')
+    } finally {
+      setReactingCommentId(null)
     }
   }
 
@@ -262,43 +321,54 @@ export function DayCommentSection({
         />
       </CommentProfileLink>
       <div className="community-comment-row__main min-w-0 flex-1">
-        <div className="community-comment-row__head flex items-start gap-2">
-          <p className="min-w-0 flex-1 text-xs leading-snug">
-            <CommentProfileLink
-              userId={c.authorId}
-              label={authorProfileLabel(c.authorNickname)}
-              className="community-comment-author font-medium hover:underline"
-            >
-              {c.authorNickname}
-            </CommentProfileLink>
-            {c.replyToNickname && c.replyToUserId && (
-              <>
-                <span className="text-muted"> 回复 </span>
-                <CommentProfileLink
-                  userId={c.replyToUserId}
-                  label={authorProfileLabel(c.replyToNickname)}
-                  className="community-comment-reply-to hover:underline"
-                >
-                  @{c.replyToNickname}
-                </CommentProfileLink>
-              </>
-            )}
-            <span className="text-muted"> · {formatTime(c.createdAt)}</span>
-          </p>
-          <LikeHeartButton
-            active={c.viewerLiked}
-            count={c.likeCount}
-            disabled={likingCommentId === c.id}
-            size="sm"
-            layout="column"
-            className="community-comment-row__like shrink-0"
-            onClick={() => void toggleCommentLike(c)}
-          />
-        </div>
+        <p className="min-w-0 text-xs leading-snug">
+          <CommentProfileLink
+            userId={c.authorId}
+            label={authorProfileLabel(c.authorNickname)}
+            className="community-comment-author font-medium hover:underline"
+          >
+            {c.authorNickname}
+          </CommentProfileLink>
+          {c.replyToNickname && c.replyToUserId && (
+            <>
+              <span className="text-muted"> 回复 </span>
+              <CommentProfileLink
+                userId={c.replyToUserId}
+                label={authorProfileLabel(c.replyToNickname)}
+                className="community-comment-reply-to hover:underline"
+              >
+                @{c.replyToNickname}
+              </CommentProfileLink>
+            </>
+          )}
+          <span className="text-muted"> · {formatTime(c.createdAt)}</span>
+        </p>
         <p className="community-comment-row__body mt-1 text-sm leading-relaxed text-primary">
           {c.body}
         </p>
-        <div className="community-comment-actions mt-1.5 flex flex-wrap items-center gap-3">
+      </div>
+      <div className="community-comment-row__aside">
+        <div className="community-comment-row__reactions day-like-pair day-like-pair--compact">
+          <LikeHeartButton
+            active={c.viewerLiked}
+            count={c.likeCount}
+            disabled={reactingCommentId === c.id}
+            size="sm"
+            layout="inline"
+            className="log-item-like"
+            onClick={() => void toggleCommentLike(c)}
+          />
+          <DislikeButton
+            active={c.viewerDisliked}
+            count={c.dislikeCount}
+            disabled={reactingCommentId === c.id}
+            size="sm"
+            layout="inline"
+            className="log-item-dislike"
+            onClick={() => void toggleCommentDislike(c)}
+          />
+        </div>
+        <div className="community-comment-row__actions">
           <button
             type="button"
             onClick={() => startReply(c)}
@@ -338,6 +408,10 @@ export function DayCommentSection({
         }
         disabled={sending}
         onChange={(e) => setBody(e.target.value)}
+        onFocus={() => {
+          if (!isTouchCoarse) return
+          scheduleTouchComposeScroll()
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             e.preventDefault()

@@ -123,6 +123,7 @@ export function CalendarPage() {
   const handleDayClick = useCallback(
     async (date: string, gridType: MonthGridType = 'deficit') => {
       if (!user) return
+      if (isBeforeAccountStart(date, accountStartKey)) return
       if (selectedDateKey === date && anchorGrid === gridType) {
         setSelected(null)
         setAnchorEl(null)

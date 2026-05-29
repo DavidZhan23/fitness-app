@@ -210,6 +210,20 @@ export async function runMigrations() {
   }
   try {
     await pool.query(`
+      create table if not exists public.day_comment_dislikes (
+        comment_id uuid not null references public.day_comments (id) on delete cascade,
+        disliker_id uuid not null references public.users (id) on delete cascade,
+        created_at timestamptz not null default now(),
+        primary key (comment_id, disliker_id)
+      )`)
+    await pool.query(`
+      create index if not exists idx_day_comment_dislikes_disliker
+      on public.day_comment_dislikes (disliker_id, created_at)`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(`
       create table if not exists public.telemetry_events (
         id uuid primary key default gen_random_uuid(),
         user_id uuid references public.users (id) on delete set null,
@@ -305,6 +319,22 @@ export async function runMigrations() {
   try {
     await pool.query(
       `alter table public.profiles add column if not exists welcome_message text`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(
+      `alter table public.profiles add column if not exists welcome_subtitle text`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(
+      `update public.profiles
+       set community_visible = true, updated_at = now()
+       where onboarding_complete = true and community_visible = false`,
     )
   } catch {
     /* 表未建等 */

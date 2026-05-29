@@ -68,6 +68,14 @@ describe('communityBadges grid helpers', () => {
         dailyBmr: bmr,
       }),
     ).toBeNull()
+    expect(
+      resolveExerciseGridBadge({
+        deficit: 600,
+        exerciseKcal: 200,
+        mealKcal: 0,
+        dailyBmr: bmr,
+      }),
+    ).toBeNull()
   })
 
   it('resolveDeficitGridBadge prefers foodKing over meal', () => {

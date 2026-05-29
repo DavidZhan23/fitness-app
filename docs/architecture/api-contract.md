@@ -85,7 +85,7 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为全部 `community_visible` 且 onboarding 完成用户（无固定条数上限，默认昵称排序）；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日） |
+| GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为 `community_visible = true` 且 `onboarding_complete = true` 的用户（onboarding 完成时默认 `community_visible=true`，无固定条数上限，默认昵称排序）；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日） |
 | GET | `/community/followers` | 关注我的用户列表；`{ total, followers[] }`，每项含 `id`、`nickname`、`avatarUrl`、`followedAt`、`isFollowing`（我是否已回关）、`canViewProfile` |
 | PUT | `/community/member-order` | 排序 |
 | PATCH | `/community/days/:date/visible` | 设置当日社区动态是否公开；body `{ visible: boolean }`；`:date` 为 `YYYY-MM-DD`，仅本人 |
@@ -96,10 +96,11 @@ Base URL：
 | GET | `/community/users/:userId/comments` | 评论列表；每项含 `authorAvatarUrl`（作者头像 URL，可空） |
 | POST | `/community/users/:userId/comments` | body: `{ body, parentCommentId? }` | 发评论（`parentCommentId` 可选，回复时填写）；响应含 `authorAvatarUrl` |
 | DELETE | `/community/comments/:commentId` | 删评论 |
-| POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论 |
+| POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论；响应 `{ likeCount, dislikeCount, viewerLiked, viewerDisliked }` |
+| POST/DELETE | `/community/comments/:commentId/dislikes` | 点踩/取消点踩评论；响应同上 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |
-| GET | `/community/inbox/unread` | 未读摘要：`count`（全部）、`interactionCount`（赞/踩/留言/回复）、`followersOnMe`（新关注）；`items[]` 含 `id`、`kind`（含 `follow`）、`actorId`、`actorNickname`、`createdAt`；follow 项另含 `viewerFollowsActor`、可选 `actorCanViewProfile` |
-| GET | `/community/inbox` | `?mode=unread\|history&limit&offset`；列表项字段同 unread `items` |
+| GET | `/community/inbox/unread` | 未读摘要：`count`（全部）、`interactionCount`（赞/踩/留言/回复/评论赞踩，**实时聚合源表**）；`items[]` 含 `kind`（含 `comment_like`、`comment_dislike`、`follow` 等）；取消 reaction 后刷新即消失 |
+| GET | `/community/inbox` | `?mode=unread\|history&limit&offset`；列表项字段同 unread `items`；`comment_like`/`comment_dislike` 通知评论作者（`day_comments.author_id`） |
 | POST | `/community/inbox/mark-read` | 标已读（更新 `community_notify_seen_at`） |
 
 ## 错误

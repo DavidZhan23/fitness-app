@@ -223,6 +223,7 @@ export function CommunityUserPage() {
 
   const handleDayClick = useCallback(
     (date: string, gridType: MonthGridType = 'deficit') => {
+      if (isBeforeAccountStart(date, accountStartKey)) return
       if (viewDate === date && anchorGrid === gridType && popoverActive) {
         setPopoverActive(false)
         return
@@ -235,7 +236,7 @@ export function CommunityUserPage() {
         void loadDay(date, true)
       }
     },
-    [viewDate, anchorGrid, popoverActive, loadDay],
+    [viewDate, anchorGrid, popoverActive, loadDay, accountStartKey],
   )
 
   const closePopover = useCallback(() => {

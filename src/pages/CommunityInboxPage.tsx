@@ -1,90 +1,147 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FollowButton } from '../components/FollowButton'
+import { UserAvatar } from '../components/UserAvatar'
+import { SegmentedControl } from '../components/ui/responsive'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
+import { formatDateKey, normalizeDateKey } from '../lib/streaks'
 import type { CommunityInboxItem, CommunityInboxListResponse } from '../types'
 
 type InboxMode = 'unread' | 'history'
+type DateGroupKey = 'today' | 'yesterday' | 'earlier'
 
 const PAGE_SIZE = 20
 
-function formatWhen(iso: string, logDate: string) {
-  const today = new Date()
-  const y = today.getFullYear()
-  const m = String(today.getMonth() + 1).padStart(2, '0')
-  const d = String(today.getDate()).padStart(2, '0')
-  const todayKey = `${y}-${m}-${d}`
-  if (logDate === todayKey) {
-    return new Date(iso).toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+const INTERACTION_KINDS = new Set<CommunityInboxItem['kind']>([
+  'like',
+  'dislike',
+  'comment_on_card',
+  'reply',
+  'comment_like',
+  'comment_dislike',
+])
+
+const GROUP_LABELS: Record<DateGroupKey, string> = {
+  today: '今天',
+  yesterday: '昨天',
+  earlier: '更早',
+}
+
+function filterInteractionItems(items: CommunityInboxItem[]) {
+  return items.filter((item) => INTERACTION_KINDS.has(item.kind))
+}
+
+function getYesterdayDateKey() {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return formatDateKey(d)
+}
+
+function getDateGroupKey(iso: string): DateGroupKey {
+  const dateKey = normalizeDateKey(iso)
+  const todayKey = formatDateKey()
+  if (dateKey === todayKey) return 'today'
+  if (dateKey === getYesterdayDateKey()) return 'yesterday'
+  return 'earlier'
+}
+
+function groupInboxItems(items: CommunityInboxItem[]) {
+  const order: DateGroupKey[] = ['today', 'yesterday', 'earlier']
+  const buckets: Record<DateGroupKey, CommunityInboxItem[]> = {
+    today: [],
+    yesterday: [],
+    earlier: [],
   }
+  for (const item of items) {
+    buckets[getDateGroupKey(item.createdAt)].push(item)
+  }
+  return order
+    .filter((key) => buckets[key].length > 0)
+    .map((key) => ({
+      key,
+      label: GROUP_LABELS[key],
+      items: buckets[key],
+    }))
+}
+
+function formatLogDateLabel(logDate: string | null | undefined) {
+  if (!logDate || !/^\d{4}-\d{2}-\d{2}$/.test(logDate)) return '当日'
   const [, mm, dd] = logDate.split('-')
-  return `${Number(mm)}月${Number(dd)}日`
+  const m = Number(mm)
+  const d = Number(dd)
+  if (!Number.isFinite(m) || !Number.isFinite(d)) return '当日'
+  return `${m}月${d}日`
 }
 
-function itemTitle(item: CommunityInboxItem) {
-  if (item.kind === 'like') return '赞了你的今日名片'
-  if (item.kind === 'dislike') return '踩了你的今日名片'
-  if (item.kind === 'comment_on_card') return '在你的名片下留言'
-  if (item.kind === 'follow') return '关注了你'
-  return '回复了你的留言'
+function formatItemTime(iso: string, groupKey: DateGroupKey) {
+  const time = new Date(iso).toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  if (groupKey === 'today' || groupKey === 'yesterday') return time
+  const dateKey = normalizeDateKey(iso)
+  const [, mm, dd] = dateKey.split('-')
+  return `${Number(mm)}/${Number(dd)} ${time}`
 }
 
-function itemToneClass(item: CommunityInboxItem) {
-  if (item.kind === 'like') return 'bg-teal-900/30 ring-teal-500/30 text-teal-200'
-  if (item.kind === 'dislike') return 'bg-orange-900/30 ring-orange-500/30 text-orange-200'
-  if (item.kind === 'comment_on_card') {
-    return 'bg-violet-900/30 ring-violet-500/30 text-violet-200'
-  }
-  if (item.kind === 'follow') return 'bg-sky-900/30 ring-sky-500/30 text-sky-200'
-  return 'bg-rose-900/30 ring-rose-500/30 text-rose-200'
-}
-
-function itemEmoji(item: CommunityInboxItem) {
-  if (item.kind === 'like') return '👍'
-  if (item.kind === 'dislike') return '👎'
-  if (item.kind === 'comment_on_card') return '💬'
-  if (item.kind === 'follow') return '👤'
-  return '↩️'
+function itemActionText(item: CommunityInboxItem) {
+  const logLabel = formatLogDateLabel(item.logDate)
+  if (item.kind === 'like') return `赞了你 ${logLabel}的记录`
+  if (item.kind === 'dislike') return `踩了你 ${logLabel}的记录`
+  if (item.kind === 'comment_on_card') return `评论了你 ${logLabel}的记录`
+  if (item.kind === 'comment_like') return '赞了你的评论'
+  if (item.kind === 'comment_dislike') return '踩了你的评论'
+  return '回复了你的评论'
 }
 
 function inboxItemHref(item: CommunityInboxItem) {
   if (item.kind === 'like' || item.kind === 'dislike') {
     return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}`
   }
-  if (item.kind === 'comment_on_card' || item.kind === 'reply') {
-    return `/community/${item.targetUserId}#day-comments`
+  if (
+    item.kind === 'comment_on_card' ||
+    item.kind === 'reply' ||
+    item.kind === 'comment_like' ||
+    item.kind === 'comment_dislike'
+  ) {
+    return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}#day-comments`
   }
-  return `/community/${item.actorId}`
+  return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}`
 }
 
-function InboxItemBody({ item }: { item: CommunityInboxItem }) {
+function InboxItemRow({
+  item,
+  groupKey,
+}: {
+  item: CommunityInboxItem
+  groupKey: DateGroupKey
+}) {
   return (
-    <>
-      <span
-        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ring-1 ${itemToneClass(item)}`}
-        aria-hidden
-      >
-        {itemEmoji(item)}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="text-xs leading-snug text-primary">
+    <Link to={inboxItemHref(item)} className="community-inbox-row">
+      <UserAvatar
+        variant="community"
+        size="sm"
+        nickname={item.actorNickname}
+        avatarUrl={item.actorAvatarUrl}
+      />
+      <span className="community-inbox-row__main">
+        <span className="community-inbox-row__title">
           <span className="font-medium">{item.actorNickname}</span>{' '}
-          {itemTitle(item)}
-          <span className="ml-1.5 text-muted">
-            {formatWhen(item.createdAt, item.logDate)}
-          </span>
+          {itemActionText(item)}
         </span>
         {item.bodyPreview && (
-          <span className="mt-0.5 block truncate text-[11px] text-muted">
+          <span className="community-inbox-row__quote">
             「{item.bodyPreview}」
           </span>
         )}
       </span>
-    </>
+      <span className="community-inbox-row__aside">
+        <span className="community-inbox-row__time">
+          {formatItemTime(item.createdAt, groupKey)}
+        </span>
+        <span className="community-inbox-action">查看</span>
+      </span>
+    </Link>
   )
 }
 
@@ -98,20 +155,28 @@ export function CommunityInboxPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const markedRef = useRef(false)
+  const rawOffsetRef = useRef(0)
 
-  const handleFollowBack = useCallback((itemId: string) => {
-    setItems((prev) =>
-      prev.map((x) =>
-        x.id === itemId ? { ...x, viewerFollowsActor: true } : x,
-      ),
-    )
-  }, [])
+  const groupedItems = useMemo(() => groupInboxItems(items), [items])
 
-  const applyData = useCallback((data: CommunityInboxListResponse, append: boolean) => {
-    setTotal(data.total)
-    setHasMore(data.hasMore)
-    setItems((prev) => (append ? [...prev, ...data.items] : data.items))
-  }, [])
+  const showFinalEmpty = !loading && !loadingMore && items.length === 0 && !hasMore
+  const showFilteredEmptyLoading =
+    !loading && !loadingMore && items.length === 0 && hasMore
+
+  const applyData = useCallback(
+    (data: CommunityInboxListResponse, append: boolean) => {
+      setTotal(data.total)
+      setHasMore(data.hasMore)
+      const filtered = filterInteractionItems(data.items)
+      setItems((prev) => (append ? [...prev, ...filtered] : filtered))
+      if (append) {
+        rawOffsetRef.current += data.items.length
+      } else {
+        rawOffsetRef.current = data.items.length
+      }
+    },
+    [],
+  )
 
   const load = useCallback(
     async (nextMode: InboxMode, append = false, offset = 0) => {
@@ -140,94 +205,54 @@ export function CommunityInboxPage() {
 
   useEffect(() => {
     markedRef.current = false
+    rawOffsetRef.current = 0
     void load(mode)
   }, [load, mode])
 
-  const renderFollowActions = (item: CommunityInboxItem) => (
-    <div className="flex shrink-0 flex-col items-end gap-1.5">
-      <Link
-        to={`/community/${item.actorId}`}
-        className="text-[10px] text-muted hover:text-primary"
-      >
-        查看主页
-      </Link>
-      <FollowButton
-        userId={item.actorId}
-        isFollowing={item.viewerFollowsActor ?? false}
-        compact
-        idleLabel="回关"
-        onChange={(following) => {
-          if (following) handleFollowBack(item.id)
-        }}
-      />
-    </div>
-  )
-
-  const renderRow = (item: CommunityInboxItem) => {
-    if (item.kind === 'follow') {
-      return (
-        <div className="block px-3 py-2.5">
-          <span className="flex items-start gap-2.5">
-            <InboxItemBody item={item} />
-            {renderFollowActions(item)}
-          </span>
-        </div>
-      )
-    }
-
-    return (
-      <Link
-        to={inboxItemHref(item)}
-        className="block px-3 py-2.5 transition hover:opacity-90"
-      >
-        <span className="flex items-start gap-2.5">
-          <InboxItemBody item={item} />
-          <span className="shrink-0 self-center text-[10px] text-muted">
-            查看 →
-          </span>
-        </span>
-      </Link>
-    )
-  }
+  useEffect(() => {
+    if (loading || loadingMore || error || items.length > 0 || !hasMore) return
+    void load(mode, true, rawOffsetRef.current)
+  }, [error, hasMore, items.length, load, loading, loadingMore, mode])
 
   return (
-    <div className="space-y-4 pb-2">
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-3 pb-2">
+      <header className="community-inbox-header">
         <div>
-          <h1 className="text-lg font-semibold text-primary">互动消息</h1>
-          <p className="text-xs text-muted">
-            {mode === 'unread' ? '未读互动会集中展示在这里' : '历史互动按时间倒序展示'}
+          <h1 className="community-inbox-header__title">互动消息</h1>
+          <p className="community-inbox-header__desc">
+            赞、踩、评论和回复会出现在这里
           </p>
         </div>
-        <Link to="/community" className="text-xs text-muted hover:text-primary">
+        <Link to="/community" className="community-inbox-back">
           返回社区
         </Link>
-      </div>
+      </header>
 
-      <div className="flex items-center gap-2">
+      <SegmentedControl
+        columns={2}
+        className="community-segment"
+        role="tablist"
+        aria-label="互动消息筛选"
+      >
         <button
           type="button"
+          role="tab"
+          aria-selected={mode === 'unread'}
           onClick={() => setMode('unread')}
-          className={`rounded-full px-3 py-1.5 text-xs ring-1 transition ${
-            mode === 'unread'
-              ? 'bg-violet-500/20 text-violet-100 ring-violet-400/35'
-              : 'text-muted ring-[var(--surface-card-border)] hover:text-primary'
-          }`}
+          className={`community-segment__tab ${mode === 'unread' ? 'community-segment__tab--active' : ''}`}
         >
-          未读互动
+          未读
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={mode === 'history'}
           onClick={() => setMode('history')}
-          className={`rounded-full px-3 py-1.5 text-xs ring-1 transition ${
-            mode === 'history'
-              ? 'bg-violet-500/20 text-violet-100 ring-violet-400/35'
-              : 'text-muted ring-[var(--surface-card-border)] hover:text-primary'
-          }`}
+          className={`community-segment__tab ${mode === 'history' ? 'community-segment__tab--active' : ''}`}
         >
-          历史互动
+          历史
         </button>
-      </div>
+      </SegmentedControl>
 
       {loading ? (
         <p className="py-10 text-center text-sm text-muted">加载互动中…</p>
@@ -242,21 +267,44 @@ export function CommunityInboxPage() {
             重试
           </button>
         </p>
-      ) : items.length === 0 ? (
-        <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted">
-          {mode === 'unread' ? '暂无未读互动' : '暂无历史互动'}
-        </p>
+      ) : showFinalEmpty ? (
+        <div className="community-empty">
+          <p className="community-empty__title">
+            {mode === 'unread' ? '暂无未读互动' : '暂无历史互动'}
+          </p>
+          <p className="community-empty__desc">
+            {mode === 'unread'
+              ? '收到新的赞、踩、评论和回复时会出现在这里'
+              : '你收到过的赞、踩、评论和回复会保存在这里'}
+          </p>
+        </div>
+      ) : showFilteredEmptyLoading ? (
+        <div className="py-10 text-center">
+          <p className="text-sm text-muted">加载互动中…</p>
+          <button
+            type="button"
+            onClick={() => void load(mode, true, rawOffsetRef.current)}
+            disabled={loadingMore}
+            className="btn-soft mt-3 rounded-lg px-2.5 py-1 text-xs disabled:opacity-50"
+          >
+            {loadingMore ? '加载中…' : '加载更多'}
+          </button>
+        </div>
       ) : (
-        <ul className="space-y-2">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-xl border border-[var(--surface-card-border)]"
-            >
-              {renderRow(item)}
-            </li>
+        <div className="space-y-0">
+          {groupedItems.map((group) => (
+            <section key={group.key} className="community-inbox-group">
+              <h2 className="community-inbox-group__label">{group.label}</h2>
+              <ul className="community-inbox-list">
+                {group.items.map((item) => (
+                  <li key={item.id}>
+                    <InboxItemRow item={item} groupKey={group.key} />
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
 
       {!loading && items.length > 0 && (
@@ -265,9 +313,9 @@ export function CommunityInboxPage() {
           {hasMore && (
             <button
               type="button"
-              onClick={() => void load(mode, true, items.length)}
+              onClick={() => void load(mode, true, rawOffsetRef.current)}
               disabled={loadingMore}
-              className="rounded-lg px-2.5 py-1 text-xs text-violet-200 ring-1 ring-violet-400/30 transition hover:bg-violet-500/15 disabled:opacity-50"
+              className="btn-soft rounded-lg px-2.5 py-1 text-xs disabled:opacity-50"
             >
               {loadingMore ? '加载中…' : '加载更多'}
             </button>

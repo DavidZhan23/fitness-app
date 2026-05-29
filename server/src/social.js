@@ -3,6 +3,7 @@ import { assertCanViewCommunity, loadProfile } from './community.js'
 import { publicNickname } from './publicProfile.js'
 
 let ensureCommentLikeSchemaPromise = null
+let ensureCommentDislikeSchemaPromise = null
 
 function ensureCommentLikeSchema() {
   if (!ensureCommentLikeSchemaPromise) {
@@ -26,6 +27,34 @@ function ensureCommentLikeSchema() {
     })
   }
   return ensureCommentLikeSchemaPromise
+}
+
+function ensureCommentDislikeSchema() {
+  if (!ensureCommentDislikeSchemaPromise) {
+    ensureCommentDislikeSchemaPromise = (async () => {
+      await query(
+        `create table if not exists public.day_comment_dislikes (
+          comment_id uuid not null references public.day_comments (id) on delete cascade,
+          disliker_id uuid not null references public.users (id) on delete cascade,
+          created_at timestamptz not null default now(),
+          primary key (comment_id, disliker_id)
+        )`,
+      )
+      await query(
+        `create index if not exists idx_day_comment_dislikes_disliker
+         on public.day_comment_dislikes (disliker_id, created_at)`,
+      )
+    })().catch((err) => {
+      ensureCommentDislikeSchemaPromise = null
+      throw err
+    })
+  }
+  return ensureCommentDislikeSchemaPromise
+}
+
+async function ensureCommentReactionSchema() {
+  await ensureCommentLikeSchema()
+  await ensureCommentDislikeSchema()
 }
 
 export async function assertCanInteract(viewerId, targetUserId) {
@@ -279,6 +308,8 @@ function mapDayCommentRow(r, viewerId) {
       : null,
     likeCount: Number(r.like_count ?? 0),
     viewerLiked: Boolean(r.viewer_liked),
+    dislikeCount: Number(r.dislike_count ?? 0),
+    viewerDisliked: Boolean(r.viewer_disliked),
   }
 }
 
@@ -297,11 +328,16 @@ async function getCommentById(commentId) {
   return comment
 }
 
-export async function getDayCommentLikeStats(commentId, viewerId) {
-  await ensureCommentLikeSchema()
-  const [counts, viewer] = await Promise.all([
+export async function getDayCommentReactionStats(commentId, viewerId) {
+  await ensureCommentReactionSchema()
+  const [likeCounts, dislikeCounts, viewerLike, viewerDislike] = await Promise.all([
     query(
       `select count(*)::int as c from day_comment_likes
+       where comment_id = $1`,
+      [commentId],
+    ),
+    query(
+      `select count(*)::int as c from day_comment_dislikes
        where comment_id = $1`,
       [commentId],
     ),
@@ -312,10 +348,19 @@ export async function getDayCommentLikeStats(commentId, viewerId) {
           [commentId, viewerId],
         )
       : Promise.resolve({ rows: [] }),
+    viewerId
+      ? query(
+          `select 1 from day_comment_dislikes
+           where comment_id = $1 and disliker_id = $2`,
+          [commentId, viewerId],
+        )
+      : Promise.resolve({ rows: [] }),
   ])
   return {
-    likeCount: counts.rows[0]?.c ?? 0,
-    viewerLiked: viewer.rows.length > 0,
+    likeCount: likeCounts.rows[0]?.c ?? 0,
+    dislikeCount: dislikeCounts.rows[0]?.c ?? 0,
+    viewerLiked: viewerLike.rows.length > 0,
+    viewerDisliked: viewerDislike.rows.length > 0,
   }
 }
 
@@ -347,7 +392,7 @@ async function loadParentForReply(parentCommentId, targetUserId, logDate) {
 }
 
 export async function listDayComments(targetUserId, logDate, viewerId) {
-  await ensureCommentLikeSchema()
+  await ensureCommentReactionSchema()
   await assertCanInteract(viewerId, targetUserId)
   const { rows } = await query(
     `with comment_rows as (
@@ -367,18 +412,34 @@ export async function listDayComments(targetUserId, logDate, viewerId) {
        join comment_rows cr on cr.id = l.comment_id
        group by l.comment_id
      ),
+     dislike_stats as (
+       select d.comment_id, count(*)::int as dislike_count
+       from day_comment_dislikes d
+       join comment_rows cr on cr.id = d.comment_id
+       group by d.comment_id
+     ),
      viewer_like as (
        select l.comment_id
        from day_comment_likes l
        join comment_rows cr on cr.id = l.comment_id
        where l.liker_id = $3
+     ),
+     viewer_dislike as (
+       select d.comment_id
+       from day_comment_dislikes d
+       join comment_rows cr on cr.id = d.comment_id
+       where d.disliker_id = $3
      )
      select cr.*,
             coalesce(ls.like_count, 0) as like_count,
-            (vl.comment_id is not null) as viewer_liked
+            coalesce(ds.dislike_count, 0) as dislike_count,
+            (vl.comment_id is not null) as viewer_liked,
+            (vd.comment_id is not null) as viewer_disliked
      from comment_rows cr
      left join like_stats ls on ls.comment_id = cr.id
+     left join dislike_stats ds on ds.comment_id = cr.id
      left join viewer_like vl on vl.comment_id = cr.id
+     left join viewer_dislike vd on vd.comment_id = cr.id
      order by cr.root_created_at asc,
               case when cr.parent_comment_id is null then 0 else 1 end,
               cr.created_at asc,
@@ -447,6 +508,8 @@ export async function addDayComment(
     isOwn: true,
     likeCount: 0,
     viewerLiked: false,
+    dislikeCount: 0,
+    viewerDisliked: false,
     parentCommentId: row.parent_comment_id ?? null,
     replyToUserId: row.reply_to_user_id ?? null,
     replyToNickname,
@@ -467,20 +530,25 @@ export async function deleteDayComment(viewerId, commentId) {
 }
 
 export async function likeDayComment(viewerId, commentId) {
-  await ensureCommentLikeSchema()
+  await ensureCommentReactionSchema()
   const comment = await getCommentById(commentId)
   await assertCanInteract(viewerId, comment.target_user_id)
+  await query(
+    `delete from day_comment_dislikes
+     where comment_id = $1 and disliker_id = $2`,
+    [commentId, viewerId],
+  )
   await query(
     `insert into day_comment_likes (comment_id, liker_id)
      values ($1, $2)
      on conflict do nothing`,
     [commentId, viewerId],
   )
-  return getDayCommentLikeStats(commentId, viewerId)
+  return getDayCommentReactionStats(commentId, viewerId)
 }
 
 export async function unlikeDayComment(viewerId, commentId) {
-  await ensureCommentLikeSchema()
+  await ensureCommentReactionSchema()
   const comment = await getCommentById(commentId)
   await assertCanInteract(viewerId, comment.target_user_id)
   await query(
@@ -488,5 +556,35 @@ export async function unlikeDayComment(viewerId, commentId) {
      where comment_id = $1 and liker_id = $2`,
     [commentId, viewerId],
   )
-  return getDayCommentLikeStats(commentId, viewerId)
+  return getDayCommentReactionStats(commentId, viewerId)
+}
+
+export async function dislikeDayComment(viewerId, commentId) {
+  await ensureCommentReactionSchema()
+  const comment = await getCommentById(commentId)
+  await assertCanInteract(viewerId, comment.target_user_id)
+  await query(
+    `delete from day_comment_likes
+     where comment_id = $1 and liker_id = $2`,
+    [commentId, viewerId],
+  )
+  await query(
+    `insert into day_comment_dislikes (comment_id, disliker_id)
+     values ($1, $2)
+     on conflict do nothing`,
+    [commentId, viewerId],
+  )
+  return getDayCommentReactionStats(commentId, viewerId)
+}
+
+export async function undislikeDayComment(viewerId, commentId) {
+  await ensureCommentReactionSchema()
+  const comment = await getCommentById(commentId)
+  await assertCanInteract(viewerId, comment.target_user_id)
+  await query(
+    `delete from day_comment_dislikes
+     where comment_id = $1 and disliker_id = $2`,
+    [commentId, viewerId],
+  )
+  return getDayCommentReactionStats(commentId, viewerId)
 }
