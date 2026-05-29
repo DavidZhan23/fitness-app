@@ -86,6 +86,7 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为全部 `community_visible` 且 onboarding 完成用户（无固定条数上限，默认昵称排序）；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日） |
+| GET | `/community/followers` | 关注我的用户列表；`{ total, followers[] }`，每项含 `id`、`nickname`、`avatarUrl`、`followedAt`、`isFollowing`（我是否已回关）、`canViewProfile` |
 | PUT | `/community/member-order` | 排序 |
 | PATCH | `/community/days/:date/visible` | 设置当日社区动态是否公开；body `{ visible: boolean }`；`:date` 为 `YYYY-MM-DD`，仅本人 |
 | GET | `/community/users/:userId` | 用户公开页（`?date=YYYY-MM-DD` 可选，默认今日） |

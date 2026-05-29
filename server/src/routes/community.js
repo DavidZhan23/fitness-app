@@ -18,6 +18,7 @@ import {
   followUser,
   getDayLikeStats,
   isFollowing,
+  listCommunityFollowers,
   likeDayComment,
   likeDay,
   listDayComments,
@@ -60,6 +61,15 @@ router.post(
   authMiddleware,
   asyncHandler(async (req, res) => {
     const data = await markCommunityInboxRead(req.userId)
+    res.json(data)
+  }),
+)
+
+router.get(
+  '/community/followers',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await listCommunityFollowers(req.userId)
     res.json(data)
   }),
 )

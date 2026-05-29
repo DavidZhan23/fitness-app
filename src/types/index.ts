@@ -46,6 +46,21 @@ export interface CommunityMember {
   viewerDislikedToday: boolean
 }
 
+/** 关注我的用户（关注我 Tab） */
+export interface CommunityFollower {
+  id: string
+  nickname: string
+  avatarUrl?: string | null
+  followedAt: string
+  isFollowing: boolean
+  canViewProfile: boolean
+}
+
+export interface CommunityFollowersResponse {
+  total: number
+  followers: CommunityFollower[]
+}
+
 export type CommunityInboxItemKind =
   | 'like'
   | 'dislike'

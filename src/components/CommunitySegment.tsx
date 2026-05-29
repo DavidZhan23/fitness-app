@@ -1,10 +1,11 @@
 import { SegmentedControl } from './ui/responsive'
 
-export type CommunityFilter = 'all' | 'following'
+export type CommunityFilter = 'all' | 'following' | 'followers'
 
 interface CommunitySegmentProps {
   value: CommunityFilter
   followingCount: number
+  followerCount: number
   refreshing?: boolean
   onChange: (value: CommunityFilter) => void
 }
@@ -12,13 +13,14 @@ interface CommunitySegmentProps {
 export function CommunitySegment({
   value,
   followingCount,
+  followerCount,
   refreshing = false,
   onChange,
 }: CommunitySegmentProps) {
   return (
     <div className="relative">
       <SegmentedControl
-        columns={2}
+        columns={3}
         className="community-segment"
         role="tablist"
         aria-label="社区列表筛选"
@@ -33,6 +35,15 @@ export function CommunitySegment({
           关注
           {followingCount > 0 && (
             <span className="community-segment__badge">{followingCount}</span>
+          )}
+        </SegmentButton>
+        <SegmentButton
+          active={value === 'followers'}
+          onClick={() => onChange('followers')}
+        >
+          关注我
+          {followerCount > 0 && (
+            <span className="community-segment__badge">{followerCount}</span>
           )}
         </SegmentButton>
       </SegmentedControl>

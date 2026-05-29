@@ -6,6 +6,8 @@ interface FollowButtonProps {
   isFollowing: boolean
   onChange?: (following: boolean) => void
   compact?: boolean
+  /** compact 未关注时的按钮文案，默认「关注」 */
+  idleLabel?: string
 }
 
 export function FollowButton({
@@ -13,7 +15,10 @@ export function FollowButton({
   isFollowing: initialFollowing,
   onChange,
   compact = false,
+  idleLabel,
 }: FollowButtonProps) {
+  const compactIdle = idleLabel ?? '关注'
+  const fullIdle = idleLabel ?? '+ 关注'
   const [following, setFollowing] = useState(initialFollowing)
   const [busy, setBusy] = useState(false)
 
@@ -52,7 +57,7 @@ export function FollowButton({
           following ? 'follow-btn--following' : 'follow-btn--idle'
         }`}
       >
-        {busy ? '…' : following ? '已关注' : '关注'}
+        {busy ? '…' : following ? '已关注' : compactIdle}
       </button>
     )
   }
@@ -66,7 +71,7 @@ export function FollowButton({
         following ? 'follow-btn--following' : 'follow-btn--idle'
       }`}
     >
-      {busy ? '…' : following ? '已关注' : '+ 关注'}
+      {busy ? '…' : following ? '已关注' : fullIdle}
     </button>
   )
 }
