@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { MOBILE_VIEWPORTS } from './fixtures/mobile-viewports'
 import { mainNav, registerAndOnboard, uniqueE2eEmail } from './helpers/auth'
-import { logExercise } from './helpers/flows'
+import { logExercise, communityPageMarker, communityPageTitle } from './helpers/flows'
 import {
   assertLocatorInScrollport,
   assertNoHorizontalOverflow,
@@ -51,13 +51,11 @@ for (const viewport of MOBILE_VIEWPORTS) {
 
       // Community
       await nav.getByRole('link', { name: '社区' }).click()
-      await expect(
-        page.getByRole('heading', { name: '社区', exact: true }),
-      ).toBeVisible()
+      await expect(communityPageMarker(page)).toBeVisible()
       await assertLayoutShell(page, `${viewport.name} /community`)
       await assertLocatorInScrollport(
         page,
-        page.getByRole('heading', { name: '社区', exact: true }),
+        communityPageTitle(page),
         '社区标题',
       )
       await assertLocatorInScrollport(

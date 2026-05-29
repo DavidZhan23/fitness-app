@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { RESPONSIVE_VIEWPORTS } from '../src/lib/responsive'
 import { registerAndOnboard, uniqueE2eEmail } from './helpers/auth'
-import { logExercise } from './helpers/flows'
+import { logExercise, communityPageTitle } from './helpers/flows'
 import {
   assertContentClearOfTabbar,
   assertLayoutShell,
@@ -61,7 +61,7 @@ const SITE_ROUTES: SiteRoute[] = [
     anchors: [
       {
         label: '社区标题',
-        getLocator: (p) => p.getByRole('heading', { name: '社区', exact: true }),
+        getLocator: (p) => communityPageTitle(p),
       },
       {
         label: '全部 tab',

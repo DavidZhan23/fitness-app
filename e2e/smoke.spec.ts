@@ -9,6 +9,7 @@ import {
   logMeal,
   openCommunity,
   switchCommunityFilter,
+  communityPageMarker,
 } from './helpers/flows'
 
 test.describe.serial('main flow smoke', () => {
@@ -64,9 +65,7 @@ test.describe.serial('main flow smoke', () => {
     await switchCommunityFilter(page, '关注')
     await switchCommunityFilter(page, '全部')
 
-    await expect(
-      page.getByRole('heading', { name: '社区', exact: true }),
-    ).toBeVisible()
+    await expect(communityPageMarker(page)).toBeVisible()
     await expect(page.getByText('加载社区…')).toBeHidden()
     await expect(page.getByLabel('更新中')).toBeHidden()
   })
