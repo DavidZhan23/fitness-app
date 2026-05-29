@@ -325,17 +325,35 @@ export function SettingsPage() {
   const currentStyleTitle =
     styleOptions.find((item) => item.id === style)?.title ?? '深海能量'
 
-  const saveWallStyle = useCallback(async () => {
-    await updateProfile({ wall_style: wallStyle })
-  }, [updateProfile, wallStyle])
+  const [wallStyleSaveState, setWallStyleSaveState] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle')
+  const [wallStyleBusy, setWallStyleBusy] = useState(false)
 
-  const wallStyleAutosave = useDebouncedAutosave({
-    enabled: Boolean(profile),
-    isEqual: wallStyle === savedWallStyle,
-    save: saveWallStyle,
-    mapError: () => '保存失败',
-  })
-  const wallStyleSaveState = wallStyleAutosave.state
+  const handleWallStyleChange = useCallback(
+    async (next: WallStyle) => {
+      if (wallStyleBusy || next === wallStyle) return
+      setWallStyle(next)
+      setWallStyleSaveState('saving')
+      setWallStyleBusy(true)
+      try {
+        await updateProfile({ wall_style: next })
+        setWallStyleSaveState('saved')
+      } catch {
+        setWallStyle(savedWallStyle)
+        setWallStyleSaveState('error')
+      } finally {
+        setWallStyleBusy(false)
+      }
+    },
+    [wallStyleBusy, wallStyle, savedWallStyle, updateProfile],
+  )
+
+  useEffect(() => {
+    if (wallStyleSaveState !== 'saved') return
+    const timer = window.setTimeout(() => setWallStyleSaveState('idle'), 3000)
+    return () => clearTimeout(timer)
+  }, [wallStyleSaveState])
 
   const handleSignOut = async () => {
     await signOut()
@@ -503,8 +521,8 @@ export function SettingsPage() {
                   value={welcomeMessage}
                   onChange={(e) => setWelcomeMessage(e.target.value)}
                   className="input profile-welcome-field__input w-full"
-                  placeholder="写一句给自己打气的欢迎语吧"
-                  aria-label="欢迎语"
+                  placeholder="自定义首页标题"
+                  aria-label="自定义首页标题"
                 />
                 <span
                   className="profile-welcome-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
@@ -676,7 +694,8 @@ export function SettingsPage() {
               name="wall_style"
               value="classic"
               checked={wallStyle === 'classic'}
-              onChange={() => setWallStyle('classic')}
+              disabled={wallStyleBusy}
+              onChange={() => void handleWallStyleChange('classic')}
               className="mt-1"
             />
             <span className="text-sm">
@@ -692,7 +711,8 @@ export function SettingsPage() {
               name="wall_style"
               value="split"
               checked={wallStyle === 'split'}
-              onChange={() => setWallStyle('split')}
+              disabled={wallStyleBusy}
+              onChange={() => void handleWallStyleChange('split')}
               className="mt-1"
             />
             <span className="text-sm">

@@ -152,30 +152,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null)
   }
 
-  const updateProfile = async (data: Partial<Profile>) => {
-    if (!user) return
+  const updateProfile = useCallback(
+    async (data: Partial<Profile>) => {
+      if (!user) return
 
-    let bmr: number | null = null
-    let tdee: number | null = null
-    const merged = mergeProfileForCalc(data, profile)
-    if (merged) {
-      bmr = calculateBmr(
-        merged.weight_kg,
-        merged.height_cm,
-        merged.age,
-        merged.sex,
-      )
-      tdee = calculateTdee(bmr, merged.activity_factor)
-    }
+      const snapshot = profile
+      setProfile((prev) => (prev ? { ...prev, ...data } : prev))
 
-    const payload = buildProfilePatchBody(data, bmr, tdee)
-    if (Object.keys(payload).length === 0) {
-      throw new Error('请填写有效的身体资料')
-    }
+      let bmr: number | null = null
+      let tdee: number | null = null
+      const merged = mergeProfileForCalc(data, snapshot)
+      if (merged) {
+        bmr = calculateBmr(
+          merged.weight_kg,
+          merged.height_cm,
+          merged.age,
+          merged.sex,
+        )
+        tdee = calculateTdee(bmr, merged.activity_factor)
+      }
 
-    const saved = await httpData.updateProfile(payload)
-    setProfile(mergeProfileFromApi(saved as Profile))
-  }
+      const payload = buildProfilePatchBody(data, bmr, tdee)
+      if (Object.keys(payload).length === 0) {
+        if (snapshot) setProfile(snapshot)
+        throw new Error('请填写有效的身体资料')
+      }
+
+      try {
+        const saved = await httpData.updateProfile(payload)
+        setProfile(mergeProfileFromApi(saved as Profile))
+      } catch (err) {
+        if (snapshot) {
+          setProfile(snapshot)
+        } else {
+          await fetchProfile(user.id).catch(() => {})
+        }
+        throw err
+      }
+    },
+    [user, profile, mergeProfileFromApi, fetchProfile],
+  )
 
   const completeOnboarding = async (data: {
     weight_kg: number
@@ -213,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       completeOnboarding,
     }),
-    [user, profile, loading, refreshProfile],
+    [user, profile, loading, refreshProfile, updateProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

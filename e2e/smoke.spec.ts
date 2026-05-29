@@ -84,7 +84,6 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByText('缺口连续')).toBeVisible()
 
     await nav.getByRole('link', { name: '设置' }).click()
-    await page.locator('summary').filter({ hasText: '打卡墙样式' }).click()
     const splitRadio = page.getByRole('radio', { name: /分屏版/ })
     const wallStyleSaved = page.waitForResponse(
       (resp) =>
