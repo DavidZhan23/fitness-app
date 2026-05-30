@@ -44,6 +44,7 @@ interface AuthContextValue {
     birthday: string
     sex: Sex
     activity_factor: number
+    deficit_threshold?: number
   }) => Promise<void>
 }
 
@@ -199,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     birthday: string
     sex: Sex
     activity_factor: number
+    deficit_threshold?: number
   }) => {
     if (!user) return
     const parsedBirthday = parseBirthdayKey(data.birthday)
@@ -208,8 +210,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const bmr = calculateBmr(data.weight_kg, data.height_cm, age, data.sex)
     const tdee = calculateTdee(bmr, data.activity_factor)
+    const { deficit_threshold, ...bodyFields } = data
     const payload = buildProfilePatchBody(
-      { ...data, age, birthday: parsedBirthday, onboarding_complete: true },
+      {
+        ...bodyFields,
+        age,
+        birthday: parsedBirthday,
+        onboarding_complete: true,
+        ...(deficit_threshold != null ? { deficit_threshold } : {}),
+      },
       bmr,
       tdee,
     )

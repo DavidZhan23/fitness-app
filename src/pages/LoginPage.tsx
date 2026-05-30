@@ -92,7 +92,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full min-w-0 rounded-xl bg-brand-dark py-3 font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+            className="btn-primary w-full min-w-0 py-3 font-medium disabled:opacity-50"
           >
             {loading ? '请稍候…' : isRegister ? '注册' : '登录'}
           </button>
