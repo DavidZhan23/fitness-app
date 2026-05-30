@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   CommunityDragHandle,
-  CommunityDragHandlePlaceholder,
 } from './CommunityDragHandle'
 import { CommunityMemberCard } from './CommunityMemberCard'
 import { httpData } from '../lib/api'
@@ -133,18 +132,16 @@ export function CommunityMemberList({
           return (
             <li
               key={m.id}
-              id={m.isSelf ? 'community-member-self' : undefined}
               data-member-row
               data-member-id={m.id}
               className={`flex items-stretch ${dragging ? 'relative z-10' : ''}`}
             >
-              {showHandles && !m.isSelf && (
+              {showHandles && (
                 <CommunityDragHandle
                   disabled={saving}
                   onPointerDown={(e) => startDrag(e, m.id)}
                 />
               )}
-              {showHandles && m.isSelf && <CommunityDragHandlePlaceholder />}
               <div
                 className={`min-w-0 flex-1 ${showHandles ? 'rounded-r-2xl' : ''} ${dragging ? 'shadow-lg shadow-violet-500/10 ring-2 ring-violet-500/40' : ''}`}
               >

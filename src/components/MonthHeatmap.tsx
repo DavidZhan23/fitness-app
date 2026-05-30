@@ -27,11 +27,7 @@ export interface MonthHeatmapProps {
   wallPane?: MonthGridType
   onWallPaneChange?: (pane: MonthGridType) => void
   onDayClick?: (date: string, gridType?: MonthGridType) => void
-  anchorGrid?: MonthGridType | null
-  onSelectedCellAnchorChange?: (
-    el: HTMLElement | null,
-    gridType: MonthGridType,
-  ) => void
+  selectedGridType?: MonthGridType | null
   /** 社区公开：代谢墙不显示 meal 提醒角标 */
   honorsOnly?: boolean
 }
@@ -44,8 +40,7 @@ export function MonthHeatmap({
   accountStartKey = null,
   selectedDateKey = null,
   legendHighlight = null,
-  anchorGrid = null,
-  onSelectedCellAnchorChange,
+  selectedGridType = null,
   onDayClick,
   honorsOnly = false,
 }: MonthHeatmapProps) {
@@ -61,8 +56,7 @@ export function MonthHeatmap({
         type="exercise"
         selectedDateKey={selectedDateKey}
         legendHighlight={legendHighlight}
-        anchorGrid={anchorGrid}
-        onSelectedCellAnchorChange={onSelectedCellAnchorChange}
+        selectedGridType={selectedGridType}
         onDayClick={onDayClick}
         honorsOnly={honorsOnly}
       />
@@ -74,8 +68,7 @@ export function MonthHeatmap({
         type="deficit"
         selectedDateKey={selectedDateKey}
         legendHighlight={legendHighlight}
-        anchorGrid={anchorGrid}
-        onSelectedCellAnchorChange={onSelectedCellAnchorChange}
+        selectedGridType={selectedGridType}
         onDayClick={onDayClick}
         honorsOnly={honorsOnly}
       />
@@ -93,11 +86,7 @@ export interface MonthGridProps {
   selectedDateKey?: string | null
   legendHighlight?: WallLegendHighlight | null
   type: MonthGridType
-  anchorGrid?: MonthGridType | null
-  onSelectedCellAnchorChange?: (
-    el: HTMLElement | null,
-    gridType: MonthGridType,
-  ) => void
+  selectedGridType?: MonthGridType | null
   onDayClick?: (date: string, gridType?: MonthGridType) => void
   /** 社区公开：代谢墙不显示 meal 提醒角标 */
   honorsOnly?: boolean
@@ -111,8 +100,7 @@ export function MonthGrid({
   selectedDateKey,
   legendHighlight = null,
   type,
-  anchorGrid = null,
-  onSelectedCellAnchorChange,
+  selectedGridType = null,
   onDayClick,
   honorsOnly = false,
 }: MonthGridProps) {
@@ -140,7 +128,9 @@ export function MonthGrid({
           const dayNum = parseInt(dateKey.slice(-2), 10)
           const isToday = dateKey === todayKey
           const isSelected =
-            selectedDateKey != null && dateKey === selectedDateKey
+            selectedDateKey != null &&
+            dateKey === selectedDateKey &&
+            (selectedGridType == null || selectedGridType === type)
           const isFuture = dateKey > todayKey
           const isBlocked = isFuture || beforeAccount
 
@@ -174,17 +164,9 @@ export function MonthGrid({
               ? `${dayNum}日，今日`
               : `${dayNum}日`
 
-          const isAnchorCell =
-            isSelected && anchorGrid === type && onSelectedCellAnchorChange
-
           return (
             <button
               key={dateKey}
-              ref={
-                isAnchorCell
-                  ? (el) => onSelectedCellAnchorChange?.(el, type)
-                  : undefined
-              }
               type="button"
               disabled={isBlocked}
               data-heatmap-day={dateKey}

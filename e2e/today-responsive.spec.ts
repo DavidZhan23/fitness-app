@@ -45,6 +45,11 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         page.getByRole('link', { name: '+ 记饮食' }),
         '记饮食按钮',
       )
+      await assertLocatorInScrollport(
+        page,
+        page.locator('.today-records-section'),
+        '今日记录摘要',
+      )
 
       await mainNav(page).getByRole('link', { name: '今日' }).click()
       await assertLocatorInScrollport(

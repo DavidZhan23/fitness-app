@@ -21,7 +21,7 @@ export async function logExercise(
   await page.getByLabel('名称').fill(name)
   await page.getByLabel('热量 (kcal)').fill(kcal)
   await page.getByRole('button', { name: '保存' }).click()
-  await expect(page.getByText(name)).toBeVisible()
+  await expectTodayRecordInExpandedList(page, name, kcal)
 }
 
 export async function logMeal(page: Page, name: string, kcal: string) {
@@ -30,7 +30,24 @@ export async function logMeal(page: Page, name: string, kcal: string) {
   await page.getByLabel('名称').fill(name)
   await page.getByLabel('热量 (kcal)').fill(kcal)
   await page.getByRole('button', { name: '保存' }).click()
-  await expect(page.getByText(name)).toBeVisible()
+  await expectTodayRecordInExpandedList(page, name, kcal)
+}
+
+async function expectTodayRecordInExpandedList(
+  page: Page,
+  name: string,
+  kcal: string,
+) {
+  const records = page.locator('.today-records-section')
+  await expect(records.getByRole('button', { name: '展开' })).toBeVisible()
+  await records.getByRole('button', { name: '展开' }).click()
+  const row = records.locator('.today-records-section__row').filter({
+    hasText: name,
+  })
+  await expect(row).toBeVisible()
+  await expect(row.locator('.today-records-section__row-meta')).toHaveText(
+    `${kcal} kcal`,
+  )
 }
 
 export async function openCommunity(page: Page) {

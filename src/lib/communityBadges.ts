@@ -98,7 +98,7 @@ export function resolveHeatmapDayBadge(input: {
 export type ExerciseGridDayBadge = 'champion' | 'elite'
 export type DeficitGridDayBadge = 'foodKing' | 'meal'
 
-/** Popover：当天所有达成称号（顺序固定） */
+/** 打卡墙详情卡：当天所有达成称号（顺序固定） */
 export function listDayBadges(input: {
   deficit: number
   exerciseKcal: number

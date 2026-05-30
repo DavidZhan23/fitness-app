@@ -11,6 +11,10 @@ import { computeCommunityDeficit } from '../lib/communityDeficit'
 import type { CommunityMember, Profile } from '../types'
 import { DayLikeButton } from './DayLikeButton'
 import { FollowButton } from './FollowButton'
+import {
+  CommunityMemberHonorFx,
+  resolveMemberCardFxClass,
+} from './CommunityMemberHonorFx'
 import { UserAvatar } from './UserAvatar'
 import { ActionRow } from './ui/responsive'
 
@@ -122,8 +126,6 @@ export function CommunityMemberCard({
         mealKcal,
         dailyBmr: member.today.dailyBmr,
       })
-  const isChampion = todayBadge === 'champion'
-  const isElite = todayBadge === 'elite'
   const honorBadges = isHiddenForViewer
     ? []
     : listPublicHonorBadges({
@@ -138,11 +140,7 @@ export function CommunityMemberCard({
   const viewerDislikedToday = member.viewerDislikedToday ?? false
 
   const roundClass = roundedLeft ? 'rounded-2xl' : 'rounded-r-2xl rounded-l-none'
-  const fxClass = isChampion
-    ? 'community-card-champion'
-    : isElite
-      ? 'community-card-elite'
-      : ''
+  const fxClass = resolveMemberCardFxClass(todayBadge)
 
   const prefetchUserPage = () => {
     void import('../pages/CommunityUserPage')
@@ -150,47 +148,9 @@ export function CommunityMemberCard({
 
   return (
     <article
-      className={`community-member-card responsive-list-card group relative overflow-hidden ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''} ${isChampion || isElite ? '' : ''}`}
+      className={`community-member-card responsive-list-card group relative overflow-hidden ${roundClass} ${fxClass} ${isDragging ? 'opacity-95' : ''}`}
     >
-      {isElite && (
-        <>
-          <span className="community-card-elite__ember community-card-elite__ember--l" aria-hidden>
-            🔥
-          </span>
-          <span className="community-card-elite__ember community-card-elite__ember--c" aria-hidden>
-            🔥
-          </span>
-          <span className="community-card-elite__ember community-card-elite__ember--r" aria-hidden>
-            🔥
-          </span>
-        </>
-      )}
-      {isChampion && (
-        <>
-          <span className="community-card-champion__aura" aria-hidden />
-          <span className="community-card-champion__edge" aria-hidden />
-          <span className="community-card-champion__orb community-card-champion__orb--1" aria-hidden />
-          <span className="community-card-champion__orb community-card-champion__orb--2" aria-hidden />
-          <span
-            className="community-card-champion__sparkle community-card-champion__sparkle--tl"
-            aria-hidden
-          >
-            ✦
-          </span>
-          <span
-            className="community-card-champion__sparkle community-card-champion__sparkle--tr"
-            aria-hidden
-          >
-            ✦
-          </span>
-          <span
-            className="community-card-champion__sparkle community-card-champion__sparkle--br"
-            aria-hidden
-          >
-            ✦
-          </span>
-        </>
-      )}
+      <CommunityMemberHonorFx badge={todayBadge} />
       <div className="community-card-fx-inner">
         <div className="community-member-card__body">
           <Link

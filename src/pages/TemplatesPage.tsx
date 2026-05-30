@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { RecordDeleteButton } from '../components/RecordActionIcons'
 import {
   ActionRow,
@@ -12,11 +13,25 @@ import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
 import type { ExerciseTemplate, MealTemplate } from '../types'
 
+function resolveInitialTab(
+  location: ReturnType<typeof useLocation>,
+): 'exercise' | 'meal' {
+  const stateTab = (location.state as { tab?: string } | null)?.tab
+  if (stateTab === 'meal' || stateTab === 'exercise') return stateTab
+  const queryTab = new URLSearchParams(location.search).get('tab')
+  if (queryTab === 'meal' || queryTab === 'exercise') return queryTab
+  return 'exercise'
+}
+
 export function TemplatesPage() {
   const { user } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [exercises, setExercises] = useState<ExerciseTemplate[]>([])
   const [meals, setMeals] = useState<MealTemplate[]>([])
-  const [tab, setTab] = useState<'exercise' | 'meal'>('exercise')
+  const [tab, setTab] = useState<'exercise' | 'meal'>(() =>
+    resolveInitialTab(location),
+  )
   const [adding, setAdding] = useState(false)
   const [draftName, setDraftName] = useState('')
   const [draftKcal, setDraftKcal] = useState('')
@@ -36,6 +51,10 @@ export function TemplatesPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    setTab(resolveInitialTab(location))
+  }, [location.key, location.state, location.search])
 
   const resetAddForm = () => {
     setAdding(false)
@@ -83,6 +102,13 @@ export function TemplatesPage() {
 
   return (
     <PageShell>
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="text-sm text-secondary hover:text-primary"
+      >
+        ← 返回
+      </button>
       <FluidText as="h1" variant="title" className="text-xl font-bold text-primary">
         我的模板
       </FluidText>

@@ -25,6 +25,7 @@ import {
   STYLE_TONE_SECTIONS,
   styleOptionsForGroup,
 } from '../lib/styleOptions'
+import { parseDeficitGoalInput } from '../lib/deficitGoal'
 import { getHeroCollabConfig } from '../lib/themeMeta'
 import type { Sex, WallStyle } from '../types'
 
@@ -144,10 +145,10 @@ export function SettingsPage() {
   const savedWelcomeSubtitle = (profile?.welcome_subtitle ?? '').trim()
   const parsedWeight = parseFloat(weight)
   const parsedHeight = parseFloat(height)
-  const parsedDeficit = parseInt(threshold, 10) || 0
+  const parsedGoalThreshold = parseDeficitGoalInput(threshold)
   const savedWeight = Number(profile?.weight_kg)
   const savedHeight = Number(profile?.height_cm)
-  const savedDeficit = Number(profile?.deficit_threshold ?? 0)
+  const savedGoalThreshold = Number(profile?.deficit_threshold ?? 0)
   const savedBirthday = normalizeBirthdayFromApi(profile?.birthday) ?? ''
   const savedActivity = Number(profile?.activity_factor) || 1.375
   const savedSex = profile?.sex ?? 'male'
@@ -157,9 +158,13 @@ export function SettingsPage() {
       savedHeight === parsedHeight &&
       savedBirthday === birthday &&
       savedSex === sex &&
-      savedActivity === activity &&
-      savedDeficit === parsedDeficit
+      savedActivity === activity
     : true
+
+  const goalThresholdUnchanged =
+    profile && parsedGoalThreshold != null
+      ? savedGoalThreshold === parsedGoalThreshold
+      : true
 
   const saveNickname = useCallback(async () => {
     await updateProfile({ nickname: trimmedNickname || null })
@@ -215,7 +220,6 @@ export function SettingsPage() {
       age,
       sex,
       activity_factor: activity,
-      deficit_threshold: parsedDeficit,
     })
   }, [
     profile,
@@ -224,7 +228,6 @@ export function SettingsPage() {
     activity,
     parsedWeight,
     parsedHeight,
-    parsedDeficit,
     updateProfile,
   ])
 
@@ -237,6 +240,26 @@ export function SettingsPage() {
   })
   const bodySaveState = bodyAutosave.state
   const bodySaveError = bodyAutosave.error
+
+  const validateGoalThreshold = useCallback(() => {
+    if (parsedGoalThreshold == null) return '请输入 1–5000 之间的整数 kcal'
+    return null
+  }, [parsedGoalThreshold])
+
+  const saveGoalThreshold = useCallback(async () => {
+    if (!profile || parsedGoalThreshold == null) return
+    await updateProfile({ deficit_threshold: parsedGoalThreshold })
+  }, [profile, parsedGoalThreshold, updateProfile])
+
+  const goalThresholdAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: goalThresholdUnchanged,
+    validate: validateGoalThreshold,
+    save: saveGoalThreshold,
+    mapError: (err) => (err instanceof Error ? err.message : '保存失败'),
+  })
+  const goalThresholdSaveState = goalThresholdAutosave.state
+  const goalThresholdSaveError = goalThresholdAutosave.error
 
   const savedWallStyle: WallStyle =
     profile?.wall_style === 'split' ? 'split' : 'classic'
@@ -471,6 +494,46 @@ export function SettingsPage() {
           <MetabolismSummary profile={profile} variant="embedded" />
         )}
 
+        <section className="mt-4 border-t border-slate-600/40 pt-4">
+          <div className="flex min-h-5 items-center justify-between gap-2">
+            <h2 className="text-sm font-medium text-primary">目标偏好</h2>
+            <div className="text-xs">
+              {goalThresholdSaveState === 'saving' && (
+                <span className="text-muted">保存中…</span>
+              )}
+              {goalThresholdSaveState === 'saved' && (
+                <span className="text-brand">已保存</span>
+              )}
+              {goalThresholdSaveState === 'error' && (
+                <span className="text-amber-400">
+                  {goalThresholdSaveError || '保存失败'}
+                </span>
+              )}
+              {goalThresholdSaveState === 'idle' && goalThresholdSaveError && (
+                <span className="text-amber-400">{goalThresholdSaveError}</span>
+              )}
+            </div>
+          </div>
+          <label className="mt-3 block">
+            <span className="text-sm text-muted">默认目标缺口</span>
+            <input
+              type="number"
+              min={1}
+              max={5000}
+              step={1}
+              inputMode="numeric"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+              className="input mt-1 w-full min-w-0"
+              aria-label="默认目标缺口 kcal"
+            />
+            <p className="mt-1 text-xs text-muted">
+              用于 Today 页判断是否达成目标，可在今日页主卡中快速调整。
+            </p>
+            <p className="mt-0.5 text-xs text-muted">建议范围 300–800 kcal</p>
+          </label>
+        </section>
+
         <details className="group mt-3 border-t border-slate-600/40 pt-3">
           <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-2">
@@ -562,18 +625,6 @@ export function SettingsPage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="block">
-              <span className="text-sm text-muted">缺口打卡阈值 (kcal)</span>
-              <input
-                type="number"
-                value={threshold}
-                onChange={(e) => setThreshold(e.target.value)}
-                className="input mt-1"
-              />
-              <p className="mt-1 text-xs text-muted">
-                缺口大于此值才算打卡成功，默认 0
-              </p>
             </label>
 
           </div>

@@ -23,6 +23,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await logExercise(page, 'E2E 布局检查运动', '180')
 
       const nav = mainNav(page)
+      await expect(nav.getByRole('link')).toHaveCount(4)
 
       // Today
       await nav.getByRole('link', { name: '今日' }).click()
@@ -64,8 +65,10 @@ for (const viewport of MOBILE_VIEWPORTS) {
         '社区 全部 tab',
       )
 
-      // Templates
-      await nav.getByRole('link', { name: '模板' }).click()
+      // Templates (via log flow; no tab bar item)
+      await nav.getByRole('link', { name: '今日' }).click()
+      await page.getByRole('link', { name: '+ 记运动' }).click()
+      await page.getByRole('button', { name: '管理快捷模板' }).click()
       await expect(page.getByRole('heading', { name: '我的模板' })).toBeVisible()
       await assertLayoutShell(page, `${viewport.name} /templates`)
       await assertLocatorInScrollport(

@@ -3,7 +3,9 @@ import {
   BADGE_THRESHOLDS,
   evaluateCommunityDayStatus,
   heatmapBadgeEmoji,
+  listPublicHonorBadges,
   type CommunityDayBadge,
+  type PublicHonorBadge,
 } from '../lib/communityBadges'
 import {
   EXERCISE_KCAL_STAT_LABEL,
@@ -126,7 +128,7 @@ export function PersonalDayStatus({
   exerciseKcal: number
   mealKcal: number
   dailyBmr: number
-  variant?: 'full' | 'side'
+  variant?: 'full' | 'side' | 'compact'
 }) {
   const status = evaluateCommunityDayStatus({
     deficit,
@@ -134,6 +136,46 @@ export function PersonalDayStatus({
     mealKcal,
     dailyBmr,
   })
+
+  if (variant === 'compact') {
+    const badgeInput = { deficit, exerciseKcal, mealKcal, dailyBmr }
+    const honors = listPublicHonorBadges(badgeInput)
+
+    if (honors.length > 0) {
+      return (
+        <div className="today-status-strips">
+          {honors.map((key) => (
+            <TodayStatusStrip
+              key={key}
+              {...TODAY_HONOR_STRIP[key]}
+              badgeLabel="今日已点亮"
+            />
+          ))}
+        </div>
+      )
+    }
+
+    if (status.needsMealLog) {
+      return (
+        <TodayStatusStrip
+          icon="🍽️"
+          desc="今天还没记录饮食，补上后数据会更准确"
+          tone="reminder"
+          reminder
+          badgeLabel="继续记录"
+        />
+      )
+    }
+    return (
+      <TodayStatusStrip
+        icon="✨"
+        desc="继续记录，下一次就能点亮它"
+        tone="empty"
+        badgeLabel="继续记录"
+      />
+    )
+  }
+
   if (!status.needsMealLog && !status.badge && !status.foodKing) return null
 
   if (variant === 'side') {
@@ -207,6 +249,73 @@ export function PersonalDayStatus({
         <FoodKingBanner mealKcal={mealKcal} dailyBmr={dailyBmr} />
       )}
       {status.needsMealLog && <MealReminderCard isSelf />}
+    </div>
+  )
+}
+
+type TodayStripTone = 'champion' | 'elite' | 'foodKing' | 'empty' | 'reminder'
+
+const TODAY_HONOR_STRIP: Record<
+  PublicHonorBadge,
+  {
+    icon: string
+    title: string
+    desc: string
+    tone: TodayStripTone
+  }
+> = {
+  champion: {
+    icon: '👑',
+    title: '运动大王',
+    desc: '训练、补给、缺口都在线，今天很硬核',
+    tone: 'champion',
+  },
+  elite: {
+    icon: '🔥',
+    title: '减脂先锋',
+    desc: '当前缺口已超过 500 kcal，今天的节奏很稳',
+    tone: 'elite',
+  },
+  foodKing: {
+    icon: '🥘',
+    title: '美食大王',
+    desc: '饮食补给已拉满，今天吃得很认真',
+    tone: 'foodKing',
+  },
+}
+
+function TodayStatusStrip({
+  icon,
+  title,
+  desc,
+  reminder = false,
+  tone = 'empty',
+  badgeLabel,
+}: {
+  icon: string
+  title?: string
+  desc: string
+  reminder?: boolean
+  tone?: TodayStripTone
+  badgeLabel?: string
+}) {
+  return (
+    <div
+      className={`today-status-strip personal-day-status--today-compact today-status-strip--${tone}${reminder ? ' today-status-strip--reminder' : ''}`}
+      role="status"
+    >
+      <div className="today-status-strip__icon" aria-hidden>
+        {icon}
+      </div>
+      <div className="today-status-strip__content">
+        {title ? (
+          <div className="today-status-strip__title">{title}</div>
+        ) : null}
+        <div className="today-status-strip__desc">{desc}</div>
+      </div>
+      {badgeLabel ? (
+        <div className="today-status-strip__badge">{badgeLabel}</div>
+      ) : null}
     </div>
   )
 }

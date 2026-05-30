@@ -61,7 +61,7 @@ export function LogPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="text-sm text-secondary hover:text-primary"
           >
             ← 返回
@@ -78,6 +78,18 @@ export function LogPage() {
             aiFallbackTracker.markTemplateInput()
           }}
         />
+
+        <p className="text-center">
+          <button
+            type="button"
+            onClick={() =>
+              navigate('/templates', { state: { tab: kind } })
+            }
+            className="text-sm text-brand underline-offset-2 hover:underline"
+          >
+            管理快捷模板
+          </button>
+        </p>
 
         <LogEntryForm
           kind={kind}

@@ -22,6 +22,7 @@ Before **any** `git commit` or `git push`, print this block and **stop**:
 - commit message：<full conventional message>
 - push 目标：origin <current-branch>
 - PR 目标：main（创建或更新 PR）
+- qa-seed 清理：npm run cleanup:qa-seed 已执行（若本轮跑过 e2e/seed；见 05-qa-manual-seed）
 
 回复 go 继续，或告诉我需要调整哪里。
 ```

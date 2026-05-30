@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CommunityMemberList } from '../components/CommunityMemberList'
+import { CommunitySelfSummary } from '../components/CommunitySelfSummary'
+import { CommunityBadgeRulesDialog } from '../components/CommunityBadgeRulesDialog'
 import {
   CommunitySegment,
   type CommunityFilter,
@@ -66,6 +68,7 @@ export function CommunityPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [togglingDayVisible, setTogglingDayVisible] = useState(false)
+  const [badgeRulesOpen, setBadgeRulesOpen] = useState(false)
   const [selfDayVisible, setSelfDayVisible] = useState(() =>
     resolveSelfDayVisible(initial.members),
   )
@@ -340,8 +343,16 @@ export function CommunityPage() {
   }
 
   const visible = Boolean(profile?.community_visible)
-  const othersCount = members.filter((m) => !m.isSelf).length
+  const selfMember = members.find((m) => m.isSelf) ?? null
+  const listMembers = members.filter((m) => !m.isSelf)
   const listLoading = loading && members.length === 0
+
+  const handleMembersChange = useCallback((nextOthers: CommunityMember[]) => {
+    setMembers((prev) => {
+      const self = prev.find((m) => m.isSelf)
+      return self ? [self, ...nextOthers] : nextOthers
+    })
+  }, [])
 
   return (
     <PageShell className="pb-2">
@@ -394,55 +405,30 @@ export function CommunityPage() {
               </span>
             )}
           </Link>
+          <span className="community-hub-sep" aria-hidden>
+            ·
+          </span>
+          <button
+            type="button"
+            className="community-hub-link community-hub-link--help"
+            aria-haspopup="dialog"
+            onClick={() => setBadgeRulesOpen(true)}
+          >
+            称号规则
+            <span className="community-hub-chevron" aria-hidden>
+              〉
+            </span>
+          </button>
         </nav>
-        <p className="community-hero-rules-hint">
-          按住左侧 ⋮⋮ 可拖动排序；点击名片查看详情
-        </p>
       </header>
 
-      <section
-        className="community-title-rules px-4 py-2.5"
-        aria-label="称号规则"
-      >
-        <div className="space-y-2 leading-relaxed">
-          <p className="flex flex-nowrap items-center gap-2">
-            <span className="community-pill community-pill--elite inline-flex shrink-0 items-center gap-1">
-              <span aria-hidden>🔥</span>
-              减脂先锋
-            </span>
-            <span
-              className="community-title-rules__desc min-w-0 flex-1 truncate"
-              title="当日热量缺口≥500kcal，且已记录饮食"
-            >
-              热量缺口≥500kcal
-            </span>
-          </p>
-          <p className="flex flex-nowrap items-center gap-2">
-            <span className="community-pill community-pill--champion inline-flex shrink-0 items-center gap-1">
-              <span aria-hidden>👑</span>
-              运动大王
-            </span>
-            <span
-              className="community-title-rules__desc min-w-0 flex-1 truncate"
-              title="缺口≥800、运动≥500"
-            >
-              缺口≥800、运动≥600、饮食≥1k(kcal)
-            </span>
-          </p>
-          <p className="flex flex-nowrap items-center gap-2">
-            <span className="community-pill community-pill--foodKing inline-flex shrink-0 items-center gap-1">
-              <span aria-hidden>🥘</span>
-              美食大王
-            </span>
-            <span
-              className="community-title-rules__desc min-w-0 flex-1 truncate"
-              title="当日饮食热量 ≥ 基础代谢 × 1.2"
-            >
-              饮食 ≥ 基础代谢 × 1.2
-            </span>
-          </p>
-        </div>
-      </section>
+      <CommunitySelfSummary
+        member={selfMember}
+        todayKey={todayKey}
+        viewerProfile={profile}
+        selfDayVisible={selfDayVisible}
+        onBeforeNavigate={persistListCache}
+      />
 
       {!visible && (
         <p className="community-visibility-hint">
@@ -474,9 +460,9 @@ export function CommunityPage() {
         </p>
       )}
 
-      {!listLoading && !error && members.length === 0 && filter === 'following' && (
+      {!listLoading && !error && listMembers.length === 0 && filter === 'following' && (
         <div className="community-empty">
-          <p className="community-empty__title">还没有关注任何人</p>
+          <p className="community-empty__title">你还没有关注其他健友</p>
           <button
             type="button"
             onClick={() => handleFilterChange('all')}
@@ -487,28 +473,30 @@ export function CommunityPage() {
         </div>
       )}
 
-      {!listLoading && !error && members.length === 0 && filter === 'all' && (
+      {!listLoading && !error && listMembers.length === 0 && filter === 'all' && (
         <div className="community-empty">
-          <p className="community-empty__title">还没有人公开社区动态</p>
+          <p className="community-empty__title">还没有其他公开健友</p>
           <p className="community-empty__desc">成为第一个分享的人吧</p>
         </div>
       )}
 
-      {!error && members.length > 0 && (
+      {!listLoading && !error && filter === 'all' && listMembers.length > 0 && (
+        <p className="community-list-hint">拖动健友卡片调整排序，点击名片查看详情</p>
+      )}
+
+      {!error && listMembers.length > 0 && (
         <>
           {filter === 'following' && (
             <p className="text-xs text-muted">
-              {othersCount > 0
-                ? `关注 ${othersCount} 位健友`
-                : '目前只有你已公开'}
+              关注 {listMembers.length} 位健友
             </p>
           )}
           <CommunityMemberList
-            members={members}
+            members={listMembers}
             todayKey={todayKey}
             viewerProfile={profile}
             sortable={filter === 'all'}
-            onMembersChange={setMembers}
+            onMembersChange={handleMembersChange}
             onFollowChange={handleFollowChange}
             onLikeChange={handleLikeChange}
             onBeforeOpenMember={persistListCache}
@@ -522,6 +510,11 @@ export function CommunityPage() {
       >
         在设置中管理昵称与个人资料
       </Link>
+
+      <CommunityBadgeRulesDialog
+        open={badgeRulesOpen}
+        onClose={() => setBadgeRulesOpen(false)}
+      />
     </PageShell>
   )
 }
