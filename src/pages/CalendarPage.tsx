@@ -250,8 +250,8 @@ export function CalendarPage() {
         <StatCard label="缺口连续" value={streakDeficit} unit="天" variant="deficit" />
       </StatsGrid>
 
-      <section className="surface-card p-4">
-        <div className="mb-4 flex items-center justify-between gap-2">
+      <section className="surface-card min-w-0 max-w-full p-4">
+        <div className="mb-4 flex min-w-0 items-center justify-between gap-2">
           <button
             type="button"
             onClick={goPrev}

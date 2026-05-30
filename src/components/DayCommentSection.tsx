@@ -388,7 +388,7 @@ export function DayCommentSection({
     <div
       ref={composeRef}
       id="day-comment-compose"
-      className={`community-comment-compose scroll-mt-4 flex items-center gap-2${
+      className={`community-comment-compose scroll-mt-4 flex min-w-0 items-center gap-2${
         enableDock ? ' community-comment-compose--dock' : ''
       }`}
     >
@@ -423,7 +423,7 @@ export function DayCommentSection({
             void send()
           }
         }}
-        className="input min-h-0 flex-1 rounded-full py-2.5 text-sm"
+        className="input min-h-0 min-w-0 flex-1 rounded-full py-2.5 text-sm"
       />
       <button
         type="button"

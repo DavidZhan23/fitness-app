@@ -356,8 +356,8 @@ export function SettingsPage() {
       <section className="surface-panel p-4">
         <h2 className="font-semibold text-primary">个人资料</h2>
 
-        <div className="mt-3 flex items-start gap-3">
-          <div className="flex shrink-0 flex-col items-center">
+        <div className="profile-fields-stack mt-3">
+          <div className="profile-fields-stack__avatar flex flex-col items-center">
             <button
               type="button"
               disabled={avatarBusy}
@@ -379,7 +379,7 @@ export function SettingsPage() {
               ref={avatarInputRef}
               type="file"
               accept="image/*"
-              className="sr-only"
+              hidden
               onChange={(e) => void handleAvatarFile(e.target.files?.[0])}
             />
             {avatarError && (
@@ -388,79 +388,45 @@ export function SettingsPage() {
               </p>
             )}
           </div>
-          <div className="profile-nickname-field min-w-0 flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                maxLength={32}
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="input profile-nickname-field__input w-full"
-                placeholder="输入你的昵称"
-                aria-label="昵称"
-              />
-              <span
-                className="profile-nickname-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                aria-hidden
-              >
-                <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
-                  <path
-                    d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M13.5 6.5l4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
+          <div className="profile-fields-stack__fields">
+            <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={32}
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="input profile-field__input w-full min-w-0"
+                  placeholder="输入你的昵称"
+                  aria-label="昵称"
+                />
+                <ProfileFieldEditIcon />
+              </div>
+              {nicknameSaveState === 'saving' && (
+                <p className="mt-1 text-xs text-muted">保存中…</p>
+              )}
+              {nicknameSaveState === 'saved' && (
+                <p className="mt-1 text-xs text-brand">已保存</p>
+              )}
+              {nicknameSaveState === 'error' && (
+                <p className="mt-1 text-xs text-danger">保存失败</p>
+              )}
             </div>
-            {nicknameSaveState === 'saving' && (
-              <p className="mt-1 text-xs text-muted">保存中…</p>
-            )}
-            {nicknameSaveState === 'saved' && (
-              <p className="mt-1 text-xs text-brand">已保存</p>
-            )}
-            {nicknameSaveState === 'error' && (
-              <p className="mt-1 text-xs text-danger">保存失败</p>
-            )}
 
-            <div className="profile-welcome-field mt-3">
+            <hr className="profile-fields-divider" />
+
+            <div>
               <div className="relative">
                 <input
                   type="text"
                   maxLength={30}
                   value={welcomeMessage}
                   onChange={(e) => setWelcomeMessage(e.target.value)}
-                  className="input profile-welcome-field__input w-full"
+                  className="input profile-field__input w-full min-w-0"
                   placeholder="自定义首页标题"
                   aria-label="自定义首页标题"
                 />
-                <span
-                  className="profile-welcome-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                  aria-hidden
-                >
-                  <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
-                    <path
-                      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M13.5 6.5l4 4"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
+                <ProfileFieldEditIcon />
               </div>
               {welcomeMessageSaveState === 'saving' && (
                 <p className="mt-1 text-xs text-muted">保存中…</p>
@@ -473,37 +439,20 @@ export function SettingsPage() {
               )}
             </div>
 
-            <div className="mt-3">
+            <hr className="profile-fields-divider" />
+
+            <div>
               <div className="relative">
                 <input
                   type="text"
                   maxLength={40}
                   value={welcomeSubtitle}
                   onChange={(e) => setWelcomeSubtitle(e.target.value)}
-                  className="input profile-welcome-field__input w-full"
+                  className="input profile-field__input w-full min-w-0"
                   placeholder="自定义副标题"
                   aria-label="自定义副标题"
                 />
-                <span
-                  className="profile-welcome-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                  aria-hidden
-                >
-                  <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
-                    <path
-                      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M13.5 6.5l4 4"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
+                <ProfileFieldEditIcon />
               </div>
               {welcomeSubtitleSaveState === 'saving' && (
                 <p className="mt-1 text-xs text-muted">保存中…</p>
@@ -890,5 +839,30 @@ export function SettingsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function ProfileFieldEditIcon() {
+  return (
+    <span
+      className="profile-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+      aria-hidden
+    >
+      <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
+        <path
+          d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M13.5 6.5l4 4"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
   )
 }
