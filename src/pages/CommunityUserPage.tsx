@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
-import { DayBadgePopover } from '../components/DayBadgePopover'
+import { CalendarDayDetailPanel } from '../components/CalendarDayDetailPanel'
 import { DayCommentSection } from '../components/DayCommentSection'
 import { FollowButton } from '../components/FollowButton'
 import { UserAvatar } from '../components/UserAvatar'
@@ -89,9 +89,9 @@ export function CommunityUserPage() {
   const [loading, setLoading] = useState(initial.loading)
   const [dayLoading, setDayLoading] = useState(false)
   const [monthLoading, setMonthLoading] = useState(false)
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
-  const [anchorGrid, setAnchorGrid] = useState<MonthGridType>('deficit')
-  const [popoverActive, setPopoverActive] = useState(false)
+  const [selectedGridType, setSelectedGridType] =
+    useState<MonthGridType>('deficit')
+  const [detailActive, setDetailActive] = useState(false)
   const [wallPane, setWallPane] = useState<'exercise' | 'deficit'>('exercise')
   const [error, setError] = useState('')
 
@@ -200,7 +200,7 @@ export function CommunityUserPage() {
   }, [year, month, loading, error, loadMonth])
 
   useEffect(() => {
-    setPopoverActive(false)
+    setDetailActive(false)
   }, [year, month])
 
   useEffect(() => {
@@ -214,33 +214,26 @@ export function CommunityUserPage() {
     return () => window.clearTimeout(id)
   }, [loading, error, viewDate])
 
-  const handleSelectedCellAnchorChange = useCallback(
-    (el: HTMLElement | null, _gridType: MonthGridType) => {
-      setAnchorEl(el)
-    },
-    [],
-  )
-
   const handleDayClick = useCallback(
     (date: string, gridType: MonthGridType = 'deficit') => {
       if (isBeforeAccountStart(date, accountStartKey)) return
-      if (viewDate === date && anchorGrid === gridType && popoverActive) {
-        setPopoverActive(false)
+      if (viewDate === date && selectedGridType === gridType && detailActive) {
+        setDetailActive(false)
         return
       }
 
-      setAnchorGrid(gridType)
-      setPopoverActive(true)
+      setSelectedGridType(gridType)
+      setDetailActive(true)
       if (viewDate !== date) {
         setViewDate(date)
         void loadDay(date, true)
       }
     },
-    [viewDate, anchorGrid, popoverActive, loadDay, accountStartKey],
+    [viewDate, selectedGridType, detailActive, loadDay, accountStartKey],
   )
 
-  const closePopover = useCallback(() => {
-    setPopoverActive(false)
+  const closeDetail = useCallback(() => {
+    setDetailActive(false)
   }, [])
 
   const goPrev = () => setView((v) => shiftMonth(v.year, v.month, -1))
@@ -272,22 +265,31 @@ export function CommunityUserPage() {
   )
 
   const selectedCell = dayMap.get(viewDate)
-  const popoverFromSnapshot =
+  const detailFromSnapshot =
     snapshot && !selectedCell && snapshot.date === viewDate ? snapshot : null
-  const popoverOpen = Boolean(
-    popoverActive &&
-      anchorEl &&
-      viewDate &&
-      (selectedCell || popoverFromSnapshot),
-  )
-  const popoverBmr = ownerDailyBmr || snapshot?.dailyBmr || 0
-  const popoverThreshold = monthThreshold || snapshot?.threshold || 0
-  const popoverDeficit =
-    selectedCell?.deficit ?? popoverFromSnapshot?.deficit ?? 0
-  const popoverExerciseKcal =
-    selectedCell?.exerciseKcal ?? popoverFromSnapshot?.exerciseKcal ?? 0
-  const popoverMealKcal =
-    selectedCell?.mealKcal ?? popoverFromSnapshot?.mealKcal ?? 0
+  const detailBmr = ownerDailyBmr || snapshot?.dailyBmr || 0
+  const detailThreshold = monthThreshold || snapshot?.threshold || 0
+  const detailDeficit =
+    selectedCell?.deficit ?? detailFromSnapshot?.deficit ?? 0
+  const detailExerciseKcal =
+    selectedCell?.exerciseKcal ?? detailFromSnapshot?.exerciseKcal ?? 0
+  const detailMealKcal =
+    selectedCell?.mealKcal ?? detailFromSnapshot?.mealKcal ?? 0
+  const detailPanel =
+    detailActive && viewDate ? (
+      <CalendarDayDetailPanel
+        dateKey={viewDate}
+        gridType={selectedGridType}
+        deficit={detailDeficit}
+        exerciseKcal={detailExerciseKcal}
+        mealKcal={detailMealKcal}
+        bmr={detailBmr}
+        tdee={detailBmr + detailExerciseKcal}
+        deficitThreshold={detailThreshold}
+        honorsOnly={!isSelf}
+        onClose={closeDetail}
+      />
+    ) : null
 
   if (loading && !snapshot) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -312,8 +314,7 @@ export function CommunityUserPage() {
     accountStartKey,
     selectedDateKey: viewDate,
     legendHighlight,
-    anchorGrid,
-    onSelectedCellAnchorChange: handleSelectedCellAnchorChange,
+    selectedGridType,
     onDayClick: handleDayClick,
     honorsOnly: !isSelf,
   }
@@ -472,28 +473,13 @@ export function CommunityUserPage() {
             ) : (
               <MonthHeatmap {...heatmapProps} />
             )}
+            {detailPanel}
             <p className="mt-3 text-center text-xs text-muted">
               点击格子查看当日称号与数据
             </p>
           </>
         )}
       </section>
-
-      <DayBadgePopover
-        open={popoverOpen}
-        anchorEl={anchorEl}
-        anchorGrid={anchorGrid}
-        dateKey={viewDate}
-        todayKey={todayKey}
-        deficit={popoverDeficit}
-        exerciseKcal={popoverExerciseKcal}
-        mealKcal={popoverMealKcal}
-        bmr={popoverBmr}
-        tdee={popoverBmr + popoverExerciseKcal}
-        deficitThreshold={popoverThreshold}
-        honorsOnly={!isSelf}
-        onClose={closePopover}
-      />
 
       {isSelf && (
         <Link

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { DeficitCard } from '../components/DeficitCard'
 import { HeroGreeting } from '../components/HeroGreeting'
-import { LogList } from '../components/LogList'
+import { TodayRecordsSection } from '../components/TodayRecordsSection'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
@@ -122,10 +122,11 @@ export function TodayPage() {
   const threshold = toKcal(profile?.deficit_threshold)
 
   const greeting = displayName(profile, user)
+  const noRecordsToday = exercises.length === 0 && meals.length === 0
 
   return (
     <PageShell>
-      <div className="today-hero-block">
+      <div className="today-hero-block today-hero-block--compact">
         <HeroGreeting
           name={greeting}
           themeStyle={style}
@@ -144,13 +145,6 @@ export function TodayPage() {
         />
       </div>
 
-      <PersonalDayStatus
-        deficit={deficit}
-        exerciseKcal={exerciseKcal}
-        mealKcal={mealKcal}
-        dailyBmr={fullDayBmr}
-      />
-
       <StatsGrid columns={2}>
         <Link
           to="/log/exercise"
@@ -166,14 +160,30 @@ export function TodayPage() {
         </Link>
       </StatsGrid>
 
-      <LogList
+      <PersonalDayStatus
+        variant="compact"
+        deficit={deficit}
+        exerciseKcal={exerciseKcal}
+        mealKcal={mealKcal}
+        dailyBmr={fullDayBmr}
+      />
+
+      <TodayRecordsSection
         exercises={exercises}
         meals={meals}
+        exerciseKcal={exerciseKcal}
+        mealKcal={mealKcal}
         onDeleteExercise={handleDeleteExercise}
         onDeleteMeal={handleDeleteMeal}
         onUpdateExercise={handleUpdateExercise}
         onUpdateMeal={handleUpdateMeal}
       />
+
+      {noRecordsToday ? (
+        <p className="text-xs text-muted">
+          连续记录后，可以在「打卡」里查看热力图。
+        </p>
+      ) : null}
     </PageShell>
   )
 }

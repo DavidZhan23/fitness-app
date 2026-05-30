@@ -17,8 +17,7 @@ export function SplitMonthWall({
   legendHighlight = null,
   wallPane: wallPaneProp,
   onWallPaneChange,
-  anchorGrid = null,
-  onSelectedCellAnchorChange,
+  selectedGridType = null,
   onDayClick,
   honorsOnly = false,
 }: MonthHeatmapProps) {
@@ -58,8 +57,7 @@ export function SplitMonthWall({
           type="exercise"
           selectedDateKey={selectedDateKey}
           legendHighlight={legendHighlight}
-          anchorGrid={anchorGrid}
-          onSelectedCellAnchorChange={onSelectedCellAnchorChange}
+          selectedGridType={selectedGridType}
           onDayClick={onDayClick}
           honorsOnly={honorsOnly}
         />
@@ -72,8 +70,7 @@ export function SplitMonthWall({
           type="deficit"
           selectedDateKey={selectedDateKey}
           legendHighlight={legendHighlight}
-          anchorGrid={anchorGrid}
-          onSelectedCellAnchorChange={onSelectedCellAnchorChange}
+          selectedGridType={selectedGridType}
           onDayClick={onDayClick}
           honorsOnly={honorsOnly}
         />

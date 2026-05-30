@@ -1,0 +1,45 @@
+---
+description: 社区等功能本地手动验收 — e2e 后 seed（仅 teardown）、PR 前 mandatory cleanup
+alwaysApply: true
+---
+
+# QA 手动验收种子（本地）
+
+## 硬约束
+
+- `seed:qa-manual` / `cleanup:qa-seed` **仅**允许 `DATABASE_URL` 指向 `localhost` 或 `127.0.0.1` 的 **`fitness`** 库；否则脚本 **exit 1**。
+- **不**自动创建 `jerryuk1019@163.com`；不存在时 seed **warn + exit 0**（不得让 verify/e2e 失败）。
+- cleanup **只**删 `qa-seed+%@example.com`；**禁止**删除 `jerryuk1019@163.com`。
+- 自动 seed **仅**在 [`e2e/global-teardown.mjs`](e2e/global-teardown.mjs)（e2e 用户 cleanup 之后）；**不要**在 `verify-local.sh` 再调 seed。
+- 跳过 seed：`PW_SKIP_QA_SEED=1 npm run test:e2e`
+
+## E2E / verify 通过后
+
+若本轮改动涉及 **社区 / inbox / follow / comment / 点赞踩**，向用户输出手动验收清单：
+
+1. 用 **jerryuk1019@163.com**（本地已有密码）登录
+2. **社区** → **查看互动消息**（关注、评论、点赞、评论踩）
+3. **设置** 或社区底链 → 关注者列表
+4. 打开 **qa-seed+fan-a** / **fan-b** 用户页 → 今日 **#day-comments**
+5. 数据带 `[QA_SEED_FEATURE]` 前缀（默认 `manual`）
+
+## PR 提交前（与 03-commit-and-push 确认门）
+
+在 `git commit` / `push` / 开 PR **之前**，**必须**执行并成功：
+
+```bash
+npm run cleanup:qa-seed
+```
+
+确认门 checklist 须包含：`cleanup:qa-seed` 已执行（若本轮跑过 e2e/seed）。
+
+未清理 **不得**在用户回复 `go` 后继续 commit/push。
+
+## 命令
+
+| 命令 | 用途 |
+|------|------|
+| `npm run seed:qa-manual` | 手动重跑种子（会先 cleanup） |
+| `npm run cleanup:qa-seed` | PR 前删除 fan-a/fan-b 临时号 |
+
+详见 [`docs/ops/qa-manual-seed.md`](docs/ops/qa-manual-seed.md)。

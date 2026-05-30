@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { DayBadgePopover } from '../components/DayBadgePopover'
+import { CalendarDayDetailPanel } from '../components/CalendarDayDetailPanel'
 import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
@@ -36,8 +36,9 @@ export function CalendarPage() {
   const [view, setView] = useState(getTodayMonth)
   const [dayMap, setDayMap] = useState(() => new Map())
   const [selected, setSelected] = useState<DayLog | null>(null)
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
-  const [anchorGrid, setAnchorGrid] = useState<MonthGridType>('deficit')
+  const [detailDateKey, setDetailDateKey] = useState<string | null>(null)
+  const [selectedGridType, setSelectedGridType] =
+    useState<MonthGridType>('deficit')
   const [loading, setLoading] = useState(true)
   const [streakExercise, setStreakExercise] = useState(0)
   const [streakDeficit, setStreakDeficit] = useState(0)
@@ -47,9 +48,7 @@ export function CalendarPage() {
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
   const { bmr: profileBmr, tdee: profileTdee } = resolveProfileMetabolism(profile)
   const { year, month } = view
-  const selectedDateKey = selected
-    ? normalizeDateKey(String(selected.log_date))
-    : null
+  const selectedDateKey = detailDateKey
   const isCurrentMonth =
     year === getTodayMonth().year && month === getTodayMonth().month
 
@@ -113,27 +112,22 @@ export function CalendarPage() {
     load()
   }, [load])
 
-  const handleSelectedCellAnchorChange = useCallback(
-    (el: HTMLElement | null, _gridType: MonthGridType) => {
-      setAnchorEl(el)
-    },
-    [],
-  )
+  const closeDetail = useCallback(() => {
+    setDetailDateKey(null)
+    setSelected(null)
+  }, [])
 
   const handleDayClick = useCallback(
     async (date: string, gridType: MonthGridType = 'deficit') => {
       if (!user) return
       if (isBeforeAccountStart(date, accountStartKey)) return
-      if (selectedDateKey === date && anchorGrid === gridType) {
-        setSelected(null)
-        setAnchorEl(null)
+      if (detailDateKey === date && selectedGridType === gridType) {
+        closeDetail()
         return
       }
 
-      setAnchorGrid(gridType)
-      if (selectedDateKey !== date) {
-        setSelected(null)
-      }
+      setSelectedGridType(gridType)
+      setDetailDateKey(date)
 
       const log = await httpData.fetchDayLogByDate(date)
       setSelected(log)
@@ -158,8 +152,9 @@ export function CalendarPage() {
     },
     [
       user,
-      selectedDateKey,
-      anchorGrid,
+      detailDateKey,
+      selectedGridType,
+      closeDetail,
       threshold,
       todayKey,
       accountStartKey,
@@ -181,43 +176,57 @@ export function CalendarPage() {
   }
   const goToday = () => setView(getTodayMonth())
 
+  const detailCell = detailDateKey ? dayMap.get(detailDateKey) : undefined
+  const detailExerciseKcal =
+    detailCell?.exerciseKcal ??
+    (selected ? toKcal(selected.exercise_kcal) : 0)
+  const detailMealKcal =
+    detailCell?.mealKcal ?? (selected ? toKcal(selected.meal_kcal) : 0)
+
   const selectedDeficit =
-    selected && selectedDateKey
-      ? isBeforeAccountStart(selectedDateKey, accountStartKey)
+    detailDateKey != null
+      ? isBeforeAccountStart(detailDateKey, accountStartKey)
         ? 0
-        : selectedDateKey === todayKey
-          ? calculateSpreadDeficit(
-              profileBmr,
-              toKcal(selected.exercise_kcal),
-              toKcal(selected.meal_kcal),
-              todayKey,
-            )
-          : calculateSpreadDeficit(
-              profileBmr,
-              toKcal(selected.exercise_kcal),
-              toKcal(selected.meal_kcal),
-              selectedDateKey,
-              new Date(`${selectedDateKey}T23:59:59`),
-            )
+        : detailCell?.deficit ??
+          (selected && detailDateKey === normalizeDateKey(String(selected.log_date))
+            ? detailDateKey === todayKey
+              ? calculateSpreadDeficit(
+                  profileBmr,
+                  toKcal(selected.exercise_kcal),
+                  toKcal(selected.meal_kcal),
+                  todayKey,
+                )
+              : calculateSpreadDeficit(
+                  profileBmr,
+                  toKcal(selected.exercise_kcal),
+                  toKcal(selected.meal_kcal),
+                  detailDateKey,
+                  new Date(`${detailDateKey}T23:59:59`),
+                )
+            : 0)
       : 0
 
   const selectedBeforeAccount =
-    selectedDateKey != null &&
-    isBeforeAccountStart(selectedDateKey, accountStartKey)
+    detailDateKey != null &&
+    isBeforeAccountStart(detailDateKey, accountStartKey)
   const liveDeficitHeatmap = getDeficitHeatmapCell(
     selectedBeforeAccount ? 0 : selectedDeficit,
     threshold,
   )
   const legendHighlight =
-    selectedDateKey && selected
+    detailDateKey && (detailCell || selected)
       ? getLiveWallLegendHighlight(
-          toKcal(selected.exercise_kcal),
+          detailExerciseKcal,
           liveDeficitHeatmap,
           selectedBeforeAccount,
         )
       : null
 
-  const popoverOpen = Boolean(selected && anchorEl && selectedDateKey)
+  const detailOpen = detailDateKey != null
+  const detailTdee =
+    selected && detailDateKey === normalizeDateKey(String(selected.log_date))
+      ? toKcal(selected.tdee_snapshot) || profileTdee
+      : profileBmr + detailExerciseKcal
 
   if (loading) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -231,10 +240,23 @@ export function CalendarPage() {
     accountStartKey,
     selectedDateKey,
     legendHighlight,
-    anchorGrid,
-    onSelectedCellAnchorChange: handleSelectedCellAnchorChange,
+    selectedGridType,
     onDayClick: handleDayClick,
   }
+
+  const detailPanel =
+    detailOpen && detailDateKey ? (
+      <CalendarDayDetailPanel
+        dateKey={detailDateKey}
+        gridType={selectedGridType}
+        deficit={selectedDeficit}
+        exerciseKcal={detailExerciseKcal}
+        mealKcal={detailMealKcal}
+        bmr={profileBmr}
+        tdee={detailTdee}
+        onClose={closeDetail}
+      />
+    ) : null
 
   return (
     <PageShell>
@@ -292,28 +314,8 @@ export function CalendarPage() {
         ) : (
           <MonthHeatmap {...heatmapProps} />
         )}
+        {detailPanel}
       </section>
-
-      <DayBadgePopover
-        open={popoverOpen}
-        anchorEl={anchorEl}
-        anchorGrid={anchorGrid}
-        dateKey={selectedDateKey ?? todayKey}
-        todayKey={todayKey}
-        deficit={selectedDeficit}
-        exerciseKcal={selected ? toKcal(selected.exercise_kcal) : 0}
-        mealKcal={selected ? toKcal(selected.meal_kcal) : 0}
-        bmr={profileBmr}
-        tdee={
-          selected
-            ? toKcal(selected.tdee_snapshot) || profileTdee
-            : profileTdee
-        }
-        onClose={() => {
-          setSelected(null)
-          setAnchorEl(null)
-        }}
-      />
 
       <p className="text-center text-xs text-muted">
         打卡墙样式可在{' '}

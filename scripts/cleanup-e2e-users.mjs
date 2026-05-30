@@ -17,6 +17,8 @@ const require = createRequire(import.meta.url)
 const { Pool } = require(path.resolve(__dirname, '../server/node_modules/pg'))
 
 const E2E_EMAIL_PATTERN = 'e2e+%@example.com'
+/** Never delete manual QA account (not matched by e2e+ pattern; listed for documentation). */
+const PROTECTED_EMAILS = ['jerryuk1019@163.com']
 const retainMax = Math.max(
   0,
   Number.parseInt(process.env.E2E_USER_RETAIN_MAX ?? '5', 10) || 5,
@@ -29,8 +31,10 @@ const pool = new Pool({ connectionString: databaseUrl })
 
 try {
   const { rows: counted } = await pool.query(
-    `select count(*)::int as c from users where email like $1`,
-    [E2E_EMAIL_PATTERN],
+    `select count(*)::int as c from users
+     where email like $1
+       and email <> all($2::text[])`,
+    [E2E_EMAIL_PATTERN, PROTECTED_EMAILS],
   )
   const total = counted[0]?.c ?? 0
 
@@ -47,11 +51,12 @@ try {
               row_number() over (order by created_at desc) as rn
        from users
        where email like $1
+         and email <> all($3::text[])
      )
      delete from users
      where id in (select id from ranked where rn > $2)
      returning email`,
-    [E2E_EMAIL_PATTERN, retainMax],
+    [E2E_EMAIL_PATTERN, retainMax, PROTECTED_EMAILS],
   )
 
   const remaining = total - deleted.length

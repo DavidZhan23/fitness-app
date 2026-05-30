@@ -78,6 +78,8 @@ npm run verify
 
 每次 E2E 跑完后会自动清理本地库里的测试账号（邮箱 `e2e+*@example.com`），**只保留最新 5 个**（`E2E_USER_RETAIN_MAX` 可改）。手动清理：`npm run cleanup:e2e-users`。跳过清理：`PW_SKIP_E2E_CLEANUP=1 npm run test:e2e`。
 
+E2E 结束后还会向本地账号 **jerryuk1019@163.com** 注入社区互动种子数据（`qa-seed+fan-a/b@example.com`），便于手动点验 inbox/关注/评论。PR 前执行 `npm run cleanup:qa-seed`。详见 [ops/qa-manual-seed.md](ops/qa-manual-seed.md)。跳过种子：`PW_SKIP_QA_SEED=1 npm run test:e2e`。
+
 如需复用已启动服务（例如你在本地调试时固定跑 3001/5173），请显式开启：
 
 ```bash

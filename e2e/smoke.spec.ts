@@ -29,13 +29,19 @@ test.describe.serial('main flow smoke', () => {
 
     await openCommunity(page)
 
-    await nav.getByRole('link', { name: '模板' }).click()
+    await nav.getByRole('link', { name: '今日' }).click()
+    await page.getByRole('link', { name: '+ 记运动' }).click()
+    await page.getByRole('button', { name: '管理快捷模板' }).click()
     await expect(page.getByRole('heading', { name: '我的模板' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: '运动', selected: true })).toBeVisible()
 
     await nav.getByRole('link', { name: '今日' }).click()
     await expect(page.getByRole('link', { name: '+ 记运动' })).toBeVisible()
-    await expect(page.getByText(exerciseName)).toBeVisible()
+    await expect(page.getByText('今日记录')).toBeVisible()
+    await expect(page.getByText(/运动 1 条 · 饮食 1 条/)).toBeVisible()
+    await page.getByRole('button', { name: '展开' }).click()
     await expect(page.getByText(mealName)).toBeVisible()
+    await expect(page.getByText(exerciseName)).toBeVisible()
   })
 
   test('today page scrolls within app-main', async ({ page }) => {
@@ -105,7 +111,7 @@ test.describe.serial('main flow smoke', () => {
 
     await page.getByRole('button', { name: /日，今日$/ }).first().click()
     await expect(page.locator('.heatmap-day--selected').first()).toBeVisible()
-    await expect(page.getByTestId('day-badge-popover')).toBeVisible()
+    await expect(page.getByTestId('calendar-day-detail-panel')).toBeVisible()
   })
 
   test('settings avatar control is available', async ({ page }) => {
