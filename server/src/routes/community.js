@@ -14,6 +14,7 @@ import {
   addDayComment,
   dislikeDay,
   deleteDayComment,
+  dislikeDayComment,
   enrichMembersSocial,
   followUser,
   getDayLikeStats,
@@ -25,6 +26,7 @@ import {
   unfollowUser,
   unlikeDayComment,
   unlikeDay,
+  undislikeDayComment,
   undislikeDay,
 } from '../social.js'
 import {
@@ -296,6 +298,24 @@ router.delete(
   authMiddleware,
   asyncHandler(async (req, res) => {
     const data = await unlikeDayComment(req.userId, req.params.commentId)
+    res.json(data)
+  }),
+)
+
+router.post(
+  '/community/comments/:commentId/dislikes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await dislikeDayComment(req.userId, req.params.commentId)
+    res.json(data)
+  }),
+)
+
+router.delete(
+  '/community/comments/:commentId/dislikes',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const data = await undislikeDayComment(req.userId, req.params.commentId)
     res.json(data)
   }),
 )

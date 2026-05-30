@@ -27,7 +27,7 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 1. Copy `lavender.css` → `my-theme.css`, change selector to `[data-style='my-theme']`.
 2. Add `@import './my-theme.css';` in `index.css` (this folder).
 3. Extend `AppStyle` in `src/context/StyleContext.tsx`.
-4. Add a row in `styleOptions` on `SettingsPage.tsx` plus `style-swatch-*` / `style-option-*` in `src/index.css` if needed.
+4. Append an entry in [`src/lib/styleOptions.ts`](../../lib/styleOptions.ts) with `group` and `sortHue` (`sortHue` = main visual hue for settings picker order). Add `style-swatch-*` / `style-option-*` in `src/index.css` if needed.
 
 ## Related docs
 

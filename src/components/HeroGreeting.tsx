@@ -10,6 +10,7 @@ interface HeroGreetingProps {
   name: string
   themeStyle: AppStyle
   customWelcomeMessage?: string | null
+  customWelcomeSubtitle?: string | null
 }
 
 function splitTemplate(template: string) {
@@ -25,13 +26,17 @@ export function HeroGreeting({
   name,
   themeStyle,
   customWelcomeMessage,
+  customWelcomeSubtitle,
 }: HeroGreetingProps) {
   const config = getHeroGreetingConfig(themeStyle)
   const customTitle =
     typeof customWelcomeMessage === 'string' ? customWelcomeMessage.trim() : ''
+  const customSubtitle =
+    typeof customWelcomeSubtitle === 'string' ? customWelcomeSubtitle.trim() : ''
   const title = customTitle || config.titleTemplate
+  const subtitle = customSubtitle || config.subtitle
   const templateParts = customTitle ? null : splitTemplate(title)
-  const subtitleParts = splitTemplate(config.subtitle)
+  const subtitleParts = customSubtitle ? null : splitTemplate(subtitle)
   const allowWrap = shouldAllowHeroGreetingWrap({ customTitle, title })
 
   const vars = {
@@ -76,7 +81,7 @@ export function HeroGreeting({
             {subtitleParts.after}
           </>
         ) : (
-          config.subtitle
+          subtitle
         )}
       </FluidText>
     </header>

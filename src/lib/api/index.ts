@@ -9,6 +9,7 @@ import type {
   CommunityMember,
   CommunityUserDetail,
   DayComment,
+  DayCommentReactionStats,
   DayLog,
   Exercise,
   Meal,
@@ -388,14 +389,30 @@ export const httpData = {
 
   async likeCommunityComment(
     commentId: string,
-  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+  ): Promise<DayCommentReactionStats> {
     return apiFetch(`/community/comments/${commentId}/likes`, { method: 'POST' })
   },
 
   async unlikeCommunityComment(
     commentId: string,
-  ): Promise<{ likeCount: number; viewerLiked: boolean }> {
+  ): Promise<DayCommentReactionStats> {
     return apiFetch(`/community/comments/${commentId}/likes`, { method: 'DELETE' })
+  },
+
+  async dislikeCommunityComment(
+    commentId: string,
+  ): Promise<DayCommentReactionStats> {
+    return apiFetch(`/community/comments/${commentId}/dislikes`, {
+      method: 'POST',
+    })
+  },
+
+  async undislikeCommunityComment(
+    commentId: string,
+  ): Promise<DayCommentReactionStats> {
+    return apiFetch(`/community/comments/${commentId}/dislikes`, {
+      method: 'DELETE',
+    })
   },
 
   async getCommunityUserMonth(

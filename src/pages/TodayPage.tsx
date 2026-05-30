@@ -130,6 +130,7 @@ export function TodayPage() {
           name={greeting}
           themeStyle={style}
           customWelcomeMessage={profile?.welcome_message}
+          customWelcomeSubtitle={profile?.welcome_subtitle}
         />
         <DeficitCard
           dateLabel={dateLabel}

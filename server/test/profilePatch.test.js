@@ -47,4 +47,27 @@ describe('buildProfileUpdate', () => {
     expect(cleared.updates).toContain('avatar_url = $1')
     expect(cleared.values[0]).toBeNull()
   })
+
+  it('sets community_visible true when completing onboarding without explicit flag', () => {
+    const { updates, values } = buildProfileUpdate({ onboarding_complete: true })
+    expect(updates).toContain('onboarding_complete = $1')
+    expect(updates).toContain('community_visible = $2')
+    expect(values).toEqual([true, true])
+  })
+
+  it('respects explicit community_visible false when completing onboarding', () => {
+    const { updates, values } = buildProfileUpdate({
+      onboarding_complete: true,
+      community_visible: false,
+    })
+    expect(updates).toContain('onboarding_complete = $1')
+    expect(updates).toContain('community_visible = $2')
+    expect(values).toEqual([true, false])
+  })
+
+  it('does not auto-open community when onboarding_complete is false', () => {
+    const { updates } = buildProfileUpdate({ onboarding_complete: false })
+    expect(updates).toContain('onboarding_complete = $1')
+    expect(updates.some((u) => u.startsWith('community_visible'))).toBe(false)
+  })
 })

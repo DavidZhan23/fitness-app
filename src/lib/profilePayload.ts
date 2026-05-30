@@ -29,6 +29,14 @@ export function buildProfilePatchBody(
     body.welcome_message = welcome ? welcome.slice(0, 30) : null
   }
 
+  if (data.welcome_subtitle !== undefined) {
+    const subtitle =
+      typeof data.welcome_subtitle === 'string'
+        ? data.welcome_subtitle.trim()
+        : ''
+    body.welcome_subtitle = subtitle ? subtitle.slice(0, 40) : null
+  }
+
   if (data.avatar_url !== undefined) {
     body.avatar_url =
       typeof data.avatar_url === 'string' && data.avatar_url.trim()

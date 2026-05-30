@@ -42,6 +42,11 @@ export function evaluateCommunityDayStatus(input: {
   } = BADGE_THRESHOLDS
 
   const needsMealLog = deficit > mealReminderDeficit && mealKcal <= 0
+
+  if (mealKcal <= 0) {
+    return { needsMealLog, badge: null, foodKing: false }
+  }
+
   const foodKing = isFoodKing(mealKcal, input.dailyBmr)
 
   const isChampion =

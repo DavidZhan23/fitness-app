@@ -74,7 +74,7 @@ export function buildMonthDayMap(
       exerciseKcal,
       mealKcal,
       deficit,
-      exerciseLevel: getExerciseIntensityLevel(exerciseKcal),
+      exerciseLevel: beforeAccount ? 0 : getExerciseIntensityLevel(exerciseKcal),
       deficitLevel: heatmap.level,
       deficitTone: heatmap.tone,
       beforeAccount,

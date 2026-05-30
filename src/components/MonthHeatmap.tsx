@@ -52,7 +52,7 @@ export function MonthHeatmap({
   const { weeks } = getMonthGrid(year, month)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-heatmap-root>
       <MonthGrid
         weeks={weeks}
         dayMap={dayMap}
@@ -131,8 +131,7 @@ export function MonthGrid({
             )
           }
           const cell = dayMap.get(dateKey)
-          const beforeAccount =
-            type === 'deficit' && isBeforeAccountStart(dateKey, accountStartKey)
+          const beforeAccount = isBeforeAccountStart(dateKey, accountStartKey)
           const level = beforeAccount
             ? 0
             : type === 'exercise'
@@ -143,14 +142,16 @@ export function MonthGrid({
           const isSelected =
             selectedDateKey != null && dateKey === selectedDateKey
           const isFuture = dateKey > todayKey
+          const isBlocked = isFuture || beforeAccount
 
           const cellClass =
             type === 'exercise'
               ? EXERCISE_LEVEL_CLASSES[level]
               : getDeficitHeatmapClass(level, cell?.deficitTone ?? 'neutral')
 
-          const rawGridBadge =
-            type === 'exercise'
+          const rawGridBadge = beforeAccount
+            ? null
+            : type === 'exercise'
               ? cell?.exerciseDayBadge
               : cell?.deficitDayBadge
           const gridBadge =
@@ -158,7 +159,7 @@ export function MonthGrid({
           const badgeLabel = gridBadge ? heatmapBadgeLabel(gridBadge) : null
 
           const titleText = beforeAccount
-            ? `${formatTooltipDate(dateKey)} 注册之前不统计`
+            ? `${formatTooltipDate(dateKey)} 注册之前不可查看`
             : cell
               ? type === 'exercise'
                 ? `${formatTooltipDate(dateKey)} 运动 ${Math.round(cell.exerciseKcal)} 千卡`
@@ -167,9 +168,11 @@ export function MonthGrid({
                 ? `${formatTooltipDate(dateKey)} 收支持平`
                 : `${formatTooltipDate(dateKey)} 无记录`
 
-          const ariaLabel = isToday
-            ? `${dayNum}日，今日`
-            : `${dayNum}日`
+          const ariaLabel = beforeAccount
+            ? `${dayNum}日，注册之前不可查看`
+            : isToday
+              ? `${dayNum}日，今日`
+              : `${dayNum}日`
 
           const isAnchorCell =
             isSelected && anchorGrid === type && onSelectedCellAnchorChange
@@ -183,16 +186,16 @@ export function MonthGrid({
                   : undefined
               }
               type="button"
-              disabled={isFuture}
+              disabled={isBlocked}
               data-heatmap-day={dateKey}
               data-heatmap-grid={type}
               title={isToday ? `${titleText} · 今日` : titleText}
               aria-label={ariaLabel}
-              onClick={() => !isFuture && onDayClick?.(dateKey, type)}
+              onClick={() => !isBlocked && onDayClick?.(dateKey, type)}
               className={`relative flex aspect-square items-center justify-center rounded-md text-[11px] font-medium tabular-nums transition-transform active:scale-95 ${cellClass} ${
-                isFuture ? 'cursor-not-allowed opacity-30' : ''
+                isBlocked ? 'cursor-not-allowed opacity-30' : ''
               } ${isSelected ? 'heatmap-day--selected' : ''} ${
-                !isFuture && onDayClick ? 'hover:brightness-110' : ''
+                !isBlocked && onDayClick ? 'hover:brightness-110' : ''
               }`}
             >
               {isToday && (

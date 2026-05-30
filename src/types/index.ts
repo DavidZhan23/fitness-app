@@ -8,8 +8,10 @@ export interface Profile {
   email: string | null
   /** 用户自定义昵称，展示用 */
   nickname?: string | null
-  /** 今日页欢迎语（可选；留空时回退为“欢迎回来，昵称。”） */
+  /** 今日页欢迎语（可选；留空时回退为主题默认标题） */
   welcome_message?: string | null
+  /** 今日页副标题（可选；留空时回退为主题默认副标题） */
+  welcome_subtitle?: string | null
   /** 头像 data URL（JPEG/PNG/WebP base64） */
   avatar_url?: string | null
   /** 账号注册时间，用于打卡墙「注册日前不计缺口」 */
@@ -66,6 +68,8 @@ export type CommunityInboxItemKind =
   | 'dislike'
   | 'comment_on_card'
   | 'reply'
+  | 'comment_like'
+  | 'comment_dislike'
   | 'follow'
 
 export interface CommunityInboxItem {
@@ -73,6 +77,7 @@ export interface CommunityInboxItem {
   kind: CommunityInboxItemKind
   actorId: string
   actorNickname: string
+  actorAvatarUrl?: string | null
   logDate: string
   targetUserId: string
   bodyPreview: string | null
@@ -100,6 +105,13 @@ export interface CommunityInboxListResponse {
   items: CommunityInboxItem[]
 }
 
+export interface DayCommentReactionStats {
+  likeCount: number
+  dislikeCount: number
+  viewerLiked: boolean
+  viewerDisliked: boolean
+}
+
 export interface DayComment {
   id: string
   authorId: string
@@ -110,6 +122,8 @@ export interface DayComment {
   isOwn: boolean
   likeCount: number
   viewerLiked: boolean
+  dislikeCount: number
+  viewerDisliked: boolean
   /** 回复时挂在的顶层评论 id */
   parentCommentId?: string | null
   replyToUserId?: string | null

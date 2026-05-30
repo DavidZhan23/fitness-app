@@ -28,7 +28,7 @@ export function SplitMonthWall({
   const { weeks } = getMonthGrid(year, month)
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-heatmap-root>
       <SegmentedControl
         columns={2}
         className="wall-pane-tabs w-fit max-w-full rounded-xl p-1"

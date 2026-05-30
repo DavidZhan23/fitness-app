@@ -1,13 +1,14 @@
 import { expect, type Page } from '@playwright/test'
 import { mainNav } from './auth'
 
-/** Community header after inbox entry polish (title is span, not heading) */
+/** Community list ready marker */
 export function communityPageMarker(page: Page) {
   return page.getByRole('tablist', { name: '社区列表筛选' })
 }
 
+/** Inbox hub link (Link with aria-label, not button) — layout anchor for community route */
 export function communityPageTitle(page: Page) {
-  return page.getByRole('button', { name: '查看互动消息' })
+  return page.getByRole('link', { name: '查看互动消息' })
 }
 
 export async function logExercise(

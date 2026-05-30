@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { formatAuthError } from '../lib/authErrors'
@@ -42,49 +42,49 @@ export function LoginPage() {
     }
   }
 
+  const inputClassName =
+    'w-full min-w-0 rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 focus:ring-brand outline-none box-border'
+
   return (
-    <div className="page-standalone flex flex-col justify-center">
-      <div className="mx-auto w-full max-w-sm">
+    <div className="page-standalone">
+      <div className="auth-shell mx-auto w-full min-w-0 max-w-sm box-border px-4 py-8">
         <h1 className="text-2xl font-bold text-brand">健身打卡</h1>
         <p className="mt-1 text-sm text-muted">记录运动与饮食，追踪热量缺口</p>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <label className="block">
-            <span className="text-sm text-muted">邮箱</span>
+        <form onSubmit={handleSubmit} className="responsive-form mt-8">
+          <Field label="邮箱">
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 focus:ring-brand outline-none"
+              className={inputClassName}
               placeholder="you@example.com"
             />
-          </label>
-          <label className="block">
-            <span className="text-sm text-muted">密码</span>
+          </Field>
+          <Field label="密码">
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 focus:ring-brand outline-none"
+              className={inputClassName}
               placeholder="至少 6 位"
             />
-          </label>
+          </Field>
           {isRegister && (
-            <label className="block">
-              <span className="text-sm text-muted">注册密钥</span>
+            <Field label="注册密钥">
               <input
                 type="password"
                 required
                 value={registrationKey}
                 onChange={(e) => setRegistrationKey(e.target.value)}
-                className="mt-1 w-full rounded-xl bg-card px-3 py-2.5 ring-1 ring-slate-600 focus:ring-brand outline-none"
+                className={inputClassName}
                 placeholder="请输入邀请密钥"
                 autoComplete="off"
               />
-            </label>
+            </Field>
           )}
 
           {error && <p className="text-sm text-amber-400">{error}</p>}
@@ -92,7 +92,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-brand-dark py-3 font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+            className="w-full min-w-0 rounded-xl bg-brand-dark py-3 font-medium text-white hover:bg-teal-700 disabled:opacity-50"
           >
             {loading ? '请稍候…' : isRegister ? '注册' : '登录'}
           </button>
@@ -110,5 +110,20 @@ export function LoginPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <label className="block w-full min-w-0">
+      <span className="text-sm text-muted">{label}</span>
+      <div className="mt-1">{children}</div>
+    </label>
   )
 }

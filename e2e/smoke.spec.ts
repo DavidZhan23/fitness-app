@@ -112,6 +112,8 @@ test.describe.serial('main flow smoke', () => {
     await registerAndOnboard(page, uniqueE2eEmail())
     const nav = mainNav(page)
     await nav.getByRole('link', { name: '设置' }).click()
+    await page.getByRole('button', { name: '查看头像' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
     await expect(page.getByRole('button', { name: '更换头像' })).toBeVisible()
   })
 })

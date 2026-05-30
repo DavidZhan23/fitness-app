@@ -121,6 +121,54 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
       viewport: { width: viewport.width, height: viewport.height },
     })
 
+    test('login register layout', async ({ page }) => {
+      await page.goto('/login')
+      await page.waitForLoadState('networkidle')
+      await page.getByRole('button', { name: '没有账号？注册' }).click()
+
+      const label = `${viewport.name} login-register`
+      await assertStandaloneNoHorizontalOverflow(page, label)
+
+      const email = page.getByPlaceholder('you@example.com')
+      const password = page.getByPlaceholder('至少 6 位')
+      const registrationKey = page.getByPlaceholder('请输入邀请密钥')
+      const submit = page.getByRole('button', { name: '注册', exact: true })
+
+      await expect(email).toBeVisible()
+      await expect(password).toBeVisible()
+      await expect(registrationKey).toBeVisible()
+      await expect(submit).toBeVisible()
+
+      const emailBox = await email.boundingBox()
+      const passwordBox = await password.boundingBox()
+      const registrationKeyBox = await registrationKey.boundingBox()
+      const submitBox = await submit.boundingBox()
+
+      expect(emailBox, `${label} email box`).not.toBeNull()
+      expect(passwordBox, `${label} password box`).not.toBeNull()
+      expect(registrationKeyBox, `${label} registration key box`).not.toBeNull()
+      expect(submitBox, `${label} submit box`).not.toBeNull()
+
+      expect(
+        emailBox!.y,
+        `${label} email should be above password`,
+      ).toBeLessThan(passwordBox!.y)
+      expect(
+        passwordBox!.y,
+        `${label} password should be above registration key`,
+      ).toBeLessThan(registrationKeyBox!.y)
+      expect(
+        registrationKeyBox!.y,
+        `${label} registration key should be above submit`,
+      ).toBeLessThan(submitBox!.y)
+
+      const minFieldWidth = viewport.width * 0.6
+      expect(
+        emailBox!.width,
+        `${label} email width should not collapse`,
+      ).toBeGreaterThanOrEqual(minFieldWidth)
+    })
+
     test('main routes fit viewport', async ({ page }) => {
       test.setTimeout(90_000)
 
@@ -151,6 +199,22 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
             `${label} ${anchor.label}`,
             { standalone: route.standalone },
           )
+        }
+
+        if (route.name === 'settings') {
+          await expect(page.getByLabel('昵称')).toBeVisible()
+          await expect(page.locator('input[type="file"]')).toBeHidden()
+
+          const nickname = page.getByLabel('昵称')
+          const welcomeTitle = page.getByLabel('自定义首页标题')
+          const nicknameBox = await nickname.boundingBox()
+          const welcomeTitleBox = await welcomeTitle.boundingBox()
+          expect(nicknameBox, `${label} nickname box`).not.toBeNull()
+          expect(welcomeTitleBox, `${label} welcome title box`).not.toBeNull()
+          expect(
+            nicknameBox!.y,
+            `${label} nickname should be above welcome title`,
+          ).toBeLessThan(welcomeTitleBox!.y)
         }
 
         if (route.bottomAnchor) {

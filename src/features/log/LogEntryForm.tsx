@@ -77,7 +77,7 @@ export function LogEntryForm(props: LogEntryFormProps) {
             step="1"
             value={props.kcal}
             onChange={(e) => props.onKcalChange(e.target.value)}
-            className="input mt-1"
+            className="input mt-1 w-full min-w-0"
             placeholder="300"
             required={props.isExercise || props.mealInputMode === 'kcal'}
           />
@@ -92,7 +92,7 @@ export function LogEntryForm(props: LogEntryFormProps) {
               step="1"
               value={props.grams}
               onChange={(e) => props.onGramsChange(e.target.value)}
-              className="input mt-1"
+              className="input mt-1 w-full min-w-0"
               placeholder="例如：50"
               required
             />
@@ -105,7 +105,7 @@ export function LogEntryForm(props: LogEntryFormProps) {
               step="1"
               value={props.kjPer100g}
               onChange={(e) => props.onKjPer100gChange(e.target.value)}
-              className="input mt-1"
+              className="input mt-1 w-full min-w-0"
               placeholder="包装袋上的数值，如 1200"
               required
             />

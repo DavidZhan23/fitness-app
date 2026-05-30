@@ -7,7 +7,7 @@ import { InstallGuide } from '../components/InstallGuide'
 import { MetabolismSummary } from '../components/MetabolismSummary'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../context/AuthContext'
-import { useAppStyle, type AppStyle } from '../context/StyleContext'
+import { useAppStyle } from '../context/StyleContext'
 import { ACTIVITY_LEVELS } from '../lib/calories'
 import {
   ageFromBirthdayKey,
@@ -20,113 +20,13 @@ import {
   loadImage,
   type AvatarCropRect,
 } from '../lib/avatarImage'
+import {
+  findStyleOption,
+  STYLE_TONE_SECTIONS,
+  styleOptionsForGroup,
+} from '../lib/styleOptions'
 import { getHeroCollabConfig } from '../lib/themeMeta'
 import type { Sex, WallStyle } from '../types'
-
-type StyleToneGroup = 'light' | 'dark'
-
-const styleToneSections: Array<{ group: StyleToneGroup; title: string }> = [
-  { group: 'dark', title: '深色系' },
-  { group: 'light', title: '浅色系' },
-]
-
-const styleOptions: Array<{
-  id: AppStyle
-  group: StyleToneGroup
-  title: string
-  description: string
-  swatchClassName: string
-  optionClassName: string
-}> = [
-  {
-    id: 'eva',
-    group: 'dark',
-    title: '暴走初号机',
-    description: '深黑紫机甲底 · 荧光绿运动缺口 · 插入栓橙饮食',
-    swatchClassName: 'style-swatch-eva',
-    optionClassName: 'style-option-eva',
-  },
-  {
-    id: 'eva-unit02',
-    group: 'dark',
-    title: '烈焰二号机',
-    description: '深黑红驾驶舱 · 二号机红主操 · 橙黄饮食 · 荧光绿运动缺口',
-    swatchClassName: 'style-swatch-eva-unit02',
-    optionClassName: 'style-option-eva-unit02',
-  },
-  {
-    id: 'gundam-hangar',
-    group: 'dark',
-    title: '格纳库提坦斯',
-    description: '暗色提坦斯钢蓝格纳库、冷青运动缺口、暗红饮食与盈余，仪表盘感',
-    swatchClassName: 'style-swatch-gundam-hangar',
-    optionClassName: 'style-option-gundam-hangar',
-  },
-  {
-    id: 'jojo-stardust-duel',
-    group: 'dark',
-    title: '时停入侵',
-    description: '承太郎钴蓝主场 · DIO 金黄绿入侵 · 黑蓝热力图',
-    swatchClassName: 'style-swatch-jojo-stardust-duel',
-    optionClassName: 'style-option-jojo-stardust-duel',
-  },
-  {
-    id: 'default',
-    group: 'dark',
-    title: '深海能量',
-    description: '偏运动感的深色青绿系',
-    swatchClassName: 'style-swatch-ocean',
-    optionClassName: 'style-option-ocean',
-  },
-  {
-    id: 'lavender',
-    group: 'light',
-    title: '薰衣云梦',
-    description: '云雾淡紫底、奶白紫卡，薰衣草主操、紫蓝运动、玫瑰紫粉饮食',
-    swatchClassName: 'style-swatch-lavender',
-    optionClassName: 'style-option-lavender',
-  },
-  {
-    id: 'sakura',
-    group: 'light',
-    title: '碧空樱缀',
-    description: '浅蓝天底、云白蓝卡，亮蓝主操，甜樱粉点缀',
-    swatchClassName: 'style-swatch-sakura',
-    optionClassName: 'style-option-sakura',
-  },
-  {
-    id: 'sakura-blush',
-    group: 'light',
-    title: '樱雾漫境',
-    description: '樱花粉底、奶粉卡，运动蓝 / 饮食莓粉',
-    swatchClassName: 'style-swatch-sakura-blush',
-    optionClassName: 'style-option-sakura-blush',
-  },
-  {
-    id: 'active-mint',
-    group: 'light',
-    title: '轻氧薄荷',
-    description: '薄荷雾绿底、奶白薄荷卡，蓝管运动、珊瑚橙管饮食、绿管缺口',
-    swatchClassName: 'style-swatch-active-mint',
-    optionClassName: 'style-option-active-mint',
-  },
-  {
-    id: 'soy-tea',
-    group: 'light',
-    title: '豆乳清茶',
-    description: '豆乳米杏底、奶绿卡，海盐蓝运动、茶绿缺口、豆乳焦糖饮食',
-    swatchClassName: 'style-swatch-soy-tea',
-    optionClassName: 'style-option-soy-tea',
-  },
-  {
-    id: 'wood-zen',
-    group: 'light',
-    title: '木隐茶庭',
-    description: '米纸原木底、米杏卡，原木棕主操、苔绿缺口、茶青运动、柿橙饮食',
-    swatchClassName: 'style-swatch-wood-zen',
-    optionClassName: 'style-option-wood-zen',
-  },
-]
 
 export function SettingsPage() {
   const { user, profile, updateProfile, signOut } = useAuth()
@@ -147,6 +47,9 @@ export function SettingsPage() {
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
   const [welcomeMessage, setWelcomeMessage] = useState(
     profile?.welcome_message ?? '',
+  )
+  const [welcomeSubtitle, setWelcomeSubtitle] = useState(
+    profile?.welcome_subtitle ?? '',
   )
   const [threshold, setThreshold] = useState(String(profile?.deficit_threshold ?? 0))
   const [wallStyle, setWallStyle] = useState<WallStyle>(
@@ -179,6 +82,7 @@ export function SettingsPage() {
     setActivity(Number(profile.activity_factor) || 1.375)
     setNickname(profile.nickname ?? '')
     setWelcomeMessage(profile.welcome_message ?? '')
+    setWelcomeSubtitle(profile.welcome_subtitle ?? '')
     setThreshold(String(profile.deficit_threshold ?? 0))
     setWallStyle(profile.wall_style === 'split' ? 'split' : 'classic')
   }, [profile])
@@ -236,6 +140,8 @@ export function SettingsPage() {
   const savedNickname = (profile?.nickname ?? '').trim()
   const trimmedWelcomeMessage = welcomeMessage.trim()
   const savedWelcomeMessage = (profile?.welcome_message ?? '').trim()
+  const trimmedWelcomeSubtitle = welcomeSubtitle.trim()
+  const savedWelcomeSubtitle = (profile?.welcome_subtitle ?? '').trim()
   const parsedWeight = parseFloat(weight)
   const parsedHeight = parseFloat(height)
   const parsedDeficit = parseInt(threshold, 10) || 0
@@ -278,6 +184,18 @@ export function SettingsPage() {
     mapError: () => '保存失败',
   })
   const welcomeMessageSaveState = welcomeMessageAutosave.state
+
+  const saveWelcomeSubtitle = useCallback(async () => {
+    await updateProfile({ welcome_subtitle: trimmedWelcomeSubtitle || null })
+  }, [updateProfile, trimmedWelcomeSubtitle])
+
+  const welcomeSubtitleAutosave = useDebouncedAutosave({
+    enabled: Boolean(profile),
+    isEqual: trimmedWelcomeSubtitle === savedWelcomeSubtitle,
+    save: saveWelcomeSubtitle,
+    mapError: () => '保存失败',
+  })
+  const welcomeSubtitleSaveState = welcomeSubtitleAutosave.state
 
   const validateBody = useCallback(() => {
     if (!parsedWeight || !parsedHeight) return '请填写有效的体重和身高'
@@ -322,8 +240,7 @@ export function SettingsPage() {
 
   const savedWallStyle: WallStyle =
     profile?.wall_style === 'split' ? 'split' : 'classic'
-  const currentStyleTitle =
-    styleOptions.find((item) => item.id === style)?.title ?? '深海能量'
+  const currentStyleTitle = findStyleOption(style)?.title ?? '深海能量'
 
   const [wallStyleSaveState, setWallStyleSaveState] = useState<
     'idle' | 'saving' | 'saved' | 'error'
@@ -439,8 +356,8 @@ export function SettingsPage() {
       <section className="surface-panel p-4">
         <h2 className="font-semibold text-primary">个人资料</h2>
 
-        <div className="mt-3 flex items-start gap-3">
-          <div className="flex shrink-0 flex-col items-center">
+        <div className="profile-fields-stack mt-3">
+          <div className="profile-fields-stack__avatar flex flex-col items-center">
             <button
               type="button"
               disabled={avatarBusy}
@@ -462,7 +379,7 @@ export function SettingsPage() {
               ref={avatarInputRef}
               type="file"
               accept="image/*"
-              className="sr-only"
+              hidden
               onChange={(e) => void handleAvatarFile(e.target.files?.[0])}
             />
             {avatarError && (
@@ -471,79 +388,45 @@ export function SettingsPage() {
               </p>
             )}
           </div>
-          <div className="profile-nickname-field min-w-0 flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                maxLength={32}
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="input profile-nickname-field__input w-full"
-                placeholder="输入你的昵称"
-                aria-label="昵称"
-              />
-              <span
-                className="profile-nickname-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                aria-hidden
-              >
-                <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
-                  <path
-                    d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M13.5 6.5l4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
+          <div className="profile-fields-stack__fields">
+            <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={32}
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="input profile-field__input w-full min-w-0"
+                  placeholder="输入你的昵称"
+                  aria-label="昵称"
+                />
+                <ProfileFieldEditIcon />
+              </div>
+              {nicknameSaveState === 'saving' && (
+                <p className="mt-1 text-xs text-muted">保存中…</p>
+              )}
+              {nicknameSaveState === 'saved' && (
+                <p className="mt-1 text-xs text-brand">已保存</p>
+              )}
+              {nicknameSaveState === 'error' && (
+                <p className="mt-1 text-xs text-danger">保存失败</p>
+              )}
             </div>
-            {nicknameSaveState === 'saving' && (
-              <p className="mt-1 text-xs text-muted">保存中…</p>
-            )}
-            {nicknameSaveState === 'saved' && (
-              <p className="mt-1 text-xs text-brand">已保存</p>
-            )}
-            {nicknameSaveState === 'error' && (
-              <p className="mt-1 text-xs text-danger">保存失败</p>
-            )}
 
-            <div className="profile-welcome-field mt-3">
+            <hr className="profile-fields-divider" />
+
+            <div>
               <div className="relative">
                 <input
                   type="text"
                   maxLength={30}
                   value={welcomeMessage}
                   onChange={(e) => setWelcomeMessage(e.target.value)}
-                  className="input profile-welcome-field__input w-full"
+                  className="input profile-field__input w-full min-w-0"
                   placeholder="自定义首页标题"
                   aria-label="自定义首页标题"
                 />
-                <span
-                  className="profile-welcome-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                  aria-hidden
-                >
-                  <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
-                    <path
-                      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M13.5 6.5l4 4"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
+                <ProfileFieldEditIcon />
               </div>
               {welcomeMessageSaveState === 'saving' && (
                 <p className="mt-1 text-xs text-muted">保存中…</p>
@@ -552,6 +435,32 @@ export function SettingsPage() {
                 <p className="mt-1 text-xs text-brand">已保存</p>
               )}
               {welcomeMessageSaveState === 'error' && (
+                <p className="mt-1 text-xs text-danger">保存失败</p>
+              )}
+            </div>
+
+            <hr className="profile-fields-divider" />
+
+            <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={40}
+                  value={welcomeSubtitle}
+                  onChange={(e) => setWelcomeSubtitle(e.target.value)}
+                  className="input profile-field__input w-full min-w-0"
+                  placeholder="自定义副标题"
+                  aria-label="自定义副标题"
+                />
+                <ProfileFieldEditIcon />
+              </div>
+              {welcomeSubtitleSaveState === 'saving' && (
+                <p className="mt-1 text-xs text-muted">保存中…</p>
+              )}
+              {welcomeSubtitleSaveState === 'saved' && (
+                <p className="mt-1 text-xs text-brand">已保存</p>
+              )}
+              {welcomeSubtitleSaveState === 'error' && (
                 <p className="mt-1 text-xs text-danger">保存失败</p>
               )}
             </div>
@@ -753,15 +662,13 @@ export function SettingsPage() {
           </summary>
           <div className="mt-4 border-t border-slate-600/40 pt-4">
             <div className="space-y-4">
-              {styleToneSections.map((section) => (
+              {STYLE_TONE_SECTIONS.map((section) => (
                 <div key={section.group}>
                   <h3 className="text-xs font-medium text-secondary">
                     {section.title}
                   </h3>
                   <div className="mt-2 space-y-2">
-                    {styleOptions
-                      .filter((item) => item.group === section.group)
-                      .map((item) => {
+                    {styleOptionsForGroup(section.group).map((item) => {
                         const active = style === item.id
                         const collabConfig = getHeroCollabConfig(item.id)
                         const optionClassName = [
@@ -932,5 +839,30 @@ export function SettingsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function ProfileFieldEditIcon() {
+  return (
+    <span
+      className="profile-field__edit-icon pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+      aria-hidden
+    >
+      <svg viewBox="0 0 24 24" width="1.125rem" height="1.125rem" fill="none">
+        <path
+          d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4.5a2.1 2.1 0 0 0-3 0L3 15v5z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M13.5 6.5l4 4"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
   )
 }
