@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { RecordDeleteButton, RecordEditButton } from './RecordActionIcons'
 
-export type TodayRecordKind = 'exercise' | 'meal'
-
-export function recordKindEmoji(kind: TodayRecordKind) {
-  return kind === 'exercise' ? '🚴' : '🍗'
-}
-
 interface TodayRecordRowProps {
-  kind: TodayRecordKind
   name: string
   kcal: number
   showActions?: boolean
+  /** 在 ul 内渲染为 li（社区只读列表） */
+  asListItem?: boolean
+  trailing?: ReactNode
   isEditing?: boolean
   onStartEdit?: () => void
   onCancelEdit?: () => void
@@ -20,10 +16,11 @@ interface TodayRecordRowProps {
 }
 
 export function TodayRecordRow({
-  kind,
   name: savedName,
   kcal: savedKcal,
   showActions = false,
+  asListItem = false,
+  trailing,
   isEditing = false,
   onStartEdit,
   onCancelEdit,
@@ -112,14 +109,11 @@ export function TodayRecordRow({
     )
   }
 
-  const RowTag = showActions ? 'li' : 'div'
+  const RowTag = showActions || asListItem ? 'li' : 'div'
 
   return (
     <RowTag className="today-records-section__row">
       <div className="today-records-section__row-main">
-        <span className="today-records-section__row-emoji" aria-hidden>
-          {recordKindEmoji(kind)}
-        </span>
         <span className="today-records-section__row-title">{savedName}</span>
       </div>
       <span className="today-records-section__row-meta">
@@ -130,6 +124,8 @@ export function TodayRecordRow({
           <RecordEditButton onClick={onStartEdit} />
           <RecordDeleteButton onClick={onDelete} />
         </div>
+      ) : trailing ? (
+        <div className="today-records-section__row-actions">{trailing}</div>
       ) : null}
     </RowTag>
   )

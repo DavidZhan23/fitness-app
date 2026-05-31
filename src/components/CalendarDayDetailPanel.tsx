@@ -109,6 +109,31 @@ export function CalendarDayDetailPanel({
 
       <div className="calendar-day-detail-panel__main">
         <section
+          className="calendar-day-detail-panel__honor-card"
+          aria-label="当日称号"
+        >
+          <h3 className="calendar-day-detail-panel__section-title">当日称号</h3>
+          {honorBadges.length > 0 ? (
+            <ul className="calendar-day-detail-panel__honor-list">
+              {honorBadges.map((badge) => (
+                <HonorRow key={badge} badge={badge} />
+              ))}
+            </ul>
+          ) : (
+            <>
+              <p className="calendar-day-detail-panel__honor-empty">
+                {HONOR_EMPTY_LABEL}
+              </p>
+              {showHonorMealHint ? (
+                <p className="calendar-day-detail-panel__honor-hint">
+                  {HONOR_MEAL_HINT}
+                </p>
+              ) : null}
+            </>
+          )}
+        </section>
+
+        <section
           className="calendar-day-detail-panel__data-card"
           aria-label="当日数据"
         >
@@ -144,68 +169,45 @@ export function CalendarDayDetailPanel({
             </span>
           </div>
 
-          <div className="calendar-day-detail-panel__reference">
-            <button
-              type="button"
-              className="calendar-day-detail-panel__reference-toggle"
-              aria-expanded={referenceExpanded}
-              aria-controls={referenceBodyId}
-              data-testid="calendar-day-detail-reference-toggle"
-              onClick={() => setReferenceExpanded((v) => !v)}
-            >
-              计算依据
-              <span
-                className={`calendar-day-detail-panel__reference-chevron${referenceExpanded ? ' calendar-day-detail-panel__reference-chevron--expanded' : ''}`}
-                aria-hidden
+          {!honorsOnly ? (
+            <div className="calendar-day-detail-panel__reference">
+              <button
+                type="button"
+                className="calendar-day-detail-panel__reference-toggle"
+                aria-expanded={referenceExpanded}
+                aria-controls={referenceBodyId}
+                data-testid="calendar-day-detail-reference-toggle"
+                onClick={() => setReferenceExpanded((v) => !v)}
               >
-                〉
-              </span>
-            </button>
-            {referenceExpanded ? (
-              <div
-                id={referenceBodyId}
-                className="calendar-day-detail-panel__reference-body"
-              >
-                <p className="calendar-day-detail-panel__reference-item tabular-nums">
-                  <span className="calendar-day-detail-panel__reference-label">
-                    基础代谢（BMR）
-                  </span>
-                  {Math.round(bmr)}
-                </p>
-                <p className="calendar-day-detail-panel__reference-item tabular-nums">
-                  <span className="calendar-day-detail-panel__reference-label">
-                    全日消耗（TDEE）
-                  </span>
-                  {Math.round(tdee)}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        <section
-          className="calendar-day-detail-panel__honor-card"
-          aria-label="当日称号"
-        >
-          <h3 className="calendar-day-detail-panel__section-title">当日称号</h3>
-          {honorBadges.length > 0 ? (
-            <ul className="calendar-day-detail-panel__honor-list">
-              {honorBadges.map((badge) => (
-                <HonorRow key={badge} badge={badge} />
-              ))}
-            </ul>
-          ) : (
-            <>
-              <p className="calendar-day-detail-panel__honor-empty">
-                {HONOR_EMPTY_LABEL}
-              </p>
-              {showHonorMealHint ? (
-                <p className="calendar-day-detail-panel__honor-hint">
-                  {HONOR_MEAL_HINT}
-                </p>
+                计算依据
+                <span
+                  className={`calendar-day-detail-panel__reference-chevron${referenceExpanded ? ' calendar-day-detail-panel__reference-chevron--expanded' : ''}`}
+                  aria-hidden
+                >
+                  〉
+                </span>
+              </button>
+              {referenceExpanded ? (
+                <div
+                  id={referenceBodyId}
+                  className="calendar-day-detail-panel__reference-body"
+                >
+                  <p className="calendar-day-detail-panel__reference-item tabular-nums">
+                    <span className="calendar-day-detail-panel__reference-label">
+                      基础代谢（BMR）
+                    </span>
+                    {Math.round(bmr)}
+                  </p>
+                  <p className="calendar-day-detail-panel__reference-item tabular-nums">
+                    <span className="calendar-day-detail-panel__reference-label">
+                      全日消耗（TDEE）
+                    </span>
+                    {Math.round(tdee)}
+                  </p>
+                </div>
               ) : null}
-            </>
-          )}
+            </div>
+          ) : null}
         </section>
       </div>
     </section>

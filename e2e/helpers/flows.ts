@@ -39,8 +39,8 @@ async function expectTodayRecordInExpandedList(
   kcal: string,
 ) {
   const records = page.locator('.today-records-section')
-  await expect(records.getByRole('button', { name: '展开' })).toBeVisible()
-  await records.getByRole('button', { name: '展开' }).click()
+  await expect(records.getByRole('button', { name: /展开/ })).toBeVisible()
+  await records.getByRole('button', { name: /展开/ }).click()
   const row = records.locator('.today-records-section__row').filter({
     hasText: name,
   })
