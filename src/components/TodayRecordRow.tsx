@@ -9,6 +9,9 @@ interface TodayRecordRowProps {
   asListItem?: boolean
   trailing?: ReactNode
   isEditing?: boolean
+  selectable?: boolean
+  selected?: boolean
+  onToggleSelect?: () => void
   onStartEdit?: () => void
   onCancelEdit?: () => void
   onDelete?: () => void
@@ -22,6 +25,9 @@ export function TodayRecordRow({
   asListItem = false,
   trailing,
   isEditing = false,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
   onStartEdit,
   onCancelEdit,
   onDelete,
@@ -112,14 +118,28 @@ export function TodayRecordRow({
   const RowTag = showActions || asListItem ? 'li' : 'div'
 
   return (
-    <RowTag className="today-records-section__row">
+    <RowTag
+      className={`today-records-section__row${
+        selectable && selected ? ' today-records-section__row--selected' : ''
+      }`}
+    >
+      {selectable && onToggleSelect ? (
+        <label className="today-records-section__row-select">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label={`选择 ${savedName}`}
+          />
+        </label>
+      ) : null}
       <div className="today-records-section__row-main">
         <span className="today-records-section__row-title">{savedName}</span>
       </div>
       <span className="today-records-section__row-meta">
         {Math.round(savedKcal)} kcal
       </span>
-      {showActions && onStartEdit && onDelete ? (
+      {showActions && !selectable && onStartEdit && onDelete ? (
         <div className="today-records-section__row-actions">
           <RecordEditButton onClick={onStartEdit} />
           <RecordDeleteButton onClick={onDelete} />

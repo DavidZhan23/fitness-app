@@ -5,8 +5,8 @@ import {
   heatmapBadgeEmoji,
   listPublicHonorBadges,
   type CommunityDayBadge,
-  type PublicHonorBadge,
 } from '../lib/communityBadges'
+import { TODAY_HONOR_STRIP } from '../lib/todayHonors'
 import {
   EXERCISE_KCAL_STAT_LABEL,
   MEAL_KCAL_STAT_LABEL,
@@ -254,35 +254,6 @@ export function PersonalDayStatus({
 }
 
 type TodayStripTone = 'champion' | 'elite' | 'foodKing' | 'empty' | 'reminder'
-
-const TODAY_HONOR_STRIP: Record<
-  PublicHonorBadge,
-  {
-    icon: string
-    title: string
-    desc: string
-    tone: TodayStripTone
-  }
-> = {
-  champion: {
-    icon: '👑',
-    title: '运动大王',
-    desc: '训练、补给、缺口都在线，今天很硬核',
-    tone: 'champion',
-  },
-  elite: {
-    icon: '🔥',
-    title: '减脂先锋',
-    desc: '当前缺口已超过 500 kcal，今天的节奏很稳',
-    tone: 'elite',
-  },
-  foodKing: {
-    icon: '🥘',
-    title: '美食大王',
-    desc: '饮食补给已拉满，今天吃得很认真',
-    tone: 'foodKing',
-  },
-}
 
 function TodayStatusStrip({
   icon,

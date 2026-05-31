@@ -107,7 +107,7 @@ export function ReadOnlyLogList({
         {expanded ? (
           <div className="today-records-section__body">
             {exercises.length > 0 ? (
-              <div className="today-records-section__group">
+              <div className="today-records-section__group today-records-section__group--exercise">
                 <p className="today-records-section__group-title">运动</p>
                 <ul className="today-records-section__row-list">
                   {exercises.map((ex) => (
@@ -142,7 +142,7 @@ export function ReadOnlyLogList({
               </div>
             ) : null}
             {meals.length > 0 ? (
-              <div className="today-records-section__group">
+              <div className="today-records-section__group today-records-section__group--meal">
                 <p className="today-records-section__group-title">饮食</p>
                 <ul className="today-records-section__row-list">
                   {meals.map((m) => (

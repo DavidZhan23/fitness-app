@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { TodayRecordsExpandedList } from './TodayRecordsExpandedList'
+import { countMealDisplayEntries } from '../lib/todayMealGroups'
 import type { Exercise, Meal } from '../types'
 
 interface TodayRecordsSectionProps {
@@ -9,6 +10,7 @@ interface TodayRecordsSectionProps {
   mealKcal: number
   onDeleteExercise: (id: string) => void
   onDeleteMeal: (id: string) => void
+  onBatchDelete: (exerciseIds: string[], mealIds: string[]) => Promise<void>
   onUpdateExercise: (id: string, name: string, kcal: number) => Promise<void>
   onUpdateMeal: (id: string, name: string, kcal: number) => Promise<void>
 }
@@ -20,16 +22,22 @@ export function TodayRecordsSection({
   mealKcal,
   onDeleteExercise,
   onDeleteMeal,
+  onBatchDelete,
   onUpdateExercise,
   onUpdateMeal,
 }: TodayRecordsSectionProps) {
   const [expanded, setExpanded] = useState(false)
   const hasRecords = exercises.length > 0 || meals.length > 0
 
+  const mealDisplayCount = useMemo(
+    () => countMealDisplayEntries(meals),
+    [meals],
+  )
+
   const countLine = useMemo(() => {
     if (!hasRecords) return null
     const exCount = exercises.length
-    const mealCount = meals.length
+    const mealCount = mealDisplayCount
     if (exCount > 0 && mealCount > 0) {
       return `运动 ${exCount} 条 · 饮食 ${mealCount} 条`
     }
@@ -37,7 +45,7 @@ export function TodayRecordsSection({
       return `运动 ${exCount} 条 · ${Math.round(exerciseKcal)} kcal`
     }
     return `饮食 ${mealCount} 条 · ${Math.round(mealKcal)} kcal`
-  }, [hasRecords, exercises.length, meals.length, exerciseKcal, mealKcal])
+  }, [hasRecords, exercises.length, mealDisplayCount, exerciseKcal, mealKcal])
 
   if (!hasRecords) {
     return (
@@ -81,6 +89,7 @@ export function TodayRecordsSection({
             meals={meals}
             onDeleteExercise={onDeleteExercise}
             onDeleteMeal={onDeleteMeal}
+            onBatchDelete={onBatchDelete}
             onUpdateExercise={onUpdateExercise}
             onUpdateMeal={onUpdateMeal}
           />

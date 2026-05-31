@@ -1,13 +1,39 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { TemplatePicker } from '../components/TemplatePicker'
-import { FluidText, PageShell } from '../components/ui/responsive'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { LogModePanel } from '../components/LogModeTabs'
+import { PendingLogDraftsSection } from '../components/PendingLogDraftsSection'
+import { TemplateEntryCard } from '../components/TemplateEntryCard'
+import { TemplateMultiPicker, TemplateSectionHeader } from '../components/TemplateMultiPicker'
+import { PageShell } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
-import { LogEntryForm } from '../features/log/LogEntryForm'
-import { submitLog } from '../features/log/submitLog'
+import {
+  AiLogSection,
+  type AiEstimateItemState,
+} from '../features/log/AiLogSection'
+import { SecondaryManualLogSection } from '../features/log/SecondaryManualLogSection'
+import {
+  BatchSavePartialError,
+  submitLog,
+  submitLogsBatch,
+} from '../features/log/submitLog'
 import { useAiEstimateFallbackTracker } from '../hooks/useAiEstimateFallbackTracker'
 import { useLogForm } from '../hooks/useLogForm'
 import { useLogTemplates } from '../hooks/useLogTemplates'
+import { usePendingLogDrafts } from '../hooks/usePendingLogDrafts'
+import { httpData } from '../lib/api'
+import {
+  aiItemsToLogPayload,
+  buildTemplateFromLogItem,
+  formatTemplateSaveNotice,
+  saveTemplatesFromItems,
+  templateKey,
+  validateAiItems,
+} from '../lib/logTemplate'
+
+const PAGE_TITLE: Record<'exercise' | 'meal', string> = {
+  meal: '小满记饮食',
+  exercise: '小满记运动',
+}
 
 export function LogPage() {
   const { type } = useParams<{ type: 'exercise' | 'meal' }>()
@@ -15,114 +41,271 @@ export function LogPage() {
   const kind = isExercise ? 'exercise' : 'meal'
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isTemplateMode = searchParams.get('mode') === 'templates'
   const form = useLogForm(isExercise)
   const aiFallbackTracker = useAiEstimateFallbackTracker()
   const templates = useLogTemplates(user?.id, kind, isExercise)
+  const pendingDrafts = usePendingLogDrafts()
+  const pendingSectionRef = useRef<HTMLElement>(null)
+  const [highlightPending, setHighlightPending] = useState(false)
+  const highlightTimerRef = useRef<number | null>(null)
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [batchSaving, setBatchSaving] = useState(false)
+  const [aiSaving, setAiSaving] = useState(false)
+  const [manualSaving, setManualSaving] = useState(false)
+  const [batchError, setBatchError] = useState('')
+  const [templateAddError, setTemplateAddError] = useState('')
+  const [manualError, setManualError] = useState('')
+  const [manualNotice, setManualNotice] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user || !profile) return
+  const anySaving = batchSaving || aiSaving || manualSaving
 
-    const kcalValue = form.resolveKcal()
-    if (!form.name.trim() || kcalValue == null || kcalValue <= 0) {
-      setError(
-        isExercise || form.mealInputMode === 'kcal'
-          ? '请填写名称和有效热量'
-          : '请填写名称、克数与千焦/100g',
-      )
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current != null) {
+        window.clearTimeout(highlightTimerRef.current)
+      }
+    }
+  }, [])
+
+  const handleTemplateToggle = (template: (typeof templates)[number]) => {
+    const wasSelected = pendingDrafts.selectedKeys.has(templateKey(template))
+    const err = pendingDrafts.toggleTemplate(template)
+    if (err) {
+      setTemplateAddError(err)
+      return
+    }
+    setTemplateAddError('')
+    if (!wasSelected) {
+      setHighlightPending(true)
+      if (highlightTimerRef.current != null) {
+        window.clearTimeout(highlightTimerRef.current)
+      }
+      highlightTimerRef.current = window.setTimeout(() => {
+        setHighlightPending(false)
+        highlightTimerRef.current = null
+      }, 1800)
+      requestAnimationFrame(() => {
+        pendingSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      })
+    }
+  }
+
+  const handleConfirmSave = async () => {
+    if (!user || !profile || pendingDrafts.drafts.length === 0) return
+
+    const result = pendingDrafts.toSubmitItems()
+    if (!result.ok) {
+      setBatchError(result.error)
       return
     }
 
-    setLoading(true)
-    setError('')
+    setBatchSaving(true)
+    setBatchError('')
     try {
+      await submitLogsBatch({
+        userId: user.id,
+        profileTdee: profile.tdee,
+        kind,
+        items: result.items,
+      })
+      pendingDrafts.clear()
+      navigate('/')
+    } catch (err) {
+      if (err instanceof BatchSavePartialError) {
+        setBatchError(err.message)
+      } else {
+        setBatchError(err instanceof Error ? err.message : '保存失败')
+      }
+    } finally {
+      setBatchSaving(false)
+    }
+  }
+
+  const saveLogsFromAiItems = async (items: AiEstimateItemState[]) => {
+    if (!user || !profile) throw new Error('未登录')
+
+    const validated = validateAiItems(items)
+    if (!validated.ok) {
+      throw new Error(validated.error)
+    }
+
+    const logItems = aiItemsToLogPayload(validated.items)
+    if (logItems.length === 1) {
       await submitLog({
         userId: user.id,
         profileTdee: profile.tdee,
         kind,
-        name: form.name.trim(),
-        kcal: kcalValue,
+        name: logItems[0].name,
+        kcal: logItems[0].kcal,
       })
-      aiFallbackTracker.recordSavedIfPending(kind)
-      navigate('/')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '保存失败')
-    } finally {
-      setLoading(false)
+    } else {
+      await submitLogsBatch({
+        userId: user.id,
+        profileTdee: profile.tdee,
+        kind,
+        items: logItems,
+      })
     }
+
+    aiFallbackTracker.recordSavedIfPending(kind)
+
+    const templateSeeds = validated.items
+      .map((item, index) =>
+        items[index]?.saveAsTemplate
+          ? buildTemplateFromLogItem({
+              name: item.name,
+              quantity: item.quantity,
+              unit: item.unit,
+              kcal: item.kcal,
+            })
+          : null,
+      )
+      .filter((item): item is NonNullable<typeof item> => item != null)
+
+    if (templateSeeds.length > 0) {
+      const templateResult = await saveTemplatesFromItems({
+        existingTemplates: templates,
+        items: templateSeeds,
+        addTemplate: (payload) => httpData.addTemplate(kind, payload),
+      })
+      return formatTemplateSaveNotice(templateResult)
+    }
+
+    return null
+  }
+
+  const handleAiSave = async (items: AiEstimateItemState[]) => {
+    setAiSaving(true)
+    try {
+      await saveLogsFromAiItems(items)
+      navigate('/')
+      return null
+    } finally {
+      setAiSaving(false)
+    }
+  }
+
+  const handleManualSubmitLog = async (name: string, kcal: number) => {
+    if (!user || !profile) throw new Error('未登录')
+    await submitLog({
+      userId: user.id,
+      profileTdee: profile.tdee,
+      kind,
+      name,
+      kcal,
+    })
+  }
+
+  const handleManualComplete = () => {
+    navigate('/')
+  }
+
+  const openTemplatesMode = () => {
+    navigate(`/log/${kind}?mode=templates`)
+  }
+
+  const backFromTemplatesMode = () => {
+    navigate(`/log/${kind}`)
   }
 
   return (
     <div className="page-standalone" data-log-kind={kind}>
-      <PageShell variant="standalone">
-        <div>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="text-sm text-secondary hover:text-primary"
-          >
-            ← 返回
-          </button>
-          <FluidText as="h1" variant="title" className="mt-2 text-xl font-bold">
-            {isExercise ? '记运动' : '记饮食'}
-          </FluidText>
-        </div>
-
-        <TemplatePicker
-          templates={templates}
-          onSelect={(nextName, nextKcal) => {
-            form.applyTemplate(nextName, nextKcal)
-            aiFallbackTracker.markTemplateInput()
-          }}
-        />
-
-        <p className="text-center">
+      <PageShell variant="standalone" className="log-page-shell">
+        <header className="log-page-header">
           <button
             type="button"
             onClick={() =>
-              navigate('/templates', { state: { tab: kind } })
+              isTemplateMode ? backFromTemplatesMode() : navigate('/')
             }
-            className="text-sm text-brand underline-offset-2 hover:underline"
+            className="log-pill-btn log-page-back"
           >
-            管理快捷模板
+            ← 返回
           </button>
-        </p>
+          <h1 className="log-page-title">
+            {isTemplateMode ? '小满快捷记' : PAGE_TITLE[kind]}
+          </h1>
+        </header>
 
-        <LogEntryForm
-          kind={kind}
-          isExercise={isExercise}
-          loading={loading}
-          error={error}
-          name={form.name}
-          onNameChange={form.setName}
-          kcal={form.kcal}
-          onKcalChange={(value) => {
-            form.setKcal(value)
-            aiFallbackTracker.markManualInput()
-          }}
-          mealInputMode={form.mealInputMode}
-          onMealInputModeChange={form.setMealInputMode}
-          grams={form.grams}
-          onGramsChange={(value) => {
-            form.setGrams(value)
-            aiFallbackTracker.markManualInput()
-          }}
-          kjPer100g={form.kjPer100g}
-          onKjPer100gChange={(value) => {
-            form.setKjPer100g(value)
-            aiFallbackTracker.markManualInput()
-          }}
-          packageKcal={form.packageKcal}
-          onEstimated={(value) => {
-            form.applyAiEstimatedKcal(value)
-            setError('')
-          }}
-          onAiOutcome={aiFallbackTracker.markAiOutcome}
-          onSubmit={handleSubmit}
-        />
+        {isTemplateMode ? (
+          <LogModePanel mode="templates">
+            <section aria-label="常用模板" className="log-template-region">
+              <TemplateSectionHeader manageTab={kind} kind={kind} />
+              <TemplateMultiPicker
+                templates={templates}
+                selectedKeys={pendingDrafts.selectedKeys}
+                onToggle={handleTemplateToggle}
+              />
+              {templateAddError ? (
+                <p className="mt-2 text-sm text-red-400">{templateAddError}</p>
+              ) : null}
+            </section>
+
+            <PendingLogDraftsSection
+              drafts={pendingDrafts.drafts}
+              saving={batchSaving}
+              hasInvalidQuantity={pendingDrafts.hasInvalidQuantity}
+              error={batchError}
+              highlight={highlightPending}
+              sectionRef={pendingSectionRef}
+              onQuantityChange={(key, value) => {
+                pendingDrafts.setQuantityInput(key, value)
+                setBatchError('')
+              }}
+              onRemove={pendingDrafts.removeDraft}
+              onConfirmSave={() => void handleConfirmSave()}
+            />
+          </LogModePanel>
+        ) : (
+          <LogModePanel mode="ai">
+            <div className="log-page-ai-stack">
+              <AiLogSection
+                kind={kind}
+                saving={aiSaving}
+                disabled={anySaving && !aiSaving}
+                onSave={handleAiSave}
+                onAiOutcome={aiFallbackTracker.markAiOutcome}
+              />
+
+              <TemplateEntryCard
+                kind={kind}
+                templates={templates}
+                onOpenAll={openTemplatesMode}
+              />
+
+              <SecondaryManualLogSection
+                isExercise={isExercise}
+                kind={kind}
+                templates={templates}
+                loading={manualSaving}
+                error={manualError}
+                notice={manualNotice}
+                name={form.name}
+                onNameChange={form.setName}
+                kcal={form.kcal}
+                onKcalChange={form.setKcal}
+                mealInputMode={form.mealInputMode}
+                onMealInputModeChange={form.setMealInputMode}
+                grams={form.grams}
+                onGramsChange={form.setGrams}
+                kjPer100g={form.kjPer100g}
+                onKjPer100gChange={form.setKjPer100g}
+                packageKcal={form.packageKcal}
+                resolveKcal={form.resolveKcal}
+                onSubmitLog={handleManualSubmitLog}
+                onComplete={handleManualComplete}
+                addTemplate={(payload) => httpData.addTemplate(kind, payload)}
+                onNotice={setManualNotice}
+                onError={setManualError}
+                onSubmittingChange={setManualSaving}
+              />
+            </div>
+          </LogModePanel>
+        )}
       </PageShell>
     </div>
   )

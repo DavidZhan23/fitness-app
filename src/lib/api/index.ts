@@ -108,10 +108,16 @@ export const httpData = {
     dayLogId: string,
     name: string,
     kcal: number,
+    batchId?: string,
   ): Promise<void> {
     await apiFetch('/meals', {
       method: 'POST',
-      body: JSON.stringify({ day_log_id: dayLogId, name, kcal }),
+      body: JSON.stringify({
+        day_log_id: dayLogId,
+        name,
+        kcal,
+        ...(batchId ? { batch_id: batchId } : {}),
+      }),
     })
   },
 
@@ -149,6 +155,13 @@ export const httpData = {
     return apiFetch('/community/inbox/mark-read', { method: 'POST' })
   },
 
+  async markCommunityInboxItemRead(inboxId: string): Promise<{ ok: boolean }> {
+    return apiFetch('/community/inbox/mark-read-item', {
+      method: 'POST',
+      body: JSON.stringify({ inboxId }),
+    })
+  },
+
   async getCommunityInboxList(
     mode: 'unread' | 'history',
     opts?: { limit?: number; offset?: number },
@@ -165,7 +178,17 @@ export const httpData = {
     type: 'exercise' | 'meal',
     description: string,
     init?: { signal?: AbortSignal },
-  ): Promise<{ kcal: number }> {
+  ): Promise<{
+    kcal: number
+    items?: {
+      name: string
+      quantity?: number
+      unit?: string
+      kcal: number
+      confidence?: 'high' | 'medium' | 'low'
+      reason?: string
+    }[]
+  }> {
     return apiFetch('/ai/estimate-kcal', {
       method: 'POST',
       body: JSON.stringify({ type, description }),
@@ -216,15 +239,47 @@ export const httpData = {
   },
 
   async listTemplates(type: 'exercise' | 'meal') {
-    return apiFetch<{ id: string; name: string; kcal: number }[]>(
-      `/templates/${type}`,
-    )
+    return apiFetch<
+      {
+        id: string
+        name: string
+        unit?: string | null
+        kcal_per_unit?: number | string | null
+        default_quantity?: number | string | null
+        kcal?: number | string | null
+        created_at?: string | null
+      }[]
+    >(`/templates/${type}`)
   },
 
-  async addTemplate(type: 'exercise' | 'meal', name: string, kcal: number) {
+  async addTemplate(
+    type: 'exercise' | 'meal',
+    payload: {
+      name: string
+      unit: string
+      kcalPerUnit: number
+      defaultQuantity: number
+    },
+  ) {
     return apiFetch(`/templates/${type}`, {
       method: 'POST',
-      body: JSON.stringify({ name, kcal }),
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async updateTemplate(
+    type: 'exercise' | 'meal',
+    id: string,
+    payload: {
+      name: string
+      unit: string
+      kcalPerUnit: number
+      defaultQuantity: number
+    },
+  ) {
+    return apiFetch(`/templates/${type}/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     })
   },
 

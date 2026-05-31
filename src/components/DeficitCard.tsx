@@ -7,6 +7,8 @@ import {
   deficitGoalValueTone,
   formatDeficitGoalStatus,
 } from '../lib/deficitGoal'
+import { BasalMetabolismSheet } from './BasalMetabolismSheet'
+import { CalculationExplanationSheet } from './CalculationExplanationSheet'
 import { DeficitGoalSheet } from './DeficitGoalSheet'
 import {
   FluidText,
@@ -14,6 +16,7 @@ import {
   ResponsiveCard,
   StatsGrid,
 } from './ui/responsive'
+import type { Profile } from '../types'
 
 interface DeficitCardProps {
   dateLabel: string
@@ -25,6 +28,11 @@ interface DeficitCardProps {
   threshold: number
   /** 全日基础代谢 BMR（Mifflin-St Jeor） */
   fullDayBmr?: number
+  /** 今日页：显示「？」计算解释入口 */
+  showExplanationButton?: boolean
+  /** 今日页：点击「基础消耗」展示 BMR 说明 */
+  showMetabolismDetail?: boolean
+  profile?: Profile | null
 }
 
 export function DeficitCard({
@@ -35,8 +43,15 @@ export function DeficitCard({
   exerciseKcal,
   mealKcal,
   threshold,
+  fullDayBmr = 0,
+  showExplanationButton = false,
+  showMetabolismDetail = false,
+  profile = null,
 }: DeficitCardProps) {
   const [goalSheetOpen, setGoalSheetOpen] = useState(false)
+  const [explanationOpen, setExplanationOpen] = useState(false)
+  const [metabolismSheetOpen, setMetabolismSheetOpen] = useState(false)
+  const metabolismDetailEnabled = showMetabolismDetail && profile != null
   const goalStatus = formatDeficitGoalStatus(deficit, threshold)
   const valueTone = deficitGoalValueTone(deficit, threshold)
   const roundedDeficit = Math.round(deficit)
@@ -71,6 +86,16 @@ export function DeficitCard({
           >
             {goalStatus.unitLabel}
           </FluidText>
+          {showExplanationButton ? (
+            <button
+              type="button"
+              className="theme-deficit-explain-btn"
+              aria-label="了解热量缺口怎么算"
+              onClick={() => setExplanationOpen(true)}
+            >
+              ?
+            </button>
+          ) : null}
         </MetricRow>
         <div className="theme-deficit-goal-panel mt-2">
           <p className="theme-deficit-goal-status">{goalStatus.message}</p>
@@ -84,7 +109,18 @@ export function DeficitCard({
           </button>
         </div>
         <StatsGrid className="theme-deficit-stats mt-5 text-center text-base">
-          <Stat label={metabolismLabel} value={metabolismKcal} variant="base" />
+          <Stat
+            label={metabolismLabel}
+            value={metabolismKcal}
+            variant="base"
+            clickable={metabolismDetailEnabled}
+            onClick={
+              metabolismDetailEnabled
+                ? () => setMetabolismSheetOpen(true)
+                : undefined
+            }
+            clickAriaLabel="了解基础消耗怎么算"
+          />
           <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} variant="exercise" />
           <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} variant="meal" />
         </StatsGrid>
@@ -94,6 +130,21 @@ export function DeficitCard({
         currentThreshold={threshold}
         onClose={() => setGoalSheetOpen(false)}
       />
+      {showExplanationButton ? (
+        <CalculationExplanationSheet
+          open={explanationOpen}
+          onClose={() => setExplanationOpen(false)}
+        />
+      ) : null}
+      {metabolismDetailEnabled && profile ? (
+        <BasalMetabolismSheet
+          open={metabolismSheetOpen}
+          onClose={() => setMetabolismSheetOpen(false)}
+          accumulatedKcal={metabolismKcal}
+          fullDayBmr={fullDayBmr}
+          profile={profile}
+        />
+      ) : null}
     </>
   )
 }
@@ -102,13 +153,23 @@ function Stat({
   label,
   value,
   variant,
+  clickable = false,
+  onClick,
+  clickAriaLabel,
 }: {
   label: string
   value: number
   variant: 'base' | 'exercise' | 'meal'
+  clickable?: boolean
+  onClick?: () => void
+  clickAriaLabel?: string
 }) {
-  return (
-    <div className={`theme-hero-stat theme-deficit-stat theme-hero-stat--${variant} px-2 py-2.5`}>
+  const className = `theme-hero-stat theme-deficit-stat theme-hero-stat--${variant} px-2 py-2.5${
+    clickable ? ' theme-deficit-stat--clickable' : ''
+  }`
+
+  const content = (
+    <>
       <FluidText
         as="p"
         variant="body"
@@ -124,6 +185,21 @@ function Stat({
       >
         {Math.round(value)} kcal
       </FluidText>
-    </div>
+    </>
   )
+
+  if (clickable && onClick) {
+    return (
+      <button
+        type="button"
+        className={className}
+        aria-label={clickAriaLabel}
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return <div className={className}>{content}</div>
 }

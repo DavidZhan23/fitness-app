@@ -339,6 +339,52 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  for (const table of ['exercise_templates', 'meal_templates']) {
+    try {
+      await pool.query(
+        `alter table public.${table}
+           add column if not exists unit text,
+           add column if not exists kcal_per_unit numeric(10, 4),
+           add column if not exists default_quantity numeric(10, 2)`,
+      )
+      await pool.query(
+        `update public.${table}
+         set
+           unit = coalesce(nullif(trim(unit), ''), '份'),
+           kcal_per_unit = coalesce(kcal_per_unit, kcal),
+           default_quantity = coalesce(default_quantity, 1)
+         where unit is null
+            or kcal_per_unit is null
+            or default_quantity is null`,
+      )
+    } catch {
+      /* 表未建等 */
+    }
+  }
+  try {
+    await pool.query(`
+      create table if not exists public.community_inbox_reads (
+        user_id uuid not null references public.profiles (id) on delete cascade,
+        inbox_id text not null,
+        read_at timestamptz not null default now(),
+        primary key (user_id, inbox_id)
+      )`)
+    await pool.query(`
+      create index if not exists idx_community_inbox_reads_user_read_at
+        on public.community_inbox_reads (user_id, read_at desc)`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(
+      `alter table public.meals add column if not exists batch_id uuid`,
+    )
+    await pool.query(`
+      create index if not exists idx_meals_day_log_batch
+        on public.meals (day_log_id, batch_id)`)
+  } catch {
+    /* 表未建等 */
+  }
   await runSqlFileMigrations()
 }
 

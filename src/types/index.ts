@@ -212,12 +212,27 @@ export interface Meal {
   name: string
   kcal: number
   created_at: string
+  batch_id?: string | null
+}
+
+export interface LogTemplate {
+  id: string
+  kind: 'meal' | 'exercise'
+  name: string
+  unit: string
+  kcalPerUnit: number
+  defaultQuantity: number
+  /** Legacy cache; do not use for log-page kcal calculation */
+  kcal?: number
 }
 
 export interface ExerciseTemplate {
   id: string
   user_id: string
   name: string
+  unit: string
+  kcal_per_unit: number
+  default_quantity: number
   kcal: number
 }
 
@@ -225,6 +240,9 @@ export interface MealTemplate {
   id: string
   user_id: string
   name: string
+  unit: string
+  kcal_per_unit: number
+  default_quantity: number
   kcal: number
 }
 

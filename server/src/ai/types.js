@@ -8,9 +8,18 @@
  */
 
 /**
+ * @typedef {Object} KcalEstimateItem
+ * @property {string} name
+ * @property {number} quantity
+ * @property {string} unit
+ * @property {number} kcal
+ */
+
+/**
  * @typedef {Object} KcalEstimateResult
  * @property {number} kcal
  * @property {string} providerId
+ * @property {KcalEstimateItem[]} [items]
  * @property {Record<string, unknown>} [meta]
  */
 

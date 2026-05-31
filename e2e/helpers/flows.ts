@@ -11,25 +11,61 @@ export function communityPageTitle(page: Page) {
   return page.getByRole('link', { name: '查看互动消息' })
 }
 
+function manualLogSection(page: Page) {
+  return page.getByRole('region', { name: '手动填写' })
+}
+
+export async function openLogPage(
+  page: Page,
+  kind: 'meal' | 'exercise' = 'meal',
+) {
+  const linkName = kind === 'meal' ? '+ 记饮食' : '+ 记运动'
+  const heading = kind === 'meal' ? '小满记饮食' : '小满记运动'
+  await page.getByRole('link', { name: linkName }).click()
+  await page.getByRole('heading', { name: heading }).waitFor()
+}
+
+/** @deprecated use openLogPage — AI is now the default log entry */
+export async function openLogAiTab(
+  page: Page,
+  kind: 'meal' | 'exercise' = 'meal',
+) {
+  await openLogPage(page, kind)
+  await expect(page.locator('.log-ai-section')).toBeVisible()
+}
+
+export async function openLogTemplatesMode(
+  page: Page,
+  kind: 'meal' | 'exercise' = 'meal',
+) {
+  await page.goto(`/log/${kind}?mode=templates`)
+  await page.getByRole('heading', { name: '小满快捷记' }).waitFor()
+}
+
+export async function expandManualLogSection(page: Page) {
+  await page.getByRole('button', { name: '不用 AI？直接填写 kcal' }).click()
+  return manualLogSection(page)
+}
+
 export async function logExercise(
   page: Page,
   name: string,
   kcal: string,
 ) {
-  await page.getByRole('link', { name: '+ 记运动' }).click()
-  await page.getByRole('heading', { name: '记运动' }).waitFor()
-  await page.getByLabel('名称').fill(name)
-  await page.getByLabel('热量 (kcal)').fill(kcal)
-  await page.getByRole('button', { name: '保存' }).click()
+  await openLogPage(page, 'exercise')
+  const manual = await expandManualLogSection(page)
+  await manual.getByLabel('名称').fill(name)
+  await manual.getByLabel('热量 (kcal)').fill(kcal)
+  await manual.getByRole('button', { name: '保存' }).click()
   await expectTodayRecordInExpandedList(page, name, kcal)
 }
 
 export async function logMeal(page: Page, name: string, kcal: string) {
-  await page.getByRole('link', { name: '+ 记饮食' }).click()
-  await page.getByRole('heading', { name: '记饮食' }).waitFor()
-  await page.getByLabel('名称').fill(name)
-  await page.getByLabel('热量 (kcal)').fill(kcal)
-  await page.getByRole('button', { name: '保存' }).click()
+  await openLogPage(page, 'meal')
+  const manual = await expandManualLogSection(page)
+  await manual.getByLabel('名称').fill(name)
+  await manual.getByLabel('热量 (kcal)').fill(kcal)
+  await manual.getByRole('button', { name: '保存' }).click()
   await expectTodayRecordInExpandedList(page, name, kcal)
 }
 
