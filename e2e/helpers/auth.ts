@@ -16,10 +16,22 @@ export async function registerAndOnboard(page: Page, email: string) {
   await page.getByLabel('注册密钥').fill(E2E_REGISTRATION_KEY)
   await page.getByRole('button', { name: '注册', exact: true }).click()
 
-  await page.getByRole('heading', { name: '完善身体资料' }).waitFor()
+  await page.getByRole('heading', { name: '满打满算' }).waitFor()
+  await page.getByRole('button', { name: '继续' }).click()
+
+  await page.getByRole('heading', { name: '欢迎你，健友' }).waitFor()
+  await page.getByRole('button', { name: '开始设置' }).click()
+
+  await page.getByRole('heading', { name: '了解一下你的基础消耗' }).waitFor()
   await page.getByLabel('体重 (kg)').fill('70')
   await page.getByLabel('身高 (cm)').fill('175')
   await page.getByLabel('生日').fill('1996-06-15')
+  await page.getByRole('button', { name: '下一步' }).click()
+
+  await page.getByRole('heading', { name: '先选一个轻松目标' }).waitFor()
+  await page.getByRole('button', { name: '下一步' }).click()
+
+  await page.getByRole('heading', { name: '选择你的打卡氛围' }).waitFor()
   await page.getByRole('button', { name: '开始使用' }).click()
 
   await page.getByRole('navigation', { name: '主导航' }).waitFor()

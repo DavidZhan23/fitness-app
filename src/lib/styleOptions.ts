@@ -132,3 +132,38 @@ export function styleOptionsForGroup(group: StyleToneGroup): StyleOption[] {
 export function findStyleOption(id: AppStyle): StyleOption | undefined {
   return STYLE_OPTIONS.find((option) => option.id === id)
 }
+
+/** Onboarding 推荐主题（顺序固定：浅色系在前，深海能量最后） */
+export const ONBOARDING_STYLE_IDS = [
+  'sakura-blush',
+  'active-mint',
+  'soy-tea',
+  'default',
+] as const satisfies readonly AppStyle[]
+
+/** Onboarding 氛围卡专用描述（比设置页更短） */
+export const ONBOARDING_STYLE_DESCRIPTIONS: Partial<Record<AppStyle, string>> = {
+  'sakura-blush': '樱花粉底、奶粉卡，运动蓝 / 饮食莓粉',
+  'active-mint': '薄荷雾绿底、奶白薄荷卡，蓝管运动、绿管缺口',
+  'soy-tea': '豆乳米杏底、奶绿卡，海盐蓝运动、茶绿缺口',
+  default: '偏运动感的深色青绿系，夜间更专注',
+}
+
+export function onboardingStyleOptions(): StyleOption[] {
+  return ONBOARDING_STYLE_IDS.map((id) => findStyleOption(id)).filter(
+    (option): option is StyleOption => option != null,
+  )
+}
+
+export function onboardingStyleSections(): ReadonlyArray<{
+  group: StyleToneGroup
+  title: string
+  options: StyleOption[]
+}> {
+  return STYLE_TONE_SECTIONS.map((section) => ({
+    ...section,
+    options: onboardingStyleOptions().filter(
+      (option) => option.group === section.group,
+    ),
+  })).filter((section) => section.options.length > 0)
+}
