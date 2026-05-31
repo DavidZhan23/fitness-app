@@ -60,7 +60,7 @@ export default defineConfig({
         description: '记录运动与饮食，追踪热量缺口',
         lang: 'zh-CN',
         dir: 'ltr',
-        theme_color: '#0f766e',
+        theme_color: '#1e293b',
         background_color: '#1e293b',
         display: 'standalone',
         display_override: ['standalone', 'minimal-ui'],
