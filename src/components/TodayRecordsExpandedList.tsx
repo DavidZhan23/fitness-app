@@ -70,7 +70,6 @@ export function TodayRecordsExpandedList({
             {exercises.map((ex) => (
               <TodayRecordRow
                 key={ex.id}
-                kind="exercise"
                 name={ex.name}
                 kcal={ex.kcal}
                 showActions
@@ -99,7 +98,6 @@ export function TodayRecordsExpandedList({
             {meals.map((m) => (
               <TodayRecordRow
                 key={m.id}
-                kind="meal"
                 name={m.name}
                 kcal={m.kcal}
                 showActions

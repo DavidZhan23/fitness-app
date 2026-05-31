@@ -37,6 +37,11 @@ function resolveCommitSha(): string {
 
 const APP_VERSION = resolveAppVersion()
 const COMMIT_SHA = resolveCommitSha()
+const ICON_QUERY = APP_VERSION ? `?v=${APP_VERSION}` : ''
+
+function iconSrc(path: string) {
+  return `${path}${ICON_QUERY}`
+}
 
 export default defineConfig({
   define: {
@@ -44,11 +49,18 @@ export default defineConfig({
     'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(COMMIT_SHA),
   },
   plugins: [
+    {
+      name: 'inject-icon-version',
+      transformIndexHtml(html) {
+        return html.replaceAll('__ICON_VERSION__', APP_VERSION)
+      },
+    },
     react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
+        'favicon.ico',
         'favicon-32.png',
         'favicon.svg',
         'icons/*.png',
@@ -70,19 +82,19 @@ export default defineConfig({
         prefer_related_applications: false,
         icons: [
           {
-            src: '/icons/icon-192.png',
+            src: iconSrc('/icons/icon-192.png'),
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/icons/icon-512.png',
+            src: iconSrc('/icons/icon-512.png'),
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/icons/icon-512-maskable.png',
+            src: iconSrc('/icons/icon-512-maskable.png'),
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',

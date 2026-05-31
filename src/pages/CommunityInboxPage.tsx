@@ -4,6 +4,7 @@ import { UserAvatar } from '../components/UserAvatar'
 import { SegmentedControl } from '../components/ui/responsive'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
+import { inboxItemHref } from '../lib/communityInboxNav'
 import { formatDateKey, normalizeDateKey } from '../lib/streaks'
 import type { CommunityInboxItem, CommunityInboxListResponse } from '../types'
 
@@ -92,21 +93,6 @@ function itemActionText(item: CommunityInboxItem) {
   if (item.kind === 'comment_like') return '赞了你的评论'
   if (item.kind === 'comment_dislike') return '踩了你的评论'
   return '回复了你的评论'
-}
-
-function inboxItemHref(item: CommunityInboxItem) {
-  if (item.kind === 'like' || item.kind === 'dislike') {
-    return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}`
-  }
-  if (
-    item.kind === 'comment_on_card' ||
-    item.kind === 'reply' ||
-    item.kind === 'comment_like' ||
-    item.kind === 'comment_dislike'
-  ) {
-    return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}#day-comments`
-  }
-  return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}`
 }
 
 function InboxItemRow({
