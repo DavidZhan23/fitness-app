@@ -48,7 +48,7 @@ export function LoginPage() {
   return (
     <div className="page-standalone">
       <div className="auth-shell mx-auto w-full min-w-0 max-w-sm box-border px-4 py-8">
-        <h1 className="text-2xl font-bold text-brand">健身打卡</h1>
+        <h1 className="text-2xl font-bold text-brand">满打满算</h1>
         <p className="mt-1 text-sm text-muted">记录运动与饮食，追踪热量缺口</p>
 
         <form onSubmit={handleSubmit} className="responsive-form mt-8">
