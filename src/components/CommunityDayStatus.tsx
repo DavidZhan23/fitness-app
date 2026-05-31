@@ -162,7 +162,7 @@ export function PersonalDayStatus({
           desc="今天还没记录饮食，补上后数据会更准确"
           tone="reminder"
           reminder
-          badgeLabel="继续记录"
+          badgeLabel="点击上方「+ 记饮食」"
         />
       )
     }

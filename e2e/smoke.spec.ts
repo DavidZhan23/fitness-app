@@ -39,7 +39,7 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByRole('link', { name: '+ 记运动' })).toBeVisible()
     await expect(page.getByText('今日记录')).toBeVisible()
     await expect(page.getByText(/运动 1 条 · 饮食 1 条/)).toBeVisible()
-    await page.getByRole('button', { name: '展开' }).click()
+    await page.getByRole('button', { name: /展开/ }).click()
     await expect(page.getByText(mealName)).toBeVisible()
     await expect(page.getByText(exerciseName)).toBeVisible()
   })

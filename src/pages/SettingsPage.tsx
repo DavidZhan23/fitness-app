@@ -14,7 +14,7 @@ import {
   formatTodayDateKey,
   normalizeBirthdayFromApi,
 } from '../lib/birthday'
-import { useDebouncedAutosave } from '../hooks/useDebouncedAutosave'
+import { useBlurAutosave } from '../hooks/useBlurAutosave'
 import {
   fileToCroppedAvatarDataUrl,
   loadImage,
@@ -170,7 +170,7 @@ export function SettingsPage() {
     await updateProfile({ nickname: trimmedNickname || null })
   }, [updateProfile, trimmedNickname])
 
-  const nicknameAutosave = useDebouncedAutosave({
+  const nicknameAutosave = useBlurAutosave({
     enabled: Boolean(profile),
     isEqual: trimmedNickname === savedNickname,
     save: saveNickname,
@@ -182,7 +182,7 @@ export function SettingsPage() {
     await updateProfile({ welcome_message: trimmedWelcomeMessage || null })
   }, [updateProfile, trimmedWelcomeMessage])
 
-  const welcomeMessageAutosave = useDebouncedAutosave({
+  const welcomeMessageAutosave = useBlurAutosave({
     enabled: Boolean(profile),
     isEqual: trimmedWelcomeMessage === savedWelcomeMessage,
     save: saveWelcomeMessage,
@@ -194,7 +194,7 @@ export function SettingsPage() {
     await updateProfile({ welcome_subtitle: trimmedWelcomeSubtitle || null })
   }, [updateProfile, trimmedWelcomeSubtitle])
 
-  const welcomeSubtitleAutosave = useDebouncedAutosave({
+  const welcomeSubtitleAutosave = useBlurAutosave({
     enabled: Boolean(profile),
     isEqual: trimmedWelcomeSubtitle === savedWelcomeSubtitle,
     save: saveWelcomeSubtitle,
@@ -231,7 +231,7 @@ export function SettingsPage() {
     updateProfile,
   ])
 
-  const bodyAutosave = useDebouncedAutosave({
+  const bodyAutosave = useBlurAutosave({
     enabled: Boolean(profile),
     isEqual: bodyUnchanged,
     validate: validateBody,
@@ -251,7 +251,7 @@ export function SettingsPage() {
     await updateProfile({ deficit_threshold: parsedGoalThreshold })
   }, [profile, parsedGoalThreshold, updateProfile])
 
-  const goalThresholdAutosave = useDebouncedAutosave({
+  const goalThresholdAutosave = useBlurAutosave({
     enabled: Boolean(profile),
     isEqual: goalThresholdUnchanged,
     validate: validateGoalThreshold,
@@ -260,6 +260,32 @@ export function SettingsPage() {
   })
   const goalThresholdSaveState = goalThresholdAutosave.state
   const goalThresholdSaveError = goalThresholdAutosave.error
+
+  const autosaveCommitRef = useRef({
+    nickname: nicknameAutosave.commit,
+    welcomeMessage: welcomeMessageAutosave.commit,
+    welcomeSubtitle: welcomeSubtitleAutosave.commit,
+    body: bodyAutosave.commit,
+    goalThreshold: goalThresholdAutosave.commit,
+  })
+  autosaveCommitRef.current = {
+    nickname: nicknameAutosave.commit,
+    welcomeMessage: welcomeMessageAutosave.commit,
+    welcomeSubtitle: welcomeSubtitleAutosave.commit,
+    body: bodyAutosave.commit,
+    goalThreshold: goalThresholdAutosave.commit,
+  }
+
+  useEffect(() => {
+    return () => {
+      const commits = autosaveCommitRef.current
+      void commits.nickname()
+      void commits.welcomeMessage()
+      void commits.welcomeSubtitle()
+      void commits.body()
+      void commits.goalThreshold()
+    }
+  }, [])
 
   const savedWallStyle: WallStyle =
     profile?.wall_style === 'split' ? 'split' : 'classic'
@@ -419,6 +445,7 @@ export function SettingsPage() {
                   maxLength={32}
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
+                  onBlur={() => void nicknameAutosave.commit()}
                   className="input profile-field__input w-full min-w-0"
                   placeholder="输入你的昵称"
                   aria-label="昵称"
@@ -445,6 +472,7 @@ export function SettingsPage() {
                   maxLength={30}
                   value={welcomeMessage}
                   onChange={(e) => setWelcomeMessage(e.target.value)}
+                  onBlur={() => void welcomeMessageAutosave.commit()}
                   className="input profile-field__input w-full min-w-0"
                   placeholder="自定义首页标题"
                   aria-label="自定义首页标题"
@@ -471,6 +499,7 @@ export function SettingsPage() {
                   maxLength={40}
                   value={welcomeSubtitle}
                   onChange={(e) => setWelcomeSubtitle(e.target.value)}
+                  onBlur={() => void welcomeSubtitleAutosave.commit()}
                   className="input profile-field__input w-full min-w-0"
                   placeholder="自定义副标题"
                   aria-label="自定义副标题"
@@ -524,6 +553,7 @@ export function SettingsPage() {
               inputMode="numeric"
               value={threshold}
               onChange={(e) => setThreshold(e.target.value)}
+              onBlur={() => void goalThresholdAutosave.commit()}
               className="input mt-1 w-full min-w-0"
               aria-label="默认目标缺口 kcal"
             />
@@ -569,6 +599,7 @@ export function SettingsPage() {
                 step="0.1"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
+                onBlur={() => void bodyAutosave.commit()}
                 className="input mt-1"
               />
             </label>
@@ -578,6 +609,7 @@ export function SettingsPage() {
                 type="number"
                 value={height}
                 onChange={(e) => setHeight(e.target.value)}
+                onBlur={() => void bodyAutosave.commit()}
                 className="input mt-1"
               />
             </label>
@@ -588,6 +620,7 @@ export function SettingsPage() {
                 max={todayKey}
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
+                onBlur={() => void bodyAutosave.commit()}
                 className="input mt-1"
               />
               {derivedAge != null && (
@@ -606,6 +639,7 @@ export function SettingsPage() {
               <select
                 value={sex}
                 onChange={(e) => setSex(e.target.value as Sex)}
+                onBlur={() => void bodyAutosave.commit()}
                 className="input mt-1"
               >
                 <option value="male">男</option>
@@ -617,6 +651,7 @@ export function SettingsPage() {
               <select
                 value={activity}
                 onChange={(e) => setActivity(parseFloat(e.target.value))}
+                onBlur={() => void bodyAutosave.commit()}
                 className="input mt-1"
               >
                 {ACTIVITY_LEVELS.map((l) => (

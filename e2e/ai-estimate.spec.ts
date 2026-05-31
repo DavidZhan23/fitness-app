@@ -24,6 +24,6 @@ test('AI estimate timeout shows fallback and manual save still works', async ({
 
   await page.getByLabel('热量 (kcal)').fill('450')
   await page.getByRole('button', { name: '保存' }).click()
-  await page.getByRole('button', { name: '展开' }).click()
+  await page.getByRole('button', { name: /展开/ }).click()
   await expect(page.getByText(mealName)).toBeVisible()
 })

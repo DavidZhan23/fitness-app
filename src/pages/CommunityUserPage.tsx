@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
 import { CalendarDayDetailPanel } from '../components/CalendarDayDetailPanel'
@@ -17,6 +17,7 @@ import {
   scrollCommunityMainToTop,
   syncFollowStatusInCommunityListCache,
 } from '../lib/communityListCache'
+import { resolveDateFromSearchParams } from '../lib/communityInboxNav'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
   formatMonthTitle,
@@ -24,7 +25,7 @@ import {
   shiftMonth,
 } from '../lib/monthCalendar'
 import { getWallLegendHighlight } from '../lib/calories'
-import { formatDateKey, isBeforeAccountStart } from '../lib/streaks'
+import { formatDateKey, isBeforeAccountStart, parseDateKey } from '../lib/streaks'
 import type {
   CommunityDaySnapshot,
   CommunityPublicExercise,
@@ -60,6 +61,7 @@ export function CommunityUserPage() {
   const { profile } = useAuth()
   const { userId } = useParams<{ userId: string }>()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const todayKey = formatDateKey()
   const initial = readInitialUserState(userId)
@@ -162,16 +164,24 @@ export function CommunityUserPage() {
   const load = useCallback(async () => {
     if (!userId) return
     const preview = loadCommunityUserPreview(userId)
+    const urlDate = resolveDateFromSearchParams(searchParams, null)
+    const date = urlDate ?? preview?.today.date ?? todayKey
+
+    if (urlDate) {
+      const d = parseDateKey(urlDate)
+      setView({ year: d.getFullYear(), month: d.getMonth() + 1 })
+    }
+
     if (!preview) setLoading(true)
     setError('')
     try {
-      await loadDay(preview?.today.date ?? todayKey)
+      await loadDay(date)
     } catch (err) {
       setError(err instanceof Error ? err.message : '无法查看该用户')
     } finally {
       setLoading(false)
     }
-  }, [userId, todayKey, loadDay])
+  }, [userId, todayKey, loadDay, searchParams])
 
   useEffect(() => {
     if (location.hash === '#day-comments') return
@@ -181,18 +191,21 @@ export function CommunityUserPage() {
   useEffect(() => {
     if (!userId) return
     const preview = loadCommunityUserPreview(userId)
+    const urlDate = resolveDateFromSearchParams(searchParams, null)
     if (preview) {
       setNickname(preview.nickname)
       setIsSelf(preview.isSelf)
       setIsFollowing(preview.isFollowing)
-      setSnapshot(preview.today)
-      setViewDate(preview.today.date)
-      setLoading(false)
+      if (!urlDate) {
+        setSnapshot(preview.today)
+        setViewDate(preview.today.date)
+      }
+      setLoading(Boolean(urlDate))
     } else {
       setLoading(true)
     }
     void load()
-  }, [userId, load])
+  }, [userId, load, searchParams])
 
   useEffect(() => {
     if (loading || error) return
@@ -395,36 +408,23 @@ export function CommunityUserPage() {
         variant="full"
       />
 
-      <section>
-        <h2 className="mb-2 text-sm font-medium text-primary">当日记录</h2>
-        {!isSelf && (exercises.length > 0 || meals.length > 0) && (
-          <p className="mb-2 text-xs text-muted">
-            {/* 每条记录右侧可 👍 👎 表态（再次点击取消） */}
-          </p>
-        )}
-        {isSelf && (exercises.length > 0 || meals.length > 0) && (
-          <p className="mb-2 text-xs text-muted">
-            {/* 右侧为健友对你每条记录的 👍 👎 人数 */}
-          </p>
-        )}
-        <ReadOnlyLogList
-          exercises={exercises}
-          meals={meals}
-          targetUserId={userId}
-          canReact={!isSelf}
-          showReactionStats={isSelf}
-          onExerciseReactionChange={(id, stats) =>
-            setExercises((prev) =>
-              prev.map((e) => (e.id === id ? { ...e, ...stats } : e)),
-            )
-          }
-          onMealReactionChange={(id, stats) =>
-            setMeals((prev) =>
-              prev.map((m) => (m.id === id ? { ...m, ...stats } : m)),
-            )
-          }
-        />
-      </section>
+      <ReadOnlyLogList
+        exercises={exercises}
+        meals={meals}
+        targetUserId={userId}
+        canReact={!isSelf}
+        showReactionStats={isSelf}
+        onExerciseReactionChange={(id, stats) =>
+          setExercises((prev) =>
+            prev.map((e) => (e.id === id ? { ...e, ...stats } : e)),
+          )
+        }
+        onMealReactionChange={(id, stats) =>
+          setMeals((prev) =>
+            prev.map((m) => (m.id === id ? { ...m, ...stats } : m)),
+          )
+        }
+      />
 
       <div id="day-comments" className="scroll-mt-4">
         <DayCommentSection

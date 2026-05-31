@@ -53,7 +53,7 @@ execFileSync('node', ['scripts/cleanup-qa-seed.mjs'], {
 })
 
 const { query, pool } = await import('../server/src/db.js')
-const { formatDateKeyInTz } = await import('../server/src/dateKey.js')
+const { formatDateKeyInTz, shiftDateKey } = await import('../server/src/dateKey.js')
 const { registerUser } = await import('../server/src/auth.js')
 const { buildProfileUpdate } = await import('../server/src/profilePatch.js')
 const {

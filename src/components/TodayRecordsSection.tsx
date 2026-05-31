@@ -58,21 +58,22 @@ export function TodayRecordsSection({
   return (
     <section className="today-records-section" aria-label="今日记录">
       <div className="today-records-section__card">
-        <div className="today-records-section__header">
-          <span className="today-records-section__heading">今日记录</span>
-          <button
-            type="button"
-            className="today-records-section__expand-btn"
-            aria-expanded={expanded}
-            onClick={() => setExpanded((v) => !v)}
-          >
-            {expanded ? '收起' : '展开'}
-          </button>
-        </div>
-
-        {countLine ? (
-          <p className="today-records-section__summary">{countLine}</p>
-        ) : null}
+        <button
+          type="button"
+          className="today-records-section__toggle"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <span className="today-records-section__header">
+            <span className="today-records-section__heading">今日记录</span>
+            <span className="today-records-section__expand-label">
+              {expanded ? '收起' : '展开'}
+            </span>
+          </span>
+          {countLine ? (
+            <span className="today-records-section__summary">{countLine}</span>
+          ) : null}
+        </button>
 
         {expanded ? (
           <TodayRecordsExpandedList
