@@ -49,14 +49,14 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
+        'favicon-32.png',
         'favicon.svg',
-        'icons/*.svg',
         'icons/*.png',
       ],
       manifest: {
         id: '/',
-        name: '健身打卡',
-        short_name: '健身打卡',
+        name: '满打满算',
+        short_name: '满打满算',
         description: '记录运动与饮食，追踪热量缺口',
         lang: 'zh-CN',
         dir: 'ltr',

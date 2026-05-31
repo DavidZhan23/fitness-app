@@ -33,7 +33,7 @@
 
 ## 开发者：重新生成 PNG 图标
 
-修改 `public/icons/*.svg` 后执行：
+替换 `public/icons/icon-source.png` 后执行：
 
 ```bash
 bash scripts/generate-icons.sh
