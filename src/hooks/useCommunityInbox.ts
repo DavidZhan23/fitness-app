@@ -44,6 +44,19 @@ export function useCommunityInbox() {
     }
   }, [user])
 
+  const markItemRead = useCallback(
+    async (inboxId: string) => {
+      if (!user) return
+      try {
+        await httpData.markCommunityInboxItemRead(inboxId)
+        await refresh()
+      } catch {
+        /* ignore */
+      }
+    },
+    [refresh, user],
+  )
+
   useEffect(() => {
     if (!user) {
       setUnreadCount(0)
@@ -74,5 +87,6 @@ export function useCommunityInbox() {
     followersOnMe,
     refresh,
     markRead,
+    markItemRead,
   }
 }

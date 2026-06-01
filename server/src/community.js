@@ -248,7 +248,7 @@ export async function getCommunityUser(viewerId, targetUserId, logDate) {
         [dayLog.id],
       ),
       query(
-        `select id, name, kcal, created_at from meals where day_log_id = $1 order by created_at desc`,
+        `select id, name, kcal, created_at, batch_id from meals where day_log_id = $1 order by created_at desc`,
         [dayLog.id],
       ),
     ])

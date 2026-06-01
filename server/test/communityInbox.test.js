@@ -9,6 +9,8 @@ vi.mock('../src/db.js', () => ({
 const {
   getCommunityInboxUnread,
   markCommunityInboxRead,
+  markCommunityInboxItemRead,
+  listCommunityInbox,
   loadInboxItems,
   emptyInbox,
 } = await import('../src/communityInbox.js')
@@ -268,5 +270,119 @@ describe('getCommunityInboxUnread comment reactions', () => {
 
     expect(data.interactionCount).toBe(2)
     expect(data.count).toBe(2)
+  })
+})
+
+describe('markCommunityInboxItemRead', () => {
+  it('inserts read row for inbox id', async () => {
+    queryMock.mockResolvedValueOnce({ rows: [] })
+
+    const data = await markCommunityInboxItemRead(VIEWER_ID, 'comment:abc-1')
+
+    expect(data).toEqual({ ok: true })
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining('insert into community_inbox_reads'),
+      [VIEWER_ID, 'comment:abc-1'],
+    )
+  })
+
+  it('rejects empty inbox id', async () => {
+    await expect(markCommunityInboxItemRead(VIEWER_ID, '  ')).rejects.toMatchObject({
+      status: 400,
+    })
+  })
+})
+
+describe('per-item read filtering', () => {
+  it('excludes read items from unread counts', async () => {
+    queryMock.mockImplementation(async (sql) => {
+      if (sql.includes('community_notify_seen_at from profiles')) {
+        return { rows: [{ community_notify_seen_at: SEEN_AT }] }
+      }
+      if (sql.includes('from day_likes') && sql.includes('count')) {
+        return { rows: [{ c: 0 }] }
+      }
+      if (sql.includes('from day_dislikes') && sql.includes('count')) {
+        return { rows: [{ c: 0 }] }
+      }
+      if (
+        sql.includes('from day_comments') &&
+        sql.includes('reply_to_user_id = $1') &&
+        sql.includes('count')
+      ) {
+        return { rows: [{ c: 0 }] }
+      }
+      if (
+        sql.includes('from day_comments') &&
+        sql.includes('target_user_id = $1') &&
+        sql.includes('count')
+      ) {
+        return { rows: [{ c: 1 }] }
+      }
+      if (sql.includes('from day_comment_likes') && sql.includes('count')) {
+        return { rows: [{ c: 0 }] }
+      }
+      if (sql.includes('from day_comment_dislikes') && sql.includes('count')) {
+        return { rows: [{ c: 0 }] }
+      }
+      if (sql.includes('from follows') && sql.includes('count')) {
+        return { rows: [{ c: 0 }] }
+      }
+      if (sql.includes('union all') && sql.includes('community_inbox_reads')) {
+        return { rows: [] }
+      }
+      return { rows: [] }
+    })
+
+    const data = await getCommunityInboxUnread(VIEWER_ID)
+
+    expect(data.interactionCount).toBe(1)
+    expect(data.count).toBe(1)
+    expect(
+      queryMock.mock.calls.some(([sql]) =>
+        sql.includes('community_inbox_reads'),
+      ),
+    ).toBe(true)
+  })
+
+  it('history list does not filter by community_inbox_reads', async () => {
+    queryMock.mockImplementation(async (sql) => {
+      if (sql.includes('community_notify_seen_at from profiles')) {
+        return { rows: [{ community_notify_seen_at: SEEN_AT }] }
+      }
+      if (sql.includes('as total')) {
+        return { rows: [{ total: 1 }] }
+      }
+      if (sql.includes('union all') && !sql.includes('community_inbox_reads')) {
+        return {
+          rows: [
+            {
+              kind: 'comment_on_card',
+              inbox_id: 'comment:read-1',
+              created_at: new Date('2025-05-10T12:00:00Z'),
+              log_date: '2025-05-10',
+              target_user_id: VIEWER_ID,
+              actor_id: 'actor-1',
+              body_preview: 'hi',
+              actor_nickname: 'Actor',
+              actor_avatar_url: null,
+              viewer_follows_actor: null,
+              actor_can_view_profile: null,
+            },
+          ],
+        }
+      }
+      return { rows: [] }
+    })
+
+    const data = await listCommunityInbox(VIEWER_ID, { mode: 'history' })
+
+    expect(data.items).toHaveLength(1)
+    expect(data.items[0].id).toBe('comment:read-1')
+    expect(
+      queryMock.mock.calls.some(
+        ([sql]) => sql.includes('union all') && sql.includes('community_inbox_reads'),
+      ),
+    ).toBe(false)
   })
 })

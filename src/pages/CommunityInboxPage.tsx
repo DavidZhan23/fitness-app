@@ -98,12 +98,18 @@ function itemActionText(item: CommunityInboxItem) {
 function InboxItemRow({
   item,
   groupKey,
+  onView,
 }: {
   item: CommunityInboxItem
   groupKey: DateGroupKey
+  onView?: () => void
 }) {
   return (
-    <Link to={inboxItemHref(item)} className="community-inbox-row">
+    <Link
+      to={inboxItemHref(item)}
+      className="community-inbox-row"
+      onClick={() => onView?.()}
+    >
       <UserAvatar
         variant="community"
         size="sm"
@@ -132,7 +138,7 @@ function InboxItemRow({
 }
 
 export function CommunityInboxPage() {
-  const { markRead } = useCommunityInbox()
+  const { markItemRead } = useCommunityInbox()
   const [mode, setMode] = useState<InboxMode>('unread')
   const [items, setItems] = useState<CommunityInboxItem[]>([])
   const [total, setTotal] = useState(0)
@@ -140,7 +146,6 @@ export function CommunityInboxPage() {
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
-  const markedRef = useRef(false)
   const rawOffsetRef = useRef(0)
 
   const groupedItems = useMemo(() => groupInboxItems(items), [items])
@@ -175,10 +180,6 @@ export function CommunityInboxPage() {
           offset,
         })
         applyData(data, append)
-        if (nextMode === 'unread' && !markedRef.current) {
-          markedRef.current = true
-          await markRead()
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载互动失败')
       } finally {
@@ -186,11 +187,20 @@ export function CommunityInboxPage() {
         else setLoading(false)
       }
     },
-    [applyData, markRead],
+    [applyData],
+  )
+
+  const handleItemView = useCallback(
+    (item: CommunityInboxItem) => {
+      if (mode !== 'unread') return
+      setItems((prev) => prev.filter((row) => row.id !== item.id))
+      setTotal((prev) => Math.max(0, prev - 1))
+      void markItemRead(item.id)
+    },
+    [markItemRead, mode],
   )
 
   useEffect(() => {
-    markedRef.current = false
     rawOffsetRef.current = 0
     void load(mode)
   }, [load, mode])
@@ -284,7 +294,15 @@ export function CommunityInboxPage() {
               <ul className="community-inbox-list">
                 {group.items.map((item) => (
                   <li key={item.id}>
-                    <InboxItemRow item={item} groupKey={group.key} />
+                    <InboxItemRow
+                      item={item}
+                      groupKey={group.key}
+                      onView={
+                        mode === 'unread'
+                          ? () => handleItemView(item)
+                          : undefined
+                      }
+                    />
                   </li>
                 ))}
               </ul>

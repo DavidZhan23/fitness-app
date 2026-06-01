@@ -34,7 +34,7 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| POST | `/ai/estimate-kcal` | DeepSeek 估算千卡（需服务端 Key） |
+| POST | `/ai/estimate-kcal` | DeepSeek 估算千卡（需服务端 Key）。Body: `{ type: 'exercise'|'meal', description: string }`。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**：`[{ name, quantity, unit, kcal, confidence?, reason? }]`（`confidence`: `high` \| `medium` \| `low`；`reason`: 服务端 normalize 后 ≤60 Unicode 字符的简短估算依据），此时 `kcal` 为各 item 之和；仅顶层 kcal 时返回单条 fallback item |
 
 ## 遥测（轻量埋点）
 
@@ -70,16 +70,18 @@ Base URL：
 | POST | `/day-logs/ensure` | 确保当日 log 存在 |
 | POST | `/exercises` | 添加运动 |
 | PATCH/DELETE | `/exercises/:id` | 更新/删除运动 |
-| POST | `/meals` | 添加饮食 |
-| PATCH/DELETE | `/meals/:id` | 更新/删除饮食 |
+| POST | `/meals` | 添加饮食；body 可选 `batch_id`（UUID，同批多条饮食共享，仅客户端批量保存时使用） |
+| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；`Meal` 含 `batch_id`（nullable） |
 
 ## 模板
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET/POST | `/templates/:type` | type: `exercise` \| `meal` |
+| GET | `/templates/:type` | type: `exercise` \| `meal`；返回 `id, name, unit, kcal_per_unit, default_quantity, kcal`（`kcal` 为兼容缓存） |
+| POST | `/templates/:type` | body: `{ name, unit, kcalPerUnit, defaultQuantity }`；服务端写入并同步 `kcal = round(kcalPerUnit × defaultQuantity)` |
+| PATCH | `/templates/:type/:id` | 同 POST body；更新模板字段并同步 `kcal` |
 | DELETE | `/templates/:type/:id` | 删除模板 |
-| POST | `/templates/seed` | 种子默认模板 |
+| POST | `/templates/seed` | 种子默认模板；body `{ exerciseTemplates[], mealTemplates[] }`，每项含 `name, unit, kcalPerUnit, defaultQuantity` |
 
 ## 社区
 
@@ -99,9 +101,10 @@ Base URL：
 | POST/DELETE | `/community/comments/:commentId/likes` | 点赞/取消点赞评论；响应 `{ likeCount, dislikeCount, viewerLiked, viewerDisliked }` |
 | POST/DELETE | `/community/comments/:commentId/dislikes` | 点踩/取消点踩评论；响应同上 |
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |
-| GET | `/community/inbox/unread` | 未读摘要：`count`（全部）、`interactionCount`（赞/踩/留言/回复/评论赞踩，**实时聚合源表**）；`items[]` 含 `kind`（含 `comment_like`、`comment_dislike`、`follow` 等）；取消 reaction 后刷新即消失 |
-| GET | `/community/inbox` | `?mode=unread\|history&limit&offset`；列表项字段同 unread `items`；`comment_like`/`comment_dislike` 通知评论作者（`day_comments.author_id`） |
-| POST | `/community/inbox/mark-read` | 标已读（更新 `community_notify_seen_at`） |
+| GET | `/community/inbox/unread` | 未读摘要：`count`（全部）、`interactionCount`（赞/踩/留言/回复/评论赞踩，**实时聚合源表**）；排除 `community_inbox_reads` 中已逐条标已读项；`items[]` 含 `kind`（含 `comment_like`、`comment_dislike`、`follow` 等）；取消 reaction 后刷新即消失 |
+| GET | `/community/inbox` | `?mode=unread\|history&limit&offset`；`unread` 同 unread 摘要过滤（`created_at > community_notify_seen_at` 且不在 `community_inbox_reads`）；`history` 全量；列表项字段同 unread `items` |
+| POST | `/community/inbox/mark-read` | 批量标已读（更新 `community_notify_seen_at`；前端列表页不再自动调用） |
+| POST | `/community/inbox/mark-read-item` | body: `{ inboxId: string }`（如 `comment:uuid`）；逐条标已读，写入 `community_inbox_reads`；响应 `{ ok: true }` |
 
 ## 错误
 

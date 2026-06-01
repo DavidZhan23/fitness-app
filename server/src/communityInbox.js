@@ -85,11 +85,57 @@ function buildSinceClauses(since, params) {
   }
 }
 
+const READ_EXCLUDE_OUTER = ` where not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1 and r.inbox_id = u.inbox_id
+)`
+
+const READ_EXCLUDE_LIKE = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1
+  and r.inbox_id = 'like:' || dl.liker_id::text || ':' || dl.target_user_id::text || ':' || dl.like_date::text
+)`
+
+const READ_EXCLUDE_DISLIKE = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1
+  and r.inbox_id = 'dislike:' || dd.liker_id::text || ':' || dd.target_user_id::text || ':' || dd.like_date::text
+)`
+
+const READ_EXCLUDE_COMMENT = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1 and r.inbox_id = 'comment:' || c.id::text
+)`
+
+const READ_EXCLUDE_REPLY = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1 and r.inbox_id = 'reply:' || c.id::text
+)`
+
+const READ_EXCLUDE_COMMENT_LIKE = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1
+  and r.inbox_id = 'comment_like:' || l.comment_id::text || ':' || l.liker_id::text
+)`
+
+const READ_EXCLUDE_COMMENT_DISLIKE = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1
+  and r.inbox_id = 'comment_dislike:' || d.comment_id::text || ':' || d.disliker_id::text
+)`
+
+const READ_EXCLUDE_FOLLOW = ` and not exists (
+  select 1 from community_inbox_reads r
+  where r.user_id = $1
+  and r.inbox_id = 'follow:' || f.follower_id::text || ':' || f.followee_id::text || ':' || f.created_at::text
+)`
+
 async function loadInboxItems(userId, opts = {}) {
   const {
     since = null,
     limit = 20,
     offset = 0,
+    excludeRead = false,
   } = opts
   const { safeLimit, safeOffset } = normalizePagination(limit, offset)
 
@@ -108,6 +154,8 @@ async function loadInboxItems(userId, opts = {}) {
   const limitParam = `$${params.length}`
   params.push(safeOffset)
   const offsetParam = `$${params.length}`
+
+  const readExcludeOuter = excludeRead ? READ_EXCLUDE_OUTER : ''
 
   const { rows } = await query(
     `select * from (
@@ -200,7 +248,7 @@ async function loadInboxItems(userId, opts = {}) {
        from follows f
        join profiles p on p.id = f.follower_id
        where f.followee_id = $1 and f.follower_id <> $1${sinceClauseFollow}
-     ) u
+     ) u${readExcludeOuter}
      order by created_at desc
      limit ${limitParam}
      offset ${offsetParam}`,
@@ -210,7 +258,7 @@ async function loadInboxItems(userId, opts = {}) {
   return rows.map(mapInboxRow)
 }
 
-async function loadInboxTotal(userId, since = null) {
+async function loadInboxTotal(userId, since = null, excludeRead = false) {
   const params = [userId]
   let likeSince = ''
   let dislikeSince = ''
@@ -222,39 +270,46 @@ async function loadInboxTotal(userId, since = null) {
   if (since) {
     params.push(since)
     const p = `$${params.length}`
-    likeSince = ` and created_at > ${p}`
-    dislikeSince = ` and created_at > ${p}`
-    commentSince = ` and created_at > ${p}`
-    replySince = ` and created_at > ${p}`
+    likeSince = ` and dl.created_at > ${p}`
+    dislikeSince = ` and dd.created_at > ${p}`
+    commentSince = ` and c.created_at > ${p}`
+    replySince = ` and c.created_at > ${p}`
     commentLikeSince = ` and l.created_at > ${p}`
     commentDislikeSince = ` and d.created_at > ${p}`
     followSince = ` and f.created_at > ${p}`
   }
+  const readLike = excludeRead ? READ_EXCLUDE_LIKE : ''
+  const readDislike = excludeRead ? READ_EXCLUDE_DISLIKE : ''
+  const readComment = excludeRead ? READ_EXCLUDE_COMMENT : ''
+  const readReply = excludeRead ? READ_EXCLUDE_REPLY : ''
+  const readCommentLike = excludeRead ? READ_EXCLUDE_COMMENT_LIKE : ''
+  const readCommentDislike = excludeRead ? READ_EXCLUDE_COMMENT_DISLIKE : ''
+  const readFollow = excludeRead ? READ_EXCLUDE_FOLLOW : ''
   const { rows } = await query(
     `select (
-       select count(*)::int from day_likes
-       where target_user_id = $1 and liker_id <> $1${likeSince}
+       select count(*)::int from day_likes dl
+       where dl.target_user_id = $1 and dl.liker_id <> $1${likeSince}${readLike}
      ) + (
-       select count(*)::int from day_dislikes
-       where target_user_id = $1 and liker_id <> $1${dislikeSince}
+       select count(*)::int from day_dislikes dd
+       where dd.target_user_id = $1 and dd.liker_id <> $1${dislikeSince}${readDislike}
      ) + (
-       select count(*)::int from day_comments
-       where target_user_id = $1 and author_id <> $1
-         and (reply_to_user_id is null or reply_to_user_id <> $1)${commentSince}
+       select count(*)::int from day_comments c
+       where c.target_user_id = $1 and c.author_id <> $1
+         and (c.reply_to_user_id is null or c.reply_to_user_id <> $1)${commentSince}${readComment}
      ) + (
-       select count(*)::int from day_comments
-       where reply_to_user_id = $1 and author_id <> $1${replySince}
+       select count(*)::int from day_comments c
+       where c.reply_to_user_id = $1 and c.author_id <> $1${replySince}${readReply}
      ) + (
        select count(*)::int from day_comment_likes l
        join day_comments c on c.id = l.comment_id
-       where c.author_id = $1 and l.liker_id <> $1${commentLikeSince}
+       where c.author_id = $1 and l.liker_id <> $1${commentLikeSince}${readCommentLike}
      ) + (
        select count(*)::int from day_comment_dislikes d
        join day_comments c on c.id = d.comment_id
-       where c.author_id = $1 and d.disliker_id <> $1${commentDislikeSince}
+       where c.author_id = $1 and d.disliker_id <> $1${commentDislikeSince}${readCommentDislike}
      ) + (
        select count(*)::int from follows f
-       where f.followee_id = $1 and f.follower_id <> $1${followSince}
+       where f.followee_id = $1 and f.follower_id <> $1${followSince}${readFollow}
      ) as total`,
     params,
   )
@@ -276,44 +331,49 @@ export async function getCommunityInboxUnread(userId) {
     items,
   ] = await Promise.all([
       query(
-        `select count(*)::int as c from day_likes
-         where target_user_id = $1 and liker_id <> $1 and created_at > $2`,
+        `select count(*)::int as c from day_likes dl
+         where dl.target_user_id = $1 and dl.liker_id <> $1 and dl.created_at > $2${READ_EXCLUDE_LIKE}`,
         [userId, seenAt],
       ),
       query(
-        `select count(*)::int as c from day_dislikes
-         where target_user_id = $1 and liker_id <> $1 and created_at > $2`,
+        `select count(*)::int as c from day_dislikes dd
+         where dd.target_user_id = $1 and dd.liker_id <> $1 and dd.created_at > $2${READ_EXCLUDE_DISLIKE}`,
         [userId, seenAt],
       ),
       query(
-        `select count(*)::int as c from day_comments
-         where target_user_id = $1 and author_id <> $1 and created_at > $2
-           and (reply_to_user_id is null or reply_to_user_id <> $1)`,
+        `select count(*)::int as c from day_comments c
+         where c.target_user_id = $1 and c.author_id <> $1 and c.created_at > $2
+           and (c.reply_to_user_id is null or c.reply_to_user_id <> $1)${READ_EXCLUDE_COMMENT}`,
         [userId, seenAt],
       ),
       query(
-        `select count(*)::int as c from day_comments
-         where reply_to_user_id = $1 and author_id <> $1 and created_at > $2`,
+        `select count(*)::int as c from day_comments c
+         where c.reply_to_user_id = $1 and c.author_id <> $1 and c.created_at > $2${READ_EXCLUDE_REPLY}`,
         [userId, seenAt],
       ),
       query(
         `select count(*)::int as c from day_comment_likes l
          join day_comments c on c.id = l.comment_id
-         where c.author_id = $1 and l.liker_id <> $1 and l.created_at > $2`,
+         where c.author_id = $1 and l.liker_id <> $1 and l.created_at > $2${READ_EXCLUDE_COMMENT_LIKE}`,
         [userId, seenAt],
       ),
       query(
         `select count(*)::int as c from day_comment_dislikes d
          join day_comments c on c.id = d.comment_id
-         where c.author_id = $1 and d.disliker_id <> $1 and d.created_at > $2`,
+         where c.author_id = $1 and d.disliker_id <> $1 and d.created_at > $2${READ_EXCLUDE_COMMENT_DISLIKE}`,
         [userId, seenAt],
       ),
       query(
-        `select count(*)::int as c from follows
-         where followee_id = $1 and follower_id <> $1 and created_at > $2`,
+        `select count(*)::int as c from follows f
+         where f.followee_id = $1 and f.follower_id <> $1 and f.created_at > $2${READ_EXCLUDE_FOLLOW}`,
         [userId, seenAt],
       ),
-      loadInboxItems(userId, { since: seenAt, limit: 8, offset: 0 }),
+      loadInboxItems(userId, {
+        since: seenAt,
+        limit: 8,
+        offset: 0,
+        excludeRead: true,
+      }),
     ])
 
   const likesOnMyCard = likeCount.rows[0]?.c ?? 0
@@ -356,7 +416,7 @@ export async function listCommunityInbox(
   if (mode === 'history') {
     await resolveSeenAt(userId)
     const [total, items] = await Promise.all([
-      loadInboxTotal(userId, null),
+      loadInboxTotal(userId, null, false),
       loadInboxItems(userId, { limit: safeLimit, offset: safeOffset }),
     ])
     return {
@@ -376,8 +436,13 @@ export async function listCommunityInbox(
     }
   }
   const [total, items] = await Promise.all([
-    loadInboxTotal(userId, seenAt),
-    loadInboxItems(userId, { since: seenAt, limit: safeLimit, offset: safeOffset }),
+    loadInboxTotal(userId, seenAt, true),
+    loadInboxItems(userId, {
+      since: seenAt,
+      limit: safeLimit,
+      offset: safeOffset,
+      excludeRead: true,
+    }),
   ])
   return {
     mode,
@@ -393,6 +458,21 @@ export async function markCommunityInboxRead(userId) {
     [userId],
   )
   return { ok: true, count: 0 }
+}
+
+export async function markCommunityInboxItemRead(userId, inboxId) {
+  if (typeof inboxId !== 'string' || !inboxId.trim()) {
+    const err = new Error('inboxId required')
+    err.status = 400
+    throw err
+  }
+  await query(
+    `insert into community_inbox_reads (user_id, inbox_id)
+     values ($1, $2)
+     on conflict (user_id, inbox_id) do nothing`,
+    [userId, inboxId.trim()],
+  )
+  return { ok: true }
 }
 
 export { loadInboxItems, mapInboxRow, emptyInbox }

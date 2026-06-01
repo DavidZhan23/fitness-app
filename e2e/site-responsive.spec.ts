@@ -79,13 +79,14 @@ const SITE_ROUTES: SiteRoute[] = [
     path: '/templates',
     anchors: [
       {
-        label: '我的模板',
-        getLocator: (p) => p.getByRole('heading', { name: '我的模板' }),
+        label: '小满模板库',
+        getLocator: (p) => p.getByRole('heading', { name: '小满模板库' }),
       },
     ],
     bottomAnchor: {
       label: '最后一张模板卡',
-      getLocator: (p) => p.locator('.app-main__inner ul li .responsive-list-card').last(),
+      getLocator: (p) =>
+        p.locator('.log-template-chip-grid .template-manage-chip').last(),
     },
   },
   {
@@ -109,7 +110,10 @@ const SITE_ROUTES: SiteRoute[] = [
     anchors: [
       {
         label: '保存',
-        getLocator: (p) => p.getByRole('button', { name: '保存' }),
+        getLocator: (p) =>
+          p
+            .getByRole('region', { name: '手动填写' })
+            .getByRole('button', { name: '保存' }),
       },
     ],
   },
@@ -193,6 +197,9 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         }
 
         for (const anchor of route.anchors) {
+          if (route.name === 'log-exercise') {
+            await page.getByRole('button', { name: '不用 AI？直接填写 kcal' }).click()
+          }
           await assertLocatorInScrollport(
             page,
             anchor.getLocator(page),
@@ -219,10 +226,10 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
 
         if (route.bottomAnchor) {
           if (route.name === 'templates') {
-            const cards = page.locator(
-              '.app-main__inner ul li .responsive-list-card',
+            const chips = page.locator(
+              '.log-template-chip-grid .template-manage-chip',
             )
-            await expect(cards.first()).toBeVisible()
+            await expect(chips.first()).toBeVisible()
           }
           await assertContentClearOfTabbar(
             page,

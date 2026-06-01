@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PersonalDayStatus } from '../components/CommunityDayStatus'
 import { DeficitCard } from '../components/DeficitCard'
 import { HeroGreeting } from '../components/HeroGreeting'
+import { TodayFeedbackCard } from '../components/TodayFeedbackCard'
 import { TodayRecordsSection } from '../components/TodayRecordsSection'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
@@ -22,6 +22,8 @@ import {
 } from '../lib/metabolism'
 import { displayName } from '../lib/profileDisplay'
 import { formatDateKey } from '../lib/streaks'
+import { buildTodayHonors } from '../lib/todayHonors'
+import { countMealDisplayEntries } from '../lib/todayMealGroups'
 import type { DayLog, Exercise, Meal } from '../types'
 
 export function TodayPage() {
@@ -74,6 +76,19 @@ export function TodayPage() {
     await load()
   }
 
+  const handleBatchDeleteRecords = async (
+    exerciseIds: string[],
+    mealIds: string[],
+  ) => {
+    for (const id of exerciseIds) {
+      await deleteExercise(id)
+    }
+    for (const id of mealIds) {
+      await deleteMeal(id)
+    }
+    await load()
+  }
+
   const handleUpdateExercise = async (
     id: string,
     name: string,
@@ -123,6 +138,7 @@ export function TodayPage() {
 
   const greeting = displayName(profile, user)
   const noRecordsToday = exercises.length === 0 && meals.length === 0
+  const mealDisplayCount = countMealDisplayEntries(meals)
 
   return (
     <PageShell>
@@ -142,6 +158,9 @@ export function TodayPage() {
           mealKcal={mealKcal}
           threshold={threshold}
           fullDayBmr={fullDayBmr}
+          showExplanationButton
+          showMetabolismDetail
+          profile={profile}
         />
       </div>
 
@@ -160,12 +179,15 @@ export function TodayPage() {
         </Link>
       </StatsGrid>
 
-      <PersonalDayStatus
-        variant="compact"
-        deficit={deficit}
-        exerciseKcal={exerciseKcal}
-        mealKcal={mealKcal}
-        dailyBmr={fullDayBmr}
+      <TodayFeedbackCard
+        exerciseCount={exercises.length}
+        mealCount={mealDisplayCount}
+        honors={buildTodayHonors({
+          deficit,
+          exerciseKcal,
+          mealKcal,
+          dailyBmr: fullDayBmr,
+        })}
       />
 
       <TodayRecordsSection
@@ -175,6 +197,7 @@ export function TodayPage() {
         mealKcal={mealKcal}
         onDeleteExercise={handleDeleteExercise}
         onDeleteMeal={handleDeleteMeal}
+        onBatchDelete={handleBatchDeleteRecords}
         onUpdateExercise={handleUpdateExercise}
         onUpdateMeal={handleUpdateMeal}
       />

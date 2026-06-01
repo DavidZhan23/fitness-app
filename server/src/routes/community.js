@@ -32,6 +32,7 @@ import {
 import {
   getCommunityInboxUnread,
   listCommunityInbox,
+  markCommunityInboxItemRead,
   markCommunityInboxRead,
 } from '../communityInbox.js'
 
@@ -63,6 +64,16 @@ router.post(
   authMiddleware,
   asyncHandler(async (req, res) => {
     const data = await markCommunityInboxRead(req.userId)
+    res.json(data)
+  }),
+)
+
+router.post(
+  '/community/inbox/mark-read-item',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const inboxId = req.body?.inboxId
+    const data = await markCommunityInboxItemRead(req.userId, inboxId)
     res.json(data)
   }),
 )

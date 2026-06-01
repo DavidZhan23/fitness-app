@@ -1,5 +1,5 @@
 /**
- * DeepSeek 文本估算 provider（deepseek-chat，非 reasoner，低 token）
+ * DeepSeek 文本估算 provider（deepseek-chat，非 reasoner）
  */
 
 const API_URL =
@@ -8,6 +8,49 @@ const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
 const TIMEOUT_MS = Number(process.env.DEEPSEEK_TIMEOUT_MS || 25_000)
 const MAX_HTTP_RETRIES = 3
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503])
+const MAX_TOKENS = 768
+const REASON_MAX_LEN = 60
+export const FALLBACK_REASON = '按整体描述估算，可按实际份量调整'
+
+/**
+ * @param {unknown} raw
+ * @returns {'high' | 'medium' | 'low'}
+ */
+export function normalizeConfidence(raw) {
+  const v = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+  if (v === 'high' || v === 'medium' || v === 'low') return v
+  return 'medium'
+}
+
+/**
+ * @param {'high' | 'medium' | 'low'} confidence
+ */
+export function defaultReason(confidence) {
+  switch (confidence) {
+    case 'high':
+      return '按明确份量估算'
+    case 'low':
+      return '描述较模糊，按普通份量估算'
+    default:
+      return '按常见份量估算'
+  }
+}
+
+/**
+ * @param {unknown} raw
+ * @param {'high' | 'medium' | 'low'} confidence
+ */
+export function normalizeReason(raw, confidence) {
+  let text = String(raw ?? '').trim()
+  if (!text) text = defaultReason(confidence)
+  const chars = Array.from(text)
+  if (chars.length > REASON_MAX_LEN) {
+    return chars.slice(0, REASON_MAX_LEN).join('')
+  }
+  return text
+}
 
 export function getDeepSeekApiKey() {
   const raw = process.env.DEEPSEEK_API_KEY
@@ -29,7 +72,50 @@ function clampKcal(n) {
   return Math.min(9999, v)
 }
 
-function extractKcalFromContent(content) {
+function stripCodeFence(text) {
+  const match = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  return match ? match[1].trim() : text
+}
+
+function extractFirstJsonObject(text) {
+  const start = text.indexOf('{')
+  if (start === -1) return null
+
+  let depth = 0
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i]
+    if (ch === '{') depth += 1
+    else if (ch === '}') {
+      depth -= 1
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, i + 1))
+        } catch {
+          return null
+        }
+      }
+    }
+  }
+  return null
+}
+
+function tryParseJsonObject(text) {
+  try {
+    const value = JSON.parse(text)
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value
+    }
+  } catch {
+    /* fall through */
+  }
+  return null
+}
+
+/**
+ * @param {string} content
+ * @returns {{ kcal?: number, items?: unknown[] }}
+ */
+export function parseEstimatePayload(content) {
   const text = String(content || '').trim()
   if (!text) {
     const err = new Error('AI 未返回内容，请稍后重试')
@@ -37,18 +123,107 @@ function extractKcalFromContent(content) {
     throw err
   }
 
-  try {
-    const j = JSON.parse(text)
-    if (j.kcal != null) return clampKcal(j.kcal)
-  } catch {
-    /* fall through */
+  let parsed = tryParseJsonObject(text)
+  if (parsed) return parsed
+
+  const unfenced = stripCodeFence(text)
+  if (unfenced !== text) {
+    parsed = tryParseJsonObject(unfenced.trim())
+    if (parsed) return parsed
+    parsed = extractFirstJsonObject(unfenced)
+    if (parsed) return parsed
   }
 
-  const jsonMatch = text.match(/\{[\s\S]*?"kcal"\s*:\s*(\d+)[\s\S]*?\}/i)
-  if (jsonMatch) return clampKcal(jsonMatch[1])
+  parsed = extractFirstJsonObject(text)
+  if (parsed) return parsed
 
   const numMatch = text.match(/\b(\d{1,4})\b/)
-  if (numMatch) return clampKcal(numMatch[1])
+  if (numMatch) return { kcal: Number(numMatch[1]) }
+
+  const err = new Error('无法解析 AI 返回的热量，请改描述后重试')
+  err.status = 502
+  throw err
+}
+
+/**
+ * @param {unknown[]} rawItems
+ * @param {'meal'|'exercise'} kind
+ */
+export function normalizeEstimateItems(rawItems, kind) {
+  if (!Array.isArray(rawItems)) return []
+
+  const defaultUnit = kind === 'meal' ? '份' : '分钟'
+  const out = []
+
+  for (const raw of rawItems) {
+    if (!raw || typeof raw !== 'object') continue
+
+    const name = String(raw.name ?? '').trim()
+    if (!name) continue
+
+    const quantityRaw = raw.quantity
+    const quantity =
+      quantityRaw == null || quantityRaw === ''
+        ? 1
+        : Number(quantityRaw)
+    if (!Number.isFinite(quantity) || quantity <= 0) continue
+
+    const unit = String(raw.unit ?? '').trim() || defaultUnit
+
+    const kcalRaw = Math.round(Number(raw.kcal))
+    if (!Number.isFinite(kcalRaw) || kcalRaw <= 0) continue
+    const kcal = Math.min(5000, Math.max(1, kcalRaw))
+
+    const confidence = normalizeConfidence(raw.confidence)
+    const reason = normalizeReason(raw.reason, confidence)
+
+    out.push({ name, quantity, unit, kcal, confidence, reason })
+  }
+
+  return out
+}
+
+/**
+ * @param {{ kcal?: number, items?: unknown[] }} parsed
+ * @param {'meal'|'exercise'} kind
+ * @param {{ description?: string }} [options]
+ * @returns {{
+ *   kcal: number,
+ *   items?: {
+ *     name: string,
+ *     quantity: number,
+ *     unit: string,
+ *     kcal: number,
+ *     confidence: 'high' | 'medium' | 'low',
+ *     reason: string,
+ *   }[],
+ * }}
+ */
+export function buildEstimateResult(parsed, kind, options = {}) {
+  const items = normalizeEstimateItems(parsed.items, kind)
+  if (items.length >= 1) {
+    const kcal = items.reduce((sum, item) => sum + item.kcal, 0)
+    return { kcal, items }
+  }
+
+  if (parsed.kcal != null) {
+    const kcal = clampKcal(parsed.kcal)
+    const fallbackName = String(options.description ?? '').trim() || '整体'
+    const defaultUnit = kind === 'meal' ? '份' : '分钟'
+    return {
+      kcal,
+      items: [
+        {
+          name: fallbackName,
+          quantity: 1,
+          unit: defaultUnit,
+          kcal,
+          confidence: 'medium',
+          reason: FALLBACK_REASON,
+        },
+      ],
+    }
+  }
 
   const err = new Error('无法解析 AI 返回的热量，请改描述后重试')
   err.status = 502
@@ -66,7 +241,7 @@ function extractMessageContent(choice) {
   const reasoning = msg.reasoning_content
   if (reasoning != null && String(reasoning).trim()) {
     const num = String(reasoning).match(/\b(\d{1,4})\b/)
-    if (num) return `{"kcal":${num[1]}}`
+    if (num) return String(num[1])
   }
 
   return ''
@@ -77,17 +252,26 @@ function buildSystemPrompt(type, profile) {
   const weightHint =
     weight && weight > 0 ? `参考体重约 ${weight} kg。` : '参考普通成年人体重。'
 
+  const jsonOnly =
+    '只输出一个 JSON object，不要 Markdown，不要代码块，不要解释文字。' +
+    '格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":整数,"confidence":"high|medium|low","reason":"简短估算依据"},...]}。' +
+    '每条 item 的 kcal 在 1-5000；quantity 为正数。' +
+    'reason 只能是面向用户的简短估算依据（中文 8-40 字，说明份量或单位假设），禁止 chain-of-thought、step-by-step reasoning 或推理过程。' +
+    'confidence 规则：明确 g/ml/分钟 → high；一碗/一个/一杯 → medium；一盘/一些/一顿/正常吃了 → low。' +
+    '缺单位时 meal 默认 份×1；exercise 默认 分钟或按描述。'
+
   if (type === 'exercise') {
     return (
-      '你是运动消耗估算器。根据用户中文描述（运动类型、时长、强度、距离等），' +
-      `估算消耗千卡。${weightHint}` +
-      '禁止解释。只回复 JSON：{"kcal":整数}，kcal 在 1-5000。'
+      '你是运动消耗估算器。将用户中文描述拆成多条运动分别估算消耗千卡。' +
+      `${weightHint}单位可用：分钟、小时、km、次、组 等。` +
+      jsonOnly
     )
   }
 
   return (
-    '你是饮食摄入估算器。根据用户中文描述（食物种类、分量、做法），' +
-    '估算摄入千卡。禁止解释。只回复 JSON：{"kcal":整数}，kcal 在 1-5000。'
+    '你是饮食摄入估算器。将用户中文描述拆成多条食物分别估算摄入千卡。' +
+    '例如「一碗牛肉，一盘鸡蛋」应拆成两条并分别估算。' +
+    `${jsonOnly}单位可用：份、碗、g、ml、个 等。`
   )
 }
 
@@ -186,7 +370,7 @@ function contentPreview(data) {
 function buildPayload({ type, description, profile, mode }) {
   const base = {
     model: MODEL,
-    max_tokens: 64,
+    max_tokens: MAX_TOKENS,
     temperature: 0.1,
   }
 
@@ -214,6 +398,7 @@ function buildPayload({ type, description, profile, mode }) {
 }
 
 async function tryStrategy(apiKey, options) {
+  const kind = options.type === 'meal' ? 'meal' : 'exercise'
   const { data } = await requestDeepSeekWithRetry(
     apiKey,
     buildPayload(options),
@@ -225,8 +410,8 @@ async function tryStrategy(apiKey, options) {
     err.status = 502
     throw err
   }
-  const kcal = extractKcalFromContent(content)
-  return kcal
+  const parsed = parseEstimatePayload(content)
+  return buildEstimateResult(parsed, kind, { description: options.description })
 }
 
 /**
@@ -267,8 +452,7 @@ export async function estimateKcalFromDescription(input) {
 
   for (const mode of modes) {
     try {
-      const kcal = await tryStrategy(apiKey, { ...baseOpts, mode })
-      return { kcal }
+      return await tryStrategy(apiKey, { ...baseOpts, mode })
     } catch (e) {
       lastError = e.message || lastError
       if (e.status === 401 || e.status === 402 || e.status === 504) break
@@ -292,6 +476,7 @@ export async function deepseekTextEstimator(input) {
   })
   return {
     kcal: result.kcal,
+    ...(result.items?.length ? { items: result.items } : {}),
     providerId: DEEPSEEK_TEXT_PROVIDER_ID,
   }
 }

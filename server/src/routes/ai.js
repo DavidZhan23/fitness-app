@@ -25,7 +25,9 @@ router.post(
       profile: rows[0] || {},
       modality: 'text',
     })
-    res.json({ kcal: result.kcal })
+    const body = { kcal: result.kcal }
+    if (result.items?.length) body.items = result.items
+    res.json(body)
   }),
 )
 

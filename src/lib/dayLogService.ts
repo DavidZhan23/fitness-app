@@ -41,8 +41,9 @@ export async function addMeal(
   dayLogId: string,
   name: string,
   kcal: number,
+  batchId?: string,
 ): Promise<void> {
-  await httpData.addMeal(dayLogId, name, kcal)
+  await httpData.addMeal(dayLogId, name, kcal, batchId)
   bumpCommunityListAfterLogChange()
 }
 

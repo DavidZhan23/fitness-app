@@ -65,16 +65,21 @@ for (const viewport of MOBILE_VIEWPORTS) {
         '社区 全部 tab',
       )
 
-      // Templates (via log flow; no tab bar item)
+      // Templates (via log templates mode; no tab bar item)
       await nav.getByRole('link', { name: '今日' }).click()
       await page.getByRole('link', { name: '+ 记运动' }).click()
-      await page.getByRole('button', { name: '管理快捷模板' }).click()
-      await expect(page.getByRole('heading', { name: '我的模板' })).toBeVisible()
+      await page.getByRole('button', { name: '查看全部' }).click()
+      await expect(page.getByRole('heading', { name: '小满快捷记' })).toBeVisible()
+      await page
+        .getByRole('region', { name: '常用模板' })
+        .getByRole('link', { name: '管理模板' })
+        .click()
+      await expect(page.getByRole('heading', { name: '小满模板库' })).toBeVisible()
       await assertLayoutShell(page, `${viewport.name} /templates`)
       await assertLocatorInScrollport(
         page,
-        page.getByRole('heading', { name: '我的模板' }),
-        '我的模板标题',
+        page.getByRole('heading', { name: '小满模板库' }),
+        '小满模板库标题',
       )
 
       // Settings
@@ -90,14 +95,18 @@ for (const viewport of MOBILE_VIEWPORTS) {
       // Log exercise (standalone shell, no tabbar)
       await nav.getByRole('link', { name: '今日' }).click()
       await page.getByRole('link', { name: '+ 记运动' }).click()
-      await expect(page.getByRole('heading', { name: '记运动' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: '小满记运动' })).toBeVisible()
+      await expect(page.locator('.log-ai-section')).toBeVisible()
+      await page.getByRole('button', { name: '不用 AI？直接填写 kcal' }).click()
       await assertStandaloneNoHorizontalOverflow(
         page,
         `${viewport.name} /log/exercise`,
       )
       await assertLocatorInScrollport(
         page,
-        page.getByRole('button', { name: '保存' }),
+        page
+          .getByRole('region', { name: '手动填写' })
+          .getByRole('button', { name: '保存' }),
         '记运动 保存',
         { standalone: true },
       )
