@@ -12,6 +12,14 @@ const MAX_TOKENS = 768
 const REASON_MAX_LEN = 60
 export const FALLBACK_REASON = '按整体描述估算，可按实际份量调整'
 
+/** 运动 AI 估算：仅增量耗能，供 prompt 与单测断言 */
+export const EXERCISE_NET_ACTIVITY_RULES =
+  '只估算运动带来的增量消耗（额外耗能），严禁计入基础代谢、静息代谢、BMR、RMR 或同时段内的维持生命体征消耗。' +
+  '用户给出的时长/距离/次数仅对应该活动的动态消耗；勿用「时长×全天基础代谢率」或 TDEE 静息部分折算。' +
+  '宜用 MET 等思路估净活动耗能（活动 MET 减去 1.0 后按体重与时长计），例如步行 2 小时只估步行额外千卡，不含 2 小时内的基础代谢。' +
+  '慢跑、骑车、力量训练等同理；睡觉、久坐、日常维持体征不计入。' +
+  'items 的 reason 可简要说明强度/份量假设，并体现为增量运动消耗（非含基础代谢）。'
+
 /**
  * @param {unknown} raw
  * @returns {'high' | 'medium' | 'low'}
@@ -262,7 +270,8 @@ function buildSystemPrompt(type, profile) {
 
   if (type === 'exercise') {
     return (
-      '你是运动消耗估算器。将用户中文描述拆成多条运动分别估算消耗千卡。' +
+      '你是运动增量消耗估算器。将用户中文描述拆成多条运动分别估算千卡。' +
+      EXERCISE_NET_ACTIVITY_RULES +
       `${weightHint}单位可用：分钟、小时、km、次、组 等。` +
       jsonOnly
     )
@@ -276,9 +285,15 @@ function buildSystemPrompt(type, profile) {
 }
 
 function buildMinimalUserPrompt(type, description) {
-  const label = type === 'exercise' ? '运动消耗' : '饮食摄入'
+  if (type === 'exercise') {
+    return (
+      '请估算以下描述的运动增量消耗千卡数（仅活动额外耗能，不含基础代谢/静息代谢）。' +
+      `描述：${description}。` +
+      '只回复一个正整数，不要任何其他文字或标点。'
+    )
+  }
   return (
-    `请估算以下内容的${label}千卡数。` +
+    `请估算以下内容的饮食摄入千卡数。` +
     `描述：${description}。` +
     '只回复一个正整数，不要任何其他文字或标点。'
   )

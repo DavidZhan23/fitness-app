@@ -2,12 +2,21 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEstimateResult,
   defaultReason,
+  EXERCISE_NET_ACTIVITY_RULES,
   FALLBACK_REASON,
   normalizeConfidence,
   normalizeEstimateItems,
   normalizeReason,
   parseEstimatePayload,
 } from '../src/ai/providers/deepseekText.js'
+
+describe('EXERCISE_NET_ACTIVITY_RULES', () => {
+  it('requires net activity kcal excluding basal metabolism', () => {
+    expect(EXERCISE_NET_ACTIVITY_RULES).toMatch(/基础代谢/)
+    expect(EXERCISE_NET_ACTIVITY_RULES).toMatch(/增量消耗|额外耗能/)
+    expect(EXERCISE_NET_ACTIVITY_RULES).toMatch(/步行/)
+  })
+})
 
 describe('parseEstimatePayload', () => {
   it('parses pure JSON with items', () => {

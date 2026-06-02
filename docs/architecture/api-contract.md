@@ -34,7 +34,7 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| POST | `/ai/estimate-kcal` | DeepSeek 估算千卡（需服务端 Key）。Body: `{ type: 'exercise'|'meal', description: string }`。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**：`[{ name, quantity, unit, kcal, confidence?, reason? }]`（`confidence`: `high` \| `medium` \| `low`；`reason`: 服务端 normalize 后 ≤60 Unicode 字符的简短估算依据），此时 `kcal` 为各 item 之和；仅顶层 kcal 时返回单条 fallback item |
+| POST | `/ai/estimate-kcal` | DeepSeek 估算千卡（需服务端 Key）。Body: `{ type: 'exercise'|'meal', description: string }`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**（不含基础代谢/静息代谢）；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**：`[{ name, quantity, unit, kcal, confidence?, reason? }]`（`confidence`: `high` \| `medium` \| `low`；`reason`: 服务端 normalize 后 ≤60 Unicode 字符的简短估算依据），此时 `kcal` 为各 item 之和；仅顶层 kcal 时返回单条 fallback item |
 
 ## 遥测（轻量埋点）
 
