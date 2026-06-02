@@ -22,10 +22,11 @@ export function useCommunityInbox() {
     }
     try {
       const data = await httpData.getCommunityInboxUnread()
-      setUnreadCount(data.count)
+      // 互动入口只展示互动类消息，提醒数字也保持同口径，避免“看不到的 +1”
+      setUnreadCount(data.interactionCount)
       setInteractionCount(data.interactionCount)
       setFollowersOnMe(data.followersOnMe)
-      await syncAppIconBadge(data.count)
+      await syncAppIconBadge(data.interactionCount)
     } catch {
       /* 网络抖动时保留上次数字 */
     }

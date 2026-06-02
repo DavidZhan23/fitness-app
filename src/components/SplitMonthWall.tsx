@@ -44,7 +44,7 @@ export function SplitMonthWall({
           active={pane === 'deficit'}
           onClick={() => setPane('deficit')}
         >
-          代谢墙
+          热量墙
         </WallPaneTab>
       </SegmentedControl>
 

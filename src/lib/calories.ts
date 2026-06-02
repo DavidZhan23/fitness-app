@@ -94,39 +94,39 @@ export function hasDeficitCheck(deficit: number, threshold: number): boolean {
 export function getExerciseIntensityLevel(kcal: number): 0 | 1 | 2 | 3 | 4 {
   kcal = toKcal(kcal)
   if (kcal <= 0) return 0
-  if (kcal < 150) return 1
-  if (kcal < 300) return 2
-  if (kcal < 500) return 3
+  if (kcal < 200) return 1
+  if (kcal < 400) return 2
+  if (kcal < 600) return 3
+  // 600-799 与 800+ 都归入最高档（4 档）
   return 4
 }
 
 export type DeficitHeatmapTone = 'neutral' | 'deficit' | 'surplus'
 
-/** 超出阈值部分的强度 1–4（与缺口/盈余色阶对称） */
+/** 缺口/盈余强度分档：150 / 300 / 450 / 600+ */
 function deficitMagnitudeToLevel(magnitude: number): 0 | 1 | 2 | 3 | 4 {
   if (magnitude <= 0) return 0
-  if (magnitude < 100) return 1
+  if (magnitude < 150) return 1
   if (magnitude < 300) return 2
-  if (magnitude < 500) return 3
+  if (magnitude < 450) return 3
   return 4
 }
 
-/** 打卡格：绿=缺口、红=盈余，色阶与阈值对称 */
+/** 打卡格：绿=缺口、红=盈余，按固定分档着色（150/300/450/600+） */
 export function getDeficitHeatmapCell(
   deficit: number,
-  threshold: number,
+  _threshold: number,
 ): { level: 0 | 1 | 2 | 3 | 4; tone: DeficitHeatmapTone } {
   deficit = toKcal(deficit)
-  threshold = toKcal(threshold)
-  if (deficit > threshold) {
+  if (deficit > 0) {
     return {
-      level: deficitMagnitudeToLevel(deficit - threshold),
+      level: deficitMagnitudeToLevel(deficit),
       tone: 'deficit',
     }
   }
-  if (deficit < -threshold) {
+  if (deficit < 0) {
     return {
-      level: deficitMagnitudeToLevel(-threshold - deficit),
+      level: deficitMagnitudeToLevel(Math.abs(deficit)),
       tone: 'surplus',
     }
   }

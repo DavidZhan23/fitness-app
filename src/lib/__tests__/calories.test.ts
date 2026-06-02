@@ -53,10 +53,20 @@ describe('calories', () => {
     expect(tdee).toBe(2267)
   })
 
-  it('getDeficitHeatmapCell classifies deficit / surplus / neutral', () => {
-    expect(getDeficitHeatmapCell(400, 300).tone).toBe('deficit')
-    expect(getDeficitHeatmapCell(-400, 300).tone).toBe('surplus')
-    expect(getDeficitHeatmapCell(50, 300).tone).toBe('neutral')
+  it('getDeficitHeatmapCell classifies by fixed deficit bands', () => {
+    expect(getDeficitHeatmapCell(0, 300)).toEqual({ level: 0, tone: 'neutral' })
+    expect(getDeficitHeatmapCell(149, 300)).toEqual({ level: 1, tone: 'deficit' })
+    expect(getDeficitHeatmapCell(150, 300)).toEqual({ level: 2, tone: 'deficit' })
+    expect(getDeficitHeatmapCell(300, 300)).toEqual({ level: 3, tone: 'deficit' })
+    expect(getDeficitHeatmapCell(450, 300)).toEqual({ level: 4, tone: 'deficit' })
+    expect(getDeficitHeatmapCell(-149, 300)).toEqual({
+      level: 1,
+      tone: 'surplus',
+    })
+    expect(getDeficitHeatmapCell(-600, 300)).toEqual({
+      level: 4,
+      tone: 'surplus',
+    })
   })
 
   it('legendSwatchLevel maps 0 to level 1 swatch', () => {
@@ -90,7 +100,7 @@ describe('calories', () => {
   it('getLiveWallLegendHighlight uses live exercise and deficit', () => {
     const heatmap = getDeficitHeatmapCell(-744, 300)
     expect(getLiveWallLegendHighlight(300, heatmap, false)).toEqual({
-      exerciseLevel: 3,
+      exerciseLevel: 2,
       deficitLevel: heatmap.level,
       deficitTone: 'surplus',
     })
@@ -105,7 +115,7 @@ describe('calories', () => {
         exerciseKcal: 300,
         deficitHeatmap: heatmap,
       }),
-    ).toBe('heatmap-exercise-3')
+    ).toBe('heatmap-exercise-2')
     expect(
       getCalendarDayDetailBackgroundClass({
         beforeAccount: false,

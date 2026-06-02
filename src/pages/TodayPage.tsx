@@ -23,7 +23,6 @@ import {
 import { displayName } from '../lib/profileDisplay'
 import { formatDateKey } from '../lib/streaks'
 import { buildTodayHonors } from '../lib/todayHonors'
-import { countMealDisplayEntries } from '../lib/todayMealGroups'
 import type { DayLog, Exercise, Meal } from '../types'
 
 export function TodayPage() {
@@ -138,7 +137,6 @@ export function TodayPage() {
 
   const greeting = displayName(profile, user)
   const noRecordsToday = exercises.length === 0 && meals.length === 0
-  const mealDisplayCount = countMealDisplayEntries(meals)
 
   return (
     <PageShell>
@@ -181,7 +179,7 @@ export function TodayPage() {
 
       <TodayFeedbackCard
         exerciseCount={exercises.length}
-        mealCount={mealDisplayCount}
+        deficit={deficit}
         honors={buildTodayHonors({
           deficit,
           exerciseKcal,

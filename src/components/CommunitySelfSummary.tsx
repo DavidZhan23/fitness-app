@@ -139,84 +139,79 @@ export function CommunitySelfSummary({
   }
 
   return (
-    <article
-      className={`community-self-card responsive-list-card group relative overflow-hidden rounded-2xl ${fxClass}`}
-      aria-label="我的社区"
+    <Link
+      to={profilePath}
+      onClick={handleNavigate}
+      className={`community-self-card community-self-card--link responsive-list-card group relative overflow-hidden rounded-2xl ${fxClass}`}
+      aria-label="打开我的个人主页"
     >
       <CommunityMemberHonorFx badge={todayBadge} />
       <div className="community-card-fx-inner">
         <div className="community-member-card__body">
           <div className="community-self-card__top-row">
-          <div className="community-self-card__identity">
-            <UserAvatar
-              variant="community"
-              size="sm"
-              nickname={member.nickname}
-              avatarUrl={member.avatarUrl}
-              isSelf
-            />
-            <div className="community-self-card__identity-main min-w-0">
-              <div className="community-self-card__name-row">
-                <span className="community-self-card__name responsive-truncate text-sm font-semibold text-primary">
-                  {member.nickname}
-                </span>
-                <span className="community-self-card__self-badge text-[10px] font-normal accent-exercise">
-                  我
-                </span>
+            <div className="community-self-card__identity">
+              <UserAvatar
+                variant="community"
+                size="sm"
+                nickname={member.nickname}
+                avatarUrl={member.avatarUrl}
+                isSelf
+              />
+              <div className="community-self-card__identity-main min-w-0">
+                <div className="community-self-card__name-row">
+                  <span className="community-self-card__name responsive-truncate text-sm font-semibold text-primary">
+                    {member.nickname}
+                  </span>
+                  <span className="community-self-card__self-badge text-[10px] font-normal accent-exercise">
+                    我
+                  </span>
+                </div>
+                {!isToday ? (
+                  <p className="text-[10px] text-muted">{member.today.date}</p>
+                ) : null}
               </div>
-              {!isToday ? (
-                <p className="text-[10px] text-muted">{member.today.date}</p>
-              ) : null}
+            </div>
+            <div className="community-self-card__deficit-top">
+              <DeficitDisplay
+                isHiddenForViewer={isHiddenForViewer}
+                deficit={deficit}
+                surplus={surplus}
+              />
             </div>
           </div>
-          <Link
-            to={profilePath}
-            className="community-self-card__profile-link"
-            onClick={handleNavigate}
-          >
-            查看主页
-          </Link>
-        </div>
 
-        <div className="community-member-card__badge-row">
-          {isHiddenForViewer ? (
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-secondary">今日未公开</p>
-              <p className="mt-0.5 text-[10px] leading-snug text-muted">
-                可在今日页记录或调整公开状态
+          <div className="community-member-card__badge-row">
+            {isHiddenForViewer ? (
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-secondary">今日未公开</p>
+                <p className="mt-0.5 text-[10px] leading-snug text-muted">
+                  可在今日页记录或调整公开状态
+                </p>
+              </div>
+            ) : (
+              honorBadges.length > 0 && <HonorBadgePills badges={honorBadges} />
+            )}
+          </div>
+
+          {!isHiddenForViewer ? (
+            <div className="community-member-card__meta-row">
+              <p className="community-member-card__stats truncate text-[10px] text-muted">
+                运动 {Math.round(exerciseKcal)} kcal
+                <span className="mx-1">·</span>
+                饮食 {Math.round(mealKcal)} kcal
               </p>
+              <div
+                className="community-self-card__reactions"
+                aria-label="今日互动"
+              >
+                <span>今日 {todayLikeCount} 赞</span>
+                <span aria-hidden>/</span>
+                <span>{todayDislikeCount} 踩</span>
+              </div>
             </div>
-          ) : (
-            honorBadges.length > 0 && <HonorBadgePills badges={honorBadges} />
-          )}
-          <div className="community-member-card__deficit">
-            <DeficitDisplay
-              isHiddenForViewer={isHiddenForViewer}
-              deficit={deficit}
-              surplus={surplus}
-            />
-          </div>
-        </div>
-
-        {!isHiddenForViewer ? (
-          <div className="community-member-card__meta-row">
-            <p className="community-member-card__stats truncate text-[10px] text-muted">
-              运动 {Math.round(exerciseKcal)} kcal
-              <span className="mx-1">·</span>
-              饮食 {Math.round(mealKcal)} kcal
-            </p>
-            <div
-              className="community-self-card__reactions"
-              aria-label="今日互动"
-            >
-              <span>今日 {todayLikeCount} 赞</span>
-              <span aria-hidden>/</span>
-              <span>{todayDislikeCount} 踩</span>
-            </div>
-          </div>
-        ) : null}
+          ) : null}
         </div>
       </div>
-    </article>
+    </Link>
   )
 }

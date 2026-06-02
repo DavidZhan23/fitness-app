@@ -35,7 +35,7 @@ function formatPanelDateLine(dateKey: string): string {
 }
 
 function gridSourceLabel(grid: MonthGridType): string {
-  return grid === 'exercise' ? '运动墙' : '代谢墙'
+  return grid === 'exercise' ? '运动墙' : '热量墙'
 }
 
 function deficitToneClass(

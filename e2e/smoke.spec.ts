@@ -110,7 +110,7 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByText('运动量少')).toBeVisible()
     await expect(page.getByText('盈余少')).toBeHidden()
 
-    await page.getByRole('tab', { name: '代谢墙' }).click()
+    await page.getByRole('tab', { name: '热量墙' }).click()
     await expect(page.getByText('运动量少')).toBeHidden()
     await expect(page.getByText('盈余少')).toBeVisible()
 

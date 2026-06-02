@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ResponsiveForm } from '../../components/ui/responsive'
 import { KJ_PER_KCAL } from '../../lib/calories'
 import {
@@ -40,6 +40,10 @@ interface SecondaryManualLogSectionProps {
   onNotice: (message: string) => void
   onError: (message: string) => void
   onSubmittingChange: (loading: boolean) => void
+  showNameField?: boolean
+  collapsible?: boolean
+  titleText?: string
+  descriptionText?: string
 }
 
 function suggestTemplateFields(input: {
@@ -93,7 +97,17 @@ function suggestTemplateFields(input: {
 }
 
 export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps) {
-  const [expanded, setExpanded] = useState(false)
+  const {
+    resolveKcal,
+    isExercise,
+    name,
+    mealInputMode,
+    grams,
+    kjPer100g,
+    packageKcal,
+  } = props
+  const isCollapsible = props.collapsible ?? true
+  const [expanded, setExpanded] = useState(!isCollapsible)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateFieldsTouched, setTemplateFieldsTouched] = useState(false)
   const [templateName, setTemplateName] = useState('')
@@ -101,24 +115,32 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   const [templateDefaultQuantity, setTemplateDefaultQuantity] = useState('')
   const [templateKcalPerUnit, setTemplateKcalPerUnit] = useState('')
 
-  const applySuggestion = () => {
-    const kcalValue = props.resolveKcal()
-    if (kcalValue == null || kcalValue <= 0 || !props.name.trim()) return
+  const applySuggestion = useCallback(() => {
+    const kcalValue = resolveKcal()
+    if (kcalValue == null || kcalValue <= 0 || !name.trim()) return
     const suggestion = suggestTemplateFields({
-      isExercise: props.isExercise,
-      name: props.name,
+      isExercise,
+      name,
       kcal: kcalValue,
-      mealInputMode: props.mealInputMode,
-      grams: props.grams,
-      kjPer100g: props.kjPer100g,
-      packageKcal: props.packageKcal,
+      mealInputMode,
+      grams,
+      kjPer100g,
+      packageKcal,
     })
     if (!suggestion) return
     setTemplateName(suggestion.name)
     setTemplateUnit(suggestion.unit)
     setTemplateDefaultQuantity(String(suggestion.defaultQuantity))
     setTemplateKcalPerUnit(String(suggestion.kcalPerUnit))
-  }
+  }, [
+    resolveKcal,
+    isExercise,
+    name,
+    mealInputMode,
+    grams,
+    kjPer100g,
+    packageKcal,
+  ])
 
   useEffect(() => {
     if (!saveAsTemplate || templateFieldsTouched) return
@@ -126,14 +148,19 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   }, [
     saveAsTemplate,
     templateFieldsTouched,
-    props.name,
+    name,
     props.kcal,
-    props.grams,
-    props.kjPer100g,
-    props.mealInputMode,
-    props.packageKcal,
-    props.isExercise,
+    grams,
+    kjPer100g,
+    mealInputMode,
+    packageKcal,
+    isExercise,
+    applySuggestion,
   ])
+
+  useEffect(() => {
+    if (!isCollapsible) setExpanded(true)
+  }, [isCollapsible])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -192,24 +219,37 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   return (
     <div className="log-manual-secondary">
       <div className="log-manual-secondary__card">
-        <button
-          type="button"
-          className="log-manual-secondary__toggle"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
-        >
-          <span className="log-manual-secondary__copy">
-            <strong className="log-manual-secondary__title">
-              不用 AI？直接填写 kcal
-            </strong>
-            <span className="log-manual-secondary__desc">
-              已知道热量时，可以直接保存本次记录。
+        {isCollapsible ? (
+          <button
+            type="button"
+            className="log-manual-secondary__toggle"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((value) => !value)}
+          >
+            <span className="log-manual-secondary__copy">
+              <strong className="log-manual-secondary__title">
+                {props.titleText ?? '不用 AI？直接填写 kcal'}
+              </strong>
+              <span className="log-manual-secondary__desc">
+                {props.descriptionText ?? '已知道热量时，可以直接保存本次记录。'}
+              </span>
             </span>
-          </span>
-          <span className="log-manual-secondary__action" aria-hidden="true">
-            {expanded ? '收起' : '展开'}
-          </span>
-        </button>
+            <span className="log-manual-secondary__action" aria-hidden="true">
+              {expanded ? '收起' : '展开'}
+            </span>
+          </button>
+        ) : (
+          <div className="log-manual-secondary__header">
+            <div className="log-manual-secondary__copy">
+              <strong className="log-manual-secondary__title">
+                {props.titleText ?? '不用 AI？直接填写 kcal'}
+              </strong>
+              <span className="log-manual-secondary__desc">
+                {props.descriptionText ?? '已知道热量时，可以直接保存本次记录。'}
+              </span>
+            </div>
+          </div>
+        )}
 
         {expanded ? (
           <div className="log-manual-secondary__body">
@@ -219,19 +259,21 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                   onSubmit={(event) => void handleSubmit(event)}
                   className="log-manual-section__form"
                 >
-                  <label className="log-manual-secondary__field">
-                    <span className="log-manual-secondary__field-label">
-                      名称
-                    </span>
-                    <input
-                      value={props.name}
-                      onChange={(e) => props.onNameChange(e.target.value)}
-                      disabled={props.loading}
-                      className="input w-full min-w-0"
-                      aria-label="名称"
-                      required
-                    />
-                  </label>
+                  {props.showNameField !== false ? (
+                    <label className="log-manual-secondary__field">
+                      <span className="log-manual-secondary__field-label">
+                        名称
+                      </span>
+                      <input
+                        value={props.name}
+                        onChange={(e) => props.onNameChange(e.target.value)}
+                        disabled={props.loading}
+                        className="input w-full min-w-0"
+                        aria-label="名称"
+                        required
+                      />
+                    </label>
+                  ) : null}
 
                   {!props.isExercise && (
                     <div

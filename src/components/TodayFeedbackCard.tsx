@@ -3,18 +3,19 @@ import { TODAY_HONOR_STRIP } from '../lib/todayHonors'
 
 interface TodayFeedbackCardProps {
   exerciseCount: number
-  mealCount: number
+  deficit: number
   honors: TodayHonor[]
 }
 
 export function TodayFeedbackCard({
   exerciseCount,
-  mealCount,
+  deficit,
   honors,
 }: TodayFeedbackCardProps) {
   const exerciseHonors = honors.filter((h) => h.category === 'exercise')
   const mealHonors = honors.filter((h) => h.category === 'meal')
   const generalHonors = honors.filter((h) => h.category === 'general')
+  const calorieWallLit = deficit > 150
 
   return (
     <section className="today-feedback-card" aria-label="今日反馈">
@@ -33,14 +34,14 @@ export function TodayFeedbackCard({
           honors={exerciseHonors}
         />
         <FeedbackWall
-          title="美食墙"
-          lit={mealCount > 0}
+          title="热量墙"
+          lit={calorieWallLit}
           litLabel="今日已点亮"
           unlitLabel="未点亮"
           countLine={
-            mealCount > 0
-              ? `饮食 ${mealCount} 条`
-              : '记录一餐饮食后点亮'
+            calorieWallLit
+              ? `缺口 +${Math.round(deficit)} kcal`
+              : '缺口超过 150 kcal 后点亮'
           }
           tone="meal"
           honors={mealHonors}
