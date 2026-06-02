@@ -153,7 +153,7 @@ export function AiLogSection({
   const isExercise = kind === 'exercise'
   const sectionTitle = isExercise ? '做了什么运动？' : '吃了什么？'
   const sectionHint = isExercise
-    ? '不用精确到数据，描述运动和时长就可以。'
+    ? '描述运动和时长即可；AI 只估运动额外消耗，不含基础代谢。'
     : '不用精确到克数，像聊天一样描述也可以。'
   const placeholder = isExercise
     ? '例如：慢跑 40 分钟 + 拉伸 10 分钟'
@@ -246,7 +246,7 @@ export function AiLogSection({
 
   const handleSave = async () => {
     const validated = validateAiItems(items)
-    if (!validated.ok) {
+    if (validated.ok === false) {
       setSaveError(validated.error)
       return
     }
