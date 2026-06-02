@@ -6,8 +6,8 @@ test('manual log can save parsed item as template', async ({ page }) => {
   await registerAndOnboard(page, uniqueE2eEmail())
   await openLogAiTab(page, 'meal')
 
-  const manual = await expandManualLogSection(page)
-  await manual.getByLabel('名称').fill('E2E 瘦鸡胸 150g')
+  const manual = await expandManualLogSection(page, 'meal')
+  await page.getByLabel('饮食名称/描述').fill('E2E 瘦鸡胸 150g')
   await manual.getByLabel('热量 (kcal)').fill('248')
   await manual.getByRole('checkbox', { name: '同时保存为快捷模板' }).check()
 

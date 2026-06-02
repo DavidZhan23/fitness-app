@@ -198,7 +198,10 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
 
         for (const anchor of route.anchors) {
           if (route.name === 'log-exercise') {
-            await page.getByRole('button', { name: '不用 AI？直接填写 kcal' }).click()
+            await page
+              .getByRole('navigation', { name: '记录方式切换' })
+              .getByRole('button', { name: '手动录入' })
+              .click()
           }
           await assertLocatorInScrollport(
             page,
