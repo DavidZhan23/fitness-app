@@ -68,8 +68,11 @@ for (const viewport of MOBILE_VIEWPORTS) {
       // Templates (via log templates mode; no tab bar item)
       await nav.getByRole('link', { name: '今日' }).click()
       await page.getByRole('link', { name: '+ 记运动' }).click()
-      await page.getByRole('button', { name: '查看全部' }).click()
-      await expect(page.getByRole('heading', { name: '小满快捷记' })).toBeVisible()
+      await page
+        .getByRole('navigation', { name: '记录方式切换' })
+        .getByRole('button', { name: '模板记录' })
+        .click()
+      await expect(page.getByRole('heading', { name: '小满记运动' })).toBeVisible()
       await page
         .getByRole('region', { name: '常用模板' })
         .getByRole('link', { name: '管理模板' })
@@ -97,7 +100,10 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await page.getByRole('link', { name: '+ 记运动' }).click()
       await expect(page.getByRole('heading', { name: '小满记运动' })).toBeVisible()
       await expect(page.locator('.log-ai-section')).toBeVisible()
-      await page.getByRole('button', { name: '不用 AI？直接填写 kcal' }).click()
+      await page
+        .getByRole('navigation', { name: '记录方式切换' })
+        .getByRole('button', { name: '手动录入' })
+        .click()
       await assertStandaloneNoHorizontalOverflow(
         page,
         `${viewport.name} /log/exercise`,

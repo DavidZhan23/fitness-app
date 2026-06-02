@@ -68,7 +68,7 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
       await page.getByRole('button', { name: '知道了' }).click()
 
       const metabolismBtn = page.getByRole('button', {
-        name: '了解基础消耗怎么算',
+        name: '了解基础代谢怎么算',
       })
       await expect(metabolismBtn).toBeVisible()
       await metabolismBtn.click()

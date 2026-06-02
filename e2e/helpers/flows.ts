@@ -34,16 +34,46 @@ export async function openLogAiTab(
   await expect(page.locator('.log-ai-section')).toBeVisible()
 }
 
+export async function openLogTemplatesTab(
+  page: Page,
+  kind: 'meal' | 'exercise' = 'meal',
+) {
+  await openLogPage(page, kind)
+  await page
+    .getByRole('navigation', { name: '记录方式切换' })
+    .getByRole('button', { name: '模板记录' })
+    .click()
+  await expect(page.getByRole('region', { name: '常用模板' })).toBeVisible()
+}
+
+/** @deprecated use openLogTemplatesTab — deep link still supported */
 export async function openLogTemplatesMode(
   page: Page,
   kind: 'meal' | 'exercise' = 'meal',
 ) {
   await page.goto(`/log/${kind}?mode=templates`)
-  await page.getByRole('heading', { name: '小满快捷记' }).waitFor()
+  const heading = kind === 'meal' ? '小满记饮食' : '小满记运动'
+  await page.getByRole('heading', { name: heading }).waitFor()
+  await expect(page.getByRole('region', { name: '常用模板' })).toBeVisible()
 }
 
-export async function expandManualLogSection(page: Page) {
-  await page.getByRole('button', { name: '不用 AI？直接填写 kcal' }).click()
+function manualTabName(kind: 'meal' | 'exercise') {
+  return kind === 'meal' ? '营养表录入' : '手动录入'
+}
+
+function sharedLogNameLabel(kind: 'meal' | 'exercise') {
+  return kind === 'meal' ? '饮食名称/描述' : '运动名称/描述'
+}
+
+/** 切换到手动/营养表分栏（三栏记录页顶部的 tab） */
+export async function expandManualLogSection(
+  page: Page,
+  kind: 'meal' | 'exercise' = 'exercise',
+) {
+  await page
+    .getByRole('navigation', { name: '记录方式切换' })
+    .getByRole('button', { name: manualTabName(kind) })
+    .click()
   return manualLogSection(page)
 }
 
@@ -53,8 +83,8 @@ export async function logExercise(
   kcal: string,
 ) {
   await openLogPage(page, 'exercise')
-  const manual = await expandManualLogSection(page)
-  await manual.getByLabel('名称').fill(name)
+  const manual = await expandManualLogSection(page, 'exercise')
+  await page.getByLabel(sharedLogNameLabel('exercise')).fill(name)
   await manual.getByLabel('热量 (kcal)').fill(kcal)
   await manual.getByRole('button', { name: '保存' }).click()
   await expectTodayRecordInExpandedList(page, name, kcal)
@@ -62,8 +92,8 @@ export async function logExercise(
 
 export async function logMeal(page: Page, name: string, kcal: string) {
   await openLogPage(page, 'meal')
-  const manual = await expandManualLogSection(page)
-  await manual.getByLabel('名称').fill(name)
+  const manual = await expandManualLogSection(page, 'meal')
+  await page.getByLabel(sharedLogNameLabel('meal')).fill(name)
   await manual.getByLabel('热量 (kcal)').fill(kcal)
   await manual.getByRole('button', { name: '保存' }).click()
   await expectTodayRecordInExpandedList(page, name, kcal)
