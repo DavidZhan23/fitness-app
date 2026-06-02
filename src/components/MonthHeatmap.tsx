@@ -153,7 +153,11 @@ export function MonthGrid({
             : cell
               ? type === 'exercise'
                 ? `${formatTooltipDate(dateKey)} 运动 ${Math.round(cell.exerciseKcal)} 千卡`
-                : `${formatDeficitTooltip(dateKey, cell.deficit)}${badgeLabel ? ` · ${badgeLabel}` : ''}`
+                : `${formatDeficitTooltip(dateKey, cell.deficit)}${
+                    cell.noMealBmrExcluded
+                      ? ' · 该日未记饮食，缺口不含基础代谢'
+                      : ''
+                  }${badgeLabel ? ` · ${badgeLabel}` : ''}`
               : type === 'deficit' && accountStartKey && dateKey >= accountStartKey
                 ? `${formatTooltipDate(dateKey)} 收支持平`
                 : `${formatTooltipDate(dateKey)} 无记录`
@@ -175,6 +179,8 @@ export function MonthGrid({
               aria-label={ariaLabel}
               onClick={() => !isBlocked && onDayClick?.(dateKey, type)}
               className={`relative flex aspect-square items-center justify-center rounded-md text-[11px] font-medium tabular-nums transition-transform active:scale-95 ${cellClass} ${
+                beforeAccount ? 'heatmap-day--before-account' : ''
+              } ${
                 isBlocked ? 'cursor-not-allowed opacity-30' : ''
               } ${isSelected ? 'heatmap-day--selected' : ''} ${
                 !isBlocked && onDayClick ? 'hover:brightness-110' : ''

@@ -9,7 +9,6 @@ import {
 } from '../lib/deficitGoal'
 import { BasalMetabolismSheet } from './BasalMetabolismSheet'
 import { CalculationExplanationSheet } from './CalculationExplanationSheet'
-import { DeficitGoalSheet } from './DeficitGoalSheet'
 import {
   FluidText,
   MetricRow,
@@ -30,7 +29,7 @@ interface DeficitCardProps {
   fullDayBmr?: number
   /** 今日页：显示「？」计算解释入口 */
   showExplanationButton?: boolean
-  /** 今日页：点击「基础消耗」展示 BMR 说明 */
+  /** 今日页：点击「基础代谢」展示 BMR 说明 */
   showMetabolismDetail?: boolean
   profile?: Profile | null
 }
@@ -48,11 +47,10 @@ export function DeficitCard({
   showMetabolismDetail = false,
   profile = null,
 }: DeficitCardProps) {
-  const [goalSheetOpen, setGoalSheetOpen] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
   const [metabolismSheetOpen, setMetabolismSheetOpen] = useState(false)
   const metabolismDetailEnabled = showMetabolismDetail && profile != null
-  const goalStatus = formatDeficitGoalStatus(deficit, threshold)
+  const unitLabel = formatDeficitGoalStatus(deficit, threshold).unitLabel
   const valueTone = deficitGoalValueTone(deficit, threshold)
   const roundedDeficit = Math.round(deficit)
   const compactDigits = Math.abs(roundedDeficit).toString().length >= 5
@@ -84,7 +82,7 @@ export function DeficitCard({
             variant="body"
             className="theme-deficit-unit text-muted"
           >
-            {goalStatus.unitLabel}
+            {unitLabel}
           </FluidText>
           {showExplanationButton ? (
             <button
@@ -97,17 +95,6 @@ export function DeficitCard({
             </button>
           ) : null}
         </MetricRow>
-        <div className="theme-deficit-goal-panel mt-2">
-          <p className="theme-deficit-goal-status">{goalStatus.message}</p>
-          <button
-            type="button"
-            className="theme-deficit-goal-adjust"
-            aria-label="调整目标缺口"
-            onClick={() => setGoalSheetOpen(true)}
-          >
-            调整
-          </button>
-        </div>
         <StatsGrid className="theme-deficit-stats mt-5 text-center text-base">
           <Stat
             label={metabolismLabel}
@@ -119,17 +106,12 @@ export function DeficitCard({
                 ? () => setMetabolismSheetOpen(true)
                 : undefined
             }
-            clickAriaLabel="了解基础消耗怎么算"
+            clickAriaLabel="了解基础代谢怎么算"
           />
           <Stat label={EXERCISE_KCAL_STAT_LABEL} value={exerciseKcal} variant="exercise" />
           <Stat label={MEAL_KCAL_STAT_LABEL} value={mealKcal} variant="meal" />
         </StatsGrid>
       </ResponsiveCard>
-      <DeficitGoalSheet
-        open={goalSheetOpen}
-        currentThreshold={threshold}
-        onClose={() => setGoalSheetOpen(false)}
-      />
       {showExplanationButton ? (
         <CalculationExplanationSheet
           open={explanationOpen}

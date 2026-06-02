@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { LogModePanel } from '../components/LogModeTabs'
 import { PendingLogDraftsSection } from '../components/PendingLogDraftsSection'
-import { TemplateEntryCard } from '../components/TemplateEntryCard'
 import { TemplateMultiPicker, TemplateSectionHeader } from '../components/TemplateMultiPicker'
 import { PageShell } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
@@ -35,6 +34,19 @@ const PAGE_TITLE: Record<'exercise' | 'meal', string> = {
   exercise: '小满记运动',
 }
 
+type LogTabMode = 'ai' | 'templates' | 'manual'
+type LogSlideDirection = 'forward' | 'backward'
+type SwipeAxis = 'pending' | 'horizontal' | 'vertical'
+
+const LOG_TAB_ORDER: LogTabMode[] = ['ai', 'manual', 'templates']
+
+function normalizeMode(value: string | null): LogTabMode {
+  if (value === 'templates' || value === 'manual' || value === 'ai') {
+    return value
+  }
+  return 'ai'
+}
+
 export function LogPage() {
   const { type } = useParams<{ type: 'exercise' | 'meal' }>()
   const isExercise = type === 'exercise'
@@ -42,7 +54,9 @@ export function LogPage() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const isTemplateMode = searchParams.get('mode') === 'templates'
+  const [activeMode, setActiveMode] = useState<LogTabMode>(() =>
+    normalizeMode(searchParams.get('mode')),
+  )
   const form = useLogForm(isExercise)
   const aiFallbackTracker = useAiEstimateFallbackTracker()
   const templates = useLogTemplates(user?.id, kind, isExercise)
@@ -50,6 +64,9 @@ export function LogPage() {
   const pendingSectionRef = useRef<HTMLElement>(null)
   const [highlightPending, setHighlightPending] = useState(false)
   const highlightTimerRef = useRef<number | null>(null)
+  const templateRegionRef = useRef<HTMLElement>(null)
+  const templateHighlightTimerRef = useRef<number | null>(null)
+  const [highlightTemplateRegion, setHighlightTemplateRegion] = useState(false)
 
   const [batchSaving, setBatchSaving] = useState(false)
   const [aiSaving, setAiSaving] = useState(false)
@@ -60,14 +77,56 @@ export function LogPage() {
   const [manualNotice, setManualNotice] = useState('')
 
   const anySaving = batchSaving || aiSaving || manualSaving
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
+  const touchStartAtRef = useRef<number | null>(null)
+  const swipeAxisRef = useRef<SwipeAxis | null>(null)
+  const [slideDirection, setSlideDirection] = useState<LogSlideDirection>('forward')
+  const [dragOffsetPx, setDragOffsetPx] = useState(0)
+  const tabTitles = useMemo(
+    () => ({
+      ai: 'AI记录',
+      manual: isExercise ? '手动录入' : '营养表录入',
+      templates: '模板记录',
+    }),
+    [isExercise],
+  )
+  const sharedNamePlaceholder = isExercise
+    ? '输入运动名称或描述，例如：慢跑 40 分钟'
+    : '输入饮食名称或描述，例如：牛肉面 + 鸡蛋'
 
   useEffect(() => {
     return () => {
       if (highlightTimerRef.current != null) {
         window.clearTimeout(highlightTimerRef.current)
       }
+      if (templateHighlightTimerRef.current != null) {
+        window.clearTimeout(templateHighlightTimerRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    setActiveMode(normalizeMode(searchParams.get('mode')))
+  }, [searchParams])
+
+  useEffect(() => {
+    if (activeMode !== 'templates') return
+    requestAnimationFrame(() => {
+      templateRegionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    })
+    setHighlightTemplateRegion(true)
+    if (templateHighlightTimerRef.current != null) {
+      window.clearTimeout(templateHighlightTimerRef.current)
+    }
+    templateHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightTemplateRegion(false)
+      templateHighlightTimerRef.current = null
+    }, 900)
+  }, [activeMode])
 
   const handleTemplateToggle = (template: (typeof templates)[number]) => {
     const wasSelected = pendingDrafts.selectedKeys.has(templateKey(template))
@@ -205,13 +264,88 @@ export function LogPage() {
     navigate('/')
   }
 
-  const openTemplatesMode = () => {
-    navigate(`/log/${kind}?mode=templates`)
+  const switchMode = (mode: LogTabMode) => {
+    if (mode === activeMode) return
+    const currentIndex = LOG_TAB_ORDER.indexOf(activeMode)
+    const nextIndex = LOG_TAB_ORDER.indexOf(mode)
+    setSlideDirection(nextIndex >= currentIndex ? 'forward' : 'backward')
+    setDragOffsetPx(0)
+    setActiveMode(mode)
   }
 
-  const backFromTemplatesMode = () => {
-    navigate(`/log/${kind}`)
+  const handleSwipeStart = (clientX: number, clientY: number) => {
+    touchStartXRef.current = clientX
+    touchStartYRef.current = clientY
+    touchStartAtRef.current = performance.now()
+    swipeAxisRef.current = 'pending'
   }
+
+  const applyDragResistance = (deltaX: number) => {
+    const currentIndex = LOG_TAB_ORDER.indexOf(activeMode)
+    const atFirst = currentIndex === 0
+    const atLast = currentIndex === LOG_TAB_ORDER.length - 1
+    const towardBlockedEdge = (atFirst && deltaX > 0) || (atLast && deltaX < 0)
+    const factor = towardBlockedEdge ? 0.28 : 0.55
+    const resisted = deltaX * factor
+    return Math.max(-120, Math.min(120, resisted))
+  }
+
+  const handleSwipeMove = (clientX: number, clientY: number) => {
+    const startX = touchStartXRef.current
+    const startY = touchStartYRef.current
+    if (startX == null || startY == null || swipeAxisRef.current == null) return
+
+    const deltaX = clientX - startX
+    const deltaY = clientY - startY
+
+    if (swipeAxisRef.current === 'pending') {
+      const absX = Math.abs(deltaX)
+      const absY = Math.abs(deltaY)
+      if (absX < 6 && absY < 6) return
+      swipeAxisRef.current = absX > absY ? 'horizontal' : 'vertical'
+    }
+
+    if (swipeAxisRef.current !== 'horizontal') return
+    setDragOffsetPx(applyDragResistance(deltaX))
+  }
+
+  const handleSwipeEnd = (clientX: number) => {
+    const startX = touchStartXRef.current
+    const startAt = touchStartAtRef.current
+    const axis = swipeAxisRef.current
+    touchStartXRef.current = null
+    touchStartYRef.current = null
+    touchStartAtRef.current = null
+    swipeAxisRef.current = null
+    if (startX == null || axis !== 'horizontal') {
+      setDragOffsetPx(0)
+      return
+    }
+    const deltaX = clientX - startX
+    const elapsedMs = startAt == null ? Number.POSITIVE_INFINITY : performance.now() - startAt
+    const width = window.innerWidth || 390
+    const distanceThreshold = Math.max(18, Math.min(40, width * 0.075))
+    const quickSwipeThreshold = 12
+    const isQuickSwipe = elapsedMs <= 280 && Math.abs(deltaX) >= quickSwipeThreshold
+    setDragOffsetPx(0)
+    if (Math.abs(deltaX) < distanceThreshold && !isQuickSwipe) return
+    const currentIndex = LOG_TAB_ORDER.indexOf(activeMode)
+    if (deltaX < 0 && currentIndex < LOG_TAB_ORDER.length - 1) {
+      setSlideDirection('forward')
+      setActiveMode(LOG_TAB_ORDER[currentIndex + 1])
+    }
+    if (deltaX > 0 && currentIndex > 0) {
+      setSlideDirection('backward')
+      setActiveMode(LOG_TAB_ORDER[currentIndex - 1])
+    }
+  }
+
+  const isDraggingHorizontally =
+    swipeAxisRef.current === 'horizontal' && Math.abs(dragOffsetPx) > 0
+  const panelInlineStyle =
+    dragOffsetPx === 0
+      ? undefined
+      : ({ transform: `translate3d(${dragOffsetPx}px, 0, 0)` } as const)
 
   return (
     <div className="page-standalone" data-log-kind={kind}>
@@ -219,21 +353,78 @@ export function LogPage() {
         <header className="log-page-header">
           <button
             type="button"
-            onClick={() =>
-              isTemplateMode ? backFromTemplatesMode() : navigate('/')
-            }
+            onClick={() => navigate('/')}
             className="log-pill-btn log-page-back"
           >
             ← 返回
           </button>
-          <h1 className="log-page-title">
-            {isTemplateMode ? '小满快捷记' : PAGE_TITLE[kind]}
-          </h1>
+          <h1 className="log-page-title">{PAGE_TITLE[kind]}</h1>
         </header>
 
-        {isTemplateMode ? (
-          <LogModePanel mode="templates">
-            <section aria-label="常用模板" className="log-template-region">
+        <nav className="log-tab-switcher" aria-label="记录方式切换">
+          {LOG_TAB_ORDER.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`log-tab-switcher__item${activeMode === mode ? ' log-tab-switcher__item--active' : ''}`}
+              aria-pressed={activeMode === mode}
+              onClick={() => switchMode(mode)}
+            >
+              {tabTitles[mode]}
+            </button>
+          ))}
+        </nav>
+
+        {activeMode !== 'templates' ? (
+          <section className="log-shared-name-card" aria-label="统一名称输入">
+            <label className="log-shared-name-field">
+              <span className="log-shared-name-label">
+                {isExercise ? '运动名称/描述' : '饮食名称/描述'}
+              </span>
+              <input
+                value={form.name}
+                onChange={(event) => form.setName(event.target.value)}
+                disabled={anySaving}
+                className="input w-full min-w-0"
+                placeholder={sharedNamePlaceholder}
+              />
+            </label>
+          </section>
+        ) : null}
+
+        <div
+          className="log-mode-swipe-area"
+          onTouchStart={(event) =>
+            handleSwipeStart(
+              event.touches[0]?.clientX ?? 0,
+              event.touches[0]?.clientY ?? 0,
+            )}
+          onTouchMove={(event) => {
+            handleSwipeMove(
+              event.touches[0]?.clientX ?? 0,
+              event.touches[0]?.clientY ?? 0,
+            )
+            if (swipeAxisRef.current === 'horizontal') {
+              event.preventDefault()
+            }
+          }}
+          onTouchEnd={(event) => handleSwipeEnd(event.changedTouches[0]?.clientX ?? 0)}
+          onTouchCancel={() => handleSwipeEnd(touchStartXRef.current ?? 0)}
+        >
+          {activeMode === 'templates' ? (
+            <div
+              key="templates-panel"
+              className={`log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`}
+              style={panelInlineStyle}
+            >
+              <LogModePanel mode="templates">
+            <section
+              ref={templateRegionRef}
+              aria-label="常用模板"
+              className={`log-template-region${
+                highlightTemplateRegion ? ' log-template-region--intro-highlight' : ''
+              }`}
+            >
               <TemplateSectionHeader manageTab={kind} kind={kind} />
               <TemplateMultiPicker
                 templates={templates}
@@ -259,27 +450,45 @@ export function LogPage() {
               onRemove={pendingDrafts.removeDraft}
               onConfirmSave={() => void handleConfirmSave()}
             />
-          </LogModePanel>
-        ) : (
-          <LogModePanel mode="ai">
-            <div className="log-page-ai-stack">
+              </LogModePanel>
+            </div>
+          ) : activeMode === 'ai' ? (
+            <div
+              key="ai-panel"
+              className={`log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`}
+              style={panelInlineStyle}
+            >
+              <LogModePanel mode="ai">
               <AiLogSection
                 kind={kind}
+                description={form.name}
+                onDescriptionChange={form.setName}
                 saving={aiSaving}
                 disabled={anySaving && !aiSaving}
+                showDescriptionInput={false}
                 onSave={handleAiSave}
                 onAiOutcome={aiFallbackTracker.markAiOutcome}
               />
-
-              <TemplateEntryCard
-                kind={kind}
-                templates={templates}
-                onOpenAll={openTemplatesMode}
-              />
-
+              </LogModePanel>
+            </div>
+          ) : (
+            <div
+              key="manual-panel"
+              className={`log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`}
+              style={panelInlineStyle}
+            >
+              <LogModePanel mode="ai">
               <SecondaryManualLogSection
                 isExercise={isExercise}
                 kind={kind}
+                showNameField={false}
+                collapsible={false}
+                titleText={isExercise ? '手动录入' : '营养表录入'}
+                descriptionText={
+                  isExercise
+                    ? '不使用 AI 时，可直接填写热量后保存。'
+                    : '可直接填 kcal，或按包装营养表（g + kJ）自动换算。'
+                }
                 templates={templates}
                 loading={manualSaving}
                 error={manualError}
@@ -303,9 +512,10 @@ export function LogPage() {
                 onError={setManualError}
                 onSubmittingChange={setManualSaving}
               />
+              </LogModePanel>
             </div>
-          </LogModePanel>
-        )}
+          )}
+        </div>
       </PageShell>
     </div>
   )

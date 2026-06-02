@@ -394,11 +394,11 @@ export function CommunityPage() {
             className="community-hub-link"
             aria-label={
               followerCount > 0
-                ? `查看新增关注，${followerCount > 99 ? '99+' : followerCount} 人`
-                : '查看新增关注'
+                ? `查看粉丝，${followerCount > 99 ? '99+' : followerCount} 人`
+                : '查看粉丝'
             }
           >
-            <span>新增关注</span>
+            <span>粉丝</span>
             {followerCount > 0 && (
               <span className="community-hub-count">
                 {followerCount > 99 ? '99+' : followerCount}

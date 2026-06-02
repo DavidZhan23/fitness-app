@@ -36,7 +36,7 @@ export function CommunityFollowersPage() {
     <div className="space-y-3 pb-2">
       <header className="community-inbox-header">
         <div>
-          <h1 className="community-inbox-header__title">新增关注</h1>
+          <h1 className="community-inbox-header__title">粉丝</h1>
           <p className="community-inbox-header__desc">最近关注你的人</p>
         </div>
         <Link to="/community" className="community-inbox-back">

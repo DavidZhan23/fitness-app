@@ -101,18 +101,7 @@ export async function computeDaySnapshot(
 
   const exerciseKcal = toKcal(log?.exercise_kcal)
   const mealKcal = toKcal(log?.meal_kcal)
-  const endOfDay =
-    logDate === formatDateKey(now)
-      ? now
-      : new Date(`${logDate}T23:59:59`)
-  const deficit = calculateSpreadDeficit(
-    bmr,
-    exerciseKcal,
-    mealKcal,
-    logDate,
-    endOfDay,
-  )
-
+  const todayKey = formatDateKey(now)
   let exerciseCount = 0
   let mealCount = 0
   if (log) {
@@ -127,6 +116,20 @@ export async function computeDaySnapshot(
     exerciseCount = ex.rows[0]?.c ?? 0
     mealCount = meals.rows[0]?.c ?? 0
   }
+  const historicalWithoutMeal =
+    logDate !== todayKey && mealCount === 0 && mealKcal <= 0
+  const bmrForDeficit = historicalWithoutMeal ? 0 : bmr
+  const endOfDay =
+    logDate === todayKey
+      ? now
+      : new Date(`${logDate}T23:59:59`)
+  const deficit = calculateSpreadDeficit(
+    bmrForDeficit,
+    exerciseKcal,
+    mealKcal,
+    logDate,
+    endOfDay,
+  )
 
   return {
     date: logDate,

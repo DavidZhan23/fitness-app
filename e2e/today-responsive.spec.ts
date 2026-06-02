@@ -8,7 +8,7 @@ import {
   assertNoDescendantWiderThanViewport,
 } from './helpers/layout'
 
-function feedbackWall(page: Page, wallTitle: '运动墙' | '美食墙') {
+function feedbackWall(page: Page, wallTitle: '运动墙' | '热量墙') {
   return page
     .locator('.today-feedback-wall')
     .filter({ has: page.getByRole('heading', { name: wallTitle, level: 3 }) })
@@ -76,7 +76,7 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
       await page.getByRole('button', { name: '知道了' }).click()
 
       await expect(page.getByText('运动墙')).toBeVisible()
-      await expect(page.getByText('美食墙')).toBeVisible()
+      await expect(page.getByText('热量墙')).toBeVisible()
 
       const exerciseWall = feedbackWall(page, '运动墙')
       await expect(exerciseWall.locator('.today-feedback-wall__status')).toHaveText(
@@ -86,9 +86,12 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         /运动 \d+ 条/,
       )
 
-      const mealWall = feedbackWall(page, '美食墙')
+      const mealWall = feedbackWall(page, '热量墙')
       await expect(mealWall.locator('.today-feedback-wall__status')).toHaveText(
-        '未点亮',
+        '今日已点亮',
+      )
+      await expect(mealWall.locator('.today-feedback-wall__count')).toHaveText(
+        /缺口 \+\d+ kcal/,
       )
 
       await assertNoDescendantWiderThanViewport(

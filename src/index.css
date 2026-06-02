@@ -1824,6 +1824,30 @@ button {
   gap: 1rem;
 }
 
+.log-template-region {
+  border-radius: 0.875rem;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.log-template-region--intro-highlight {
+  animation: log-template-region-intro 900ms ease-out;
+}
+
+@keyframes log-template-region-intro {
+  0% {
+    background: color-mix(in oklab, var(--surface-elevated) 70%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, var(--surface-border) 55%, transparent),
+      0 0 0 0 color-mix(in oklab, var(--surface-border) 22%, transparent);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 0 transparent, 0 0 0 0 transparent;
+  }
+}
+
 .log-page-ai-stack {
   display: flex;
   flex-direction: column;
@@ -1834,6 +1858,146 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.log-shared-name-card {
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--surface-border) 60%, transparent);
+  background: color-mix(in oklab, var(--surface-elevated) 95%, transparent);
+}
+
+.log-shared-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.log-shared-name-label {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.log-tab-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--surface-border) 60%, transparent);
+  background: color-mix(in oklab, var(--surface-card) 88%, transparent);
+}
+
+.log-tab-switcher__item {
+  min-width: 0;
+  border: none;
+  border-radius: 0.625rem;
+  min-height: 2.45rem;
+  padding: 0.6rem 0.5rem;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.log-tab-switcher__item:active {
+  transform: scale(0.98);
+}
+
+.log-tab-switcher__item--active {
+  color: var(--text-primary);
+  background: color-mix(in oklab, var(--surface-elevated) 96%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--surface-border) 52%, transparent),
+    0 4px 12px color-mix(in oklab, var(--surface-shadow) 18%, transparent);
+  font-weight: 700;
+}
+
+.log-tab-switcher__item[aria-pressed='true']::after {
+  content: '';
+  display: block;
+  width: 1.4rem;
+  height: 2px;
+  margin: 0.3rem auto 0;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand, var(--accent-exercise)) 72%, white 28%);
+}
+
+.log-mode-swipe-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  touch-action: pan-y;
+  overflow: hidden;
+}
+
+.log-mode-swipe-panel {
+  will-change: transform, opacity;
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-fill-mode: both;
+  transition: transform 130ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.log-mode-swipe-panel--dragging {
+  animation: none;
+  transition: none;
+  opacity: 1;
+}
+
+.log-mode-swipe-panel--forward {
+  animation-name: log-mode-slide-in-forward;
+}
+
+.log-mode-swipe-panel--backward {
+  animation-name: log-mode-slide-in-backward;
+}
+
+@keyframes log-mode-slide-in-forward {
+  from {
+    opacity: 0.86;
+    transform: translate3d(12px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes log-mode-slide-in-backward {
+  from {
+    opacity: 0.86;
+    transform: translate3d(-12px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .log-mode-swipe-panel {
+    animation: none;
+  }
+
+  .log-template-region--intro-highlight {
+    animation: none;
+  }
+
+  .log-tab-switcher__item {
+    transition: none;
+  }
 }
 
 .log-page-header {
@@ -2276,6 +2440,11 @@ button {
 .log-manual-secondary__toggle:hover {
   color: var(--text-primary);
   background: color-mix(in oklab, var(--surface-elevated) 55%, transparent);
+}
+
+.log-manual-secondary__header {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--surface-border) 45%, transparent);
 }
 
 .log-manual-secondary__copy {
@@ -4231,9 +4400,18 @@ button {
 .theme-deficit-value {
   font-size: clamp(1.85rem, 9vw, 2.75rem);
   line-height: 0.95;
-  min-width: 0;
+  flex-shrink: 0;
+  min-width: max-content;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.theme-deficit-main .theme-deficit-value.responsive-fluid-metric {
+  min-width: max-content;
+  overflow-wrap: normal;
+  white-space: nowrap;
 }
 
 .theme-deficit-unit {
@@ -5686,9 +5864,14 @@ button.theme-deficit-stat--clickable:focus-visible {
     line-height: 1;
   }
 
-  .theme-deficit-main {
+  .theme-deficit-main:not(.theme-deficit-main--inline) {
     gap: 0.25rem;
     max-width: min(50%, 100%);
+  }
+
+  .theme-deficit-main--inline {
+    gap: 0.25rem;
+    max-width: 100%;
   }
 
   .theme-deficit-value {
@@ -5925,37 +6108,6 @@ button.theme-deficit-stat--clickable:focus-visible {
   color: var(--text-muted);
 }
 
-.deficit-goal-sheet__backdrop {
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  background: rgb(0 0 0 / 0.18);
-  backdrop-filter: blur(14px) saturate(1.08);
-  -webkit-backdrop-filter: blur(14px) saturate(1.08);
-}
-
-.deficit-goal-sheet__panel {
-  border-radius: 1rem 1rem 0 0;
-  background: var(--surface-card);
-  box-shadow:
-    inset 0 0 0 1px var(--surface-card-border),
-    0 16px 48px rgb(0 0 0 / 0.2);
-}
-
-@media (min-width: 640px) {
-  .deficit-goal-sheet__panel {
-    border-radius: 1rem;
-  }
-}
-
-.deficit-goal-sheet__title {
-  color: var(--text-primary);
-}
-
-.deficit-goal-sheet__desc {
-  color: var(--text-secondary);
-}
-
 .deficit-goal-sheet__preset-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -6015,17 +6167,6 @@ button.theme-deficit-stat--clickable:focus-visible {
 
 .deficit-goal-sheet__custom .input {
   background: color-mix(in oklab, var(--surface-card-soft) 80%, var(--surface-card));
-}
-
-.deficit-goal-sheet__cancel {
-  border-radius: 0.75rem;
-  border: 1px solid var(--surface-panel-border);
-  background: var(--surface-panel-soft-bg);
-  color: var(--text-secondary);
-}
-
-.deficit-goal-sheet__cancel:hover:not(:disabled) {
-  background: var(--surface-panel-soft-hover);
 }
 
 .calc-explanation-sheet__backdrop {
@@ -6475,6 +6616,25 @@ button.theme-deficit-stat--clickable:focus-visible {
   background: var(--community-member-card-bg);
 }
 
+.community-self-card--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.community-self-card--link:hover {
+  transform: translateY(-1px);
+}
+
+.community-self-card--link:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-brand, var(--accent-exercise)) 45%, transparent);
+  outline-offset: 2px;
+}
+
 .community-self-card.community-card-champion,
 .community-self-card.community-card-elite {
   border-style: solid;
@@ -6520,6 +6680,12 @@ button.theme-deficit-stat--clickable:focus-visible {
   justify-content: space-between;
   gap: 0.75rem;
   min-width: 0;
+}
+
+.community-self-card__deficit-top {
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
 }
 
 .community-self-card__identity {
@@ -6849,6 +7015,13 @@ button.theme-deficit-stat--clickable:focus-visible {
     inset 0 0 0 2.5px var(--heatmap-day-selected-ring),
     0 0 0 2px var(--surface-card),
     var(--heatmap-day-selected-shadow, 0 0 10px rgb(0 0 0 / 0.2));
+}
+
+.heatmap-day--before-account {
+  opacity: 1 !important;
+  background: color-mix(in oklab, var(--surface-card) 72%, #9ca3af 28%) !important;
+  color: color-mix(in oklab, var(--text-muted) 88%, #6b7280 12%) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--surface-border) 68%, transparent);
 }
 
 .heatmap-legend-swatch--active {

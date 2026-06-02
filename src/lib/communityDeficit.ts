@@ -21,10 +21,12 @@ export function computeCommunityDeficit(
   if (options?.isSelf && options.viewerProfile) {
     dailyBmr = resolveProfileMetabolism(options.viewerProfile).bmr
   }
+  const historicalWithoutMeal = snapshot.date !== todayKey && snapshot.mealKcal <= 0
+  const bmrForDeficit = historicalWithoutMeal ? 0 : dailyBmr
   const at =
     snapshot.date === todayKey ? now : new Date(`${snapshot.date}T23:59:59`)
   return calculateSpreadDeficit(
-    dailyBmr,
+    bmrForDeficit,
     snapshot.exerciseKcal,
     snapshot.mealKcal,
     snapshot.date,
@@ -46,7 +48,9 @@ export function computeCommunityMetabolism(
   if (options?.isSelf && options.viewerProfile) {
     dailyBmr = resolveProfileMetabolism(options.viewerProfile).bmr
   }
+  const historicalWithoutMeal = snapshot.date !== todayKey && snapshot.mealKcal <= 0
+  const bmrForMetabolism = historicalWithoutMeal ? 0 : dailyBmr
   const at =
     snapshot.date === todayKey ? now : new Date(`${snapshot.date}T23:59:59`)
-  return getAccumulatedMetabolism(dailyBmr, snapshot.date, at)
+  return getAccumulatedMetabolism(bmrForMetabolism, snapshot.date, at)
 }

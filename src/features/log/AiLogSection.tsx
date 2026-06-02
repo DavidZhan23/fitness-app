@@ -30,10 +30,13 @@ export interface AiEstimateItemState {
 
 interface AiLogSectionProps {
   kind: 'exercise' | 'meal'
+  description: string
+  onDescriptionChange: (value: string) => void
   saving: boolean
   onSave: (items: AiEstimateItemState[]) => Promise<string | null>
   onAiOutcome?: (outcome: 'success' | 'timeout' | 'error') => void
   disabled?: boolean
+  showDescriptionInput?: boolean
 }
 
 function classifyErrorType(err: unknown): 'network' | 'error' {
@@ -133,12 +136,14 @@ function mapResponseItems(
 
 export function AiLogSection({
   kind,
+  description,
+  onDescriptionChange,
   saving,
   onSave,
   onAiOutcome,
   disabled,
+  showDescriptionInput = true,
 }: AiLogSectionProps) {
-  const [description, setDescription] = useState('')
   const [items, setItems] = useState<AiEstimateItemState[]>([])
   const [estimating, setEstimating] = useState(false)
   const [estimateError, setEstimateError] = useState('')
@@ -264,18 +269,22 @@ export function AiLogSection({
           <p className="log-ai-card__hint">{sectionHint}</p>
         </header>
 
-        <label className="block">
-          <input
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value)
-              setEstimateError('')
-            }}
-            disabled={busy}
-            className="input w-full min-w-0"
-            placeholder={placeholder}
-          />
-        </label>
+        {showDescriptionInput ? (
+          <label className="block">
+            <input
+              value={description}
+              onChange={(e) => {
+                onDescriptionChange(e.target.value)
+                setEstimateError('')
+              }}
+              disabled={busy}
+              className="input w-full min-w-0"
+              placeholder={placeholder}
+            />
+          </label>
+        ) : (
+          <p className="log-ai-card__hint">{`当前输入：${description.trim() || placeholder}`}</p>
+        )}
 
         <div className="log-ai-examples">
           <p className="log-ai-examples__label">{examplesLabel}</p>
@@ -288,7 +297,7 @@ export function AiLogSection({
                 aria-label={`使用示例：${example}`}
                 className="log-ai-example-chip"
                 onClick={() => {
-                  setDescription(example)
+                  onDescriptionChange(example)
                   setEstimateError('')
                 }}
               >

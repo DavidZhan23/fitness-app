@@ -25,6 +25,8 @@ export interface MonthDayCell {
   deficit: number
   /** 注册日之前，代谢缺口不计入 */
   beforeAccount?: boolean
+  /** 历史日未记录饮食：缺口按“不含基础代谢”计算 */
+  noMealBmrExcluded?: boolean
   exerciseDayBadge?: ExerciseGridDayBadge | null
   deficitDayBadge?: DeficitGridDayBadge | null
 }
@@ -43,14 +45,16 @@ export function buildMonthDayMap(
     const exerciseKcal = toKcal(log.exercise_kcal)
     const mealKcal = toKcal(log.meal_kcal)
     const beforeAccount = isBeforeAccountStart(dateKey, accountStartKey)
+    const historicalWithoutMeal = dateKey !== todayKey && mealKcal <= 0
+    const bmrForDeficit = historicalWithoutMeal ? 0 : dailyBmr
 
     const endOfDay = new Date(`${dateKey}T23:59:59`)
     const deficit = beforeAccount
       ? 0
       : dateKey === todayKey
-        ? calculateSpreadDeficit(dailyBmr, exerciseKcal, mealKcal, dateKey)
+        ? calculateSpreadDeficit(bmrForDeficit, exerciseKcal, mealKcal, dateKey)
         : calculateSpreadDeficit(
-            dailyBmr,
+            bmrForDeficit,
             exerciseKcal,
             mealKcal,
             dateKey,
@@ -61,7 +65,7 @@ export function buildMonthDayMap(
       ? { level: 0 as IntensityLevel, tone: 'neutral' as DeficitHeatmapTone }
       : getDeficitHeatmapCell(deficit, threshold)
 
-    const badgeInput = { deficit, exerciseKcal, mealKcal, dailyBmr }
+    const badgeInput = { deficit, exerciseKcal, mealKcal, dailyBmr: bmrForDeficit }
     const exerciseDayBadge = beforeAccount
       ? null
       : resolveExerciseGridBadge(badgeInput)
@@ -78,6 +82,7 @@ export function buildMonthDayMap(
       deficitLevel: heatmap.level,
       deficitTone: heatmap.tone,
       beforeAccount,
+      noMealBmrExcluded: historicalWithoutMeal,
       exerciseDayBadge,
       deficitDayBadge,
     })
