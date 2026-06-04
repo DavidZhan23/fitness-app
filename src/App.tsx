@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { DeveloperRoute } from './components/DeveloperRoute'
 import { AuthProvider } from './context/AuthContext'
+import { CommunityInboxProvider } from './context/CommunityInboxContext'
 import { StyleProvider } from './context/StyleContext'
 import { TelemetryListener } from './components/TelemetryListener'
 import { LoginPage } from './pages/LoginPage'
@@ -67,8 +68,9 @@ export default function App() {
     <StyleProvider>
       <AuthProvider>
         <BrowserRouter>
-          <TelemetryListener />
-          <Suspense fallback={<RouteFallback />}>
+          <CommunityInboxProvider>
+            <TelemetryListener />
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/login" element={<LoginPage />} />
@@ -117,7 +119,8 @@ export default function App() {
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </Suspense>
+            </Suspense>
+          </CommunityInboxProvider>
         </BrowserRouter>
       </AuthProvider>
     </StyleProvider>

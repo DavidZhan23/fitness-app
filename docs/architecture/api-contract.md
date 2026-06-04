@@ -103,7 +103,7 @@ Base URL：
 | PUT | `/community/users/:userId/log-items/:itemType/:itemId/reaction` | 条目反应（body: `{ reaction: 1 \| -1 \| 0 }`；返回 `{ thumbsUp, thumbsDown, viewerReaction }`） |
 | GET | `/community/inbox/unread` | 未读摘要：`count`（全部）、`interactionCount`（赞/踩/留言/回复/评论赞踩，**实时聚合源表**）；排除 `community_inbox_reads` 中已逐条标已读项；`items[]` 含 `kind`（含 `comment_like`、`comment_dislike`、`follow` 等）；取消 reaction 后刷新即消失 |
 | GET | `/community/inbox` | `?mode=unread\|history&limit&offset`；`unread` 同 unread 摘要过滤（`created_at > community_notify_seen_at` 且不在 `community_inbox_reads`）；`history` 全量；列表项字段同 unread `items` |
-| POST | `/community/inbox/mark-read` | 批量标已读（更新 `community_notify_seen_at`；前端列表页不再自动调用） |
+| POST | `/community/inbox/mark-read` | 批量标已读（更新 `community_notify_seen_at`）；互动消息页「未读」Tab「一键已读」调用 |
 | POST | `/community/inbox/mark-read-item` | body: `{ inboxId: string }`（如 `comment:uuid`）；逐条标已读，写入 `community_inbox_reads`；响应 `{ ok: true }` |
 
 ## 错误

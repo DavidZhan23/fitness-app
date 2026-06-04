@@ -208,22 +208,8 @@ export function CommunityPage() {
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        await httpData.getCommunityInboxUnread()
-      } catch {
-        /* ignore */
-      } finally {
-        if (!cancelled) {
-          void refreshProfile()
-          void refreshInbox()
-        }
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
+    void refreshProfile()
+    void refreshInbox()
   }, [refreshProfile, refreshInbox])
 
   const didInitialLoad = useRef(false)
