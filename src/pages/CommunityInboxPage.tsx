@@ -138,15 +138,19 @@ function InboxItemRow({
 }
 
 export function CommunityInboxPage() {
-  const { markItemRead } = useCommunityInbox()
+  const { markItemRead, markRead } = useCommunityInbox()
   const [mode, setMode] = useState<InboxMode>('unread')
   const [items, setItems] = useState<CommunityInboxItem[]>([])
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [markingAll, setMarkingAll] = useState(false)
   const [error, setError] = useState('')
   const rawOffsetRef = useRef(0)
+
+  const showMarkAllRead =
+    mode === 'unread' && !loading && (items.length > 0 || total > 0 || hasMore)
 
   const groupedItems = useMemo(() => groupInboxItems(items), [items])
 
@@ -200,6 +204,23 @@ export function CommunityInboxPage() {
     [markItemRead, mode],
   )
 
+  const handleMarkAllRead = useCallback(async () => {
+    if (markingAll) return
+    setMarkingAll(true)
+    setError('')
+    const ok = await markRead()
+    if (!ok) {
+      setError('一键已读失败，请稍后重试')
+      setMarkingAll(false)
+      return
+    }
+    setItems([])
+    setTotal(0)
+    setHasMore(false)
+    rawOffsetRef.current = 0
+    setMarkingAll(false)
+  }, [markRead, markingAll])
+
   useEffect(() => {
     rawOffsetRef.current = 0
     void load(mode)
@@ -219,9 +240,21 @@ export function CommunityInboxPage() {
             赞、踩、评论和回复会出现在这里
           </p>
         </div>
-        <Link to="/community" className="community-inbox-back">
-          返回社区
-        </Link>
+        <div className="community-inbox-header__actions">
+          {showMarkAllRead && (
+            <button
+              type="button"
+              className="community-inbox-mark-all"
+              disabled={markingAll || loadingMore}
+              onClick={() => void handleMarkAllRead()}
+            >
+              {markingAll ? '处理中…' : '一键已读'}
+            </button>
+          )}
+          <Link to="/community" className="community-inbox-back">
+            返回社区
+          </Link>
+        </div>
       </header>
 
       <SegmentedControl

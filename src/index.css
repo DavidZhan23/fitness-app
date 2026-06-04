@@ -6852,6 +6852,36 @@ button.theme-deficit-stat--clickable:focus-visible {
   color: var(--text-muted);
 }
 
+.community-inbox-header__actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.375rem;
+}
+
+.community-inbox-mark-all {
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  background: var(--surface-elevated, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--surface-card-border);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.community-inbox-mark-all:hover:not(:disabled) {
+  background: var(--surface-card-hover, rgba(255, 255, 255, 0.1));
+}
+
+.community-inbox-mark-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .community-inbox-back {
   flex-shrink: 0;
   font-size: 0.75rem;
