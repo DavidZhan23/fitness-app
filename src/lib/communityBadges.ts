@@ -149,9 +149,8 @@ export function resolveDeficitGridBadge(input: {
   mealKcal: number
   dailyBmr: number
 }): DeficitGridDayBadge | null {
-  const { needsMealLog, foodKing } = evaluateCommunityDayStatus(input)
+  const { foodKing } = evaluateCommunityDayStatus(input)
   if (foodKing) return 'foodKing'
-  if (needsMealLog) return 'meal'
   return null
 }
 
@@ -164,7 +163,7 @@ export function heatmapBadgeLabel(badge: HeatmapDayBadge): string {
     case 'foodKing':
       return '美食大王'
     case 'meal':
-      return '记得记饮食'
+      return '饮食记录'
   }
 }
 
@@ -180,4 +179,3 @@ export function heatmapBadgeEmoji(badge: HeatmapDayBadge): string {
       return '🍽️'
   }
 }
-

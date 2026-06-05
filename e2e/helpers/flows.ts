@@ -61,10 +61,6 @@ function manualTabName(kind: 'meal' | 'exercise') {
   return kind === 'meal' ? '营养表录入' : '手动录入'
 }
 
-function sharedLogNameLabel(kind: 'meal' | 'exercise') {
-  return kind === 'meal' ? '饮食名称/描述' : '运动名称/描述'
-}
-
 /** 切换到手动/营养表分栏（三栏记录页顶部的 tab） */
 export async function expandManualLogSection(
   page: Page,
@@ -84,18 +80,18 @@ export async function logExercise(
 ) {
   await openLogPage(page, 'exercise')
   const manual = await expandManualLogSection(page, 'exercise')
-  await page.getByLabel(sharedLogNameLabel('exercise')).fill(name)
+  await manual.getByLabel('做了什么运动？').fill(name)
   await manual.getByLabel('热量 (kcal)').fill(kcal)
-  await manual.getByRole('button', { name: '保存' }).click()
+  await manual.getByRole('button', { name: '保存本次记录' }).click()
   await expectTodayRecordInExpandedList(page, name, kcal)
 }
 
 export async function logMeal(page: Page, name: string, kcal: string) {
   await openLogPage(page, 'meal')
   const manual = await expandManualLogSection(page, 'meal')
-  await page.getByLabel(sharedLogNameLabel('meal')).fill(name)
+  await manual.getByLabel('吃了什么？').fill(name)
   await manual.getByLabel('热量 (kcal)').fill(kcal)
-  await manual.getByRole('button', { name: '保存' }).click()
+  await manual.getByRole('button', { name: '保存本次记录' }).click()
   await expectTodayRecordInExpandedList(page, name, kcal)
 }
 

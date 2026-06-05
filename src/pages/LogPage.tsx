@@ -91,10 +91,6 @@ export function LogPage() {
     }),
     [isExercise],
   )
-  const sharedNamePlaceholder = isExercise
-    ? '输入运动名称或描述，例如：慢跑 40 分钟'
-    : '输入饮食名称或描述，例如：牛肉面 + 鸡蛋'
-
   useEffect(() => {
     return () => {
       if (highlightTimerRef.current != null) {
@@ -346,6 +342,7 @@ export function LogPage() {
     dragOffsetPx === 0
       ? undefined
       : ({ transform: `translate3d(${dragOffsetPx}px, 0, 0)` } as const)
+  const swipePanelClass = `log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`
 
   return (
     <div className="page-standalone" data-log-kind={kind}>
@@ -375,23 +372,6 @@ export function LogPage() {
           ))}
         </nav>
 
-        {activeMode !== 'templates' ? (
-          <section className="log-shared-name-card" aria-label="统一名称输入">
-            <label className="log-shared-name-field">
-              <span className="log-shared-name-label">
-                {isExercise ? '运动名称/描述' : '饮食名称/描述'}
-              </span>
-              <input
-                value={form.name}
-                onChange={(event) => form.setName(event.target.value)}
-                disabled={anySaving}
-                className="input w-full min-w-0"
-                placeholder={sharedNamePlaceholder}
-              />
-            </label>
-          </section>
-        ) : null}
-
         <div
           className="log-mode-swipe-area"
           onTouchStart={(event) =>
@@ -411,110 +391,108 @@ export function LogPage() {
           onTouchEnd={(event) => handleSwipeEnd(event.changedTouches[0]?.clientX ?? 0)}
           onTouchCancel={() => handleSwipeEnd(touchStartXRef.current ?? 0)}
         >
-          {activeMode === 'templates' ? (
-            <div
-              key="templates-panel"
-              className={`log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`}
-              style={panelInlineStyle}
-            >
-              <LogModePanel mode="templates">
-            <section
-              ref={templateRegionRef}
-              aria-label="常用模板"
-              className={`log-template-region${
-                highlightTemplateRegion ? ' log-template-region--intro-highlight' : ''
-              }`}
-            >
-              <TemplateSectionHeader manageTab={kind} kind={kind} />
-              <TemplateMultiPicker
-                templates={templates}
-                selectedKeys={pendingDrafts.selectedKeys}
-                onToggle={handleTemplateToggle}
-              />
-              {templateAddError ? (
-                <p className="mt-2 text-sm text-red-400">{templateAddError}</p>
-              ) : null}
-            </section>
-
-            <PendingLogDraftsSection
-              drafts={pendingDrafts.drafts}
-              saving={batchSaving}
-              hasInvalidQuantity={pendingDrafts.hasInvalidQuantity}
-              error={batchError}
-              highlight={highlightPending}
-              sectionRef={pendingSectionRef}
-              onQuantityChange={(key, value) => {
-                pendingDrafts.setQuantityInput(key, value)
-                setBatchError('')
-              }}
-              onRemove={pendingDrafts.removeDraft}
-              onConfirmSave={() => void handleConfirmSave()}
-            />
-              </LogModePanel>
-            </div>
-          ) : activeMode === 'ai' ? (
-            <div
-              key="ai-panel"
-              className={`log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`}
-              style={panelInlineStyle}
-            >
-              <LogModePanel mode="ai">
+          <div
+            key={`ai-panel-${kind}`}
+            hidden={activeMode !== 'ai'}
+            aria-hidden={activeMode !== 'ai'}
+            className={activeMode === 'ai' ? swipePanelClass : 'log-mode-swipe-panel'}
+            style={activeMode === 'ai' ? panelInlineStyle : undefined}
+          >
+            <LogModePanel mode="ai">
               <AiLogSection
+                key={kind}
                 kind={kind}
                 description={form.name}
                 onDescriptionChange={form.setName}
                 saving={aiSaving}
                 disabled={anySaving && !aiSaving}
-                showDescriptionInput={false}
                 onSave={handleAiSave}
                 onAiOutcome={aiFallbackTracker.markAiOutcome}
               />
-              </LogModePanel>
-            </div>
-          ) : (
+            </LogModePanel>
+          </div>
+
+          {activeMode === 'templates' ? (
             <div
-              key="manual-panel"
-              className={`log-mode-swipe-panel log-mode-swipe-panel--${slideDirection}${isDraggingHorizontally ? ' log-mode-swipe-panel--dragging' : ''}`}
+              key="templates-panel"
+              className={swipePanelClass}
               style={panelInlineStyle}
             >
-              <LogModePanel mode="ai">
-              <SecondaryManualLogSection
-                isExercise={isExercise}
-                kind={kind}
-                showNameField={false}
-                collapsible={false}
-                titleText={isExercise ? '手动录入' : '营养表录入'}
-                descriptionText={
-                  isExercise
-                    ? '不使用 AI 时，可直接填写热量后保存。'
-                    : '可直接填 kcal，或按包装营养表（g + kJ）自动换算。'
-                }
-                templates={templates}
-                loading={manualSaving}
-                error={manualError}
-                notice={manualNotice}
-                name={form.name}
-                onNameChange={form.setName}
-                kcal={form.kcal}
-                onKcalChange={form.setKcal}
-                mealInputMode={form.mealInputMode}
-                onMealInputModeChange={form.setMealInputMode}
-                grams={form.grams}
-                onGramsChange={form.setGrams}
-                kjPer100g={form.kjPer100g}
-                onKjPer100gChange={form.setKjPer100g}
-                packageKcal={form.packageKcal}
-                resolveKcal={form.resolveKcal}
-                onSubmitLog={handleManualSubmitLog}
-                onComplete={handleManualComplete}
-                addTemplate={(payload) => httpData.addTemplate(kind, payload)}
-                onNotice={setManualNotice}
-                onError={setManualError}
-                onSubmittingChange={setManualSaving}
-              />
+              <LogModePanel mode="templates">
+                <section
+                  ref={templateRegionRef}
+                  aria-label="常用模板"
+                  className={`log-template-region${
+                    highlightTemplateRegion
+                      ? ' log-template-region--intro-highlight'
+                      : ''
+                  }`}
+                >
+                  <TemplateSectionHeader manageTab={kind} kind={kind} />
+                  <TemplateMultiPicker
+                    templates={templates}
+                    selectedKeys={pendingDrafts.selectedKeys}
+                    onToggle={handleTemplateToggle}
+                  />
+                  {templateAddError ? (
+                    <p className="mt-2 text-sm text-red-400">{templateAddError}</p>
+                  ) : null}
+                </section>
+
+                <PendingLogDraftsSection
+                  drafts={pendingDrafts.drafts}
+                  saving={batchSaving}
+                  hasInvalidQuantity={pendingDrafts.hasInvalidQuantity}
+                  error={batchError}
+                  highlight={highlightPending}
+                  sectionRef={pendingSectionRef}
+                  onQuantityChange={(key, value) => {
+                    pendingDrafts.setQuantityInput(key, value)
+                    setBatchError('')
+                  }}
+                  onRemove={pendingDrafts.removeDraft}
+                  onConfirmSave={() => void handleConfirmSave()}
+                />
               </LogModePanel>
             </div>
-          )}
+          ) : activeMode === 'manual' ? (
+            <div
+              key="manual-panel"
+              className={swipePanelClass}
+              style={panelInlineStyle}
+            >
+              <LogModePanel mode="manual">
+                <SecondaryManualLogSection
+                  isExercise={isExercise}
+                  kind={kind}
+                  showNameField
+                  collapsible={false}
+                  templates={templates}
+                  loading={manualSaving}
+                  error={manualError}
+                  notice={manualNotice}
+                  name={form.name}
+                  onNameChange={form.setName}
+                  kcal={form.kcal}
+                  onKcalChange={form.setKcal}
+                  mealInputMode={form.mealInputMode}
+                  onMealInputModeChange={form.setMealInputMode}
+                  grams={form.grams}
+                  onGramsChange={form.setGrams}
+                  kjPer100g={form.kjPer100g}
+                  onKjPer100gChange={form.setKjPer100g}
+                  packageKcal={form.packageKcal}
+                  resolveKcal={form.resolveKcal}
+                  onSubmitLog={handleManualSubmitLog}
+                  onComplete={handleManualComplete}
+                  addTemplate={(payload) => httpData.addTemplate(kind, payload)}
+                  onNotice={setManualNotice}
+                  onError={setManualError}
+                  onSubmittingChange={setManualSaving}
+                />
+              </LogModePanel>
+            </div>
+          ) : null}
         </div>
       </PageShell>
     </div>

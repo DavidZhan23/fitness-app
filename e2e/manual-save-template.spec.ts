@@ -7,15 +7,18 @@ test('manual log can save parsed item as template', async ({ page }) => {
   await openLogAiTab(page, 'meal')
 
   const manual = await expandManualLogSection(page, 'meal')
-  await page.getByLabel('饮食名称/描述').fill('E2E 瘦鸡胸 150g')
+  await manual.getByLabel('吃了什么？').fill('E2E 瘦鸡胸 150g')
   await manual.getByLabel('热量 (kcal)').fill('248')
-  await manual.getByRole('checkbox', { name: '同时保存为快捷模板' }).check()
+  await manual.getByRole('checkbox', { name: '保存为快捷模板' }).check()
+
+  await expect(manual.getByLabel('模板名称')).toBeHidden()
+  await manual.getByRole('button', { name: '详情/调整' }).click()
 
   await expect(manual.getByLabel('模板名称')).toHaveValue('E2E 瘦鸡胸')
   await expect(manual.getByLabel('模板单位')).toHaveValue('g')
   await expect(manual.getByLabel('默认数量')).toHaveValue('150')
 
-  await manual.getByRole('button', { name: '保存' }).click()
+  await manual.getByRole('button', { name: '保存本次记录' }).click()
   await expect(page).toHaveURL('/')
 
   await page.goto('/templates?tab=meal')

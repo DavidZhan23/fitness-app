@@ -93,7 +93,7 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByText('运动连续')).toBeVisible()
     await expect(page.getByText('缺口连续')).toBeVisible()
 
-    await nav.getByRole('link', { name: '设置' }).click()
+    await page.goto('/settings')
     const splitRadio = page.getByRole('radio', { name: /分屏版/ })
     const wallStyleSaved = page.waitForResponse(
       (resp) =>
@@ -121,8 +121,7 @@ test.describe.serial('main flow smoke', () => {
 
   test('settings avatar control is available', async ({ page }) => {
     await registerAndOnboard(page, uniqueE2eEmail())
-    const nav = mainNav(page)
-    await nav.getByRole('link', { name: '设置' }).click()
+    await page.goto('/settings')
     await page.getByRole('button', { name: '查看头像' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expect(page.getByRole('button', { name: '更换头像' })).toBeVisible()

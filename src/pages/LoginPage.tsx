@@ -47,7 +47,7 @@ export function LoginPage() {
 
   return (
     <div className="page-standalone">
-      <div className="auth-shell mx-auto w-full min-w-0 max-w-sm box-border px-4 py-8">
+      <div className="auth-shell mx-auto w-full min-w-0 box-border px-4 py-8">
         <h1 className="text-2xl font-bold text-brand">满打满算</h1>
         <p className="mt-1 text-sm text-muted">记录运动与饮食，追踪热量缺口</p>
 

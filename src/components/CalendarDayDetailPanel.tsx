@@ -1,4 +1,3 @@
-import { useId, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { hasDeficitCheck, toKcal } from '../lib/calories'
 import {
@@ -21,12 +20,12 @@ export interface CalendarDayDetailPanelProps {
   deficit: number
   exerciseKcal: number
   mealKcal: number
-  bmr: number
-  tdee: number
+  dailyBmr: number
   deficitThreshold?: number
   /** 社区公开：仅荣誉称号，不含 meal 提醒 */
   honorsOnly?: boolean
   onClose: () => void
+  onEnterDayRecord?: (dateKey: string) => void
 }
 
 function formatPanelDateLine(dateKey: string): string {
@@ -55,21 +54,19 @@ export function CalendarDayDetailPanel({
   deficit,
   exerciseKcal,
   mealKcal,
-  bmr,
-  tdee,
+  dailyBmr,
   deficitThreshold,
   honorsOnly = false,
   onClose,
+  onEnterDayRecord,
 }: CalendarDayDetailPanelProps) {
-  const [referenceExpanded, setReferenceExpanded] = useState(false)
-  const referenceBodyId = useId()
   const { profile } = useAuth()
   const threshold =
     deficitThreshold != null
       ? toKcal(deficitThreshold)
       : toKcal(profile?.deficit_threshold)
 
-  const badgeInput = { deficit, exerciseKcal, mealKcal, dailyBmr: bmr }
+  const badgeInput = { deficit, exerciseKcal, mealKcal, dailyBmr }
   const { needsMealLog } = evaluateCommunityDayStatus(badgeInput)
   const honorBadges = listPublicHonorBadges(badgeInput)
   const deficitClass = deficitToneClass(deficit, threshold)
@@ -169,44 +166,14 @@ export function CalendarDayDetailPanel({
             </span>
           </div>
 
-          {!honorsOnly ? (
-            <div className="calendar-day-detail-panel__reference">
-              <button
-                type="button"
-                className="calendar-day-detail-panel__reference-toggle"
-                aria-expanded={referenceExpanded}
-                aria-controls={referenceBodyId}
-                data-testid="calendar-day-detail-reference-toggle"
-                onClick={() => setReferenceExpanded((v) => !v)}
-              >
-                计算依据
-                <span
-                  className={`calendar-day-detail-panel__reference-chevron${referenceExpanded ? ' calendar-day-detail-panel__reference-chevron--expanded' : ''}`}
-                  aria-hidden
-                >
-                  〉
-                </span>
-              </button>
-              {referenceExpanded ? (
-                <div
-                  id={referenceBodyId}
-                  className="calendar-day-detail-panel__reference-body"
-                >
-                  <p className="calendar-day-detail-panel__reference-item tabular-nums">
-                    <span className="calendar-day-detail-panel__reference-label">
-                      基础代谢（BMR）
-                    </span>
-                    {Math.round(bmr)}
-                  </p>
-                  <p className="calendar-day-detail-panel__reference-item tabular-nums">
-                    <span className="calendar-day-detail-panel__reference-label">
-                      全日消耗（TDEE）
-                    </span>
-                    {Math.round(tdee)}
-                  </p>
-                </div>
-              ) : null}
-            </div>
+          {onEnterDayRecord ? (
+            <button
+              type="button"
+              className="calendar-day-detail-panel__enter-record"
+              onClick={() => onEnterDayRecord(dateKey)}
+            >
+              进入当日记录
+            </button>
           ) : null}
         </section>
       </div>

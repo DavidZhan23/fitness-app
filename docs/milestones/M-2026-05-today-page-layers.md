@@ -1,6 +1,6 @@
 # Milestone: 今日页四层信息层级重构
 
-**Status:** active
+**Status:** done
 **Branch:** `feat/today-page-layers`
 **Issue:** （可选）
 **Started:** 2026-05-31

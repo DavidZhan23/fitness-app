@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CalendarDayDetailPanel } from '../components/CalendarDayDetailPanel'
 import { MonthHeatmap, type MonthGridType } from '../components/MonthHeatmap'
 import { SplitMonthWall } from '../components/SplitMonthWall'
@@ -32,6 +32,7 @@ import type { DayLog, HeatmapDay } from '../types'
 
 export function CalendarPage() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
   const todayKey = formatDateKey()
   const [view, setView] = useState(getTodayMonth)
   const [dayMap, setDayMap] = useState(() => new Map())
@@ -46,7 +47,7 @@ export function CalendarPage() {
 
   const threshold = toKcal(profile?.deficit_threshold)
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
-  const { bmr: profileBmr, tdee: profileTdee } = resolveProfileMetabolism(profile)
+  const { bmr: profileBmr } = resolveProfileMetabolism(profile)
   const { year, month } = view
   const selectedDateKey = detailDateKey
   const isCurrentMonth =
@@ -223,10 +224,6 @@ export function CalendarPage() {
       : null
 
   const detailOpen = detailDateKey != null
-  const detailTdee =
-    selected && detailDateKey === normalizeDateKey(String(selected.log_date))
-      ? toKcal(selected.tdee_snapshot) || profileTdee
-      : profileBmr + detailExerciseKcal
 
   if (loading) {
     return <p className="py-12 text-center text-muted">加载中…</p>
@@ -252,9 +249,16 @@ export function CalendarPage() {
         deficit={selectedDeficit}
         exerciseKcal={detailExerciseKcal}
         mealKcal={detailMealKcal}
-        bmr={profileBmr}
-        tdee={detailTdee}
+        dailyBmr={profileBmr}
         onClose={closeDetail}
+        onEnterDayRecord={(dateKey) => {
+          const communityUserId = user?.id
+          if (!communityUserId || !dateKey) return
+          closeDetail()
+          navigate(
+            `/community/${communityUserId}?date=${encodeURIComponent(dateKey)}`,
+          )
+        }}
       />
     ) : null
 

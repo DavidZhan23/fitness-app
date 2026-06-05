@@ -109,6 +109,7 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   const isCollapsible = props.collapsible ?? true
   const [expanded, setExpanded] = useState(!isCollapsible)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
+  const [templateDetailsExpanded, setTemplateDetailsExpanded] = useState(false)
   const [templateFieldsTouched, setTemplateFieldsTouched] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateUnit, setTemplateUnit] = useState('')
@@ -161,6 +162,12 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   useEffect(() => {
     if (!isCollapsible) setExpanded(true)
   }, [isCollapsible])
+
+  const sectionTitle = isExercise ? '做了什么运动？' : '吃了什么？'
+  const sectionHint = isExercise
+    ? '精确填写，直接输入运动名称和消耗热量。'
+    : '精确填写，直接输入热量或者食物包装上的营养表填写。'
+  const nameAriaLabel = sectionTitle
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -216,189 +223,196 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     }
   }
 
-  return (
-    <div className="log-manual-secondary">
-      <div className="log-manual-secondary__card">
-        {isCollapsible ? (
-          <button
-            type="button"
-            className="log-manual-secondary__toggle"
-            aria-expanded={expanded}
-            onClick={() => setExpanded((value) => !value)}
-          >
-            <span className="log-manual-secondary__copy">
-              <strong className="log-manual-secondary__title">
-                {props.titleText ?? '不用 AI？直接填写 kcal'}
-              </strong>
-              <span className="log-manual-secondary__desc">
-                {props.descriptionText ?? '已知道热量时，可以直接保存本次记录。'}
-              </span>
-            </span>
-            <span className="log-manual-secondary__action" aria-hidden="true">
-              {expanded ? '收起' : '展开'}
-            </span>
-          </button>
-        ) : (
-          <div className="log-manual-secondary__header">
-            <div className="log-manual-secondary__copy">
-              <strong className="log-manual-secondary__title">
-                {props.titleText ?? '不用 AI？直接填写 kcal'}
-              </strong>
-              <span className="log-manual-secondary__desc">
-                {props.descriptionText ?? '已知道热量时，可以直接保存本次记录。'}
-              </span>
-            </div>
-          </div>
-        )}
+  const manualForm = (
+    <section aria-label="手动填写" className="log-manual-section">
+      <ResponsiveForm
+        onSubmit={(event) => void handleSubmit(event)}
+        className="log-manual-section__form"
+      >
+        <div className="log-manual-secondary__input-panel">
+          {props.showNameField !== false ? (
+            isCollapsible ? (
+              <label className="log-manual-secondary__field">
+                <span className="log-manual-secondary__field-label">名称</span>
+                <input
+                  value={props.name}
+                  onChange={(e) => props.onNameChange(e.target.value)}
+                  disabled={props.loading}
+                  className="input w-full min-w-0"
+                  placeholder={
+                    props.isExercise
+                      ? '例如：慢跑 40 分钟'
+                      : '例如：牛肉面 1 碗'
+                  }
+                  aria-label="名称"
+                  required
+                />
+              </label>
+            ) : (
+              <input
+                value={props.name}
+                onChange={(e) => props.onNameChange(e.target.value)}
+                disabled={props.loading}
+                className="input w-full min-w-0"
+                placeholder={
+                  props.isExercise
+                    ? '例如：慢跑 40 分钟'
+                    : '例如：牛肉面 1 碗'
+                }
+                aria-label={nameAriaLabel}
+                required
+              />
+            )
+          ) : null}
 
-        {expanded ? (
-          <div className="log-manual-secondary__body">
-            <div className="log-manual-secondary__body-card">
-              <section aria-label="手动填写" className="log-manual-section">
-                <ResponsiveForm
-                  onSubmit={(event) => void handleSubmit(event)}
-                  className="log-manual-section__form"
-                >
-                  {props.showNameField !== false ? (
-                    <label className="log-manual-secondary__field">
-                      <span className="log-manual-secondary__field-label">
-                        名称
-                      </span>
-                      <input
-                        value={props.name}
-                        onChange={(e) => props.onNameChange(e.target.value)}
-                        disabled={props.loading}
-                        className="input w-full min-w-0"
-                        aria-label="名称"
-                        required
-                      />
-                    </label>
-                  ) : null}
-
-                  {!props.isExercise && (
-                    <div
-                      role="group"
-                      aria-label="热量输入方式"
-                      className="log-meal-mode-tabs flex p-1 text-sm"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => props.onMealInputModeChange('kcal')}
-                        className={`flex-1 rounded-md py-2 transition ${
-                          props.mealInputMode === 'kcal'
-                            ? 'log-meal-mode-btn--active font-medium'
-                            : 'log-meal-mode-btn--idle'
-                        }`}
+                    {!props.isExercise && (
+                      <div
+                        role="group"
+                        aria-label="热量输入方式"
+                        className="log-meal-mode-tabs flex p-1 text-sm"
                       >
-                        直接输入 kcal
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => props.onMealInputModeChange('package')}
-                        className={`flex-1 rounded-md py-2 transition ${
-                          props.mealInputMode === 'package'
-                            ? 'log-meal-mode-btn--active font-medium'
-                            : 'log-meal-mode-btn--idle'
-                        }`}
-                      >
-                        包装标注 (g + kJ)
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          onClick={() => props.onMealInputModeChange('kcal')}
+                          className={`flex-1 rounded-md py-2 transition ${
+                            props.mealInputMode === 'kcal'
+                              ? 'log-meal-mode-btn--active font-medium'
+                              : 'log-meal-mode-btn--idle'
+                          }`}
+                        >
+                          直接输入 kcal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => props.onMealInputModeChange('package')}
+                          className={`flex-1 rounded-md py-2 transition ${
+                            props.mealInputMode === 'package'
+                              ? 'log-meal-mode-btn--active font-medium'
+                              : 'log-meal-mode-btn--idle'
+                          }`}
+                        >
+                          包装标注 (g + kJ)
+                        </button>
+                      </div>
+                    )}
 
-                  {props.isExercise || props.mealInputMode === 'kcal' ? (
-                    <label className="log-manual-secondary__field">
-                      <span className="log-manual-secondary__field-label">
-                        热量 (kcal)
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={props.kcal}
-                        onChange={(e) => props.onKcalChange(e.target.value)}
-                        className="input w-full min-w-0 tabular-nums"
-                        aria-label="热量 (kcal)"
-                        required={
-                          props.isExercise || props.mealInputMode === 'kcal'
-                        }
-                      />
-                    </label>
-                  ) : (
-                    <>
+                    {props.isExercise || props.mealInputMode === 'kcal' ? (
                       <label className="log-manual-secondary__field">
                         <span className="log-manual-secondary__field-label">
-                          食用量 (g)
+                          热量 (kcal)
                         </span>
                         <input
                           type="number"
                           min="0"
                           step="1"
-                          value={props.grams}
-                          onChange={(e) => props.onGramsChange(e.target.value)}
+                          value={props.kcal}
+                          onChange={(e) => props.onKcalChange(e.target.value)}
                           className="input w-full min-w-0 tabular-nums"
-                          aria-label="食用量 (g)"
-                          required
+                          aria-label="热量 (kcal)"
+                          required={
+                            props.isExercise || props.mealInputMode === 'kcal'
+                          }
                         />
                       </label>
-                      <label className="log-manual-secondary__field">
-                        <span className="log-manual-secondary__field-label">
-                          能量 (千焦 / 100g)
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={props.kjPer100g}
-                          onChange={(e) =>
-                            props.onKjPer100gChange(e.target.value)
-                          }
-                          className="input w-full min-w-0 tabular-nums"
-                          aria-label="能量 (千焦 / 100g)"
-                          required
-                        />
+                    ) : (
+                      <>
+                        <div className="log-manual-secondary__field-grid">
+                          <label className="log-manual-secondary__field">
+                            <span className="log-manual-secondary__field-label">
+                              食用量 (g)
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={props.grams}
+                              onChange={(e) =>
+                                props.onGramsChange(e.target.value)
+                              }
+                              className="input w-full min-w-0 tabular-nums"
+                              aria-label="食用量 (g)"
+                              required
+                            />
+                          </label>
+                          <label className="log-manual-secondary__field">
+                            <span className="log-manual-secondary__field-label">
+                              能量 (千焦 / 100g)
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={props.kjPer100g}
+                              onChange={(e) =>
+                                props.onKjPer100gChange(e.target.value)
+                              }
+                              className="input w-full min-w-0 tabular-nums"
+                              aria-label="能量 (千焦 / 100g)"
+                              required
+                            />
+                          </label>
+                        </div>
                         <p className="log-manual-secondary__field-hint">
                           按包装标注自动换算：kcal = (g ÷ 100) × (kJ/100g ÷{' '}
                           {KJ_PER_KCAL})
                         </p>
-                      </label>
-                      {props.packageKcal != null && props.packageKcal > 0 ? (
-                        <p className="log-package-kcal-hint px-3 py-2 text-sm">
-                          约{' '}
-                          <span className="font-semibold tabular-nums">
-                            {props.packageKcal}
-                          </span>{' '}
-                          kcal
-                        </p>
-                      ) : null}
-                    </>
-                  )}
+                        {props.packageKcal != null && props.packageKcal > 0 ? (
+                          <p className="log-package-kcal-hint px-3 py-2 text-sm">
+                            约{' '}
+                            <span className="font-semibold tabular-nums">
+                              {props.packageKcal}
+                            </span>{' '}
+                            kcal
+                          </p>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
 
-                  <label className="log-manual-secondary__template-option">
-                    <input
-                      type="checkbox"
-                      aria-label="同时保存为快捷模板"
-                      checked={saveAsTemplate}
-                      onChange={(e) => {
-                        const checked = e.target.checked
-                        setSaveAsTemplate(checked)
-                        if (checked && !templateFieldsTouched) {
+                  <div className="log-manual-secondary__template-block">
+                    <label className="log-ai-item-card__template-option">
+                      <input
+                        type="checkbox"
+                        aria-label="保存为快捷模板"
+                        checked={saveAsTemplate}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          setSaveAsTemplate(checked)
+                          if (!checked) {
+                            setTemplateDetailsExpanded(false)
+                          }
+                          if (checked && !templateFieldsTouched) {
+                            applySuggestion()
+                          }
+                        }}
+                        disabled={props.loading}
+                      />
+                      <span className="log-ai-item-card__template-copy">
+                        <strong className="log-ai-item-card__template-title">
+                          保存为快捷模板
+                        </strong>
+                        <span className="log-ai-item-card__template-desc">
+                          下次可直接点选，系统会按数量自动计算热量。
+                        </span>
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      className="log-manual-secondary__template-details-btn"
+                      aria-expanded={templateDetailsExpanded}
+                      disabled={!saveAsTemplate || props.loading}
+                      onClick={() => {
+                        setTemplateDetailsExpanded((value) => !value)
+                        if (!templateFieldsTouched) {
                           applySuggestion()
                         }
                       }}
-                      disabled={props.loading}
-                    />
-                    <span className="log-manual-secondary__template-copy">
-                      <strong className="log-manual-secondary__template-title">
-                        同时保存为快捷模板
-                      </strong>
-                      <span className="log-manual-secondary__template-desc">
-                        保存后下次可以直接点选
-                      </span>
-                    </span>
-                  </label>
+                    >
+                      {templateDetailsExpanded ? '收起' : '详情/调整'}
+                    </button>
+                  </div>
 
-                  {saveAsTemplate ? (
+                  {saveAsTemplate && templateDetailsExpanded ? (
                     <div className="log-template-fields">
                       <label className="log-manual-secondary__field">
                         <span className="log-manual-secondary__field-label">
@@ -472,16 +486,54 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                     <p className="text-sm text-secondary">{props.notice}</p>
                   ) : null}
 
-                  <button
-                    type="submit"
-                    disabled={props.loading}
-                    className="log-manual-secondary__submit"
-                  >
-                    {props.loading ? '保存中…' : '保存'}
-                  </button>
-                </ResponsiveForm>
-              </section>
-            </div>
+        <button
+          type="submit"
+          disabled={props.loading}
+          className="btn-primary w-full py-3 disabled:opacity-50"
+        >
+          {props.loading ? '保存中…' : '保存本次记录'}
+        </button>
+      </ResponsiveForm>
+    </section>
+  )
+
+  if (!isCollapsible) {
+    return (
+      <div className="log-ai-card log-ai-card--section">
+        <header className="log-ai-card__header">
+          <h2 className="log-section-title">{sectionTitle}</h2>
+          <p className="log-ai-card__hint">{sectionHint}</p>
+        </header>
+        {manualForm}
+      </div>
+    )
+  }
+
+  return (
+    <div className="log-manual-secondary">
+      <div className="log-manual-secondary__card">
+        <button
+          type="button"
+          className="log-manual-secondary__toggle"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <span className="log-manual-secondary__copy">
+            <strong className="log-manual-secondary__title">
+              {props.titleText ?? '不用 AI？直接填写 kcal'}
+            </strong>
+            <span className="log-manual-secondary__desc">
+              {props.descriptionText ?? '已知道热量时，可以直接保存本次记录。'}
+            </span>
+          </span>
+          <span className="log-manual-secondary__action" aria-hidden="true">
+            {expanded ? '收起' : '展开'}
+          </span>
+        </button>
+
+        {expanded ? (
+          <div className="log-manual-secondary__body">
+            <div className="log-manual-secondary__body-card">{manualForm}</div>
           </div>
         ) : null}
       </div>

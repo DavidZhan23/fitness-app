@@ -1,7 +1,7 @@
 export function SetupPage() {
   return (
     <div className="page-standalone">
-      <div className="auth-shell mx-auto w-full min-w-0 max-w-md box-border space-y-4 px-4 py-8">
+      <div className="auth-shell mx-auto w-full min-w-0 box-border space-y-4 px-4 py-8">
         <h1 className="text-xl font-bold text-brand">需要配置 API 地址</h1>
         <p className="text-sm text-muted leading-relaxed">
           请在项目根目录创建 <code className="rounded bg-slate-800 px-1">.env.local</code>{' '}

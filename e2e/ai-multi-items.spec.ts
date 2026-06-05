@@ -47,6 +47,9 @@ test('AI estimate shows multiple editable items with confidence and reason', asy
   await expect(result.locator('.log-ai-item-card')).toHaveCount(2)
   await expect(result.getByText('估算可参考')).toBeVisible()
   await expect(result.locator('.log-ai-confidence--low')).toHaveText('份量不明确')
+  await expect(result.getByText('AI 估算依据：按一碗牛肉面估算')).toBeHidden()
+  await result.getByRole('button', { name: '详情/调整' }).nth(0).click()
+  await result.getByRole('button', { name: '详情/调整' }).nth(0).click()
   await expect(result.getByText('AI 估算依据：按一碗牛肉面估算')).toBeVisible()
   await expect(
     result.getByText('AI 估算依据：描述较模糊，按普通份量估算'),

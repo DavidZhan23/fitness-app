@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DeficitCard } from '../components/DeficitCard'
 import { HeroGreeting } from '../components/HeroGreeting'
-import { TodayFeedbackCard } from '../components/TodayFeedbackCard'
 import { TodayRecordsSection } from '../components/TodayRecordsSection'
+import { UserAvatar } from '../components/UserAvatar'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
@@ -22,7 +22,6 @@ import {
 } from '../lib/metabolism'
 import { displayName } from '../lib/profileDisplay'
 import { formatDateKey } from '../lib/streaks'
-import { buildTodayHonors } from '../lib/todayHonors'
 import type { DayLog, Exercise, Meal } from '../types'
 
 export function TodayPage() {
@@ -139,14 +138,28 @@ export function TodayPage() {
   const noRecordsToday = exercises.length === 0 && meals.length === 0
 
   return (
-    <PageShell>
+    <PageShell className="today-page-shell">
       <div className="today-hero-block today-hero-block--compact">
-        <HeroGreeting
-          name={greeting}
-          themeStyle={style}
-          customWelcomeMessage={profile?.welcome_message}
-          customWelcomeSubtitle={profile?.welcome_subtitle}
-        />
+        <div className="today-hero-heading">
+          <Link
+            to="/settings#body-profile"
+            className="today-hero-heading__avatar-link"
+            aria-label="进入我的身体资料设置"
+          >
+            <UserAvatar
+              profile={profile}
+              user={user}
+              size="lg"
+              className="today-hero-heading__avatar"
+            />
+          </Link>
+          <HeroGreeting
+            name={greeting}
+            themeStyle={style}
+            customWelcomeMessage={profile?.welcome_message}
+            customWelcomeSubtitle={profile?.welcome_subtitle}
+          />
+        </div>
         <DeficitCard
           dateLabel={dateLabel}
           deficit={deficit}
@@ -162,7 +175,7 @@ export function TodayPage() {
         />
       </div>
 
-      <StatsGrid columns={2}>
+      <StatsGrid columns={2} className="today-action-grid">
         <Link
           to="/log/exercise"
           className="theme-quick-action theme-quick-action--exercise"
@@ -176,17 +189,6 @@ export function TodayPage() {
           + 记饮食
         </Link>
       </StatsGrid>
-
-      <TodayFeedbackCard
-        exerciseCount={exercises.length}
-        deficit={deficit}
-        honors={buildTodayHonors({
-          deficit,
-          exerciseKcal,
-          mealKcal,
-          dailyBmr: fullDayBmr,
-        })}
-      />
 
       <TodayRecordsSection
         exercises={exercises}

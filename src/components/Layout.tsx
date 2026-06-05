@@ -5,7 +5,6 @@ const navItems = [
   { to: '/', label: '今日', icon: '◉' },
   { to: '/calendar', label: '打卡', icon: '▦' },
   { to: '/community', label: '社区', icon: '◎', notify: true },
-  { to: '/settings', label: '设置', icon: '⚙' },
 ]
 
 export function Layout() {

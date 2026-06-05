@@ -183,10 +183,12 @@ export function CommunityUserPage() {
     }
   }, [userId, todayKey, loadDay, searchParams])
 
+  const urlDate = searchParams.get('date')
+
   useEffect(() => {
     if (location.hash === '#day-comments') return
     scrollCommunityMainToTop()
-  }, [userId, location.hash])
+  }, [userId, location.hash, urlDate])
 
   useEffect(() => {
     if (!userId) return
@@ -296,11 +298,19 @@ export function CommunityUserPage() {
         deficit={detailDeficit}
         exerciseKcal={detailExerciseKcal}
         mealKcal={detailMealKcal}
-        bmr={detailBmr}
-        tdee={detailBmr + detailExerciseKcal}
+        dailyBmr={detailBmr}
         deficitThreshold={detailThreshold}
         honorsOnly={!isSelf}
         onClose={closeDetail}
+        onEnterDayRecord={(dateKey) => {
+          if (!userId || !dateKey) return
+          navigate(
+            `/community/${userId}?date=${encodeURIComponent(dateKey)}`,
+            { replace: true },
+          )
+          closeDetail()
+          scrollCommunityMainToTop()
+        }}
       />
     ) : null
 
