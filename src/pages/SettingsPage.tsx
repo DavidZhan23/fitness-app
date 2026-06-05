@@ -4,7 +4,6 @@ import { AvatarCropEditor } from '../components/AvatarCropEditor'
 import { PageShell } from '../components/ui/responsive'
 import { HeroCollabSwitch } from '../components/HeroCollabSwitch'
 import { InstallGuide } from '../components/InstallGuide'
-import { MetabolismSummary } from '../components/MetabolismSummary'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
@@ -369,7 +368,7 @@ export function SettingsPage() {
         </Link>
       )}
 
-      <section className="surface-panel p-4">
+      <section id="body-profile" className="surface-panel scroll-mt-6 p-4">
         <h2 className="font-semibold text-primary">个人资料</h2>
 
         <div className="profile-fields-stack mt-3">
@@ -485,10 +484,6 @@ export function SettingsPage() {
             </div>
           </div>
         </div>
-
-        {profile && (
-          <MetabolismSummary profile={profile} variant="embedded" />
-        )}
 
         <details className="group mt-3 border-t border-slate-600/40 pt-3">
           <summary className="settings-menu-summary cursor-pointer list-none text-sm marker:content-none [&::-webkit-details-marker]:hidden">

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { RESPONSIVE_VIEWPORTS } from '../src/lib/responsive'
 import { mainNav, registerAndOnboard, uniqueE2eEmail } from './helpers/auth'
 import { logExercise } from './helpers/flows'
@@ -7,12 +7,6 @@ import {
   assertLocatorInScrollport,
   assertNoDescendantWiderThanViewport,
 } from './helpers/layout'
-
-function feedbackWall(page: Page, wallTitle: '运动墙' | '热量墙') {
-  return page
-    .locator('.today-feedback-wall')
-    .filter({ has: page.getByRole('heading', { name: wallTitle, level: 3 }) })
-}
 
 for (const viewport of RESPONSIVE_VIEWPORTS) {
   test.describe.serial(`today responsive @ ${viewport.name}`, () => {
@@ -35,6 +29,14 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         page,
         page.locator('.hero-greeting'),
         '欢迎语',
+      )
+      const profileAvatarLink = page.getByRole('link', {
+        name: '进入我的身体资料设置',
+      })
+      await assertLocatorInScrollport(
+        page,
+        profileAvatarLink,
+        '头像资料入口',
       )
       await assertLocatorInScrollport(
         page,
@@ -75,29 +77,10 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
       await expect(page.getByText('随时间自然增长')).toBeVisible()
       await page.getByRole('button', { name: '知道了' }).click()
 
-      await expect(page.getByText('运动墙')).toBeVisible()
-      await expect(page.getByText('热量墙')).toBeVisible()
-
-      const exerciseWall = feedbackWall(page, '运动墙')
-      await expect(exerciseWall.locator('.today-feedback-wall__status')).toHaveText(
-        '今日已点亮',
-      )
-      await expect(exerciseWall.locator('.today-feedback-wall__count')).toHaveText(
-        /运动 \d+ 条/,
-      )
-
-      const mealWall = feedbackWall(page, '热量墙')
-      await expect(mealWall.locator('.today-feedback-wall__status')).toHaveText(
-        '今日已点亮',
-      )
-      await expect(mealWall.locator('.today-feedback-wall__count')).toHaveText(
-        /缺口 \+\d+ kcal/,
-      )
-
       await assertNoDescendantWiderThanViewport(
         page,
-        '.today-feedback-card',
-        `${viewport.name} / 今日反馈`,
+        '.theme-deficit-card',
+        `${viewport.name} / 缺口卡`,
       )
 
       await mainNav(page).getByRole('link', { name: '今日' }).click()
@@ -106,6 +89,10 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         page.locator('.theme-deficit-stats'),
         '三项统计',
       )
+
+      await profileAvatarLink.click()
+      await expect(page).toHaveURL(/\/settings#body-profile$/)
+      await expect(page.getByRole('heading', { name: '设置' })).toBeVisible()
     })
   })
 }

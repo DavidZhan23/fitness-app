@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  inboxActorDayHref,
   inboxItemHref,
   resolveDateFromSearchParams,
 } from '../communityInboxNav'
@@ -21,15 +22,15 @@ function inboxItem(
 }
 
 describe('inboxItemHref', () => {
-  it('like navigates to liker profile without date or hash', () => {
+  it('like navigates to target day record without hash', () => {
     expect(inboxItemHref(inboxItem({ kind: 'like' }))).toBe(
-      '/community/actor-1',
+      '/community/target-1?date=2025-05-29',
     )
   })
 
-  it('dislike navigates to disliker profile without date or hash', () => {
+  it('dislike navigates to target day record without hash', () => {
     expect(inboxItemHref(inboxItem({ kind: 'dislike' }))).toBe(
-      '/community/actor-1',
+      '/community/target-1?date=2025-05-29',
     )
   })
 
@@ -58,6 +59,14 @@ describe('inboxItemHref', () => {
     )
     expect(inboxItemHref(inboxItem({ kind: 'comment_dislike' }))).toBe(
       '/community/target-1?date=2025-05-29#day-comments',
+    )
+  })
+})
+
+describe('inboxActorDayHref', () => {
+  it('navigates avatar clicks to actor day record', () => {
+    expect(inboxActorDayHref(inboxItem({ kind: 'comment_on_card' }))).toBe(
+      '/community/actor-1?date=2025-05-29',
     )
   })
 })

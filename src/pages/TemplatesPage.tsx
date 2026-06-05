@@ -186,39 +186,13 @@ export function TemplatesPage() {
         data-template-kind={tab}
       >
         <header className="log-page-header templates-page__header">
-          {batchMode ? (
-            <div className="templates-page__batch-bar">
-              <p className="templates-page__batch-count">
-                已选 {selectedCount} 个
-              </p>
-              <div className="templates-page__batch-actions">
-                <button
-                  type="button"
-                  className="templates-page__batch-cancel"
-                  onClick={exitBatchMode}
-                  disabled={deleting}
-                >
-                  取消
-                </button>
-                <button
-                  type="button"
-                  className="templates-page__batch-delete"
-                  disabled={selectedCount === 0 || deleting}
-                  onClick={openBatchDeleteConfirm}
-                >
-                  {batchDeleteLabel(selectedCount)}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="log-pill-btn log-page-back"
-            >
-              ← 返回
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="log-pill-btn log-page-back"
+          >
+            ← 返回
+          </button>
           <h1 className="log-page-title">小满模板库</h1>
           <p className="templates-page__intro">
             管理常用模板，快捷记录时可以直接点选。
@@ -264,7 +238,26 @@ export function TemplatesPage() {
                   : '饮食常用模板'}
             </p>
           </div>
-          {batchMode ? null : (
+          {batchMode ? (
+            <div className="templates-page__list-batch-actions">
+              <button
+                type="button"
+                className="templates-page__batch-cancel"
+                onClick={exitBatchMode}
+                disabled={deleting}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="templates-page__batch-delete"
+                disabled={selectedCount === 0 || deleting}
+                onClick={openBatchDeleteConfirm}
+              >
+                {batchDeleteLabel(selectedCount)}
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
               className="log-pill-btn"
@@ -344,19 +337,6 @@ export function TemplatesPage() {
             )
           })}
         </div>
-
-        {batchMode ? (
-          <footer className="templates-page__batch-footer">
-            <button
-              type="button"
-              className="templates-page__batch-delete-primary"
-              disabled={selectedCount === 0 || deleting}
-              onClick={openBatchDeleteConfirm}
-            >
-              {batchDeleteLabel(selectedCount)}
-            </button>
-          </footer>
-        ) : null}
 
         <TemplateFormDialog
           open={formDialog != null}

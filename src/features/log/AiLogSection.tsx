@@ -51,30 +51,6 @@ function createItemId() {
   return `ai-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-const AI_EXAMPLES: Record<'exercise' | 'meal', string[]> = {
-  meal: [
-    '一碗牛肉面',
-    '今天吃了点烧烤',
-    '半杯奶茶',
-    '鸡胸肉 150g',
-    '一个鸡蛋',
-    '一盘炒饭',
-  ],
-  exercise: [
-    '慢跑 40 分钟',
-    '力量训练一小时',
-    '骑车半小时',
-    '散步一会儿',
-    '跳绳 10 分钟',
-    '瑜伽 30 分钟',
-  ],
-}
-
-const AI_EXAMPLES_LABEL: Record<'exercise' | 'meal', string> = {
-  meal: '试试这样说：',
-  exercise: '可以这样描述：',
-}
-
 function formatItemSummaryMeta(item: AiEstimateItemState): string {
   const qty = toFinitePositive(item.quantityInput)
   const kcal = toFinitePositive(item.kcalInput)
@@ -145,6 +121,7 @@ export function AiLogSection({
   showDescriptionInput = true,
 }: AiLogSectionProps) {
   const [items, setItems] = useState<AiEstimateItemState[]>([])
+  const [expandedItemIds, setExpandedItemIds] = useState<Record<string, boolean>>({})
   const [estimating, setEstimating] = useState(false)
   const [estimateError, setEstimateError] = useState('')
   const [saveError, setSaveError] = useState('')
@@ -155,10 +132,12 @@ export function AiLogSection({
   const sectionHint = isExercise
     ? '描述运动和时长即可；AI 只估运动额外消耗，不含基础代谢。'
     : '不用精确到克数，像聊天一样描述也可以。'
+  const fuzzyHint = isExercise
+    ? '支持模糊输入：像聊天一样写，比如“晚饭后散步一会儿”。'
+    : '支持模糊输入：像聊天一样写，比如“一碗牛肉面”。'
   const placeholder = isExercise
     ? '例如：慢跑 40 分钟 + 拉伸 10 分钟'
     : '例如：一碗牛肉面 + 一个鸡蛋'
-  const examplesLabel = AI_EXAMPLES_LABEL[kind]
 
   const busy = disabled || saving || estimating
 
@@ -171,6 +150,10 @@ export function AiLogSection({
     )
   }
 
+  const toggleItemExpanded = (id: string) => {
+    setExpandedItemIds((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
   const handleEstimate = async () => {
     const desc = description.trim()
     if (desc.length < 2) {
@@ -181,6 +164,7 @@ export function AiLogSection({
     setEstimateError('')
     setHasEstimate(false)
     setItems([])
+    setExpandedItemIds({})
 
     const started = performance.now()
     const controller = new AbortController()
@@ -190,7 +174,9 @@ export function AiLogSection({
       const response = await httpData.estimateKcal(kind, desc, {
         signal: controller.signal,
       })
-      setItems(mapResponseItems(desc, kind, response))
+      const nextItems = mapResponseItems(desc, kind, response)
+      setItems(nextItems)
+      setExpandedItemIds({})
       setHasEstimate(true)
       onAiOutcome?.('success')
       const durationMs = Math.round(performance.now() - started)
@@ -283,29 +269,10 @@ export function AiLogSection({
             />
           </label>
         ) : (
-          <p className="log-ai-card__hint">{`当前输入：${description.trim() || placeholder}`}</p>
+          <p className="log-ai-card__hint">{fuzzyHint}</p>
         )}
 
-        <div className="log-ai-examples">
-          <p className="log-ai-examples__label">{examplesLabel}</p>
-          <div className="log-ai-examples__chips">
-            {AI_EXAMPLES[kind].map((example) => (
-              <button
-                key={example}
-                type="button"
-                disabled={busy}
-                aria-label={`使用示例：${example}`}
-                className="log-ai-example-chip"
-                onClick={() => {
-                  onDescriptionChange(example)
-                  setEstimateError('')
-                }}
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-        </div>
+        <p className="log-ai-fuzzy-hint">{fuzzyHint}</p>
 
         <button
           type="button"
@@ -325,135 +292,156 @@ export function AiLogSection({
             <header className="log-ai-results__header">
               <h3 className="log-ai-results__title">AI 估算结果</h3>
               <p className="log-ai-results__hint">
-                结果仅供参考，份量不明确时可以手动调整。
+                先按轻量记录保存；有疑问再展开调整。
               </p>
             </header>
 
             <div className="log-ai-results__list">
-              {items.map((item) => (
-                <article key={item.id} className="log-ai-item-card">
-                  <div className="log-ai-item-card__summary">
-                    <div className="log-ai-item-card__summary-main">
-                      <strong className="log-ai-item-card__title">
-                        {item.name.trim() || '未命名'}
-                      </strong>
-                      <span className="log-ai-item-card__meta tabular-nums">
-                        {formatItemSummaryMeta(item)}
-                      </span>
+              {items.map((item) => {
+                const expanded = Boolean(expandedItemIds[item.id])
+
+                return (
+                  <article
+                    key={item.id}
+                    className={`log-ai-item-card${expanded ? ' log-ai-item-card--expanded' : ''}`}
+                  >
+                    <div className="log-ai-item-card__summary">
+                      <div className="log-ai-item-card__summary-main">
+                        <strong className="log-ai-item-card__title">
+                          {item.name.trim() || '未命名'}
+                        </strong>
+                        <span className="log-ai-item-card__meta tabular-nums">
+                          {formatItemSummaryMeta(item)}
+                        </span>
+                      </div>
+                      <div className="log-ai-item-card__actions">
+                        <span
+                          className={`log-ai-confidence log-ai-confidence--${item.confidence}`}
+                        >
+                          {CONFIDENCE_LABELS[item.confidence]}
+                        </span>
+                        <button
+                          type="button"
+                          className="log-ai-item-card__details-btn"
+                          aria-expanded={expanded}
+                          onClick={() => toggleItemExpanded(item.id)}
+                        >
+                          {expanded ? '收起' : '详情/调整'}
+                        </button>
+                      </div>
                     </div>
-                    <span
-                      className={`log-ai-confidence log-ai-confidence--${item.confidence}`}
-                    >
-                      {CONFIDENCE_LABELS[item.confidence]}
-                    </span>
-                  </div>
 
-                  <p className="log-ai-item-card__reason">
-                    AI 估算依据：{item.reason}
-                  </p>
+                    {expanded ? (
+                      <div className="log-ai-item-card__details">
+                        <p className="log-ai-item-card__reason">
+                          AI 估算依据：{item.reason}
+                        </p>
 
-                  <div className="log-ai-item-card__edit">
-                    <p className="log-ai-item-card__edit-hint">
-                      想调整？可以修改下面的数值。
-                    </p>
+                        <div className="log-ai-item-card__edit">
+                          <p className="log-ai-item-card__edit-hint">
+                            可以在保存前调整名称、份量、单位和热量。
+                          </p>
 
-                    <div className="log-ai-item-card__fields">
-                      <label className="log-ai-item-card__field log-ai-item-card__field--name">
-                        <span className="log-ai-item-card__field-label">名称</span>
-                        <input
-                          value={item.name}
-                          onChange={(e) =>
-                            updateItem(item.id, { name: e.target.value })
-                          }
-                          disabled={busy}
-                          className="input w-full min-w-0"
-                          aria-label="名称"
-                        />
-                      </label>
-                      <div className="log-ai-item-card__field-row log-ai-item-card__field-row--metrics">
-                        <label className="log-ai-item-card__field">
-                          <span className="log-ai-item-card__field-label">
-                            数量
-                          </span>
+                          <div className="log-ai-item-card__fields">
+                            <label className="log-ai-item-card__field log-ai-item-card__field--name">
+                              <span className="log-ai-item-card__field-label">名称</span>
+                              <input
+                                value={item.name}
+                                onChange={(e) =>
+                                  updateItem(item.id, { name: e.target.value })
+                                }
+                                disabled={busy}
+                                className="input w-full min-w-0"
+                                aria-label="名称"
+                              />
+                            </label>
+                            <div className="log-ai-item-card__field-row log-ai-item-card__field-row--metrics">
+                              <label className="log-ai-item-card__field">
+                                <span className="log-ai-item-card__field-label">
+                                  数量
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={item.quantityInput}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      quantityInput: e.target.value,
+                                    })
+                                  }
+                                  disabled={busy}
+                                  className="input w-full min-w-0 tabular-nums"
+                                  aria-label={`${item.name} 数量`}
+                                />
+                              </label>
+                              <label className="log-ai-item-card__field">
+                                <span className="log-ai-item-card__field-label">
+                                  单位
+                                </span>
+                                <input
+                                  value={item.unit}
+                                  onChange={(e) =>
+                                    updateItem(item.id, { unit: e.target.value })
+                                  }
+                                  disabled={busy}
+                                  className="input w-full min-w-0"
+                                  aria-label={`${item.name} 单位`}
+                                />
+                              </label>
+                              <label className="log-ai-item-card__field">
+                                <span className="log-ai-item-card__field-label">
+                                  热量 (kcal)
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={item.kcalInput}
+                                  onChange={(e) =>
+                                    updateItem(item.id, { kcalInput: e.target.value })
+                                  }
+                                  disabled={busy}
+                                  className="input w-full min-w-0 tabular-nums"
+                                  aria-label={`${item.name} 热量`}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <label className="log-ai-item-card__template-option">
                           <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            value={item.quantityInput}
+                            type="checkbox"
+                            aria-label="保存为快捷模板"
+                            checked={item.saveAsTemplate}
                             onChange={(e) =>
                               updateItem(item.id, {
-                                quantityInput: e.target.value,
+                                saveAsTemplate: e.target.checked,
                               })
                             }
                             disabled={busy}
-                            className="input w-full min-w-0 tabular-nums"
-                            aria-label={`${item.name} 数量`}
                           />
-                        </label>
-                        <label className="log-ai-item-card__field">
-                          <span className="log-ai-item-card__field-label">
-                            单位
+                          <span className="log-ai-item-card__template-copy">
+                            <strong className="log-ai-item-card__template-title">
+                              保存为快捷模板
+                            </strong>
+                            <span className="log-ai-item-card__template-desc">
+                              下次可直接点选，系统会按数量自动计算热量。
+                            </span>
                           </span>
-                          <input
-                            value={item.unit}
-                            onChange={(e) =>
-                              updateItem(item.id, { unit: e.target.value })
-                            }
-                            disabled={busy}
-                            className="input w-full min-w-0"
-                            aria-label={`${item.name} 单位`}
-                          />
                         </label>
-                        <label className="log-ai-item-card__field">
-                          <span className="log-ai-item-card__field-label">
-                            热量 (kcal)
-                          </span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            value={item.kcalInput}
-                            onChange={(e) =>
-                              updateItem(item.id, { kcalInput: e.target.value })
-                            }
-                            disabled={busy}
-                            className="input w-full min-w-0 tabular-nums"
-                            aria-label={`${item.name} 热量`}
-                          />
-                        </label>
+
+                        {item.confidence === 'low' && item.saveAsTemplate ? (
+                          <p className="log-ai-item-card__template-warning">
+                            份量较模糊，保存为模板前建议确认单位和数量。
+                          </p>
+                        ) : null}
                       </div>
-                    </div>
-                  </div>
-
-                  <label className="log-ai-item-card__template-option">
-                    <input
-                      type="checkbox"
-                      aria-label="保存为快捷模板"
-                      checked={item.saveAsTemplate}
-                      onChange={(e) =>
-                        updateItem(item.id, {
-                          saveAsTemplate: e.target.checked,
-                        })
-                      }
-                      disabled={busy}
-                    />
-                    <span className="log-ai-item-card__template-copy">
-                      <strong className="log-ai-item-card__template-title">
-                        保存为快捷模板
-                      </strong>
-                      <span className="log-ai-item-card__template-desc">
-                        下次可直接点选，系统会按数量自动计算热量。
-                      </span>
-                    </span>
-                  </label>
-
-                  {item.confidence === 'low' && item.saveAsTemplate ? (
-                    <p className="log-ai-item-card__template-warning">
-                      份量较模糊，保存为模板前建议确认单位和数量。
-                    </p>
-                  ) : null}
-                </article>
-              ))}
+                    ) : null}
+                  </article>
+                )
+              })}
             </div>
 
             <footer className="log-ai-results__footer">

@@ -23,7 +23,8 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await logExercise(page, 'E2E 布局检查运动', '180')
 
       const nav = mainNav(page)
-      await expect(nav.getByRole('link')).toHaveCount(4)
+      await expect(nav.getByRole('link')).toHaveCount(3)
+      await expect(nav.getByRole('link', { name: '设置' })).toHaveCount(0)
 
       // Today
       await nav.getByRole('link', { name: '今日' }).click()
@@ -64,6 +65,9 @@ for (const viewport of MOBILE_VIEWPORTS) {
         page.getByRole('tab', { name: '全部', exact: true }),
         '社区 全部 tab',
       )
+      await page.getByRole('link', { name: '打开我的个人主页' }).click()
+      await expect(page.getByText('这是你的公开主页')).toBeVisible()
+      await assertLayoutShell(page, `${viewport.name} /community/self`)
 
       // Templates (via log templates mode; no tab bar item)
       await nav.getByRole('link', { name: '今日' }).click()
@@ -85,8 +89,8 @@ for (const viewport of MOBILE_VIEWPORTS) {
         '小满模板库标题',
       )
 
-      // Settings
-      await nav.getByRole('link', { name: '设置' }).click()
+      // Settings route remains available, but is no longer a tab bar item.
+      await page.goto('/settings')
       await expect(page.getByRole('heading', { name: '设置' })).toBeVisible()
       await assertLayoutShell(page, `${viewport.name} /settings`)
       await assertLocatorInScrollport(
@@ -112,8 +116,8 @@ for (const viewport of MOBILE_VIEWPORTS) {
         page,
         page
           .getByRole('region', { name: '手动填写' })
-          .getByRole('button', { name: '保存' }),
-        '记运动 保存',
+          .getByRole('button', { name: '保存本次记录' }),
+        '记运动 保存本次记录',
         { standalone: true },
       )
     })

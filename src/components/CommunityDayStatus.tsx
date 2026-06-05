@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import {
   BADGE_THRESHOLDS,
   evaluateCommunityDayStatus,
@@ -39,9 +38,8 @@ export function CommunityDayStatus({
     mealKcal: snapshot.mealKcal,
     dailyBmr: snapshot.dailyBmr,
   })
-  const showMealReminder = status.needsMealLog && isSelf
 
-  if (!showMealReminder && !status.badge && !status.foodKing) return null
+  if (!status.badge && !status.foodKing) return null
 
   if (variant === 'compact') {
     if (!status.badge && !status.foodKing) return null
@@ -80,9 +78,6 @@ export function CommunityDayStatus({
             compact
           />
         )}
-        {showMealReminder && (
-          <MealReminderCard isSelf={isSelf} compact />
-        )}
       </div>
     )
   }
@@ -111,7 +106,6 @@ export function CommunityDayStatus({
           dailyBmr={snapshot.dailyBmr}
         />
       )}
-      {showMealReminder && <MealReminderCard isSelf={isSelf} />}
     </div>
   )
 }
@@ -155,17 +149,6 @@ export function PersonalDayStatus({
       )
     }
 
-    if (status.needsMealLog) {
-      return (
-        <TodayStatusStrip
-          icon="🍽️"
-          desc="今天还没记录饮食，补上后数据会更准确"
-          tone="reminder"
-          reminder
-          badgeLabel="点击上方「+ 记饮食」"
-        />
-      )
-    }
     return (
       <TodayStatusStrip
         icon="✨"
@@ -176,7 +159,7 @@ export function PersonalDayStatus({
     )
   }
 
-  if (!status.needsMealLog && !status.badge && !status.foodKing) return null
+  if (!status.badge && !status.foodKing) return null
 
   if (variant === 'side') {
     const items: {
@@ -209,15 +192,6 @@ export function PersonalDayStatus({
         tone: 'meal',
       })
     }
-    if (status.needsMealLog) {
-      items.push({
-        icon: '🍽️',
-        title: '记得记饮食',
-        desc: '缺口不错，补录饮食更准确',
-        tone: 'meal',
-      })
-    }
-
     return (
       <div className="flex flex-col gap-2">
         {items.map((item) => (
@@ -248,7 +222,6 @@ export function PersonalDayStatus({
       {status.foodKing && (
         <FoodKingBanner mealKcal={mealKcal} dailyBmr={dailyBmr} />
       )}
-      {status.needsMealLog && <MealReminderCard isSelf />}
     </div>
   )
 }
@@ -488,57 +461,5 @@ function StatChip({
       <span className="community-badge-chip__label">{label} </span>
       <span className="community-badge-chip__value font-semibold tabular-nums">{value}</span>
     </span>
-  )
-}
-
-function MealReminderCard({
-  isSelf,
-  compact = false,
-}: {
-  isSelf?: boolean
-  compact?: boolean
-}) {
-  if (compact) {
-    return (
-      <div className="community-meal-reminder community-meal-reminder--compact">
-        <span className="text-base" aria-hidden>
-          🍽️
-        </span>
-        <span>
-          缺口不错，但还没记饮食哦～
-          {isSelf ? ' 补录一下更准' : ' 提醒 TA 吃饭'}
-        </span>
-      </div>
-    )
-  }
-
-  return (
-    <section className="community-meal-reminder rounded-2xl p-4">
-      <div className="flex items-start gap-3">
-        <span
-          className="community-meal-reminder__icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl"
-          aria-hidden
-        >
-          🍽️
-        </span>
-        <div>
-          <p className="community-meal-reminder__title font-semibold">记得记饮食</p>
-          <p className="community-meal-reminder__desc mt-1 text-sm leading-relaxed">
-            今天缺口看起来不错，但饮食还是 0 千卡。
-            {isSelf
-              ? ' 把吃了什么记下来，缺口才算真实，也方便健友给你点赞～'
-              : ' 友善提醒：补录饮食后，数据会更准确哦。'}
-          </p>
-          {isSelf && (
-            <Link
-              to="/log/meal"
-              className="community-meal-reminder__cta mt-3 inline-block rounded-lg px-3 py-1.5 text-xs font-medium"
-            >
-              去记饮食
-            </Link>
-          )}
-        </div>
-      </div>
-    </section>
   )
 }

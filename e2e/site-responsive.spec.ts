@@ -29,7 +29,10 @@ const SITE_ROUTES: SiteRoute[] = [
     name: 'today',
     path: '/',
     anchors: [
-      { label: '欢迎语', getLocator: (p) => p.locator('.hero-greeting') },
+      {
+        label: '欢迎语',
+        getLocator: (p) => p.locator('.hero-greeting'),
+      },
       { label: '缺口主卡', getLocator: (p) => p.locator('.theme-deficit-card') },
       {
         label: '记运动',
@@ -109,15 +112,18 @@ const SITE_ROUTES: SiteRoute[] = [
     standalone: true,
     anchors: [
       {
-        label: '保存',
+        label: '保存本次记录',
         getLocator: (p) =>
           p
             .getByRole('region', { name: '手动填写' })
-            .getByRole('button', { name: '保存' }),
+            .getByRole('button', { name: '保存本次记录' }),
       },
     ],
   },
 ]
+
+const AUTH_SHELL_MAX_PX = 512 // 32rem
+const AUTH_SHELL_WIDTH_TOLERANCE_PX = 2
 
 for (const viewport of RESPONSIVE_VIEWPORTS) {
   test.describe.serial(`site responsive @ ${viewport.name}`, () => {
@@ -166,11 +172,33 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         `${label} registration key should be above submit`,
       ).toBeLessThan(submitBox!.y)
 
-      const minFieldWidth = viewport.width * 0.6
-      expect(
-        emailBox!.width,
-        `${label} email width should not collapse`,
-      ).toBeGreaterThanOrEqual(minFieldWidth)
+      const authShellBox = await page.locator('.auth-shell').boundingBox()
+      expect(authShellBox, `${label} auth-shell box`).not.toBeNull()
+
+      if (viewport.name === 'desktop-smoke') {
+        expect(
+          authShellBox!.width,
+          `${label} auth-shell should not exceed 32rem on desktop`,
+        ).toBeLessThanOrEqual(AUTH_SHELL_MAX_PX + AUTH_SHELL_WIDTH_TOLERANCE_PX)
+
+        for (const [fieldLabel, fieldBox] of [
+          ['email', emailBox],
+          ['password', passwordBox],
+          ['registration key', registrationKeyBox],
+          ['submit', submitBox],
+        ] as const) {
+          expect(
+            fieldBox!.width,
+            `${label} ${fieldLabel} should fit within auth-shell`,
+          ).toBeLessThanOrEqual(authShellBox!.width + AUTH_SHELL_WIDTH_TOLERANCE_PX)
+        }
+      } else {
+        const minFieldWidth = viewport.width * 0.6
+        expect(
+          emailBox!.width,
+          `${label} email width should not collapse`,
+        ).toBeGreaterThanOrEqual(minFieldWidth)
+      }
     })
 
     test('main routes fit viewport', async ({ page }) => {
