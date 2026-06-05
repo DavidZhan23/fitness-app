@@ -4,7 +4,7 @@ import { UserAvatar } from '../components/UserAvatar'
 import { SegmentedControl } from '../components/ui/responsive'
 import { useCommunityInbox } from '../hooks/useCommunityInbox'
 import { httpData } from '../lib/api'
-import { inboxItemHref } from '../lib/communityInboxNav'
+import { inboxActorDayHref, inboxItemHref } from '../lib/communityInboxNav'
 import { formatDateKey, normalizeDateKey } from '../lib/streaks'
 import type { CommunityInboxItem, CommunityInboxListResponse } from '../types'
 
@@ -105,35 +105,44 @@ function InboxItemRow({
   onView?: () => void
 }) {
   return (
-    <Link
-      to={inboxItemHref(item)}
-      className="community-inbox-row"
-      onClick={() => onView?.()}
-    >
-      <UserAvatar
-        variant="community"
-        size="sm"
-        nickname={item.actorNickname}
-        avatarUrl={item.actorAvatarUrl}
-      />
-      <span className="community-inbox-row__main">
-        <span className="community-inbox-row__title">
-          <span className="font-medium">{item.actorNickname}</span>{' '}
-          {itemActionText(item)}
-        </span>
-        {item.bodyPreview && (
-          <span className="community-inbox-row__quote">
-            「{item.bodyPreview}」
+    <div className="community-inbox-row">
+      <Link
+        to={inboxActorDayHref(item)}
+        className="community-inbox-row__avatar-link"
+        aria-label={`查看 ${item.actorNickname} 的当日记录`}
+        onClick={() => onView?.()}
+      >
+        <UserAvatar
+          variant="community"
+          size="sm"
+          nickname={item.actorNickname}
+          avatarUrl={item.actorAvatarUrl}
+        />
+      </Link>
+      <Link
+        to={inboxItemHref(item)}
+        className="community-inbox-row__content-link"
+        onClick={() => onView?.()}
+      >
+        <span className="community-inbox-row__main">
+          <span className="community-inbox-row__title">
+            <span className="font-medium">{item.actorNickname}</span>{' '}
+            {itemActionText(item)}
           </span>
-        )}
-      </span>
-      <span className="community-inbox-row__aside">
-        <span className="community-inbox-row__time">
-          {formatItemTime(item.createdAt, groupKey)}
+          {item.bodyPreview && (
+            <span className="community-inbox-row__quote">
+              「{item.bodyPreview}」
+            </span>
+          )}
         </span>
-        <span className="community-inbox-action">查看</span>
-      </span>
-    </Link>
+        <span className="community-inbox-row__aside">
+          <span className="community-inbox-row__time">
+            {formatItemTime(item.createdAt, groupKey)}
+          </span>
+          <span className="community-inbox-action">查看</span>
+        </span>
+      </Link>
+    </div>
   )
 }
 

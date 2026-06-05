@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DeficitCard } from '../components/DeficitCard'
 import { HeroGreeting } from '../components/HeroGreeting'
+import { TodayFeedbackCard } from '../components/TodayFeedbackCard'
 import { TodayRecordsSection } from '../components/TodayRecordsSection'
 import { UserAvatar } from '../components/UserAvatar'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
@@ -22,6 +23,7 @@ import {
 } from '../lib/metabolism'
 import { displayName } from '../lib/profileDisplay'
 import { formatDateKey } from '../lib/streaks'
+import { buildTodayHonors } from '../lib/todayHonors'
 import type { DayLog, Exercise, Meal } from '../types'
 
 export function TodayPage() {
@@ -135,7 +137,12 @@ export function TodayPage() {
   const threshold = toKcal(profile?.deficit_threshold)
 
   const greeting = displayName(profile, user)
-  const noRecordsToday = exercises.length === 0 && meals.length === 0
+  const todayHonors = buildTodayHonors({
+    deficit,
+    exerciseKcal,
+    mealKcal,
+    dailyBmr: fullDayBmr,
+  })
 
   return (
     <PageShell className="today-page-shell">
@@ -190,6 +197,12 @@ export function TodayPage() {
         </Link>
       </StatsGrid>
 
+      <TodayFeedbackCard
+        exerciseCount={exercises.length}
+        deficit={deficit}
+        honors={todayHonors}
+      />
+
       <TodayRecordsSection
         exercises={exercises}
         meals={meals}
@@ -202,11 +215,6 @@ export function TodayPage() {
         onUpdateMeal={handleUpdateMeal}
       />
 
-      {noRecordsToday ? (
-        <p className="text-xs text-muted">
-          连续记录后，可以在「打卡」里查看热力图。
-        </p>
-      ) : null}
     </PageShell>
   )
 }

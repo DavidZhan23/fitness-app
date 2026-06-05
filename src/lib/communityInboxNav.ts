@@ -2,9 +2,6 @@ import { normalizeDateKey } from './streaks'
 import type { CommunityInboxItem } from '../types'
 
 export function inboxItemHref(item: CommunityInboxItem): string {
-  if (item.kind === 'like' || item.kind === 'dislike') {
-    return `/community/${item.actorId}`
-  }
   if (
     item.kind === 'comment_on_card' ||
     item.kind === 'reply' ||
@@ -14,6 +11,10 @@ export function inboxItemHref(item: CommunityInboxItem): string {
     return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}#day-comments`
   }
   return `/community/${item.targetUserId}?date=${encodeURIComponent(item.logDate)}`
+}
+
+export function inboxActorDayHref(item: CommunityInboxItem): string {
+  return `/community/${item.actorId}?date=${encodeURIComponent(item.logDate)}`
 }
 
 export function resolveDateFromSearchParams(

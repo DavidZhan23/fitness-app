@@ -5286,7 +5286,7 @@ button.theme-deficit-stat--clickable:focus-visible {
 .today-feedback-walls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.625rem;
+  gap: clamp(0.375rem, 2vw, 0.625rem);
   width: 100%;
   min-width: 0;
 }
@@ -5294,7 +5294,7 @@ button.theme-deficit-stat--clickable:focus-visible {
 .today-feedback-wall {
   box-sizing: border-box;
   min-width: 0;
-  padding: 0.75rem;
+  padding: clamp(0.5rem, 2.6vw, 0.75rem);
   border-radius: 0.75rem;
   border: 1px solid color-mix(in oklab, var(--surface-border) 80%, transparent);
   background: var(--surface-card);
@@ -5328,7 +5328,7 @@ button.theme-deficit-stat--clickable:focus-visible {
   margin: 0;
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 0.8125rem;
+  font-size: clamp(0.75rem, 3.2vw, 0.8125rem);
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -5343,11 +5343,11 @@ button.theme-deficit-stat--clickable:focus-visible {
 
 .today-feedback-wall__status {
   flex-shrink: 0;
-  padding: 0.25rem 0.625rem;
+  padding: 0.2rem clamp(0.375rem, 1.8vw, 0.625rem);
   border-radius: 999px;
   border: 1px solid color-mix(in oklab, var(--surface-border) 85%, transparent);
   background: color-mix(in oklab, var(--surface-card) 90%, var(--surface-card-soft));
-  font-size: 0.6875rem;
+  font-size: clamp(0.625rem, 2.7vw, 0.6875rem);
   font-weight: 600;
   line-height: 1.25;
   white-space: nowrap;
@@ -5379,7 +5379,7 @@ button.theme-deficit-stat--clickable:focus-visible {
 
 .today-feedback-wall__count {
   margin: 0.25rem 0 0;
-  font-size: 0.8125rem;
+  font-size: clamp(0.72rem, 3vw, 0.8125rem);
   line-height: 1.45;
   color: var(--text-muted);
   overflow-wrap: anywhere;
@@ -5418,6 +5418,33 @@ button.theme-deficit-stat--clickable:focus-visible {
   gap: 0.5rem;
   margin-top: 0.625rem;
   min-width: 0;
+}
+
+@media (max-width: 390px) {
+  .today-feedback-walls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .today-feedback-wall__header {
+    gap: 0.25rem;
+  }
+
+  .today-feedback-wall__status {
+    max-width: 4.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .today-feedback-honor--compact {
+    padding: 0.45rem 0.5rem;
+  }
+
+  .today-feedback-honor--compact .today-status-strip__icon {
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
 }
 
 /* 今日记录：统一轻量卡片（收起/展开同一容器） */
@@ -6998,7 +7025,6 @@ button.theme-deficit-stat--clickable:focus-visible {
   overflow: hidden;
   padding: 0.5rem 0.625rem;
   color: inherit;
-  text-decoration: none;
   transition: background-color 0.15s ease;
 }
 
@@ -7008,6 +7034,27 @@ button.theme-deficit-stat--clickable:focus-visible {
 
 .community-inbox-list > li + li .community-inbox-row {
   border-top: 1px solid var(--surface-card-border);
+}
+
+.community-inbox-row__avatar-link {
+  flex: 0 0 auto;
+  border-radius: 0.75rem;
+  text-decoration: none;
+}
+
+.community-inbox-row__avatar-link:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+.community-inbox-row__content-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  color: inherit;
+  text-decoration: none;
 }
 
 .community-inbox-row__main {
