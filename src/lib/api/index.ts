@@ -1,3 +1,4 @@
+import type { MealPhotoQuota } from '../../lib/mealPhotoQuota'
 import {
   DEFAULT_EXERCISE_TEMPLATES,
   DEFAULT_MEAL_TEMPLATES,
@@ -192,6 +193,38 @@ export const httpData = {
     return apiFetch('/ai/estimate-kcal', {
       method: 'POST',
       body: JSON.stringify({ type, description }),
+      signal: init?.signal,
+    })
+  },
+
+  async getMealPhotoQuota(): Promise<MealPhotoQuota> {
+    return apiFetch('/ai/meal-photo-quota')
+  },
+
+  async estimateKcalFromPhoto(
+    imageDataUrl: string,
+    supplement = '',
+    init?: { signal?: AbortSignal },
+  ): Promise<{
+    kcal: number
+    mealPhotoQuota?: MealPhotoQuota
+    items?: {
+      name: string
+      quantity?: number
+      unit?: string
+      kcal: number
+      confidence?: 'high' | 'medium' | 'low'
+      reason?: string
+    }[]
+  }> {
+    return apiFetch('/ai/estimate-kcal', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'meal',
+        modality: 'image',
+        image: imageDataUrl,
+        description: supplement.trim() || undefined,
+      }),
       signal: init?.signal,
     })
   },

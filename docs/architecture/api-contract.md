@@ -34,7 +34,11 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| POST | `/ai/estimate-kcal` | DeepSeek 估算千卡（需服务端 Key）。Body: `{ type: 'exercise'|'meal', description: string }`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**（不含基础代谢/静息代谢）；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**：`[{ name, quantity, unit, kcal, confidence?, reason? }]`（`confidence`: `high` \| `medium` \| `low`；`reason`: 服务端 normalize 后 ≤60 Unicode 字符的简短估算依据），此时 `kcal` 为各 item 之和；仅顶层 kcal 时返回单条 fallback item |
+| GET | `/ai/meal-photo-quota` | 饮食拍照识别当日额度。响应 `{ limit, used, remaining, unlimited, dateKey }`；`remaining` 在开发者无限额时为 `null`；`unlimited: true` 表示不受 30 次/日限制 |
+| POST | `/ai/estimate-kcal` | AI 估算千卡。文本：`{ type: 'exercise'\|'meal', description: string }`。拍照（仅 meal）：`{ type: 'meal', modality: 'image', image: 'data:image/jpeg;base64,...', description?: string }`。拍照成功响应可含 **`mealPhotoQuota`**；超额返回 **429** 且带 `mealPhotoQuota`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**（同下） |
+| （同上 items 格式） | | `[{ name, quantity, unit, kcal, confidence?, reason? }]` |
+
+拍照识别配额：普通用户 **30 次/人/日**（Asia/Shanghai 日历日）；`DEVELOPER_EMAILS` 白名单用户不限次、不计数。
 
 ## 遥测（轻量埋点）
 

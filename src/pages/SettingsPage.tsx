@@ -17,6 +17,7 @@ import { useBlurAutosave } from '../hooks/useBlurAutosave'
 import {
   fileToCroppedAvatarDataUrl,
   loadImage,
+  prepareAvatarFile,
   type AvatarCropRect,
 } from '../lib/avatarImage'
 import {
@@ -306,13 +307,15 @@ export function SettingsPage() {
 
   const handleAvatarFile = async (file: File | undefined) => {
     if (!file || avatarBusy) return
+    setAvatarBusy(true)
     setAvatarError('')
     try {
-      const image = await loadImage(file)
-      const objectUrl = URL.createObjectURL(file)
+      const preparedFile = await prepareAvatarFile(file)
+      const image = await loadImage(preparedFile)
+      const objectUrl = URL.createObjectURL(preparedFile)
       const defaultSize = Math.max(1, Math.min(image.width, image.height))
       clearCropState()
-      setCropFile(file)
+      setCropFile(preparedFile)
       setCropImageUrl(objectUrl)
       setCropImageSize({ width: image.width, height: image.height })
       setCropRect({
@@ -324,6 +327,8 @@ export function SettingsPage() {
       setIsAvatarCropOpen(true)
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setAvatarBusy(false)
     }
     if (avatarInputRef.current) avatarInputRef.current.value = ''
   }

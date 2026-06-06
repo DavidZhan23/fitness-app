@@ -172,14 +172,21 @@ function Stat({
 
   if (clickable && onClick) {
     return (
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className={className}
         aria-label={clickAriaLabel}
         onClick={onClick}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onClick()
+          }
+        }}
       >
         {content}
-      </button>
+      </div>
     )
   }
 

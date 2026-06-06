@@ -5,6 +5,7 @@
  * @property {{ weight_kg?: number|null }} [profile]
  * @property {'text'|'image'} [modality]
  * @property {Buffer[]} [images]
+ * @property {string} [imageDataUrl]
  */
 
 /**

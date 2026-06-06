@@ -37,13 +37,20 @@ export async function apiFetch<T>(
       typeof data.error === 'string' && data.error.trim()
         ? data.error.trim()
         : ''
-    if (res.status === 502 || res.status === 503 || res.status === 504) {
-      throw new Error(
-        serverMsg ||
-          '服务暂时不可用，请稍后重试（若持续出现请重启服务器 API）',
-      )
+    const err = new Error(
+      serverMsg ||
+        (res.status === 502 || res.status === 503 || res.status === 504
+          ? '服务暂时不可用，请稍后重试（若持续出现请重启服务器 API）'
+          : res.statusText || '请求失败'),
+    ) as Error & {
+      status?: number
+      mealPhotoQuota?: unknown
     }
-    throw new Error(serverMsg || res.statusText || '请求失败')
+    err.status = res.status
+    if (data.mealPhotoQuota && typeof data.mealPhotoQuota === 'object') {
+      err.mealPhotoQuota = data.mealPhotoQuota
+    }
+    throw err
   }
   return data as T
 }
