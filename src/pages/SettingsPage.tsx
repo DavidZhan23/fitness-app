@@ -7,7 +7,7 @@ import { InstallGuide } from '../components/InstallGuide'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
-import { ACTIVITY_LEVELS } from '../lib/calories'
+import { ACTIVITY_LEVELS, resolveProfileMetabolism } from '../lib/calories'
 import {
   ageFromBirthdayKey,
   formatTodayDateKey,
@@ -26,7 +26,8 @@ import {
   styleOptionsForGroup,
 } from '../lib/styleOptions'
 import { getHeroCollabConfig } from '../lib/themeMeta'
-import type { Sex, WallStyle } from '../types'
+import { getMetabolismByMode, METABOLISM_MODE_ICON } from '../lib/metabolism'
+import type { MetabolismMode, Sex, WallStyle } from '../types'
 
 export function SettingsPage() {
   const { user, profile, updateProfile, signOut } = useAuth()
@@ -53,6 +54,9 @@ export function SettingsPage() {
   )
   const [wallStyle, setWallStyle] = useState<WallStyle>(
     () => (profile?.wall_style === 'split' ? 'split' : 'classic'),
+  )
+  const [metabolismMode, setMetabolismMode] = useState<MetabolismMode>(
+    () => (profile?.metabolism_mode === 'time_spread' ? 'time_spread' : 'full_day'),
   )
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [avatarBusy, setAvatarBusy] = useState(false)
@@ -83,6 +87,9 @@ export function SettingsPage() {
     setWelcomeMessage(profile.welcome_message ?? '')
     setWelcomeSubtitle(profile.welcome_subtitle ?? '')
     setWallStyle(profile.wall_style === 'split' ? 'split' : 'classic')
+    setMetabolismMode(
+      profile.metabolism_mode === 'time_spread' ? 'time_spread' : 'full_day',
+    )
   }, [profile])
 
   useEffect(() => {
@@ -256,12 +263,48 @@ export function SettingsPage() {
 
   const savedWallStyle: WallStyle =
     profile?.wall_style === 'split' ? 'split' : 'classic'
+  const savedMetabolismMode: MetabolismMode =
+    profile?.metabolism_mode === 'time_spread' ? 'time_spread' : 'full_day'
   const currentStyleTitle = findStyleOption(style)?.title ?? '深海能量'
+  const { bmr: fullDayBmr } = resolveProfileMetabolism(profile)
+  const metabolismExampleKcal = getMetabolismByMode(
+    fullDayBmr,
+    todayKey,
+    metabolismMode,
+  )
 
   const [wallStyleSaveState, setWallStyleSaveState] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle')
   const [wallStyleBusy, setWallStyleBusy] = useState(false)
+  const [metabolismModeSaveState, setMetabolismModeSaveState] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle')
+  const [metabolismModeBusy, setMetabolismModeBusy] = useState(false)
+
+  const handleMetabolismModeChange = useCallback(
+    async (next: MetabolismMode) => {
+      if (metabolismModeBusy || next === metabolismMode) return
+      setMetabolismMode(next)
+      setMetabolismModeSaveState('saving')
+      setMetabolismModeBusy(true)
+      try {
+        await updateProfile({ metabolism_mode: next })
+        setMetabolismModeSaveState('saved')
+      } catch {
+        setMetabolismMode(savedMetabolismMode)
+        setMetabolismModeSaveState('error')
+      } finally {
+        setMetabolismModeBusy(false)
+      }
+    },
+    [
+      metabolismModeBusy,
+      metabolismMode,
+      savedMetabolismMode,
+      updateProfile,
+    ],
+  )
 
   const handleWallStyleChange = useCallback(
     async (next: WallStyle) => {
@@ -287,6 +330,12 @@ export function SettingsPage() {
     const timer = window.setTimeout(() => setWallStyleSaveState('idle'), 3000)
     return () => clearTimeout(timer)
   }, [wallStyleSaveState])
+
+  useEffect(() => {
+    if (metabolismModeSaveState !== 'saved') return
+    const timer = window.setTimeout(() => setMetabolismModeSaveState('idle'), 3000)
+    return () => clearTimeout(timer)
+  }, [metabolismModeSaveState])
 
   const handleSignOut = async () => {
     await signOut()
@@ -590,6 +639,91 @@ export function SettingsPage() {
 
           </div>
         </details>
+      </section>
+
+      <section className="surface-card metabolism-mode-card p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-medium text-primary">基础代谢计入方式</h2>
+            <p className="mt-1 text-xs text-muted">
+              决定今天的基础代谢何时计入热量缺口
+            </p>
+          </div>
+          <div className="shrink-0 text-xs">
+            {metabolismModeSaveState === 'saving' && (
+              <span className="text-muted">保存中…</span>
+            )}
+            {metabolismModeSaveState === 'saved' && (
+              <span className="text-brand">已保存</span>
+            )}
+            {metabolismModeSaveState === 'error' && (
+              <span className="text-amber-400">保存失败</span>
+            )}
+          </div>
+        </div>
+
+        <fieldset className="metabolism-mode-options mt-3">
+          <legend className="sr-only">基础代谢计入方式</legend>
+          <label className="metabolism-mode-option cursor-pointer">
+            <input
+              type="radio"
+              name="metabolism_mode"
+              value="full_day"
+              checked={metabolismMode === 'full_day'}
+              disabled={metabolismModeBusy}
+              onChange={() => void handleMetabolismModeChange('full_day')}
+            />
+            <span className="metabolism-mode-option__icon" aria-hidden>
+              {METABOLISM_MODE_ICON.full_day}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-primary">
+                全天计入
+              </span>
+              <span className="mt-1 block text-xs text-muted">
+                当天开始后，立即计入全天基础代谢
+              </span>
+            </span>
+            <span className="metabolism-mode-option__check" aria-hidden>
+              ✓
+            </span>
+          </label>
+
+          <label className="metabolism-mode-option cursor-pointer">
+            <input
+              type="radio"
+              name="metabolism_mode"
+              value="time_spread"
+              checked={metabolismMode === 'time_spread'}
+              disabled={metabolismModeBusy}
+              onChange={() => void handleMetabolismModeChange('time_spread')}
+            />
+            <span className="metabolism-mode-option__icon" aria-hidden>
+              {METABOLISM_MODE_ICON.time_spread}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-primary">
+                随时间累计
+              </span>
+              <span className="mt-1 block text-xs text-muted">
+                基础代谢随当天时间逐分钟增加
+              </span>
+            </span>
+            <span className="metabolism-mode-option__check" aria-hidden>
+              ✓
+            </span>
+          </label>
+        </fieldset>
+
+        <div className="metabolism-mode-example mt-3">
+          <span className="text-xs text-muted">今天当前计入</span>
+          <strong className="tabular-nums text-primary">
+            {Math.round(metabolismExampleKcal)} kcal
+          </strong>
+          <span className="text-xs text-muted">
+            {metabolismMode === 'full_day' ? '全天额度已计入' : '随时间继续增加'}
+          </span>
+        </div>
       </section>
 
       <section className="surface-card p-4">

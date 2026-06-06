@@ -6,7 +6,7 @@ import { SplitMonthWall } from '../components/SplitMonthWall'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { httpData } from '../lib/api'
-import { calculateSpreadDeficit } from '../lib/metabolism'
+import { calculateDeficitByMode } from '../lib/metabolism'
 import { buildMonthDayMap } from '../lib/monthData'
 import {
   formatMonthTitle,
@@ -48,6 +48,7 @@ export function CalendarPage() {
   const threshold = toKcal(profile?.deficit_threshold)
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
   const { bmr: profileBmr } = resolveProfileMetabolism(profile)
+  const metabolismMode = profile?.metabolism_mode
   const { year, month } = view
   const selectedDateKey = detailDateKey
   const isCurrentMonth =
@@ -61,7 +62,14 @@ export function CalendarPage() {
     const logs = await httpData.fetchDayLogsRange(from, to)
 
     setDayMap(
-      buildMonthDayMap(logs, threshold, todayKey, accountStartKey, profileBmr),
+      buildMonthDayMap(
+        logs,
+        threshold,
+        todayKey,
+        accountStartKey,
+        profileBmr,
+        metabolismMode,
+      ),
     )
 
     const streakFrom = getLastNDays(120)[0]
@@ -76,24 +84,17 @@ export function CalendarPage() {
         )
         const exerciseKcal = log ? toKcal(log.exercise_kcal) : 0
         const mealKcal = log ? toKcal(log.meal_kcal) : 0
-        const endOfDay = new Date(`${date}T23:59:59`)
         const deficit =
           beforeAccount || !log
             ? 0
-            : date === todayKey
-              ? calculateSpreadDeficit(
-                  profileBmr,
-                  exerciseKcal,
-                  mealKcal,
-                  date,
-                )
-              : calculateSpreadDeficit(
-                  profileBmr,
-                  exerciseKcal,
-                  mealKcal,
-                  date,
-                  endOfDay,
-                )
+            : calculateDeficitByMode(
+                profileBmr,
+                exerciseKcal,
+                mealKcal,
+                date,
+                date === todayKey ? metabolismMode : 'full_day',
+                date === todayKey ? new Date() : new Date(`${date}T23:59:59`),
+              )
         return {
           date,
           exerciseCheck: exerciseKcal > 0,
@@ -107,7 +108,16 @@ export function CalendarPage() {
     setStreakDeficit(computeStreak(streakDays, 'deficit'))
 
     setLoading(false)
-  }, [user, year, month, threshold, todayKey, accountStartKey, profileBmr])
+  }, [
+    user,
+    year,
+    month,
+    threshold,
+    todayKey,
+    accountStartKey,
+    profileBmr,
+    metabolismMode,
+  ])
 
   useEffect(() => {
     load()
@@ -140,6 +150,7 @@ export function CalendarPage() {
           todayKey,
           accountStartKey,
           profileBmr,
+          metabolismMode,
         )
         const cell = refreshed.get(key)
         if (cell) {
@@ -160,6 +171,7 @@ export function CalendarPage() {
       todayKey,
       accountStartKey,
       profileBmr,
+      metabolismMode,
     ],
   )
 
@@ -191,17 +203,19 @@ export function CalendarPage() {
         : detailCell?.deficit ??
           (selected && detailDateKey === normalizeDateKey(String(selected.log_date))
             ? detailDateKey === todayKey
-              ? calculateSpreadDeficit(
+              ? calculateDeficitByMode(
                   profileBmr,
                   toKcal(selected.exercise_kcal),
                   toKcal(selected.meal_kcal),
                   todayKey,
+                  metabolismMode,
                 )
-              : calculateSpreadDeficit(
+              : calculateDeficitByMode(
                   profileBmr,
                   toKcal(selected.exercise_kcal),
                   toKcal(selected.meal_kcal),
                   detailDateKey,
+                  'full_day',
                   new Date(`${detailDateKey}T23:59:59`),
                 )
             : 0)

@@ -1,6 +1,18 @@
 /** 将全日 TDEE 均匀摊到每一分钟的基础代谢 */
 
 import { toKcal } from './calories'
+import type { MetabolismMode } from '../types'
+
+/** 与设置页「基础代谢计入方式」选项图标一致 */
+export const METABOLISM_MODE_ICON: Record<MetabolismMode, string> = {
+  full_day: '☀',
+  time_spread: '◷',
+}
+
+export const METABOLISM_MODE_LABEL: Record<MetabolismMode, string> = {
+  full_day: '全天计入',
+  time_spread: '随时间累计',
+}
 
 const MINUTES_PER_DAY = 24 * 60
 
@@ -36,6 +48,27 @@ export function getAccumulatedMetabolism(
   return Math.round(getMetabolismPerMinute(tdee) * minutes)
 }
 
+export function normalizeMetabolismMode(
+  mode: MetabolismMode | null | undefined,
+): MetabolismMode {
+  return mode === 'time_spread' ? 'time_spread' : 'full_day'
+}
+
+/** 按用户偏好取得某日计入的基础代谢；历史日始终按全天，未来日为 0。 */
+export function getMetabolismByMode(
+  dailyBmr: number,
+  dateKey: string,
+  mode: MetabolismMode | null | undefined,
+  now: Date = new Date(),
+): number {
+  const minutes = getMinutesElapsedForDate(dateKey, now)
+  if (minutes >= MINUTES_PER_DAY) return Math.round(toKcal(dailyBmr))
+  if (now < new Date(`${dateKey}T00:00:00`)) return 0
+  return normalizeMetabolismMode(mode) === 'full_day'
+    ? Math.round(toKcal(dailyBmr))
+    : getAccumulatedMetabolism(dailyBmr, dateKey, now)
+}
+
 export function calculateSpreadDeficit(
   tdee: number,
   exerciseKcal: number,
@@ -46,6 +79,21 @@ export function calculateSpreadDeficit(
   const accumulated = getAccumulatedMetabolism(tdee, dateKey, now)
   return Math.round(
     accumulated + toKcal(exerciseKcal) - toKcal(mealKcal),
+  )
+}
+
+export function calculateDeficitByMode(
+  dailyBmr: number,
+  exerciseKcal: number,
+  mealKcal: number,
+  dateKey: string,
+  mode: MetabolismMode | null | undefined,
+  now: Date = new Date(),
+): number {
+  return Math.round(
+    getMetabolismByMode(dailyBmr, dateKey, mode, now) +
+      toKcal(exerciseKcal) -
+      toKcal(mealKcal),
   )
 }
 

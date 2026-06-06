@@ -13,6 +13,7 @@ const ALLOWED = [
   'avatar_url',
   'community_visible',
   'wall_style',
+  'metabolism_mode',
   'weight_kg',
   'height_cm',
   'age',
@@ -132,6 +133,12 @@ export function buildProfileUpdate(body) {
   }
   if (body.wall_style === 'classic' || body.wall_style === 'split') {
     push('wall_style', body.wall_style)
+  }
+  if (
+    body.metabolism_mode === 'full_day' ||
+    body.metabolism_mode === 'time_spread'
+  ) {
+    push('metabolism_mode', body.metabolism_mode)
   }
   if (body.avatar_url !== undefined) {
     if (body.avatar_url === null || body.avatar_url === '') {

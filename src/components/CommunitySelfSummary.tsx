@@ -14,6 +14,7 @@ import {
   resolveMemberCardFxClass,
 } from './CommunityMemberHonorFx'
 import { UserAvatar } from './UserAvatar'
+import { MetabolismModeBadge } from './MetabolismModeBadge'
 
 const MAX_VISIBLE_HONOR_BADGES = 2
 
@@ -150,13 +151,21 @@ export function CommunitySelfSummary({
         <div className="community-member-card__body">
           <div className="community-self-card__top-row">
             <div className="community-self-card__identity">
-              <UserAvatar
-                variant="community"
-                size="sm"
-                nickname={member.nickname}
-                avatarUrl={member.avatarUrl}
-                isSelf
-              />
+              <div className="community-member-card__avatar-wrap relative shrink-0">
+                <UserAvatar
+                  variant="community"
+                  size="sm"
+                  nickname={member.nickname}
+                  avatarUrl={member.avatarUrl}
+                  isSelf
+                />
+                {!isHiddenForViewer ? (
+                  <MetabolismModeBadge
+                    mode={member.today.metabolismMode}
+                    variant="avatar"
+                  />
+                ) : null}
+              </div>
               <div className="community-self-card__identity-main min-w-0">
                 <div className="community-self-card__name-row">
                   <span className="community-self-card__name responsive-truncate text-sm font-semibold text-primary">

@@ -5,6 +5,7 @@ import {
 } from '../lib/calories'
 import {
   deficitGoalValueTone,
+  formatClearCalorieResult,
   formatDeficitGoalStatus,
 } from '../lib/deficitGoal'
 import { BasalMetabolismSheet } from './BasalMetabolismSheet'
@@ -31,6 +32,8 @@ interface DeficitCardProps {
   showExplanationButton?: boolean
   /** 今日页：点击「基础代谢」展示 BMR 说明 */
   showMetabolismDetail?: boolean
+  /** 今日页：使用明确的热量方向文案，并显示体重等价值 */
+  showClearCalorieResult?: boolean
   profile?: Profile | null
 }
 
@@ -45,6 +48,7 @@ export function DeficitCard({
   fullDayBmr = 0,
   showExplanationButton = false,
   showMetabolismDetail = false,
+  showClearCalorieResult = false,
   profile = null,
 }: DeficitCardProps) {
   const [explanationOpen, setExplanationOpen] = useState(false)
@@ -54,6 +58,7 @@ export function DeficitCard({
   const valueTone = deficitGoalValueTone(deficit, threshold)
   const roundedDeficit = Math.round(deficit)
   const compactDigits = Math.abs(roundedDeficit).toString().length >= 5
+  const clearCalorieResult = formatClearCalorieResult(deficit)
 
   const valueClass =
     valueTone === 'surplus'
@@ -69,20 +74,32 @@ export function DeficitCard({
           {dateLabel}
         </FluidText>
         <MetricRow className="theme-deficit-main theme-deficit-main--inline mt-3">
+          {showClearCalorieResult ? (
+            <FluidText
+              as="span"
+              variant="body"
+              className={`theme-deficit-result-label ${valueClass}`}
+            >
+              {clearCalorieResult.label}
+            </FluidText>
+          ) : null}
           <span
             className={`theme-deficit-value responsive-fluid-metric font-bold tabular-nums ${valueClass}${
               compactDigits ? ' theme-deficit-value--compact' : ''
             }`}
           >
-            {roundedDeficit > 0 ? '+' : ''}
-            {roundedDeficit}
+            {showClearCalorieResult
+              ? clearCalorieResult.value
+              : roundedDeficit > 0
+                ? `+${roundedDeficit}`
+                : roundedDeficit}
           </span>
           <FluidText
             as="span"
             variant="body"
             className="theme-deficit-unit text-muted"
           >
-            {unitLabel}
+            {showClearCalorieResult ? 'kcal' : unitLabel}
           </FluidText>
           {showExplanationButton ? (
             <button
@@ -95,6 +112,15 @@ export function DeficitCard({
             </button>
           ) : null}
         </MetricRow>
+        {showClearCalorieResult ? (
+          <FluidText
+            as="p"
+            variant="body"
+            className="theme-deficit-weight-equivalent text-muted"
+          >
+            {clearCalorieResult.weightEquivalentText}
+          </FluidText>
+        ) : null}
         <StatsGrid className="theme-deficit-stats mt-5 text-center text-base">
           <Stat
             label={metabolismLabel}

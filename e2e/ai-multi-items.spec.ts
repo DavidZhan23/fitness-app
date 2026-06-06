@@ -38,7 +38,7 @@ test('AI estimate shows multiple editable items with confidence and reason', asy
 
   const aiSection = page.getByRole('region', { name: 'AI 估算' })
   await aiSection
-    .getByPlaceholder('例如：一碗牛肉面 + 一个鸡蛋')
+    .getByRole('textbox', { name: '吃了什么？' })
     .fill('一碗牛肉面，一盘鸡蛋')
   await aiSection.getByRole('button', { name: 'AI 估算热量' }).click()
 
@@ -72,7 +72,7 @@ test('AI estimate shows multiple editable items with confidence and reason', asy
   await expect(deleteDialog.getByRole('heading')).toHaveText('删除这条估算结果？')
   await deleteDialog.getByRole('button', { name: '确定删除' }).click()
   await expect(result.locator('.log-ai-item-card')).toHaveCount(1)
-  await expect(result.getByText('1 条')).toBeVisible()
+  await expect(result.getByText('1 条', { exact: true })).toBeVisible()
 
   await result.getByRole('button', { name: '保存 1 条记录' }).click()
   await expect(page).toHaveURL('/')

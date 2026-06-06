@@ -30,7 +30,7 @@
 | 表名 | 说明 | 主要外键 |
 |------|------|---------|
 | `users` | 账号（email + password_hash） | — |
-| `profiles` | 身体指标（含 `birthday`）+ 社区开关 + `wall_style`（打卡墙 classic/split） | `id → users.id` |
+| `profiles` | 身体指标（含 `birthday`）+ 社区开关 + `wall_style`（打卡墙 classic/split）+ `metabolism_mode`（基础代谢全天计入/随时间累计） | `id → users.id` |
 | `day_logs` | 每日打卡汇总（deficit 由触发器计算）；含 `community_visible`（当日动态是否对他人公开，默认 true） | `user_id → users.id` |
 | `exercises` | 单条运动记录 | `day_log_id → day_logs.id`，`user_id → users.id` |
 | `meals` | 单条饮食记录 | `day_log_id → day_logs.id`，`user_id → users.id` |

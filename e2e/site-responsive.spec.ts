@@ -269,6 +269,61 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
           )
         }
       }
+
+      await page.goto('/log/meal')
+      await page.waitForLoadState('networkidle')
+
+      const composerLabel = `${viewport.name} log-meal composers`
+      const aiInput = page.getByRole('textbox', { name: '吃了什么？' })
+      await expect(aiInput).toBeVisible()
+      await aiInput.fill(
+        '这是一段用于确认 AI 记录输入栏在所有机型上始终保持单行且不会撑开页面的长文本',
+      )
+
+      const aiInputMetrics = await aiInput.evaluate((element) => {
+        const input = element as HTMLTextAreaElement
+        return {
+          clientHeight: input.clientHeight,
+          scrollHeight: input.scrollHeight,
+          whiteSpace: getComputedStyle(input).whiteSpace,
+          wrap: input.wrap,
+        }
+      })
+      expect(aiInputMetrics.wrap, `${composerLabel} textarea wrap`).toBe('off')
+      expect(aiInputMetrics.whiteSpace, `${composerLabel} textarea white-space`).toBe(
+        'pre',
+      )
+      expect(
+        aiInputMetrics.scrollHeight,
+        `${composerLabel} textarea should remain one line`,
+      ).toBeLessThanOrEqual(aiInputMetrics.clientHeight + 2)
+      await assertStandaloneNoHorizontalOverflow(page, composerLabel)
+
+      await page
+        .getByRole('navigation', { name: '记录方式切换' })
+        .getByRole('button', { name: '营养表录入' })
+        .click()
+
+      const manual = page.getByRole('region', { name: '手动填写' })
+      const nameInput = manual.getByRole('textbox', { name: '吃了什么？' })
+      const voiceButton = manual.getByRole('button', { name: '语音输入' })
+      await expect(nameInput).toBeVisible()
+      await expect(voiceButton).toBeVisible()
+      await expect(manual.getByRole('button', { name: '拍照识别营养表' })).toHaveCount(0)
+      await expect(manual.getByRole('button', { name: '展开营养表图片菜单' })).toHaveCount(
+        0,
+      )
+      await expect(manual.locator('input[type="file"]')).toHaveCount(0)
+
+      const nameInputBox = await nameInput.boundingBox()
+      const voiceButtonBox = await voiceButton.boundingBox()
+      expect(nameInputBox, `${composerLabel} name input box`).not.toBeNull()
+      expect(voiceButtonBox, `${composerLabel} voice button box`).not.toBeNull()
+      expect(
+        voiceButtonBox!.x + voiceButtonBox!.width,
+        `${composerLabel} voice button should stay inside name input`,
+      ).toBeLessThanOrEqual(nameInputBox!.x + nameInputBox!.width + 1)
+      await assertStandaloneNoHorizontalOverflow(page, composerLabel)
     })
   })
 }

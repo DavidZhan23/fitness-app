@@ -20,6 +20,9 @@
 | [M-2026-05-scroll-avatar-wall](M-2026-05-scroll-avatar-wall.md) | done | #50 #30 #75 #71 #78 |
 | [M-2026-05-today-page-layers](M-2026-05-today-page-layers.md) | done | `feat/today-page-layers` |
 | [M-2026-06-avatar-upload-reliability](M-2026-06-avatar-upload-reliability.md) | done | `main` |
+| [M-2026-06-log-composer-responsive](M-2026-06-log-composer-responsive.md) | done | `main` |
+| [M-2026-06-today-calorie-result-copy](M-2026-06-today-calorie-result-copy.md) | done | `main` |
+| [M-2026-06-metabolism-mode](M-2026-06-metabolism-mode.md) | done | `main` |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）

@@ -3,13 +3,10 @@ import {
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
   type FormEvent,
 } from 'react'
 import { ResponsiveForm } from '../../components/ui/responsive'
 import { KJ_PER_KCAL } from '../../lib/calories'
-import { httpData } from '../../lib/api'
-import { fileToMealPhotoDataUrl } from '../../lib/mealPhotoImage'
 import {
   buildTemplateFromLogItem,
   formatTemplateSaveNotice,
@@ -71,23 +68,6 @@ function VoiceIcon() {
       <path d="M5 10v4h3l4 4V6L8 10H5Z" />
       <path d="M15 9.2a4 4 0 0 1 0 5.6" />
       <path d="M17.7 6.5a8 8 0 0 1 0 11" />
-    </svg>
-  )
-}
-
-function CameraIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M8.5 6.5 10 4h4l1.5 2.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z" />
-      <circle cx="12" cy="13" r="3.25" />
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M12 5v14M5 12h14" />
     </svg>
   )
 }
@@ -189,8 +169,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     packageKcal,
   } = props
   const isCollapsible = props.collapsible ?? true
-  const cameraInputRef = useRef<HTMLInputElement>(null)
-  const galleryInputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const [expanded, setExpanded] = useState(!isCollapsible)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
@@ -200,10 +178,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   const [templateUnit, setTemplateUnit] = useState('')
   const [templateDefaultQuantity, setTemplateDefaultQuantity] = useState('')
   const [templateKcalPerUnit, setTemplateKcalPerUnit] = useState('')
-  const [nutritionPhotoMenuOpen, setNutritionPhotoMenuOpen] = useState(false)
-  const [nutritionPhotoLoading, setNutritionPhotoLoading] = useState(false)
-  const [nutritionPhotoError, setNutritionPhotoError] = useState('')
-  const [nutritionPhotoNotice, setNutritionPhotoNotice] = useState('')
   const [speechSupported, setSpeechSupported] = useState(false)
   const [listening, setListening] = useState(false)
   const [speechError, setSpeechError] = useState('')
@@ -268,7 +242,7 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     ? '精确填写，直接输入运动名称和消耗热量。'
     : '精确填写，直接输入热量或者食物包装上的营养表填写。'
   const nameAriaLabel = sectionTitle
-  const manualBusy = props.loading || nutritionPhotoLoading
+  const manualBusy = props.loading
 
   const toggleSpeechInput = () => {
     if (manualBusy) return
@@ -319,45 +293,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
       setListening(false)
       setSpeechError('语音输入启动失败，请再试一次。')
     }
-  }
-
-  const parseNutritionPhotoFiles = async (files: File[]) => {
-    if (files.length === 0 || props.isExercise) return
-    setNutritionPhotoLoading(true)
-    setNutritionPhotoError('')
-    setNutritionPhotoNotice('')
-    props.onError('')
-    try {
-      const imageDataUrls = await Promise.all(files.map(fileToMealPhotoDataUrl))
-      const result = await httpData.parseNutritionLabelPhoto(
-        imageDataUrls,
-        props.name,
-      )
-      props.onMealInputModeChange('package')
-      props.onNameChange(result.name)
-      props.onGramsChange(String(result.grams))
-      props.onKjPer100gChange(String(result.kjPer100g))
-      setNutritionPhotoNotice(
-        result.reason
-          ? `已自动填入：${result.reason}`
-          : '已根据营养表照片自动填入。',
-      )
-      setNutritionPhotoMenuOpen(false)
-    } catch (err) {
-      setNutritionPhotoError(
-        err instanceof Error ? err.message : '营养表解析失败，请手动填写',
-      )
-    } finally {
-      setNutritionPhotoLoading(false)
-    }
-  }
-
-  const handleNutritionPhotoChange = async (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = Array.from(event.target.files ?? [])
-    event.target.value = ''
-    await parseNutritionPhotoFiles(files)
   }
 
   const handleSubmit = async (event: FormEvent) => {
@@ -423,8 +358,42 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
         <div className="log-manual-secondary__input-panel">
           {props.showNameField !== false ? (
             isCollapsible ? (
-              <label className="log-manual-secondary__field">
+              <div className="log-manual-secondary__field">
                 <span className="log-manual-secondary__field-label">名称</span>
+                <div
+                  className={`log-manual-secondary__name-input${!props.isExercise ? ' log-manual-secondary__name-input--with-voice' : ''}`}
+                >
+                  <input
+                    value={props.name}
+                    onChange={(e) => props.onNameChange(e.target.value)}
+                    disabled={props.loading}
+                    className="input w-full min-w-0"
+                    placeholder={
+                      props.isExercise
+                        ? '例如：慢跑 40 分钟'
+                        : '例如：牛肉面 1 碗'
+                    }
+                    aria-label="名称"
+                    required
+                  />
+                  {!props.isExercise ? (
+                    <button
+                      type="button"
+                      className={`log-ai-composer__icon-btn log-manual-secondary__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
+                      aria-label={listening ? '停止语音输入' : '语音输入'}
+                      aria-pressed={listening}
+                      disabled={manualBusy}
+                      onClick={toggleSpeechInput}
+                    >
+                      <VoiceIcon />
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`log-manual-secondary__name-input${!props.isExercise ? ' log-manual-secondary__name-input--with-voice' : ''}`}
+              >
                 <input
                   value={props.name}
                   onChange={(e) => props.onNameChange(e.target.value)}
@@ -435,124 +404,27 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                       ? '例如：慢跑 40 分钟'
                       : '例如：牛肉面 1 碗'
                   }
-                  aria-label="名称"
+                  aria-label={nameAriaLabel}
                   required
                 />
-              </label>
-            ) : (
-              <input
-                value={props.name}
-                onChange={(e) => props.onNameChange(e.target.value)}
-                disabled={props.loading}
-                className="input w-full min-w-0"
-                placeholder={
-                  props.isExercise
-                    ? '例如：慢跑 40 分钟'
-                    : '例如：牛肉面 1 碗'
-                }
-                aria-label={nameAriaLabel}
-                required
-              />
+                {!props.isExercise ? (
+                  <button
+                    type="button"
+                    className={`log-ai-composer__icon-btn log-manual-secondary__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
+                    aria-label={listening ? '停止语音输入' : '语音输入'}
+                    aria-pressed={listening}
+                    disabled={manualBusy}
+                    onClick={toggleSpeechInput}
+                  >
+                    <VoiceIcon />
+                  </button>
+                ) : null}
+              </div>
             )
           ) : null}
 
-          {!props.isExercise ? (
-            <div className="log-manual-secondary__assist">
-              <div className="log-ai-composer log-ai-composer--compact" role="group" aria-label="营养表辅助输入">
-                <button
-                  type="button"
-                  className={`log-ai-composer__icon-btn log-ai-composer__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
-                  aria-label={listening ? '停止语音输入' : '语音输入'}
-                  aria-pressed={listening}
-                  disabled={manualBusy}
-                  onClick={toggleSpeechInput}
-                >
-                  <VoiceIcon />
-                </button>
-                <span className="log-manual-secondary__assist-copy">
-                  可说出食品名称，或拍营养表自动填入
-                </span>
-                <div className="log-ai-composer__actions">
-                  <button
-                    type="button"
-                    className="log-ai-composer__icon-btn"
-                    aria-label="拍照识别营养表"
-                    disabled={manualBusy}
-                    onClick={() => cameraInputRef.current?.click()}
-                  >
-                    <CameraIcon />
-                  </button>
-                  <button
-                    type="button"
-                    className={`log-ai-composer__icon-btn${nutritionPhotoMenuOpen ? ' log-ai-composer__icon-btn--active' : ''}`}
-                    aria-label="展开营养表图片菜单"
-                    aria-expanded={nutritionPhotoMenuOpen}
-                    disabled={manualBusy}
-                    onClick={() => setNutritionPhotoMenuOpen((open) => !open)}
-                  >
-                    <PlusIcon />
-                  </button>
-                </div>
-              </div>
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                disabled={manualBusy}
-                onChange={(event) => void handleNutritionPhotoChange(event)}
-              />
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                disabled={manualBusy}
-                onChange={(event) => void handleNutritionPhotoChange(event)}
-              />
-              {nutritionPhotoMenuOpen ? (
-                <div className="log-ai-composer-menu log-ai-composer-menu--compact" role="menu">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="log-ai-composer-menu__item"
-                    onClick={() => {
-                      setNutritionPhotoMenuOpen(false)
-                      cameraInputRef.current?.click()
-                    }}
-                  >
-                    <CameraIcon />
-                    <span>拍照</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="log-ai-composer-menu__item"
-                    onClick={() => {
-                      setNutritionPhotoMenuOpen(false)
-                      galleryInputRef.current?.click()
-                    }}
-                  >
-                    <PlusIcon />
-                    <span>相册/文件</span>
-                  </button>
-                </div>
-              ) : null}
-              {nutritionPhotoLoading ? (
-                <p className="log-ai-estimating-status" role="status">
-                  正在解析营养表…
-                </p>
-              ) : null}
-              {nutritionPhotoNotice ? (
-                <p className="text-xs text-secondary">{nutritionPhotoNotice}</p>
-              ) : null}
-              {nutritionPhotoError ? (
-                <p className="text-xs text-red-400">{nutritionPhotoError}</p>
-              ) : null}
-              {speechError ? <p className="text-xs text-red-400">{speechError}</p> : null}
-            </div>
+          {!props.isExercise && speechError ? (
+            <p className="text-xs text-red-400">{speechError}</p>
           ) : null}
 
                     {!props.isExercise && (

@@ -28,7 +28,7 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/profile` | 读取资料 |
-| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换）。支持 `avatar_url`：`data:image/(jpeg\|png\|webp);base64,...`（≤120KB），传 `null` 清除 |
+| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换）。支持 `metabolism_mode`：`full_day`（默认，当天立即计入全天基础代谢）或 `time_spread`（随时间逐分钟累计）。支持 `avatar_url`：`data:image/(jpeg\|png\|webp);base64,...`（≤120KB），传 `null` 清除 |
 
 ## AI
 
@@ -91,12 +91,12 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为 `community_visible = true` 且 `onboarding_complete = true` 的用户（onboarding 完成时默认 `community_visible=true`，无固定条数上限，默认昵称排序）；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日） |
+| GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为 `community_visible = true` 且 `onboarding_complete = true` 的用户（onboarding 完成时默认 `community_visible=true`，无固定条数上限，默认昵称排序）；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日）及 `metabolismMode`（卡片主人的基础代谢计入方式） |
 | GET | `/community/followers` | 关注我的用户列表；`{ total, followers[] }`，每项含 `id`、`nickname`、`avatarUrl`、`followedAt`、`isFollowing`（我是否已回关）、`canViewProfile` |
 | PUT | `/community/member-order` | 排序 |
 | PATCH | `/community/days/:date/visible` | 设置当日社区动态是否公开；body `{ visible: boolean }`；`:date` 为 `YYYY-MM-DD`，仅本人 |
 | GET | `/community/users/:userId` | 用户公开页（`?date=YYYY-MM-DD` 可选，默认今日） |
-| GET | `/community/users/:userId/month` | 月历 |
+| GET | `/community/users/:userId/month` | 月历；响应含 `metabolismMode`，用于按卡片主人的方式计算今日格 |
 | POST/DELETE | `/community/users/:userId/follow` | 关注 |
 | POST/DELETE | `/community/users/:userId/likes` | 点赞日 |
 | GET | `/community/users/:userId/comments` | 评论列表；每项含 `authorAvatarUrl`（作者头像 URL，可空） |

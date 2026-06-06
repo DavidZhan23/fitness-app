@@ -40,6 +40,7 @@ export function BasalMetabolismSheet({
 
   const accumulated = Math.round(accumulatedKcal)
   const fullDay = Math.round(fullDayBmr)
+  const timeSpread = profile.metabolism_mode === 'time_spread'
 
   return createPortal(
     <div
@@ -70,7 +71,9 @@ export function BasalMetabolismSheet({
               <p className="basal-metabolism-sheet__current-value tabular-nums">
                 {accumulated} / {fullDay}
               </p>
-              <p className="basal-metabolism-sheet__growth-tip">随时间自然增长</p>
+              <p className="basal-metabolism-sheet__growth-tip">
+                {timeSpread ? '随时间自然增长' : '全天额度已计入'}
+              </p>
             </div>
           }
         />

@@ -283,7 +283,6 @@ export function AiLogSection({
   disabled,
   showDescriptionInput = true,
 }: AiLogSectionProps) {
-  const textInputRef = useRef<HTMLTextAreaElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -341,17 +340,6 @@ export function AiLogSection({
     if (!isMeal) return
     void loadPhotoQuota()
   }, [isMeal, loadPhotoQuota])
-
-  const resizeTextInput = useCallback(() => {
-    const node = textInputRef.current
-    if (!node) return
-    node.style.height = 'auto'
-    node.style.height = `${Math.min(node.scrollHeight, 180)}px`
-  }, [])
-
-  useEffect(() => {
-    resizeTextInput()
-  }, [description, resizeTextInput])
 
   useEffect(() => {
     setSpeechSupported(getSpeechRecognitionConstructor() != null)
@@ -575,7 +563,6 @@ export function AiLogSection({
       onDescriptionChange(nextDescription)
       setEstimateError('')
       setSpeechError('')
-      window.requestAnimationFrame(resizeTextInput)
     }
     recognitionRef.current = recognition
     try {
@@ -745,15 +732,14 @@ export function AiLogSection({
                 </button>
 
                 <textarea
-                  ref={textInputRef}
                   rows={1}
+                  wrap="off"
                   value={description}
                   onChange={(e) => {
                     onDescriptionChange(e.target.value)
                     setEstimateError('')
                     setPhotoError('')
                     setSpeechError('')
-                    window.requestAnimationFrame(resizeTextInput)
                   }}
                   onPaste={handleInputPaste}
                   disabled={busy}

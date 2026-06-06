@@ -16,6 +16,7 @@ import {
   resolveMemberCardFxClass,
 } from './CommunityMemberHonorFx'
 import { UserAvatar } from './UserAvatar'
+import { MetabolismModeBadge } from './MetabolismModeBadge'
 import { ActionRow } from './ui/responsive'
 
 interface CommunityMemberCardProps {
@@ -165,13 +166,21 @@ export function CommunityMemberCard({
             }}
           >
             <ActionRow className="items-center gap-2.5">
-              <UserAvatar
-                variant="community"
-                size="sm"
-                nickname={member.nickname}
-                avatarUrl={member.avatarUrl}
-                isSelf={member.isSelf}
-              />
+              <div className="community-member-card__avatar-wrap relative shrink-0">
+                <UserAvatar
+                  variant="community"
+                  size="sm"
+                  nickname={member.nickname}
+                  avatarUrl={member.avatarUrl}
+                  isSelf={member.isSelf}
+                />
+                {!isHiddenForViewer ? (
+                  <MetabolismModeBadge
+                    mode={member.today.metabolismMode}
+                    variant="avatar"
+                  />
+                ) : null}
+              </div>
               <div className="responsive-action-row__main">
                 <p className="responsive-truncate text-sm font-semibold text-primary">
                   {member.nickname}

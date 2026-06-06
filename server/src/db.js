@@ -332,6 +332,19 @@ export async function runMigrations() {
   }
   try {
     await pool.query(
+      `alter table public.profiles add column if not exists metabolism_mode text not null default 'full_day'`,
+    )
+    await pool.query(
+      `alter table public.profiles drop constraint if exists profiles_metabolism_mode_check`,
+    )
+    await pool.query(
+      `alter table public.profiles add constraint profiles_metabolism_mode_check check (metabolism_mode in ('full_day', 'time_spread'))`,
+    )
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(
       `update public.profiles
        set community_visible = true, updated_at = now()
        where onboarding_complete = true and community_visible = false`,

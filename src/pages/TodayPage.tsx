@@ -17,8 +17,8 @@ import {
 } from '../lib/dayLogService'
 import { resolveProfileMetabolism, toKcal } from '../lib/calories'
 import {
-  calculateSpreadDeficit,
-  getAccumulatedMetabolism,
+  calculateDeficitByMode,
+  getMetabolismByMode,
   getMetabolismStatLabel,
 } from '../lib/metabolism'
 import { displayName } from '../lib/profileDisplay'
@@ -125,14 +125,16 @@ export function TodayPage() {
   }
 
   const { bmr: fullDayBmr } = resolveProfileMetabolism(profile)
+  const metabolismMode = profile?.metabolism_mode
   const exerciseKcal = toKcal(dayLog?.exercise_kcal)
   const mealKcal = toKcal(dayLog?.meal_kcal)
-  const metabolismKcal = getAccumulatedMetabolism(fullDayBmr, today)
-  const deficit = calculateSpreadDeficit(
+  const metabolismKcal = getMetabolismByMode(fullDayBmr, today, metabolismMode)
+  const deficit = calculateDeficitByMode(
     fullDayBmr,
     exerciseKcal,
     mealKcal,
     today,
+    metabolismMode,
   )
   const threshold = toKcal(profile?.deficit_threshold)
 
@@ -178,6 +180,7 @@ export function TodayPage() {
           fullDayBmr={fullDayBmr}
           showExplanationButton
           showMetabolismDetail
+          showClearCalorieResult
           profile={profile}
         />
       </div>

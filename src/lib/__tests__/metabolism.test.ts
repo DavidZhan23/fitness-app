@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { calculateSpreadDeficit, getMinutesElapsedForDate } from '../metabolism'
+import {
+  calculateDeficitByMode,
+  calculateSpreadDeficit,
+  getMetabolismByMode,
+  getMinutesElapsedForDate,
+} from '../metabolism'
 
 const spreadDeficitCases = [
   {
@@ -35,5 +40,23 @@ describe('metabolism', () => {
         ),
       ).toBe(c.expected)
     }
+  })
+
+  it('full_day immediately counts the full daily metabolism', () => {
+    const now = new Date('2026-05-24T08:00:00')
+    expect(getMetabolismByMode(1800, '2026-05-24', 'full_day', now)).toBe(1800)
+    expect(
+      calculateDeficitByMode(1800, 100, 500, '2026-05-24', 'full_day', now),
+    ).toBe(1400)
+  })
+
+  it('time_spread counts metabolism by elapsed minutes', () => {
+    const now = new Date('2026-05-24T12:00:00')
+    expect(getMetabolismByMode(1800, '2026-05-24', 'time_spread', now)).toBe(900)
+  })
+
+  it('historical days always count the full daily metabolism', () => {
+    const now = new Date('2026-05-25T12:00:00')
+    expect(getMetabolismByMode(1800, '2026-05-24', 'time_spread', now)).toBe(1800)
   })
 })

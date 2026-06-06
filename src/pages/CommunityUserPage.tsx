@@ -154,6 +154,7 @@ export function CommunityUserPage() {
           todayKey,
           data.accountStartKey,
           data.dailyBmr,
+          data.metabolismMode,
         ),
       )
     } finally {
