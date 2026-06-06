@@ -1,6 +1,9 @@
 const MAX_EDGE = 256
-const JPEG_QUALITY = 0.85
 const MAX_DATA_URL_LENGTH = 110_000
+const LARGE_SOURCE_FILE_SIZE = 20 * 1024 * 1024
+const LARGE_SOURCE_MAX_EDGE = 2048
+const DEFAULT_SOURCE_MAX_EDGE = 4096
+const JPEG_QUALITIES = [0.85, 0.75, 0.65, 0.55, 0.45] as const
 
 export interface AvatarCropRect {
   x: number
@@ -74,13 +77,23 @@ export function clampAvatarCropPan(view: AvatarCropViewState): {
   }
 }
 
-function assertAvatarFile(file: File): void {
+export function assertAvatarFile(file: File): void {
   if (!file.type.startsWith('image/')) {
     throw new Error('请选择图片文件')
   }
-  if (file.size > 8 * 1024 * 1024) {
-    throw new Error('图片过大，请选择 8MB 以内的文件')
+}
+
+interface AvatarCanvas {
+  toDataURL(type?: string, quality?: number): string
+}
+
+/** 从清晰度优先开始逐级压缩，确保符合头像 API 上限。 */
+export function canvasToAvatarDataUrl(canvas: AvatarCanvas): string {
+  for (const quality of JPEG_QUALITIES) {
+    const dataUrl = canvas.toDataURL('image/jpeg', quality)
+    if (dataUrl.length <= MAX_DATA_URL_LENGTH) return dataUrl
   }
+  throw new Error('图片压缩后仍过大，请换一张更小的照片')
 }
 
 export function loadImage(file: File): Promise<HTMLImageElement> {
@@ -96,6 +109,64 @@ export function loadImage(file: File): Promise<HTMLImageElement> {
       reject(new Error('无法读取图片'))
     }
     img.src = url
+  })
+}
+
+export function calculateAvatarSourceSize(
+  width: number,
+  height: number,
+  fileSize: number,
+): { width: number; height: number; shouldResize: boolean } {
+  const maxEdge =
+    fileSize > LARGE_SOURCE_FILE_SIZE
+      ? LARGE_SOURCE_MAX_EDGE
+      : DEFAULT_SOURCE_MAX_EDGE
+  const scale = Math.min(1, maxEdge / Math.max(width, height))
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+    shouldResize: scale < 1 || fileSize > LARGE_SOURCE_FILE_SIZE,
+  }
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('无法压缩图片'))
+      },
+      type,
+      quality,
+    )
+  })
+}
+
+/** 将大文件或超高分辨率图片先降采样，避免原图大小阻止头像裁剪。 */
+export async function prepareAvatarFile(file: File): Promise<File> {
+  assertAvatarFile(file)
+  const img = await loadImage(file)
+  const target = calculateAvatarSourceSize(img.width, img.height, file.size)
+  if (!target.shouldResize) return file
+
+  const canvas = document.createElement('canvas')
+  canvas.width = target.width
+  canvas.height = target.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('无法处理图片')
+
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(img, 0, 0, target.width, target.height)
+  const blob = await canvasToBlob(canvas, 'image/jpeg', 0.9)
+  const baseName = file.name.replace(/\.[^.]+$/, '') || 'avatar'
+  return new File([blob], `${baseName}.jpg`, {
+    type: 'image/jpeg',
+    lastModified: file.lastModified,
   })
 }
 
@@ -115,11 +186,7 @@ export async function fileToAvatarDataUrl(file: File): Promise<string> {
   if (!ctx) throw new Error('无法处理图片')
 
   ctx.drawImage(img, 0, 0, w, h)
-  const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY)
-  if (dataUrl.length > MAX_DATA_URL_LENGTH) {
-    throw new Error('图片压缩后仍过大，请换一张更小的照片')
-  }
-  return dataUrl
+  return canvasToAvatarDataUrl(canvas)
 }
 
 /** 按 1:1 裁剪框导出头像 JPEG data URL */
@@ -145,9 +212,5 @@ export async function fileToCroppedAvatarDataUrl(
   if (!ctx) throw new Error('无法处理图片')
 
   ctx.drawImage(img, sx, sy, size, size, 0, 0, MAX_EDGE, MAX_EDGE)
-  const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY)
-  if (dataUrl.length > MAX_DATA_URL_LENGTH) {
-    throw new Error('图片压缩后仍过大，请换一张更小的照片')
-  }
-  return dataUrl
+  return canvasToAvatarDataUrl(canvas)
 }

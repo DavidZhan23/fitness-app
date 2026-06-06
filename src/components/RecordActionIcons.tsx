@@ -68,18 +68,20 @@ export function RecordDeleteButton({
   onClick,
   disabled,
   className = '',
+  label = '删除',
 }: {
   onClick: () => void
   disabled?: boolean
   className?: string
+  label?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label="删除"
-      title="删除"
+      aria-label={label}
+      title={label}
       className={`${iconBtnBase} action-icon-btn--delete ${className}`.trim()}
     >
       <TrashIcon />

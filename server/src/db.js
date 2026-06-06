@@ -385,6 +385,20 @@ export async function runMigrations() {
   } catch {
     /* 表未建等 */
   }
+  try {
+    await pool.query(`
+      create table if not exists public.meal_photo_daily_usage (
+        user_id uuid not null references public.profiles (id) on delete cascade,
+        usage_date date not null,
+        use_count integer not null default 0 check (use_count >= 0),
+        primary key (user_id, usage_date)
+      )`)
+    await pool.query(`
+      create index if not exists idx_meal_photo_daily_usage_date
+        on public.meal_photo_daily_usage (usage_date)`)
+  } catch {
+    /* 表未建等 */
+  }
   await runSqlFileMigrations()
 }
 

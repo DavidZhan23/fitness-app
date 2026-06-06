@@ -11,6 +11,7 @@ import {
 import { assertRegistrationKey } from '../registrationKey.js'
 import { query } from '../db.js'
 import { getDeepSeekApiKey } from '../ai/providers/deepseekText.js'
+import { getDashScopeApiKey } from '../ai/providers/qwenVision.js'
 
 const router = Router()
 
@@ -18,7 +19,11 @@ router.get(
   '/health',
   asyncHandler(async (_req, res) => {
     await query('select 1')
-    res.json({ ok: true, aiConfigured: Boolean(getDeepSeekApiKey()) })
+    res.json({
+      ok: true,
+      aiConfigured: Boolean(getDeepSeekApiKey()),
+      aiVisionConfigured: Boolean(getDashScopeApiKey()),
+    })
   }),
 )
 

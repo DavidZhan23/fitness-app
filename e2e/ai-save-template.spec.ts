@@ -43,9 +43,9 @@ test('AI estimate can save selected item as template', async ({ page }) => {
   const result = page.getByRole('region', { name: 'AI 估算结果' })
   await expect(result).toBeVisible()
 
-  await result.getByRole('button', { name: '详情/调整' }).nth(1).click()
+  await result.getByRole('button', { name: '调整' }).nth(1).click()
   await result.getByRole('checkbox', { name: '保存为快捷模板' }).check()
-  await result.getByRole('button', { name: '保存本次记录' }).click()
+  await result.getByRole('button', { name: '保存 2 条记录' }).click()
 
   await expect(page).toHaveURL('/')
 

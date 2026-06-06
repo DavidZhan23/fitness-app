@@ -38,7 +38,7 @@ const ALLOWED_METADATA_SET = new Set<string>(ALLOWED_METADATA_KEYS)
 
 export type TelemetryMetadata = Partial<{
   input_length: number
-  input_mode: 'ai' | 'manual' | 'template' | 'default_estimate'
+  input_mode: 'ai' | 'photo' | 'manual' | 'template' | 'default_estimate'
   route_from: string
   route_to: string
   duration_ms: number

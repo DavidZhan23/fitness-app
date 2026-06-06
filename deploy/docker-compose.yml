@@ -39,6 +39,8 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      KCAL_VISION_MODEL: ${KCAL_VISION_MODEL:-qwen3-vl-flash}
       DEVELOPER_EMAILS: ${DEVELOPER_EMAILS:-}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     ports:

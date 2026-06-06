@@ -14,6 +14,14 @@ export function translatePgError(err) {
 
 export function errorHandler(err, req, res, _next) {
   if (res.headersSent) return
+
+  if (err.type === 'entity.too.large') {
+    res.status(413).json({
+      error: '照片数据过大，请重新拍摄或换一张更近的照片后重试',
+    })
+    return
+  }
+
   const status = err.status || 500
   if (status >= 500) {
     console.error('[api]', req.method, req.path, err)

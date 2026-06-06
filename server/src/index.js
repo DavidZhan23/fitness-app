@@ -15,7 +15,7 @@ const port = Number(process.env.PORT || 3001)
 
 const corsOrigin = process.env.CORS_ORIGIN || '*'
 app.use(cors({ origin: corsOrigin === '*' ? true : corsOrigin.split(',') }))
-app.use(express.json())
+app.use(express.json({ limit: '2mb' }))
 
 app.use(authRouter)
 app.use(aiRouter)

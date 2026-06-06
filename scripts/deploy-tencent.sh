@@ -72,6 +72,10 @@ if [ "$WITH_API" = true ]; then
   scp "$ROOT/deploy/nginx.conf" "${SSH_TARGET}:${REMOTE_DIR}/deploy/nginx.conf"
 
   echo ""
+  echo "🔄 重载 Nginx（应用 client_max_body_size 等配置）..."
+  ssh "${SSH_TARGET}" "cd ${REMOTE_DIR}/deploy && docker compose restart web"
+
+  echo ""
   echo "🔨 重建 api 容器（读取服务器 deploy/.env 注入环境变量）..."
   ssh "${SSH_TARGET}" "cd ${REMOTE_DIR}/deploy && docker compose up -d --build api"
 
