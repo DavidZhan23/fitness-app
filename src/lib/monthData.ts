@@ -11,9 +11,9 @@ import {
   toKcal,
 } from './calories'
 import type { DeficitHeatmapTone } from './calories'
-import { calculateSpreadDeficit } from './metabolism'
+import { calculateDeficitByMode } from './metabolism'
 import { isBeforeAccountStart, normalizeDateKey } from './streaks'
-import type { DayLog } from '../types'
+import type { DayLog, MetabolismMode } from '../types'
 
 export interface MonthDayCell {
   date: string
@@ -37,6 +37,7 @@ export function buildMonthDayMap(
   todayKey: string,
   accountStartKey: string | null,
   dailyBmr: number,
+  metabolismMode?: MetabolismMode,
 ): Map<string, MonthDayCell> {
   const map = new Map<string, MonthDayCell>()
 
@@ -48,18 +49,16 @@ export function buildMonthDayMap(
     const historicalWithoutMeal = dateKey !== todayKey && mealKcal <= 0
     const bmrForDeficit = historicalWithoutMeal ? 0 : dailyBmr
 
-    const endOfDay = new Date(`${dateKey}T23:59:59`)
     const deficit = beforeAccount
       ? 0
-      : dateKey === todayKey
-        ? calculateSpreadDeficit(bmrForDeficit, exerciseKcal, mealKcal, dateKey)
-        : calculateSpreadDeficit(
-            bmrForDeficit,
-            exerciseKcal,
-            mealKcal,
-            dateKey,
-            endOfDay,
-          )
+      : calculateDeficitByMode(
+          bmrForDeficit,
+          exerciseKcal,
+          mealKcal,
+          dateKey,
+          dateKey === todayKey ? metabolismMode : 'full_day',
+          dateKey === todayKey ? new Date() : new Date(`${dateKey}T23:59:59`),
+        )
 
     const heatmap = beforeAccount
       ? { level: 0 as IntensityLevel, tone: 'neutral' as DeficitHeatmapTone }

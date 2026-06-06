@@ -79,6 +79,13 @@ export function buildProfilePatchBody(
     body.wall_style = data.wall_style
   }
 
+  if (
+    data.metabolism_mode === 'full_day' ||
+    data.metabolism_mode === 'time_spread'
+  ) {
+    body.metabolism_mode = data.metabolism_mode
+  }
+
   if (bmr != null && bmr > 0) body.bmr = Math.round(bmr)
   if (tdee != null && tdee > 0) body.tdee = Math.round(tdee)
 

@@ -43,6 +43,12 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
         page.locator('.theme-deficit-card'),
         '缺口主卡',
       )
+      await expect(page.getByText('热量缺口', { exact: true })).toBeVisible()
+      await expect(page.locator('.theme-deficit-value')).toHaveText(/^\d+$/)
+      await expect(page.getByText('kcal', { exact: true }).first()).toBeVisible()
+      await expect(
+        page.getByText(/约等价于减轻 \d+\.\d{1} g 体重/),
+      ).toBeVisible()
       await assertLocatorInScrollport(
         page,
         page.getByRole('link', { name: '+ 记运动' }),
@@ -74,7 +80,7 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
       })
       await expect(metabolismBtn).toBeVisible()
       await metabolismBtn.click()
-      await expect(page.getByText('随时间自然增长')).toBeVisible()
+      await expect(page.getByText('全天额度已计入')).toBeVisible()
       await page.getByRole('button', { name: '知道了' }).click()
 
       await assertNoDescendantWiderThanViewport(

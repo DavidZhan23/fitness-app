@@ -60,7 +60,7 @@ export function WallDayDetailCard({
         />
       </div>
       <p className="mt-2 text-xs text-muted">
-        基础代谢 (BMR) 按时间逐分钟累计，不是一次性算进全天
+        基础代谢计入方式以用户的偏好设置为准
       </p>
     </section>
   )

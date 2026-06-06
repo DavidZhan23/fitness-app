@@ -3,6 +3,9 @@ export type Sex = 'male' | 'female'
 /** 打卡墙展示：classic 同页双热力图；split 运动墙/代谢墙分屏切换 */
 export type WallStyle = 'classic' | 'split'
 
+/** 基础代谢计入方式：全天立即计入，或随时间逐分钟累计 */
+export type MetabolismMode = 'full_day' | 'time_spread'
+
 export interface Profile {
   id: string
   email: string | null
@@ -31,6 +34,8 @@ export interface Profile {
   community_visible?: boolean
   /** 打卡墙样式，默认 classic */
   wall_style?: WallStyle
+  /** 基础代谢计入方式，默认 full_day */
+  metabolism_mode?: MetabolismMode
 }
 
 export interface CommunityMember {
@@ -155,6 +160,7 @@ export interface CommunityDaySnapshot {
   exerciseCount: number
   mealCount: number
   dailyBmr: number
+  metabolismMode?: MetabolismMode
   threshold: number
   accountStartKey: string | null
   /** 他人查看时当日已手动隐藏 */

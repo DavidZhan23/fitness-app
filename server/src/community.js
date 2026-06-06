@@ -1,5 +1,5 @@
 import { resolveProfileBmr, toKcal } from './calories.js'
-import { calculateSpreadDeficit } from './metabolism.js'
+import { calculateDeficitByMode, normalizeMetabolismMode } from './metabolism.js'
 import { formatDateKeyInTz, isValidDateKey } from './dateKey.js'
 import {
   applyYesterdayVisibilityRules,
@@ -94,6 +94,7 @@ export async function computeDaySnapshot(
       exerciseCount: 0,
       mealCount: 0,
       dailyBmr: bmr,
+      metabolismMode: normalizeMetabolismMode(profile.metabolism_mode),
       threshold: toKcal(profile.deficit_threshold),
       accountStartKey: accountStartKey(profile.created_at),
     }
@@ -123,11 +124,13 @@ export async function computeDaySnapshot(
     logDate === todayKey
       ? now
       : new Date(`${logDate}T23:59:59`)
-  const deficit = calculateSpreadDeficit(
+  const metabolismMode = normalizeMetabolismMode(profile.metabolism_mode)
+  const deficit = calculateDeficitByMode(
     bmrForDeficit,
     exerciseKcal,
     mealKcal,
     logDate,
+    logDate === todayKey ? metabolismMode : 'full_day',
     endOfDay,
   )
 
@@ -140,6 +143,7 @@ export async function computeDaySnapshot(
     exerciseCount,
     mealCount,
     dailyBmr: bmr,
+    metabolismMode,
     threshold: toKcal(profile.deficit_threshold),
     accountStartKey: accountStartKey(profile.created_at),
   }
@@ -295,6 +299,7 @@ export async function getCommunityUserMonth(viewerId, targetUserId, year, month)
     month: m,
     logs,
     dailyBmr: resolveProfileBmr(profile),
+    metabolismMode: normalizeMetabolismMode(profile.metabolism_mode),
     threshold: toKcal(profile.deficit_threshold),
     accountStartKey: accountStartKey(profile.created_at),
   }

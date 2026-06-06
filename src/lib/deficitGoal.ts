@@ -23,6 +23,37 @@ export interface DeficitGoalStatus {
   unitLabel: 'kcal 缺口' | 'kcal 盈余'
 }
 
+export interface ClearCalorieResult {
+  label: '热量缺口' | '热量过剩' | '热量收支平衡'
+  value: number
+  weightEquivalentText: string
+}
+
+export function formatClearCalorieResult(deficit: number): ClearCalorieResult {
+  const roundedDeficit = Math.round(toKcal(deficit))
+  const weightEquivalentGrams = (Math.abs(toKcal(deficit)) / 7).toFixed(1)
+
+  if (roundedDeficit > 0) {
+    return {
+      label: '热量缺口',
+      value: roundedDeficit,
+      weightEquivalentText: `约等价于减轻 ${weightEquivalentGrams} g 体重`,
+    }
+  }
+  if (roundedDeficit < 0) {
+    return {
+      label: '热量过剩',
+      value: Math.abs(roundedDeficit),
+      weightEquivalentText: `约等价于增加 ${weightEquivalentGrams} g 体重`,
+    }
+  }
+  return {
+    label: '热量收支平衡',
+    value: 0,
+    weightEquivalentText: '体重基本不变',
+  }
+}
+
 export function formatDeficitGoalStatus(
   deficit: number,
   threshold: number,

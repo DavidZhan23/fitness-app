@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { calculateSpreadDeficit } from '../src/metabolism.js'
+import {
+  calculateDeficitByMode,
+  calculateSpreadDeficit,
+  getMetabolismByMode,
+} from '../src/metabolism.js'
 import { spreadDeficitCases } from './formulaCases.js'
 
 describe('server metabolism parity', () => {
@@ -15,5 +19,14 @@ describe('server metabolism parity', () => {
         ),
       ).toBe(c.expected)
     }
+  })
+
+  it('supports full-day and time-spread modes', () => {
+    const now = new Date('2026-05-24T12:00:00')
+    expect(getMetabolismByMode(2000, '2026-05-24', 'full_day', now)).toBe(2000)
+    expect(getMetabolismByMode(2000, '2026-05-24', 'time_spread', now)).toBe(1000)
+    expect(
+      calculateDeficitByMode(2000, 300, 800, '2026-05-24', 'full_day', now),
+    ).toBe(1500)
   })
 })

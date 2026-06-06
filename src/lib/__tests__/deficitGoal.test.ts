@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BANNED_DEFICIT_GOAL_PHRASES,
+  formatClearCalorieResult,
   formatDeficitGoalStatus,
   parseDeficitGoalInput,
 } from '../deficitGoal'
@@ -83,5 +84,31 @@ describe('parseDeficitGoalInput', () => {
     expect(parseDeficitGoalInput('0')).toBeNull()
     expect(parseDeficitGoalInput('5001')).toBeNull()
     expect(parseDeficitGoalInput('')).toBeNull()
+  })
+})
+
+describe('formatClearCalorieResult', () => {
+  it('formats a deficit without a positive sign', () => {
+    expect(formatClearCalorieResult(420)).toEqual({
+      label: '热量缺口',
+      value: 420,
+      weightEquivalentText: '约等价于减轻 60.0 g 体重',
+    })
+  })
+
+  it('formats a surplus as an absolute value', () => {
+    expect(formatClearCalorieResult(-182)).toEqual({
+      label: '热量过剩',
+      value: 182,
+      weightEquivalentText: '约等价于增加 26.0 g 体重',
+    })
+  })
+
+  it('formats calorie balance', () => {
+    expect(formatClearCalorieResult(0)).toEqual({
+      label: '热量收支平衡',
+      value: 0,
+      weightEquivalentText: '体重基本不变',
+    })
   })
 })

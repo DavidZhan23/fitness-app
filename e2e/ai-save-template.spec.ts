@@ -36,7 +36,7 @@ test('AI estimate can save selected item as template', async ({ page }) => {
 
   const aiSection = page.getByRole('region', { name: 'AI 估算' })
   await aiSection
-    .getByPlaceholder('例如：一碗牛肉面 + 一个鸡蛋')
+    .getByRole('textbox', { name: '吃了什么？' })
     .fill('一碗牛肉面 + 一个鸡蛋')
   await aiSection.getByRole('button', { name: 'AI 估算热量' }).click()
 

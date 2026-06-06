@@ -546,6 +546,7 @@ export const httpData = {
     month: number
     logs: DayLog[]
     dailyBmr: number
+    metabolismMode: 'full_day' | 'time_spread'
     threshold: number
     accountStartKey: string | null
   }> {

@@ -70,4 +70,13 @@ describe('buildProfileUpdate', () => {
     expect(updates).toContain('onboarding_complete = $1')
     expect(updates.some((u) => u.startsWith('community_visible'))).toBe(false)
   })
+
+  it('accepts only known metabolism modes', () => {
+    const accepted = buildProfileUpdate({ metabolism_mode: 'time_spread' })
+    expect(accepted.updates).toContain('metabolism_mode = $1')
+    expect(accepted.values).toEqual(['time_spread'])
+
+    const rejected = buildProfileUpdate({ metabolism_mode: 'hourly' })
+    expect(rejected.updates.some((u) => u.startsWith('metabolism_mode'))).toBe(false)
+  })
 })

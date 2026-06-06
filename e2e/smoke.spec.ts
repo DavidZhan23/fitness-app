@@ -126,4 +126,28 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
     await expect(page.getByRole('button', { name: '更换头像' })).toBeVisible()
   })
+
+  test('settings switches metabolism mode', async ({ page }) => {
+    await registerAndOnboard(page, uniqueE2eEmail())
+    await page.goto('/settings')
+
+    const fullDay = page.getByRole('radio', { name: /全天计入/ })
+    const timeSpread = page.getByRole('radio', { name: /随时间累计/ })
+    await expect(fullDay).toBeChecked()
+    await expect(page.getByText('全天额度已计入')).toBeVisible()
+
+    const saved = page.waitForResponse(
+      (resp) =>
+        resp.ok() &&
+        resp.request().method() === 'PATCH' &&
+        resp.url().includes('/profile'),
+    )
+    await page.getByText('随时间累计', { exact: true }).click()
+    await saved
+    await expect(timeSpread).toBeChecked()
+    await expect(page.getByText('随时间继续增加')).toBeVisible()
+
+    await page.reload()
+    await expect(page.getByRole('radio', { name: /随时间累计/ })).toBeChecked()
+  })
 })

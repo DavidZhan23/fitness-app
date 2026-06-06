@@ -2121,7 +2121,7 @@ select:focus-visible {
 .log-ai-composer {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: end;
+  align-items: center;
   gap: 0.625rem;
   min-width: 0;
   padding: 0.625rem 0.75rem;
@@ -2142,13 +2142,16 @@ select:focus-visible {
 .log-ai-composer__textarea {
   min-width: 0;
   width: 100%;
+  height: 2.6rem;
   min-height: 2.6rem;
-  max-height: 11.25rem;
+  max-height: 2.6rem;
   padding: 0.55rem 0;
   border: 0;
   outline: 0;
   resize: none;
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
   background: transparent;
   color: var(--text-primary);
   font: inherit;
@@ -2220,7 +2223,7 @@ select:focus-visible {
 }
 
 .log-ai-composer__voice-btn {
-  align-self: end;
+  align-self: center;
 }
 
 .log-ai-composer-menu {
@@ -2422,7 +2425,9 @@ select:focus-visible {
   }
 
   .log-ai-composer__textarea {
+    height: 2.35rem;
     min-height: 2.35rem;
+    max-height: 2.35rem;
     font-size: 0.9375rem;
   }
 
@@ -3352,24 +3357,34 @@ select:focus-visible {
   box-shadow: 0 1px 2px color-mix(in oklab, var(--surface-shadow) 4%, transparent);
 }
 
-.log-manual-secondary__assist {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.log-manual-secondary__assist-copy {
-  min-width: 0;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-  line-height: 1.4;
-}
-
 .log-manual-secondary__field {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
   min-width: 0;
+}
+
+.log-manual-secondary__name-input {
+  position: relative;
+  min-width: 0;
+}
+
+.log-manual-secondary__name-input--with-voice .input {
+  padding-right: 3.25rem;
+}
+
+.log-manual-secondary__voice-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translateY(-50%);
+}
+
+.log-manual-secondary__voice-btn:hover:not(:disabled),
+.log-manual-secondary__voice-btn.log-ai-composer__icon-btn--active {
+  transform: translateY(-50%);
 }
 
 .log-manual-secondary__field-label {
@@ -5185,6 +5200,22 @@ select:focus-visible {
   width: 100%;
 }
 
+.theme-deficit-result-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: clamp(0.95rem, 3.8vw, 1.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.theme-deficit-weight-equivalent {
+  margin: 0.75rem 0 0;
+  font-size: clamp(0.78rem, 3vw, 0.92rem);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .theme-deficit-value--compact {
   font-size: clamp(1.45rem, 7vw, 2.15rem);
 }
@@ -6765,6 +6796,10 @@ select:focus-visible {
   .theme-deficit-value {
     font-size: clamp(1.7rem, 8.2vw, 2.35rem);
   }
+
+  .theme-deficit-result-label {
+    font-size: 0.88rem;
+  }
 }
 
 @media (max-width: 390px) and (max-height: 720px) {
@@ -8147,6 +8182,150 @@ select:focus-visible {
 
 .wall-style-option {
   border-color: var(--surface-card-border);
+}
+
+.metabolism-mode-card {
+  overflow: hidden;
+}
+
+.metabolism-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metabolism-mode-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.875rem;
+  border: 1px solid var(--surface-card-border);
+  border-radius: 1rem;
+  background: color-mix(in oklab, var(--surface-card-soft) 82%, transparent);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.metabolism-mode-option:hover {
+  transform: translateY(-1px);
+}
+
+.metabolism-mode-option:has(:checked) {
+  border-color: var(--accent-exercise);
+  background: color-mix(in oklab, var(--accent-exercise-soft) 88%, transparent);
+}
+
+.metabolism-mode-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.metabolism-mode-option:focus-within {
+  outline: 2px solid color-mix(in oklab, var(--color-brand) 48%, transparent);
+  outline-offset: 2px;
+}
+
+.metabolism-mode-option__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: var(--surface-card-soft);
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.metabolism-mode-option:has(:checked) .metabolism-mode-option__icon {
+  background: color-mix(in oklab, var(--accent-exercise) 18%, var(--surface-card-soft));
+  color: var(--accent-exercise-strong);
+}
+
+.metabolism-mode-option__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--surface-card-soft);
+  color: transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.metabolism-mode-option:has(:checked) .metabolism-mode-option__check {
+  background: var(--accent-exercise);
+  color: var(--surface-page);
+}
+
+.metabolism-mode-example {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.8rem;
+  background: var(--surface-card-soft);
+}
+
+@media (max-width: 520px) {
+  .metabolism-mode-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metabolism-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--surface-card-soft);
+  color: var(--text-muted);
+  line-height: 1;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--surface-card-border) 88%, transparent),
+    0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.metabolism-mode-badge--avatar {
+  position: absolute;
+  right: -0.125rem;
+  bottom: -0.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  font-size: 0.625rem;
+  z-index: 1;
+}
+
+.metabolism-mode-badge--inline {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+
+.metabolism-mode-badge--full_day {
+  background: color-mix(in oklab, var(--accent-meal) 16%, var(--surface-card-soft));
+  color: var(--accent-meal-strong, var(--accent-meal));
+}
+
+.metabolism-mode-badge--time_spread {
+  background: color-mix(in oklab, var(--accent-exercise) 16%, var(--surface-card-soft));
+  color: var(--accent-exercise-strong);
+}
+
+.community-member-card__avatar-wrap {
+  display: inline-flex;
 }
 
 .wall-style-option:has(:checked) {
