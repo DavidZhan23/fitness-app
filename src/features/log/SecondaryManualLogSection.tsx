@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react'
 import { ResponsiveForm } from '../../components/ui/responsive'
 import { KJ_PER_KCAL } from '../../lib/calories'
+import { httpData } from '../../lib/api'
+import { fileToMealPhotoDataUrl } from '../../lib/mealPhotoImage'
 import {
   buildTemplateFromLogItem,
   formatTemplateSaveNotice,
@@ -9,6 +18,79 @@ import {
 } from '../../lib/logTemplate'
 import type { MealInputMode } from '../../hooks/useLogForm'
 import type { LogTemplate } from '../../types'
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number
+  results: {
+    length: number
+    [index: number]: {
+      0?: { transcript?: string }
+    }
+  }
+}
+
+interface SpeechRecognitionErrorEventLike {
+  error?: string
+}
+
+interface SpeechRecognitionLike {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  maxAlternatives: number
+  onstart: (() => void) | null
+  onend: (() => void) | null
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  start: () => void
+  stop: () => void
+  abort: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null
+  const maybeWindow = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor
+    webkitSpeechRecognition?: SpeechRecognitionConstructor
+  }
+  return maybeWindow.SpeechRecognition ?? maybeWindow.webkitSpeechRecognition ?? null
+}
+
+function appendTranscript(current: string, transcript: string): string {
+  const cleanTranscript = transcript.trim()
+  if (!cleanTranscript) return current
+  const cleanCurrent = current.trim()
+  return cleanCurrent ? `${cleanCurrent} ${cleanTranscript}` : cleanTranscript
+}
+
+function VoiceIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 10v4h3l4 4V6L8 10H5Z" />
+      <path d="M15 9.2a4 4 0 0 1 0 5.6" />
+      <path d="M17.7 6.5a8 8 0 0 1 0 11" />
+    </svg>
+  )
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M8.5 6.5 10 4h4l1.5 2.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z" />
+      <circle cx="12" cy="13" r="3.25" />
+    </svg>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
 
 interface SecondaryManualLogSectionProps {
   isExercise: boolean
@@ -107,6 +189,9 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     packageKcal,
   } = props
   const isCollapsible = props.collapsible ?? true
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const [expanded, setExpanded] = useState(!isCollapsible)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateDetailsExpanded, setTemplateDetailsExpanded] = useState(false)
@@ -115,6 +200,13 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   const [templateUnit, setTemplateUnit] = useState('')
   const [templateDefaultQuantity, setTemplateDefaultQuantity] = useState('')
   const [templateKcalPerUnit, setTemplateKcalPerUnit] = useState('')
+  const [nutritionPhotoMenuOpen, setNutritionPhotoMenuOpen] = useState(false)
+  const [nutritionPhotoLoading, setNutritionPhotoLoading] = useState(false)
+  const [nutritionPhotoError, setNutritionPhotoError] = useState('')
+  const [nutritionPhotoNotice, setNutritionPhotoNotice] = useState('')
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const [listening, setListening] = useState(false)
+  const [speechError, setSpeechError] = useState('')
 
   const applySuggestion = useCallback(() => {
     const kcalValue = resolveKcal()
@@ -163,11 +255,110 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     if (!isCollapsible) setExpanded(true)
   }, [isCollapsible])
 
+  useEffect(() => {
+    setSpeechSupported(getSpeechRecognitionConstructor() != null)
+    return () => {
+      recognitionRef.current?.abort()
+      recognitionRef.current = null
+    }
+  }, [])
+
   const sectionTitle = isExercise ? '做了什么运动？' : '吃了什么？'
   const sectionHint = isExercise
     ? '精确填写，直接输入运动名称和消耗热量。'
     : '精确填写，直接输入热量或者食物包装上的营养表填写。'
   const nameAriaLabel = sectionTitle
+  const manualBusy = props.loading || nutritionPhotoLoading
+
+  const toggleSpeechInput = () => {
+    if (manualBusy) return
+    if (!speechSupported) {
+      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
+      return
+    }
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const Recognition = getSpeechRecognitionConstructor()
+    if (!Recognition) {
+      setSpeechSupported(false)
+      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
+      return
+    }
+    const recognition = new Recognition()
+    recognition.lang = 'zh-CN'
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onstart = () => {
+      setListening(true)
+      setSpeechError('')
+    }
+    recognition.onend = () => setListening(false)
+    recognition.onerror = (event) => {
+      setListening(false)
+      setSpeechError(
+        event.error === 'not-allowed'
+          ? '没有麦克风权限，请允许后再试。'
+          : '语音识别失败，请再试一次。',
+      )
+    }
+    recognition.onresult = (event) => {
+      let transcript = ''
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        transcript += event.results[index]?.[0]?.transcript ?? ''
+      }
+      props.onNameChange(appendTranscript(props.name, transcript))
+      setSpeechError('')
+    }
+    recognitionRef.current = recognition
+    try {
+      recognition.start()
+    } catch {
+      setListening(false)
+      setSpeechError('语音输入启动失败，请再试一次。')
+    }
+  }
+
+  const parseNutritionPhotoFiles = async (files: File[]) => {
+    if (files.length === 0 || props.isExercise) return
+    setNutritionPhotoLoading(true)
+    setNutritionPhotoError('')
+    setNutritionPhotoNotice('')
+    props.onError('')
+    try {
+      const imageDataUrls = await Promise.all(files.map(fileToMealPhotoDataUrl))
+      const result = await httpData.parseNutritionLabelPhoto(
+        imageDataUrls,
+        props.name,
+      )
+      props.onMealInputModeChange('package')
+      props.onNameChange(result.name)
+      props.onGramsChange(String(result.grams))
+      props.onKjPer100gChange(String(result.kjPer100g))
+      setNutritionPhotoNotice(
+        result.reason
+          ? `已自动填入：${result.reason}`
+          : '已根据营养表照片自动填入。',
+      )
+      setNutritionPhotoMenuOpen(false)
+    } catch (err) {
+      setNutritionPhotoError(
+        err instanceof Error ? err.message : '营养表解析失败，请手动填写',
+      )
+    } finally {
+      setNutritionPhotoLoading(false)
+    }
+  }
+
+  const handleNutritionPhotoChange = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    await parseNutritionPhotoFiles(files)
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -263,6 +454,105 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                 required
               />
             )
+          ) : null}
+
+          {!props.isExercise ? (
+            <div className="log-manual-secondary__assist">
+              <div className="log-ai-composer log-ai-composer--compact" role="group" aria-label="营养表辅助输入">
+                <button
+                  type="button"
+                  className={`log-ai-composer__icon-btn log-ai-composer__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
+                  aria-label={listening ? '停止语音输入' : '语音输入'}
+                  aria-pressed={listening}
+                  disabled={manualBusy}
+                  onClick={toggleSpeechInput}
+                >
+                  <VoiceIcon />
+                </button>
+                <span className="log-manual-secondary__assist-copy">
+                  可说出食品名称，或拍营养表自动填入
+                </span>
+                <div className="log-ai-composer__actions">
+                  <button
+                    type="button"
+                    className="log-ai-composer__icon-btn"
+                    aria-label="拍照识别营养表"
+                    disabled={manualBusy}
+                    onClick={() => cameraInputRef.current?.click()}
+                  >
+                    <CameraIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className={`log-ai-composer__icon-btn${nutritionPhotoMenuOpen ? ' log-ai-composer__icon-btn--active' : ''}`}
+                    aria-label="展开营养表图片菜单"
+                    aria-expanded={nutritionPhotoMenuOpen}
+                    disabled={manualBusy}
+                    onClick={() => setNutritionPhotoMenuOpen((open) => !open)}
+                  >
+                    <PlusIcon />
+                  </button>
+                </div>
+              </div>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                disabled={manualBusy}
+                onChange={(event) => void handleNutritionPhotoChange(event)}
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                disabled={manualBusy}
+                onChange={(event) => void handleNutritionPhotoChange(event)}
+              />
+              {nutritionPhotoMenuOpen ? (
+                <div className="log-ai-composer-menu log-ai-composer-menu--compact" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="log-ai-composer-menu__item"
+                    onClick={() => {
+                      setNutritionPhotoMenuOpen(false)
+                      cameraInputRef.current?.click()
+                    }}
+                  >
+                    <CameraIcon />
+                    <span>拍照</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="log-ai-composer-menu__item"
+                    onClick={() => {
+                      setNutritionPhotoMenuOpen(false)
+                      galleryInputRef.current?.click()
+                    }}
+                  >
+                    <PlusIcon />
+                    <span>相册/文件</span>
+                  </button>
+                </div>
+              ) : null}
+              {nutritionPhotoLoading ? (
+                <p className="log-ai-estimating-status" role="status">
+                  正在解析营养表…
+                </p>
+              ) : null}
+              {nutritionPhotoNotice ? (
+                <p className="text-xs text-secondary">{nutritionPhotoNotice}</p>
+              ) : null}
+              {nutritionPhotoError ? (
+                <p className="text-xs text-red-400">{nutritionPhotoError}</p>
+              ) : null}
+              {speechError ? <p className="text-xs text-red-400">{speechError}</p> : null}
+            </div>
           ) : null}
 
                     {!props.isExercise && (

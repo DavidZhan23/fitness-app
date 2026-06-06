@@ -16,6 +16,7 @@ const MAX_HTTP_RETRIES = 3
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503])
 const MAX_TOKENS = 1024
 const MAX_IMAGE_DATA_URL_LENGTH = 1_200_000
+const MAX_IMAGES_PER_REQUEST = 6
 
 /** App 内拍摄指引（与前端 mealPhotoGuide.ts 保持一致，供 prompt 引用） */
 export const MEAL_PHOTO_SHOOTING_GUIDE =
@@ -70,6 +71,27 @@ export function buildMealVisionUserPrompt(supplement) {
   )
 }
 
+export function buildMealNutritionLabelSystemPrompt() {
+  return (
+    '你是中文食品包装营养表 OCR 解析器。用户会上传食品包装或营养成分表照片。' +
+    '请优先读取“能量”一行，判断其单位是否为 kJ/100g、千焦/100g、kcal/100g 或每份。' +
+    '本 App 手动录入需要字段：食物名称、食用量 g、能量 kJ/100g。' +
+    '如果图片中没有食用量，请默认食用量为 100g；如果只有 kcal/100g，请换算成 kJ/100g（1 kcal = 4.184 kJ）。' +
+    '如果是每份标注且能读到每份克数，请换算为 kJ/100g。' +
+    '只输出一个 JSON object，不要 Markdown，不要代码块。' +
+    '格式：{"name":"食品名称","grams":食用量g数字,"kjPer100g":每100g千焦数字,"confidence":"high|medium|low","reason":"简短依据"}。' +
+    '无法确定食品名称时 name 用“包装食品”；无法可靠识别能量时 confidence 用 low，但仍给最保守可用数值。'
+  )
+}
+
+export function buildMealNutritionLabelUserPrompt(supplement) {
+  const note = String(supplement ?? '').trim()
+  return (
+    '请解析这张食品包装营养成分表照片，并返回 App 可自动填入的字段。' +
+    (note ? `用户补充说明：${note}。` : '')
+  )
+}
+
 /**
  * @param {string} dataUrl
  * @returns {{ mime: string, dataUrl: string }}
@@ -103,6 +125,22 @@ export function parseMealImageDataUrl(dataUrl) {
   }
 
   return { mime, dataUrl: `data:${mime};base64,${base64}` }
+}
+
+export function parseMealImageDataUrls(dataUrls) {
+  const list = Array.isArray(dataUrls) ? dataUrls : [dataUrls]
+  const cleaned = list.filter((item) => String(item ?? '').trim())
+  if (cleaned.length === 0) {
+    const err = new Error('请上传餐食照片')
+    err.status = 400
+    throw err
+  }
+  if (cleaned.length > MAX_IMAGES_PER_REQUEST) {
+    const err = new Error(`一次最多上传 ${MAX_IMAGES_PER_REQUEST} 张图片`)
+    err.status = 400
+    throw err
+  }
+  return cleaned.map((item) => parseMealImageDataUrl(item))
 }
 
 function sleep(ms) {
@@ -206,7 +244,7 @@ export async function estimateMealKcalFromImage(input) {
     throw err
   }
 
-  const { dataUrl } = parseMealImageDataUrl(input.imageDataUrl)
+  const images = parseMealImageDataUrls(input.imageDataUrls ?? input.imageDataUrl)
   const supplement = String(input.description ?? '').trim()
   if (supplement.length > 200) {
     const err = new Error('补充说明请控制在 200 字以内')
@@ -225,7 +263,10 @@ export async function estimateMealKcalFromImage(input) {
         role: 'user',
         content: [
           { type: 'text', text: buildMealVisionUserPrompt(supplement) },
-          { type: 'image_url', image_url: { url: dataUrl } },
+          ...images.map(({ dataUrl }) => ({
+            type: 'image_url',
+            image_url: { url: dataUrl },
+          })),
         ],
       },
     ],
@@ -244,6 +285,83 @@ export async function estimateMealKcalFromImage(input) {
   return buildEstimateResult(parsed, 'meal', { description: fallbackLabel })
 }
 
+/**
+ * @param {{ imageDataUrl?: string, imageDataUrls?: string[], description?: string }} input
+ */
+export async function parseMealNutritionLabelFromImage(input) {
+  const apiKey = getDashScopeApiKey()
+  if (!apiKey) {
+    const err = new Error(
+      '拍照识别未配置：请在 server/.env 设置 DASHSCOPE_API_KEY 后重启 API',
+    )
+    err.status = 503
+    throw err
+  }
+
+  const images = parseMealImageDataUrls(input.imageDataUrls ?? input.imageDataUrl)
+  const supplement = String(input.description ?? '').trim()
+  if (supplement.length > 200) {
+    const err = new Error('补充说明请控制在 200 字以内')
+    err.status = 400
+    throw err
+  }
+
+  const body = {
+    model: MODEL,
+    max_tokens: 512,
+    temperature: 0,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: buildMealNutritionLabelSystemPrompt() },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: buildMealNutritionLabelUserPrompt(supplement) },
+          ...images.map(({ dataUrl }) => ({
+            type: 'image_url',
+            image_url: { url: dataUrl },
+          })),
+        ],
+      },
+    ],
+  }
+
+  const { data } = await requestDashScopeWithRetry(apiKey, body)
+  const content = extractMessageContent(data?.choices?.[0])
+  if (!content) {
+    const err = new Error('AI 未返回营养表解析结果，请重新拍摄或手动填写')
+    err.status = 502
+    throw err
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    const err = new Error('AI 返回的营养表结果无法解析，请手动填写')
+    err.status = 502
+    throw err
+  }
+
+  const grams = Number(parsed.grams)
+  const kjPer100g = Number(parsed.kjPer100g)
+  if (!Number.isFinite(grams) || grams <= 0 || !Number.isFinite(kjPer100g) || kjPer100g <= 0) {
+    const err = new Error('未能可靠识别营养表能量，请手动填写')
+    err.status = 422
+    throw err
+  }
+
+  return {
+    name: String(parsed.name || '包装食品').trim() || '包装食品',
+    grams: Math.round(grams * 10) / 10,
+    kjPer100g: Math.round(kjPer100g),
+    confidence: ['high', 'medium', 'low'].includes(parsed.confidence)
+      ? parsed.confidence
+      : 'medium',
+    reason: String(parsed.reason || '根据包装营养表识别').trim(),
+  }
+}
+
 export const QWEN_VISION_PROVIDER_ID = 'qwen-vl-flash'
 
 /** @type {import('../types.js').KcalEstimator} */
@@ -254,12 +372,16 @@ export async function qwenVisionEstimator(input) {
     throw err
   }
 
-  const imageDataUrl =
-    input.imageDataUrl ||
-    (input.images?.[0] ? `data:image/jpeg;base64,${input.images[0].toString('base64')}` : '')
+  const imageDataUrls = input.imageDataUrls?.length
+    ? input.imageDataUrls
+    : input.imageDataUrl
+      ? [input.imageDataUrl]
+      : input.images?.length
+        ? input.images.map((image) => `data:image/jpeg;base64,${image.toString('base64')}`)
+        : []
 
   const result = await estimateMealKcalFromImage({
-    imageDataUrl,
+    imageDataUrls,
     description: input.description,
   })
 

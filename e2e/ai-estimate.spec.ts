@@ -16,11 +16,11 @@ test('AI estimate timeout shows fallback and manual save still works', async ({
 
   await openLogAiTab(page, 'meal')
   const aiSection = page.getByRole('region', { name: 'AI 估算' })
-  await aiSection.getByPlaceholder('例如：一碗牛肉面 + 一个鸡蛋').fill(mealName)
+  await aiSection.getByLabel('吃了什么？').fill(mealName)
   await aiSection.getByRole('button', { name: 'AI 估算热量' }).click()
 
   await expect(page.getByText('估算中…')).toBeVisible()
-  await page.clock.fastForward(36_000)
+  await page.clock.fastForward(46_000)
   await expect(page.getByText('估算超时，请稍后重试')).toBeVisible()
 
   const manualSection = await expandManualLogSection(page, 'meal')
