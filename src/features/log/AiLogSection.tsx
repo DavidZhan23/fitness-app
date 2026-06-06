@@ -1,4 +1,11 @@
-import { useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+} from 'react'
 import { httpData } from '../../lib/api'
 import {
   CONFIDENCE_LABELS,
@@ -14,13 +21,54 @@ import {
   validateAiItems,
 } from '../../lib/logTemplate'
 import { trackMetric } from '../../lib/telemetry'
+import { fileToMealPhotoDataUrl } from '../../lib/mealPhotoImage'
+import { MEAL_PHOTO_GUIDE_TIPS } from '../../lib/mealPhotoGuide'
+import {
+  isMealPhotoQuotaExhausted,
+  type MealPhotoQuota,
+} from '../../lib/mealPhotoQuota'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { RecordDeleteButton } from '../../components/RecordActionIcons'
-import { MealPhotoSection } from './MealPhotoSection'
 
 type PendingDeleteItem = { id: string; name: string }
 
-type MealInputMode = 'text' | 'photo'
+type PhotoPickerSource = 'camera' | 'gallery' | 'file'
+
+type SelectedPhoto = {
+  id: string
+  dataUrl: string
+}
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number
+  results: {
+    length: number
+    [index: number]: {
+      0?: { transcript?: string }
+      isFinal?: boolean
+    }
+  }
+}
+
+interface SpeechRecognitionErrorEventLike {
+  error?: string
+}
+
+interface SpeechRecognitionLike {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  maxAlternatives: number
+  onstart: (() => void) | null
+  onend: (() => void) | null
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  start: () => void
+  stop: () => void
+  abort: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
 
 export interface AiEstimateItemState {
   id: string
@@ -31,6 +79,59 @@ export interface AiEstimateItemState {
   confidence: AiEstimateConfidence
   reason: string
   saveAsTemplate: boolean
+}
+
+function VoiceIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 10v4h3l4 4V6L8 10H5Z" />
+      <path d="M15 9.2a4 4 0 0 1 0 5.6" />
+      <path d="M17.7 6.5a8 8 0 0 1 0 11" />
+    </svg>
+  )
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M8.5 6.5 10 4h4l1.5 2.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.5Z" />
+      <circle cx="12" cy="13" r="3.25" />
+    </svg>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  )
+}
+
+function ImageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m7 15 3-3 3 3 2-2 3 3" />
+      <circle cx="8" cy="9" r="1.4" />
+    </svg>
+  )
+}
+
+function FolderIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z" />
+    </svg>
+  )
 }
 
 interface AiLogSectionProps {
@@ -52,8 +153,53 @@ function classifyErrorType(err: unknown): 'network' | 'error' {
   return 'error'
 }
 
+function readMealPhotoQuotaFromError(err: unknown): MealPhotoQuota | null {
+  if (!err || typeof err !== 'object') return null
+  const maybeQuota = (err as { mealPhotoQuota?: unknown }).mealPhotoQuota
+  if (!maybeQuota || typeof maybeQuota !== 'object') return null
+  const quota = maybeQuota as Partial<MealPhotoQuota>
+  if (
+    typeof quota.limit === 'number' &&
+    typeof quota.used === 'number' &&
+    typeof quota.unlimited === 'boolean' &&
+    typeof quota.dateKey === 'string'
+  ) {
+    return {
+      limit: quota.limit,
+      used: quota.used,
+      remaining:
+        typeof quota.remaining === 'number' || quota.remaining === null
+          ? quota.remaining
+          : null,
+      unlimited: quota.unlimited,
+      dateKey: quota.dateKey,
+    }
+  }
+  return null
+}
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null
+  const maybeWindow = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor
+    webkitSpeechRecognition?: SpeechRecognitionConstructor
+  }
+  return maybeWindow.SpeechRecognition ?? maybeWindow.webkitSpeechRecognition ?? null
+}
+
+function appendTranscript(current: string, transcript: string): string {
+  const cleanTranscript = transcript.trim()
+  if (!cleanTranscript) return current
+  const cleanCurrent = current.trim()
+  return cleanCurrent ? `${cleanCurrent} ${cleanTranscript}` : cleanTranscript
+}
+
 function createItemId() {
   return `ai-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function createPhotoId() {
+  return `meal-photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 function formatItemSummaryMeta(item: AiEstimateItemState): string {
@@ -137,13 +283,26 @@ export function AiLogSection({
   disabled,
   showDescriptionInput = true,
 }: AiLogSectionProps) {
+  const textInputRef = useRef<HTMLTextAreaElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const [items, setItems] = useState<AiEstimateItemState[]>([])
   const [expandedItemIds, setExpandedItemIds] = useState<Record<string, boolean>>({})
   const [estimating, setEstimating] = useState(false)
   const [estimateError, setEstimateError] = useState('')
   const [saveError, setSaveError] = useState('')
   const [hasEstimate, setHasEstimate] = useState(false)
-  const [mealInputMode, setMealInputMode] = useState<MealInputMode>('text')
+  const [photos, setPhotos] = useState<SelectedPhoto[]>([])
+  const [photoError, setPhotoError] = useState('')
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false)
+  const [photoGuideOpen, setPhotoGuideOpen] = useState(false)
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoQuota, setPhotoQuota] = useState<MealPhotoQuota | null>(null)
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const [listening, setListening] = useState(false)
+  const [speechError, setSpeechError] = useState('')
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteItem | null>(
     null,
   )
@@ -156,12 +315,11 @@ export function AiLogSection({
     : '不用精确到克数，像聊天一样描述也可以。'
   const fuzzyHint = isExercise
     ? '支持模糊输入：像聊天一样写，比如“晚饭后散步一会儿”。'
-    : '支持模糊输入：像聊天一样写，比如“一碗牛肉面”。'
-  const placeholder = isExercise
-    ? '例如：慢跑 40 分钟 + 拉伸 10 分钟'
-    : '例如：一碗牛肉面 + 一个鸡蛋'
+    : '支持模糊输入，也可以上传图片 / 拍照后补充描述。'
+  const placeholder = '发消息或点语音说话...'
 
-  const busy = disabled || saving || estimating
+  const busy = disabled || saving || estimating || photoLoading
+  const photoQuotaBlocked = isMealPhotoQuotaExhausted(photoQuota)
 
   const resetEstimateState = () => {
     setEstimateError('')
@@ -169,6 +327,39 @@ export function AiLogSection({
     setItems([])
     setExpandedItemIds({})
   }
+
+  const loadPhotoQuota = useCallback(async () => {
+    if (!isMeal) return
+    try {
+      setPhotoQuota(await httpData.getMealPhotoQuota())
+    } catch {
+      setPhotoQuota(null)
+    }
+  }, [isMeal])
+
+  useEffect(() => {
+    if (!isMeal) return
+    void loadPhotoQuota()
+  }, [isMeal, loadPhotoQuota])
+
+  const resizeTextInput = useCallback(() => {
+    const node = textInputRef.current
+    if (!node) return
+    node.style.height = 'auto'
+    node.style.height = `${Math.min(node.scrollHeight, 180)}px`
+  }, [])
+
+  useEffect(() => {
+    resizeTextInput()
+  }, [description, resizeTextInput])
+
+  useEffect(() => {
+    setSpeechSupported(getSpeechRecognitionConstructor() != null)
+    return () => {
+      recognitionRef.current?.abort()
+      recognitionRef.current = null
+    }
+  }, [])
 
   const applyEstimateResponse = (
     response: {
@@ -285,6 +476,10 @@ export function AiLogSection({
         )
         trackEstimateMetric('ai_estimate_timeout', durationMs, inputMode, inputLength)
       } else {
+        const quotaFromError = readMealPhotoQuotaFromError(err)
+        if (quotaFromError) {
+          setPhotoQuota(quotaFromError)
+        }
         setEstimateError(err instanceof Error ? err.message : '估算失败')
         trackEstimateMetric(
           'ai_estimate_error',
@@ -332,41 +527,164 @@ export function AiLogSection({
 
   const totalKcal = sumAiItemsKcal(items)
 
+  const toggleSpeechInput = () => {
+    if (busy) return
+    if (!speechSupported) {
+      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
+      return
+    }
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+
+    const Recognition = getSpeechRecognitionConstructor()
+    if (!Recognition) {
+      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
+      setSpeechSupported(false)
+      return
+    }
+
+    const recognition = new Recognition()
+    recognition.lang = 'zh-CN'
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onstart = () => {
+      setListening(true)
+      setSpeechError('')
+      setEstimateError('')
+    }
+    recognition.onend = () => {
+      setListening(false)
+    }
+    recognition.onerror = (event) => {
+      setListening(false)
+      setSpeechError(
+        event.error === 'not-allowed'
+          ? '没有麦克风权限，请允许后再试。'
+          : '语音识别失败，请再试一次。',
+      )
+    }
+    recognition.onresult = (event) => {
+      let transcript = ''
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        transcript += event.results[index]?.[0]?.transcript ?? ''
+      }
+      const nextDescription = appendTranscript(description, transcript)
+      onDescriptionChange(nextDescription)
+      setEstimateError('')
+      setSpeechError('')
+      window.requestAnimationFrame(resizeTextInput)
+    }
+    recognitionRef.current = recognition
+    try {
+      recognition.start()
+    } catch {
+      setListening(false)
+      setSpeechError('语音输入启动失败，请再试一次。')
+    }
+  }
+
+  const triggerPhotoPicker = (source: PhotoPickerSource) => {
+    if (!isMeal || busy) return
+    if (photoQuotaBlocked) {
+      setPhotoError('今日拍照识别次数已用完，请明天再试')
+      setPhotoMenuOpen(false)
+      return
+    }
+    setPhotoMenuOpen(false)
+    setPhotoError('')
+    if (source === 'camera') {
+      cameraInputRef.current?.click()
+    } else if (source === 'gallery') {
+      galleryInputRef.current?.click()
+    } else {
+      fileInputRef.current?.click()
+    }
+  }
+
+  const appendPhotoFiles = async (files: File[]) => {
+    if (files.length === 0) return
+    if (!isMeal) return
+    if (photoQuotaBlocked) {
+      setPhotoError('今日拍照识别次数已用完，请明天再试')
+      return
+    }
+    setPhotoLoading(true)
+    try {
+      const nextPhotos = await Promise.all(
+        files.map(async (file) => ({
+          id: createPhotoId(),
+          dataUrl: await fileToMealPhotoDataUrl(file),
+        })),
+      )
+      setPhotos((prev) => [...prev, ...nextPhotos])
+      setPhotoError('')
+      resetEstimateState()
+      setSaveError('')
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : '图片读取失败，请换一张试试')
+    } finally {
+      setPhotoLoading(false)
+    }
+  }
+
+  const handlePhotoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    await appendPhotoFiles(files)
+  }
+
+  const handleInputPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!isMeal || busy) return
+    const files = Array.from(event.clipboardData.files ?? []).filter((file) =>
+      file.type.startsWith('image/'),
+    )
+    if (files.length === 0) return
+    event.preventDefault()
+    void appendPhotoFiles(files)
+  }
+
+  const removeSelectedPhoto = (id: string) => {
+    setPhotos((prev) => prev.filter((photo) => photo.id !== id))
+    setPhotoError('')
+    setPhotoMenuOpen(false)
+    resetEstimateState()
+    setSaveError('')
+  }
+
   const handleEstimate = async () => {
     const desc = description.trim()
-    if (desc.length < 2) {
-      setEstimateError('请先输入内容（可含时长、分量，估算更准）')
+    const imageDataUrls = photos.map((photo) => photo.dataUrl)
+    const hasPhotoInput = isMeal && imageDataUrls.length > 0
+    if (!hasPhotoInput && desc.length < 2) {
+      setEstimateError(
+        isMeal
+          ? '请先输入内容或上传图片（可补充分量，估算更准）'
+          : '请先输入内容（可含时长、分量，估算更准）',
+      )
+      return
+    }
+    if (hasPhotoInput && photoQuotaBlocked) {
+      setEstimateError('')
+      setPhotoError('今日拍照识别次数已用完，请明天再试')
       return
     }
 
     await runEstimate(
-      (signal) => httpData.estimateKcal(kind, desc, { signal }),
-      desc,
-      'ai',
-      desc.length,
-    )
-  }
-
-  const handlePhotoEstimate = async (payload: {
-    imageDataUrl: string
-    supplement: string
-  }) => {
-    await runEstimate(
       (signal) =>
-        httpData.estimateKcalFromPhoto(payload.imageDataUrl, payload.supplement, {
+        httpData.estimateKcal(kind, desc, {
           signal,
+          imageDataUrls: hasPhotoInput ? imageDataUrls : undefined,
         }),
-      payload.supplement.trim() || '餐食照片',
-      'photo',
-      payload.supplement.trim().length,
+      desc || (imageDataUrls.length > 1 ? '多张餐食照片' : '餐食照片'),
+      hasPhotoInput ? 'photo' : 'ai',
+      desc.length + imageDataUrls.length,
     )
-  }
-
-  const switchMealInputMode = (mode: MealInputMode) => {
-    if (busy) return
-    setMealInputMode(mode)
-    resetEstimateState()
-    setSaveError('')
+    if (hasPhotoInput) {
+      void loadPhotoQuota()
+    }
   }
 
   const handleSave = async () => {
@@ -411,77 +729,219 @@ export function AiLogSection({
           <p className="log-ai-card__hint">{sectionHint}</p>
         </header>
 
-        {isMeal ? (
-          <div
-            className="log-ai-mode-tabs"
-            role="tablist"
-            aria-label="饮食记录方式"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mealInputMode === 'text'}
-              className={`log-ai-mode-tab${mealInputMode === 'text' ? ' log-ai-mode-tab--active' : ''}`}
-              onClick={() => switchMealInputMode('text')}
-              disabled={busy}
-            >
-              文字描述
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mealInputMode === 'photo'}
-              className={`log-ai-mode-tab${mealInputMode === 'photo' ? ' log-ai-mode-tab--active' : ''}`}
-              onClick={() => switchMealInputMode('photo')}
-              disabled={busy}
-            >
-              拍照识别
-            </button>
-          </div>
-        ) : null}
-
-        {isMeal && mealInputMode === 'photo' ? (
-          <MealPhotoSection
-            disabled={disabled || saving}
-            estimating={estimating}
-            estimateError={estimateError}
-            onEstimate={handlePhotoEstimate}
-          />
-        ) : (
-          <>
+        <>
+          <div className={`log-ai-unified-input${photoMenuOpen ? ' log-ai-unified-input--menu-open' : ''}`}>
             {showDescriptionInput ? (
-              <label className="block">
-                <input
+              <div className="log-ai-composer" role="group" aria-label="AI 输入">
+                <button
+                  type="button"
+                  className={`log-ai-composer__icon-btn log-ai-composer__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
+                  aria-label={listening ? '停止语音输入' : '语音输入'}
+                  aria-pressed={listening}
+                  disabled={busy}
+                  onClick={toggleSpeechInput}
+                >
+                  <VoiceIcon />
+                </button>
+
+                <textarea
+                  ref={textInputRef}
+                  rows={1}
                   value={description}
                   onChange={(e) => {
                     onDescriptionChange(e.target.value)
                     setEstimateError('')
+                    setPhotoError('')
+                    setSpeechError('')
+                    window.requestAnimationFrame(resizeTextInput)
                   }}
+                  onPaste={handleInputPaste}
                   disabled={busy}
-                  className="input w-full min-w-0"
+                  className="log-ai-composer__textarea"
                   placeholder={placeholder}
+                  aria-label={sectionTitle}
                 />
-              </label>
+
+                {isMeal ? (
+                  <div className="log-ai-composer__actions">
+                    <button
+                      type="button"
+                      className="log-ai-composer__icon-btn"
+                      aria-label="拍照"
+                      disabled={busy || photoQuotaBlocked}
+                      onClick={() => triggerPhotoPicker('camera')}
+                    >
+                      <CameraIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className={`log-ai-composer__icon-btn${photoMenuOpen ? ' log-ai-composer__icon-btn--active' : ''}`}
+                      aria-label={photoMenuOpen ? '收起图片菜单' : '展开图片菜单'}
+                      aria-expanded={photoMenuOpen}
+                      aria-haspopup="menu"
+                      disabled={busy || photoQuotaBlocked}
+                      onClick={() => {
+                        setPhotoMenuOpen((open) => !open)
+                        setPhotoError('')
+                      }}
+                    >
+                      {photoMenuOpen ? <CloseIcon /> : <PlusIcon />}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <p className="log-ai-card__hint">{fuzzyHint}</p>
             )}
 
-            <p className="log-ai-fuzzy-hint">{fuzzyHint}</p>
+            {isMeal ? (
+              <>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  onChange={(event) => void handlePhotoFileChange(event)}
+                  disabled={busy || photoQuotaBlocked}
+                />
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={(event) => void handlePhotoFileChange(event)}
+                  disabled={busy || photoQuotaBlocked}
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={(event) => void handlePhotoFileChange(event)}
+                  disabled={busy || photoQuotaBlocked}
+                />
 
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void handleEstimate()}
-              className="log-ai-btn w-full py-3 text-sm font-medium disabled:opacity-50"
-            >
-              {estimating ? '估算中…' : 'AI 估算热量'}
-            </button>
+                {photoMenuOpen ? (
+                  <div className="log-ai-composer-menu" role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="log-ai-composer-menu__item"
+                      onClick={() => triggerPhotoPicker('camera')}
+                    >
+                      <CameraIcon />
+                      <span>拍照</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="log-ai-composer-menu__item"
+                      onClick={() => triggerPhotoPicker('gallery')}
+                    >
+                      <ImageIcon />
+                      <span>相册</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="log-ai-composer-menu__item"
+                      onClick={() => triggerPhotoPicker('file')}
+                    >
+                      <FolderIcon />
+                      <span>本地文件</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="log-ai-composer-menu__hint"
+                      aria-expanded={photoGuideOpen}
+                      onClick={() => setPhotoGuideOpen((open) => !open)}
+                    >
+                      {photoGuideOpen ? '收起拍摄提示' : '拍摄小提示'}
+                    </button>
+                  </div>
+                ) : null}
 
-            {estimateError ? (
-              <p className="text-xs text-red-400">{estimateError}</p>
+                {photos.length > 0 ? (
+                  <div className="log-ai-photo-preview-list">
+                    {photos.map((photo, index) => (
+                      <div className="log-ai-photo-preview" key={photo.id}>
+                        <img
+                          src={photo.dataUrl}
+                          alt={`已选择的饮食图片 ${index + 1}`}
+                          className="log-ai-photo-preview__image"
+                        />
+                        <div className="log-ai-photo-preview__copy">
+                          <strong>图片 {index + 1}</strong>
+                          <span>可继续补充「小碗」「少油」等说明。</span>
+                        </div>
+                        <div className="log-ai-photo-preview__actions">
+                          <button
+                            type="button"
+                            className="log-ai-photo-preview__remove"
+                            disabled={busy}
+                            onClick={() => removeSelectedPhoto(photo.id)}
+                            aria-label={`删除第 ${index + 1} 张图片`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="log-ai-photo-preview__link"
+                      disabled={busy || photoQuotaBlocked}
+                      onClick={() => {
+                        setPhotoMenuOpen(true)
+                        setPhotoError('')
+                      }}
+                    >
+                      继续添加 / 重新选择
+                    </button>
+                  </div>
+                ) : null}
+
+                {photoGuideOpen ? (
+                  <div className="log-ai-photo-guide" aria-label="拍摄小提示">
+                    <ul className="log-ai-photo-guide__list">
+                      {MEAL_PHOTO_GUIDE_TIPS.map((tip) => (
+                        <li key={tip.id} className="log-ai-photo-guide__item">
+                          <strong>{tip.title}</strong>
+                          <span>{tip.body}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </>
             ) : null}
-          </>
-        )}
+          </div>
+
+          <p className="log-ai-fuzzy-hint">{fuzzyHint}</p>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleEstimate()}
+            className="log-ai-btn w-full py-3 text-sm font-medium disabled:opacity-50"
+          >
+            AI 估算热量
+          </button>
+
+          {estimating ? (
+            <p className="log-ai-estimating-status" role="status">
+              估算中…
+            </p>
+          ) : null}
+          {speechError ? <p className="text-xs text-red-400">{speechError}</p> : null}
+          {photoError ? <p className="text-xs text-red-400">{photoError}</p> : null}
+          {estimateError ? (
+            <p className="text-xs text-red-400">{estimateError}</p>
+          ) : null}
+        </>
 
         {hasEstimate ? (
           <section aria-label="AI 估算结果" className="log-ai-results">

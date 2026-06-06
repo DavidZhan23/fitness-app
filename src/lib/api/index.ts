@@ -178,9 +178,10 @@ export const httpData = {
   async estimateKcal(
     type: 'exercise' | 'meal',
     description: string,
-    init?: { signal?: AbortSignal },
+    init?: { signal?: AbortSignal; imageDataUrl?: string; imageDataUrls?: string[] },
   ): Promise<{
     kcal: number
+    mealPhotoQuota?: MealPhotoQuota
     items?: {
       name: string
       quantity?: number
@@ -190,9 +191,22 @@ export const httpData = {
       reason?: string
     }[]
   }> {
+    const cleanDescription = description.trim()
+    const imageDataUrls =
+      init?.imageDataUrls?.filter((item) => item.trim()) ??
+      (init?.imageDataUrl ? [init.imageDataUrl] : [])
+    const body = imageDataUrls.length > 0
+      ? {
+          type,
+          modality: 'image',
+          images: imageDataUrls,
+          description: cleanDescription || undefined,
+        }
+      : { type, description }
+
     return apiFetch('/ai/estimate-kcal', {
       method: 'POST',
-      body: JSON.stringify({ type, description }),
+      body: JSON.stringify(body),
       signal: init?.signal,
     })
   },
@@ -217,13 +231,29 @@ export const httpData = {
       reason?: string
     }[]
   }> {
-    return apiFetch('/ai/estimate-kcal', {
+    return this.estimateKcal('meal', supplement, {
+      signal: init?.signal,
+      imageDataUrl,
+    })
+  },
+
+  async parseNutritionLabelPhoto(
+    imageDataUrls: string[],
+    description = '',
+    init?: { signal?: AbortSignal },
+  ): Promise<{
+    name: string
+    grams: number
+    kjPer100g: number
+    confidence?: 'high' | 'medium' | 'low'
+    reason?: string
+    mealPhotoQuota?: MealPhotoQuota
+  }> {
+    return apiFetch('/ai/parse-nutrition-label', {
       method: 'POST',
       body: JSON.stringify({
-        type: 'meal',
-        modality: 'image',
-        image: imageDataUrl,
-        description: supplement.trim() || undefined,
+        images: imageDataUrls,
+        description: description.trim() || undefined,
       }),
       signal: init?.signal,
     })
