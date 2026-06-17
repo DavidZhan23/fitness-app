@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { DeveloperDevNav } from '../components/DeveloperDevNav'
 import { httpData } from '../lib/api'
 import type { WeeklyReportSummary } from '../types'
 
@@ -54,6 +55,8 @@ export function DeveloperReportsPage() {
           </button>
           <h1 className="text-xl font-bold">开发者后台</h1>
         </header>
+
+        <DeveloperDevNav />
 
         <p className="text-sm text-muted">
           每周质量报告（路由耗时、AI 估算成功率等）。数据来自生产埋点，每周一自动生成。

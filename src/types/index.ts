@@ -260,6 +260,16 @@ export interface HeatmapDay {
   exerciseKcal: number
 }
 
+/** 开发者后台：社区名片可见性管理 */
+export interface DeveloperCommunityMember {
+  id: string
+  email: string
+  nickname: string
+  communityVisible: boolean
+  onboardingComplete: boolean
+  createdAt: string
+}
+
 /** 周报列表项（不含 report_md） */
 export interface WeeklyReportSummary {
   week_id: string

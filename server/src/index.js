@@ -8,6 +8,7 @@ import authRouter from './routes/auth.js'
 import aiRouter from './routes/ai.js'
 import logsRouter from './routes/logs.js'
 import communityRouter from './routes/community.js'
+import developerRouter from './routes/developer.js'
 import telemetryRouter from './routes/telemetry.js'
 
 const app = express()
@@ -21,6 +22,7 @@ app.use(authRouter)
 app.use(aiRouter)
 app.use(logsRouter)
 app.use(communityRouter)
+app.use(developerRouter)
 app.use(telemetryRouter)
 
 app.use(errorHandler)

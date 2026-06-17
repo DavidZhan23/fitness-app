@@ -54,6 +54,11 @@ const DeveloperReportDetailPage = lazy(() =>
     default: m.DeveloperReportDetailPage,
   })),
 )
+const DeveloperCommunityPage = lazy(() =>
+  import('./pages/DeveloperCommunityPage').then((m) => ({
+    default: m.DeveloperCommunityPage,
+  })),
+)
 
 function RouteFallback() {
   return (
@@ -115,6 +120,7 @@ export default function App() {
                 }
               >
                 <Route index element={<DeveloperReportsPage />} />
+                <Route path="community" element={<DeveloperCommunityPage />} />
                 <Route path="reports/:week" element={<DeveloperReportDetailPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
