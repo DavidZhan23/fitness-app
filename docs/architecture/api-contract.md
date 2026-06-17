@@ -63,6 +63,13 @@ Base URL：
 
 **开发者鉴权**：`DEVELOPER_EMAILS`（优先）或 `ADMIN_EMAILS`（回退），逗号分隔；`requireDeveloper` middleware 比对 `req.userEmail`。App 内入口：设置页「开发者后台」（仅 `isDeveloper` 为 true 时显示）。
 
+### 社区名片可见性（开发者 only）
+
+| Method | Path | 说明 |
+|--------|------|------|
+| GET | `/developer/community-members` | 全部注册用户及 `community_visible` 状态；需开发者 |
+| PATCH | `/developer/community-members/:userId/visibility` | Body: `{ community_visible: boolean }`；隐藏后他人社区列表不展示该名片 |
+
 详见 [`docs/reports/weekly/README.md`](../reports/weekly/README.md)。
 
 ## 日记录

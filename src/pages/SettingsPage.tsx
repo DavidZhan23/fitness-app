@@ -417,7 +417,7 @@ export function SettingsPage() {
           to="/dev"
           className="flex items-center justify-between rounded-xl border border-brand/40 bg-brand/10 px-4 py-3 text-sm font-medium text-brand"
         >
-          <span>开发者后台 · 质量周报</span>
+          <span>开发者后台</span>
           <span aria-hidden>→</span>
         </Link>
       )}

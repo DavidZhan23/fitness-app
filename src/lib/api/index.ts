@@ -17,6 +17,7 @@ import type {
   Profile,
   WeeklyReportDetail,
   WeeklyReportSummary,
+  DeveloperCommunityMember,
 } from '../../types'
 
 export interface AppUser {
@@ -569,6 +570,25 @@ export const httpData = {
     return apiFetch(
       `/telemetry/weekly-reports/${encodeURIComponent(weekId)}/regenerate`,
       { method: 'POST' },
+    )
+  },
+
+  async listDeveloperCommunityMembers(): Promise<{
+    members: DeveloperCommunityMember[]
+  }> {
+    return apiFetch('/developer/community-members')
+  },
+
+  async setDeveloperCommunityVisibility(
+    userId: string,
+    communityVisible: boolean,
+  ): Promise<{ id: string; communityVisible: boolean }> {
+    return apiFetch(
+      `/developer/community-members/${encodeURIComponent(userId)}/visibility`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ community_visible: communityVisible }),
+      },
     )
   },
 }
