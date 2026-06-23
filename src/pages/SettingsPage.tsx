@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AvatarCropEditor } from '../components/AvatarCropEditor'
+import { WeeklyReportArrivalSheet } from '../components/WeeklyReportArrivalSheet'
 import { PageShell } from '../components/ui/responsive'
 import { HeroCollabSwitch } from '../components/HeroCollabSwitch'
 import { InstallGuide } from '../components/InstallGuide'
@@ -27,7 +28,9 @@ import {
 } from '../lib/styleOptions'
 import { getHeroCollabConfig } from '../lib/themeMeta'
 import { getMetabolismByMode, METABOLISM_MODE_ICON } from '../lib/metabolism'
-import type { MetabolismMode, Sex, WallStyle } from '../types'
+import { httpData } from '../lib/api'
+import { normalizeUserWeeklyReport } from '../lib/userWeeklyReport'
+import type { MetabolismMode, Sex, UserWeeklyReport, WallStyle } from '../types'
 
 export function SettingsPage() {
   const { user, profile, updateProfile, signOut } = useAuth()
@@ -72,6 +75,8 @@ export function SettingsPage() {
     size: 1,
   })
   const themeDetailsRef = useRef<HTMLDetailsElement>(null)
+  const [weeklyReport, setWeeklyReport] = useState<UserWeeklyReport | null>(null)
+  const [showWeeklyArrival, setShowWeeklyArrival] = useState(false)
 
   const todayKey = formatTodayDateKey()
   const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
@@ -91,6 +96,22 @@ export function SettingsPage() {
       profile.metabolism_mode === 'time_spread' ? 'time_spread' : 'full_day',
     )
   }, [profile])
+
+  useEffect(() => {
+    if (!profile?.onboarding_complete) return
+    let active = true
+    httpData.ensureLatestUserWeeklyReport()
+      .then(({ report }) => {
+        if (!active) return
+        const normalized = normalizeUserWeeklyReport(report)
+        setWeeklyReport(normalized)
+        if (normalized && !normalized.isViewed) {
+          setShowWeeklyArrival(true)
+        }
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [profile?.onboarding_complete])
 
   useEffect(() => {
     const handleOutsidePointer = (event: PointerEvent) => {
@@ -411,6 +432,20 @@ export function SettingsPage() {
     <div ref={pageRef}>
       <PageShell>
       <h1 className="text-xl font-bold text-primary">设置</h1>
+
+      <Link to="/weekly-reports" className="weekly-settings-entry">
+        <span className="weekly-settings-entry__icon" aria-hidden>🦊</span>
+        <span>
+          <strong>
+            我的周报
+            {weeklyReport && !weeklyReport.isViewed && (
+              <span className="settings-weekly-unread-dot" aria-label="有新周报" />
+            )}
+          </strong>
+          <small>回顾你和小狸一起努力的每一周</small>
+        </span>
+        <span aria-hidden>→</span>
+      </Link>
 
       {user?.isDeveloper && (
         <Link
@@ -914,6 +949,17 @@ export function SettingsPage() {
         退出登录
       </button>
       </PageShell>
+
+      {weeklyReport && showWeeklyArrival && (
+        <WeeklyReportArrivalSheet
+          report={weeklyReport}
+          onLater={() => setShowWeeklyArrival(false)}
+          onView={() => {
+            setShowWeeklyArrival(false)
+            navigate(`/weekly-reports/${weeklyReport.id}`)
+          }}
+        />
+      )}
 
       {isAvatarPreviewOpen && (
         <div className="settings-avatar-modal" role="dialog" aria-modal="true">

@@ -289,3 +289,150 @@ export interface WeeklyReportDetail extends WeeklyReportSummary {
   recommendations_md: string | null
   report_md: string
 }
+
+export type WeeklyDeficitStatus =
+  | 'surplus'
+  | 'mild'
+  | 'good'
+  | 'aggressive'
+  | 'unknown'
+
+export type WeeklyDeficitLevel =
+  | 'too_low'
+  | 'mild'
+  | 'good'
+  | 'aggressive'
+  | 'unknown'
+
+export type WeeklyAchievementType =
+  | 'exercise_king'
+  | 'fat_loss_pioneer'
+  | 'food_king'
+
+export interface UserWeeklyReport {
+  id: string
+  userId: string
+  weekStartDate: string
+  weekEndDate: string
+  weekNumber: number
+  year: number
+  generatedAt: string
+  viewedAt?: string | null
+  isViewed: boolean
+  sharedToCommunityAt?: string | null
+  isSharedToCommunity?: boolean
+  summary: {
+    dataStatus: 'complete' | 'insufficient'
+    activeDays: number
+    dietLoggedDays: number
+    totalExerciseMinutes: number | null
+    totalExerciseCalories: number
+    totalCaloriesIn: number
+    totalCalorieDeficit: number | null
+    averageDailyDeficit: number | null
+    weightChangeKg: number | null
+    achievementCount: number
+    overallTitle: string
+  }
+  exerciseStats: {
+    totalWorkouts: number
+    totalMinutes: number | null
+    totalCalories: number
+    favoriteExerciseName?: string
+    favoriteExerciseCount?: number
+    favoriteExerciseMinutes: number | null
+    longestWorkoutMinutes: number | null
+    bestExerciseDay?: string
+    exerciseTypeDistribution: Array<{
+      name: string
+      minutes: number | null
+      calories: number
+      count: number
+    }>
+    dailyExercise: Array<{
+      date: string
+      minutes: number | null
+      calories: number
+      workoutCount: number
+    }>
+  }
+  dietStats: {
+    loggedDays: number
+    totalCalories: number
+    averageCalories: number | null
+    totalProtein: number | null
+    averageProtein: number | null
+    totalCarbs: number | null
+    averageCarbs: number | null
+    totalFat: number | null
+    averageFat: number | null
+    favoriteFood?: string
+    favoriteFoodCount?: number
+    highestCalorieFood?: string
+    highestCalorieFoodCalories: number | null
+    bestProteinFood: string | null
+    snackCount: number | null
+    drinkCount: number | null
+    dailyDiet: Array<{
+      date: string
+      calories: number
+      protein: number | null
+      carbs: number | null
+      fat: number | null
+      foodCount: number
+    }>
+  }
+  calorieStats: {
+    totalCaloriesIn: number
+    totalExerciseCalories: number
+    estimatedTdeeTotal: number | null
+    totalDeficit: number | null
+    averageDailyDeficit: number | null
+    deficitLevel: WeeklyDeficitLevel
+    trackedDeficitDays: number
+    dailyCalories: Array<{
+      date: string
+      caloriesIn: number
+      exerciseCalories: number
+      estimatedTdee: number | null
+      deficit: number | null
+      status: WeeklyDeficitStatus
+    }>
+  }
+  achievementStats: {
+    totalCards: number
+    exerciseKingCount: number
+    fatLossPioneerCount: number
+    foodKingCount: number
+    bestAchievementDay?: string
+    dailyAchievements: Array<{
+      date: string
+      achievements: Array<{
+        type: WeeklyAchievementType
+        title: string
+        description: string
+        cardImageUrl?: string
+      }>
+    }>
+  }
+  foxComment: string
+  nextWeekSuggestions: Array<{
+    type: 'exercise' | 'diet' | 'habit' | 'recovery'
+    title: string
+    content: string
+  }>
+  shareImageUrl?: string
+}
+
+export interface CommunitySharedWeeklyReportSummary {
+  id: string
+  weekStartDate: string
+  weekEndDate: string
+  weekNumber: number
+  year: number
+  overallTitle: string
+  activeDays: number
+  totalCalorieDeficit: number | null
+  achievementCount: number
+  sharedToCommunityAt: string
+}

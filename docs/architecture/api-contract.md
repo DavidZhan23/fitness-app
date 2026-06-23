@@ -36,6 +36,8 @@ Base URL：
 |--------|------|------|
 | GET | `/ai/meal-photo-quota` | 饮食拍照识别当日额度。响应 `{ limit, used, remaining, unlimited, dateKey }`；`remaining` 在开发者无限额时为 `null`；`unlimited: true` 表示不受 30 次/日限制 |
 | POST | `/ai/estimate-kcal` | AI 估算千卡。文本：`{ type: 'exercise'\|'meal', description: string }`。拍照（仅 meal）：`{ type: 'meal', modality: 'image', image: 'data:image/jpeg;base64,...', description?: string }`。拍照成功响应可含 **`mealPhotoQuota`**；超额返回 **429** 且带 `mealPhotoQuota`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**（同下） |
+| GET | `/ai/fox-companion` | 今日页狐狸陪伴资格。仅狐狸逻辑按 Asia/Shanghai 周六到周五作为一周，只检查本周六到今天：历史日期按全天结算并固定解锁，今天按当前记录实时结算，若今天吃多后不再是运动大王且没有历史命中，小狸会消失；其他周统计仍按各自原规则。响应 `{ eligible, today, weekStart, weekEnd, todayChampion, historicalChampionDates, championDates, latestChampionDate? }` |
+| POST | `/ai/fox-encouragement` | 小狸结构化对话；仅当前用户狐狸周达成过运动大王时可用。Body 为 `{ trigger, user?: { displayName?, locale? }, fitness, context: { timeOfDay, page: 'today', appLanguage? } }`，服务端只保留白名单运动上下文。响应 `{ text, mood, motion, expression, bubbleStyle, duration, fallback }`；枚举/文本/时长均经服务端校验，AI 未配置、超时、非法 JSON 或限频时返回同形本地 fallback，不暴露 DeepSeek 密钥或错误细节 |
 | （同上 items 格式） | | `[{ name, quantity, unit, kcal, confidence?, reason? }]` |
 
 拍照识别配额：普通用户 **30 次/人/日**（Asia/Shanghai 日历日）；`DEVELOPER_EMAILS` 白名单用户不限次、不计数。
@@ -93,6 +95,19 @@ Base URL：
 | PATCH | `/templates/:type/:id` | 同 POST body；更新模板字段并同步 `kcal` |
 | DELETE | `/templates/:type/:id` | 删除模板 |
 | POST | `/templates/seed` | 种子默认模板；body `{ exerciseTemplates[], mealTemplates[] }`，每项含 `name, unit, kcalPerUnit, defaultQuantity` |
+
+## 用户周报
+
+自然周按 `DISPLAY_TIMEZONE`（默认 `Asia/Shanghai`）的周一至周日计算。报告生成后固化统计快照；同一用户、同一 `week_start_date` 仅一份。当前记录模型没有运动时长、三大营养素和体重历史，对应字段返回 `null`，客户端不得推测。
+
+| Method | Path | 说明 |
+|--------|------|------|
+| POST | `/weekly-reports/ensure-latest` | 幂等检查并懒生成上一自然周报告。响应 `{ report: UserWeeklyReport, generated: boolean }`；无记录时仍生成 `summary.dataStatus = 'insufficient'` 的简版报告 |
+| GET | `/weekly-reports` | 当前用户历史周报，按周倒序，最多 104 份。响应 `{ reports: UserWeeklyReport[] }` |
+| GET | `/weekly-reports/:id` | 当前用户指定周报详情；跨用户 id 返回 404 |
+| PATCH | `/weekly-reports/:id/viewed` | 标记已读；首次写入 `viewedAt`，重复调用幂等 |
+
+热量缺口仅在当天有饮食记录且用户 BMR 可计算时统计：`BMR + 运动消耗 - 摄入`。缺少任一条件时为 `null / unknown`，避免把未记录饮食误判为巨大缺口。每日成就复用社区既有规则，并固化在周报 JSON 快照中。
 
 ## 社区
 

@@ -435,17 +435,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                       >
                         <button
                           type="button"
-                          onClick={() => props.onMealInputModeChange('kcal')}
-                          className={`flex-1 rounded-md py-2 transition ${
-                            props.mealInputMode === 'kcal'
-                              ? 'log-meal-mode-btn--active font-medium'
-                              : 'log-meal-mode-btn--idle'
-                          }`}
-                        >
-                          直接输入 kcal
-                        </button>
-                        <button
-                          type="button"
                           onClick={() => props.onMealInputModeChange('package')}
                           className={`flex-1 rounded-md py-2 transition ${
                             props.mealInputMode === 'package'
@@ -454,6 +443,17 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                           }`}
                         >
                           包装标注 (g + kJ)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => props.onMealInputModeChange('kcal')}
+                          className={`flex-1 rounded-md py-2 transition ${
+                            props.mealInputMode === 'kcal'
+                              ? 'log-meal-mode-btn--active font-medium'
+                              : 'log-meal-mode-btn--idle'
+                          }`}
+                        >
+                          直接输入 kcal
                         </button>
                       </div>
                     )}

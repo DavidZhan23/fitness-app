@@ -8,6 +8,11 @@ import {
   setDayLogCommunityVisible,
 } from '../community.js'
 import { isValidDateKey } from '../dateKey.js'
+import { query } from '../db.js'
+import {
+  getCommunitySharedWeeklyReport,
+  listCommunitySharedWeeklyReports,
+} from '../userWeeklyReport.js'
 import { saveCommunityMemberOrder } from '../communityOrder.js'
 import { setLogItemReaction } from '../logItemReactions.js'
 import {
@@ -346,6 +351,34 @@ router.get(
       month,
     )
     res.json(data)
+  }),
+)
+
+router.get(
+  '/community/users/:userId/weekly-reports',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    res.json({
+      reports: await listCommunitySharedWeeklyReports(
+        req.params.userId,
+        req.userId,
+        query,
+      ),
+    })
+  }),
+)
+
+router.get(
+  '/community/users/:userId/weekly-reports/:reportId',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const report = await getCommunitySharedWeeklyReport(
+      req.params.userId,
+      req.params.reportId,
+      req.userId,
+      query,
+    )
+    res.json(report)
   }),
 )
 

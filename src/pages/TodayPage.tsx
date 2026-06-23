@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DeficitCard } from '../components/DeficitCard'
+import { DajiFoxCompanion } from '../components/DajiFoxCompanion'
 import { HeroGreeting } from '../components/HeroGreeting'
 import { TodayFeedbackCard } from '../components/TodayFeedbackCard'
 import { TodayRecordsSection } from '../components/TodayRecordsSection'
@@ -8,6 +9,10 @@ import { UserAvatar } from '../components/UserAvatar'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
+import {
+  httpData,
+  type FoxCompanionSummary,
+} from '../lib/api'
 import {
   deleteExercise,
   deleteMeal,
@@ -36,6 +41,7 @@ export function TodayPage() {
   const [dayLog, setDayLog] = useState<DayLog | null>(null)
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [meals, setMeals] = useState<Meal[]>([])
+  const [foxSummary, setFoxSummary] = useState<FoxCompanionSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [, tick] = useState(0)
@@ -51,10 +57,14 @@ export function TodayPage() {
     setLoading(true)
     setError('')
     try {
-      const data = await fetchDayLogWithItems(user.id, today, p)
+      const [data, fox] = await Promise.all([
+        fetchDayLogWithItems(user.id, today, p),
+        httpData.getFoxCompanion().catch(() => null),
+      ])
       setDayLog(data.dayLog)
       setExercises(data.exercises)
       setMeals(data.meals)
+      setFoxSummary(fox)
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
@@ -205,6 +215,17 @@ export function TodayPage() {
         deficit={deficit}
         honors={todayHonors}
       />
+
+      {foxSummary && (
+        <DajiFoxCompanion
+          summary={foxSummary}
+          displayName={greeting}
+          exerciseKcal={exerciseKcal}
+          exerciseCount={exercises.length}
+          lastWorkoutType={exercises.at(-1)?.name}
+          todayGoalCompleted={todayHonors.some((honor) => honor.key === 'champion')}
+        />
+      )}
 
       <TodayRecordsSection
         exercises={exercises}

@@ -6,7 +6,7 @@ export type MealInputMode = 'kcal' | 'package'
 export function useLogForm(isExercise: boolean) {
   const [name, setName] = useState('')
   const [kcal, setKcal] = useState('')
-  const [mealInputMode, setMealInputMode] = useState<MealInputMode>('kcal')
+  const [mealInputMode, setMealInputMode] = useState<MealInputMode>('package')
   const [grams, setGrams] = useState('')
   const [kjPer100g, setKjPer100g] = useState('')
 

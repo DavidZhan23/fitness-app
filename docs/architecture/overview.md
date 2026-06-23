@@ -25,7 +25,7 @@
 
 完整 DDL 见 `server/migrations/`（按文件名顺序执行）。
 
-### 3.1 ER 概览（15 张表）
+### 3.1 ER 概览
 
 | 表名 | 说明 | 主要外键 |
 |------|------|---------|
@@ -44,6 +44,7 @@
 | `log_item_reactions` | 对单条运动/饮食点赞或点踩（+1/-1） | `voter_id / owner_user_id → users.id` |
 | `telemetry_events` | 前端轻量埋点（路由切换、页面加载、AI 估算成功/超时/错误/fallback 完成）；含 `session_id` / `app_version` / `commit_sha` 上下文列 | `user_id → users.id`（可空，登录上报）|
 | `weekly_reports` | 每周自动聚合的质量周报（metrics_json、AI 解读 markdown、完整 report_md、status draft/final） | — |
+| `user_weekly_reports` | 用户上一自然周的运动、饮食、缺口、成就与小狸文案快照；含已读状态 | `user_id → users.id` |
 | `profiles.community_notify_seen_at` | 通知已读时间戳（profiles 列） | — |
 
 ### 3.2 社区可见性规则

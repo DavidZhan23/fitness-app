@@ -62,7 +62,7 @@ guard_storage_scope() {
   fi
 
   local violations
-  violations="$(printf '%s\n' "$matches" | rg -v "^(src/lib/api/http.ts|src/lib/communityListCache.ts|src/lib/telemetry.ts)$" || true)"
+  violations="$(printf '%s\n' "$matches" | rg -v "^(src/lib/api/http.ts|src/lib/communityListCache.ts|src/lib/mealPhotoGuide.ts|src/lib/telemetry.ts)$" || true)"
   if [ -n "$violations" ]; then
     echo "Storage API usage found outside whitelist:"
     printf '%s\n' "$violations"
