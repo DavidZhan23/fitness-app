@@ -10,6 +10,8 @@ import { TelemetryListener } from './components/TelemetryListener'
 import { LoginPage } from './pages/LoginPage'
 import { SetupPage } from './pages/SetupPage'
 import { TodayPage } from './pages/TodayPage'
+import { WeeklyReportsPage } from './pages/WeeklyReportsPage'
+import { CommunityWeeklyReportPage, WeeklyReportPage } from './pages/WeeklyReportPage'
 
 const CalendarPage = lazy(() =>
   import('./pages/CalendarPage').then((m) => ({ default: m.CalendarPage })),
@@ -100,9 +102,29 @@ export default function App() {
                 <Route path="community/inbox" element={<CommunityInboxPage />} />
                 <Route path="community/followers" element={<CommunityFollowersPage />} />
                 <Route path="community/:userId" element={<CommunityUserPage />} />
+                <Route
+                  path="community/:userId/weekly-reports/:reportId"
+                  element={<CommunityWeeklyReportPage />}
+                />
                 <Route path="templates" element={<TemplatesPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
+              <Route
+                path="/weekly-reports"
+                element={
+                  <ProtectedRoute>
+                    <WeeklyReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/weekly-reports/:reportId"
+                element={
+                  <ProtectedRoute>
+                    <WeeklyReportPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/log/:type"
                 element={

@@ -3,7 +3,9 @@ import { asyncHandler } from '../asyncHandler.js'
 import { authMiddleware } from '../auth.js'
 import { query } from '../db.js'
 import { getKcalEstimator, getKcalVisionEstimator } from '../ai/registry.js'
+import { generateFoxEncouragement } from '../ai/providers/deepseekFox.js'
 import { parseMealNutritionLabelFromImage } from '../ai/providers/qwenVision.js'
+import { getWeeklyChampionSummary } from '../foxCompanion.js'
 import {
   assertMealPhotoQuotaAvailable,
   getMealPhotoQuota,
@@ -14,6 +16,36 @@ import {
 } from '../mealPhotoQuota.js'
 
 const router = Router()
+const foxRequestTimes = new Map()
+const FOX_SERVER_COOLDOWN_MS = 5_000
+
+router.get(
+  '/ai/fox-companion',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const summary = await getWeeklyChampionSummary(req.userId)
+    res.json(summary)
+  }),
+)
+
+router.post(
+  '/ai/fox-encouragement',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const summary = await getWeeklyChampionSummary(req.userId)
+    if (!summary.eligible) {
+      return res.status(403).json({ error: '本周达成运动大王后，小狐狸才会出现' })
+    }
+    const now = Date.now()
+    const trigger = req.body?.trigger
+    const canBypass = trigger === 'goal_completed'
+    const lastRequestAt = foxRequestTimes.get(req.userId) || 0
+    const skipAi = !canBypass && now - lastRequestAt < FOX_SERVER_COOLDOWN_MS
+    if (!skipAi) foxRequestTimes.set(req.userId, now)
+    const result = await generateFoxEncouragement(summary, req.body, { skipAi })
+    res.json(result)
+  }),
+)
 
 router.get(
   '/ai/meal-photo-quota',

@@ -2,6 +2,22 @@
 
 export const MEAL_PHOTO_GUIDE_STORAGE_KEY = 'fitness.mealPhotoGuide.dismissed'
 
+export function isMealPhotoGuideOpen(): boolean {
+  try {
+    return localStorage.getItem(MEAL_PHOTO_GUIDE_STORAGE_KEY) !== '1'
+  } catch {
+    return true
+  }
+}
+
+export function dismissMealPhotoGuide(): void {
+  try {
+    localStorage.setItem(MEAL_PHOTO_GUIDE_STORAGE_KEY, '1')
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 export const MEAL_PHOTO_DISTANCE = {
   single: '30–40 cm',
   multi: '40–60 cm',

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
 import { httpData } from '../../lib/api'
 import {
+  dismissMealPhotoGuide,
+  isMealPhotoGuideOpen,
   MEAL_PHOTO_CAPTURE_HINT,
-  MEAL_PHOTO_GUIDE_STORAGE_KEY,
   MEAL_PHOTO_GUIDE_TIPS,
   MEAL_PHOTO_SECTION_HINT,
 } from '../../lib/mealPhotoGuide'
@@ -40,9 +41,7 @@ export function MealPhotoSection({
   const galleryInputId = useId()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
-  const [guideOpen, setGuideOpen] = useState(
-    () => localStorage.getItem(MEAL_PHOTO_GUIDE_STORAGE_KEY) !== '1',
-  )
+  const [guideOpen, setGuideOpen] = useState(() => isMealPhotoGuideOpen())
   const [previewUrl, setPreviewUrl] = useState('')
   const [imageDataUrl, setImageDataUrl] = useState('')
   const [supplement, setSupplement] = useState('')
@@ -72,7 +71,7 @@ export function MealPhotoSection({
 
   const dismissGuide = () => {
     setGuideOpen(false)
-    localStorage.setItem(MEAL_PHOTO_GUIDE_STORAGE_KEY, '1')
+    dismissMealPhotoGuide()
   }
 
   const openGuide = () => {

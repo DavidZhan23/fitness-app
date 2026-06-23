@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { registerAndOnboard, uniqueE2eEmail } from './helpers/auth'
-import { expandManualLogSection, openLogAiTab } from './helpers/flows'
+import { expandManualLogSection, openLogAiTab, selectMealKcalInputMode } from './helpers/flows'
 
 test('AI estimate timeout shows fallback and manual save still works', async ({
   page,
@@ -24,6 +24,7 @@ test('AI estimate timeout shows fallback and manual save still works', async ({
   await expect(page.getByText('估算超时，请稍后重试')).toBeVisible()
 
   const manualSection = await expandManualLogSection(page, 'meal')
+  await selectMealKcalInputMode(manualSection)
   await manualSection.getByLabel('吃了什么？').fill(mealName)
   await manualSection.getByLabel('热量 (kcal)').fill('450')
   await manualSection.getByRole('button', { name: '保存本次记录' }).click()

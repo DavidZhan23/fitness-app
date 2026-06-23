@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
+import { CommunityWeeklyReportsSection } from '../components/CommunityWeeklyReportsSection'
 import { CalendarDayDetailPanel } from '../components/CalendarDayDetailPanel'
 import { DayCommentSection } from '../components/DayCommentSection'
 import { FollowButton } from '../components/FollowButton'
@@ -399,6 +400,12 @@ export function CommunityUserPage() {
           />
         )}
       </div>
+
+      <CommunityWeeklyReportsSection
+        userId={userId!}
+        nickname={nickname}
+        isSelf={isSelf}
+      />
 
       {dayLoading && (
         <p className="text-center text-xs text-muted">加载该日记录…</p>

@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test'
 import { registerAndOnboard, uniqueE2eEmail } from './helpers/auth'
-import { expandManualLogSection, openLogAiTab } from './helpers/flows'
+import { expandManualLogSection, openLogAiTab, selectMealKcalInputMode } from './helpers/flows'
 
 test('manual log can save parsed item as template', async ({ page }) => {
   await registerAndOnboard(page, uniqueE2eEmail())
   await openLogAiTab(page, 'meal')
 
   const manual = await expandManualLogSection(page, 'meal')
+  await selectMealKcalInputMode(manual)
   await manual.getByLabel('吃了什么？').fill('E2E 瘦鸡胸 150g')
   await manual.getByLabel('热量 (kcal)').fill('248')
   await manual.getByRole('checkbox', { name: '保存为快捷模板' }).check()

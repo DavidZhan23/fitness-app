@@ -86,9 +86,18 @@ export async function logExercise(
   await expectTodayRecordInExpandedList(page, name, kcal)
 }
 
+/** 饮食手动录入默认「包装标注」，测试需切到直接 kcal */
+export async function selectMealKcalInputMode(manual: ReturnType<typeof manualLogSection>) {
+  const kcalTab = manual.getByRole('button', { name: '直接输入 kcal' })
+  if (await kcalTab.isVisible()) {
+    await kcalTab.click()
+  }
+}
+
 export async function logMeal(page: Page, name: string, kcal: string) {
   await openLogPage(page, 'meal')
   const manual = await expandManualLogSection(page, 'meal')
+  await selectMealKcalInputMode(manual)
   await manual.getByLabel('吃了什么？').fill(name)
   await manual.getByLabel('热量 (kcal)').fill(kcal)
   await manual.getByRole('button', { name: '保存本次记录' }).click()

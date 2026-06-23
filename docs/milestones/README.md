@@ -23,6 +23,8 @@
 | [M-2026-06-log-composer-responsive](M-2026-06-log-composer-responsive.md) | done | `main` |
 | [M-2026-06-today-calorie-result-copy](M-2026-06-today-calorie-result-copy.md) | done | `main` |
 | [M-2026-06-metabolism-mode](M-2026-06-metabolism-mode.md) | done | `main` |
+| [M-2026-06-daji-fox-companion](M-2026-06-daji-fox-companion.md) | done | `main` |
+| [M-2026-06-user-weekly-report](M-2026-06-user-weekly-report.md) | active | `main` |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）

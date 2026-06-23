@@ -10,6 +10,7 @@ import logsRouter from './routes/logs.js'
 import communityRouter from './routes/community.js'
 import developerRouter from './routes/developer.js'
 import telemetryRouter from './routes/telemetry.js'
+import weeklyReportsRouter from './routes/weeklyReports.js'
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -24,6 +25,7 @@ app.use(logsRouter)
 app.use(communityRouter)
 app.use(developerRouter)
 app.use(telemetryRouter)
+app.use(weeklyReportsRouter)
 
 app.use(errorHandler)
 

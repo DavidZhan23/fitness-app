@@ -1,4 +1,9 @@
 import type { MealPhotoQuota } from '../../lib/mealPhotoQuota'
+import type {
+  FoxChatResponse,
+  FoxFitnessContext,
+  FoxTrigger,
+} from '../../components/fox/foxTypes'
 import {
   DEFAULT_EXERCISE_TEMPLATES,
   DEFAULT_MEAL_TEMPLATES,
@@ -17,6 +22,8 @@ import type {
   Profile,
   WeeklyReportDetail,
   WeeklyReportSummary,
+  UserWeeklyReport,
+  CommunitySharedWeeklyReportSummary,
   DeveloperCommunityMember,
 } from '../../types'
 
@@ -24,6 +31,30 @@ export interface AppUser {
   id: string
   email: string
   isDeveloper?: boolean
+}
+
+export interface FoxCompanionSummary {
+  eligible: boolean
+  today: string
+  weekStart: string
+  weekEnd: string
+  todayChampion?: boolean
+  historicalChampionDates?: string[]
+  championDates: string[]
+  latestChampionDate?: string | null
+}
+
+export type FoxEncouragementResponse = FoxChatResponse
+
+export interface FoxEncouragementRequest {
+  trigger: FoxTrigger
+  user?: { displayName?: string; locale?: string }
+  fitness: FoxFitnessContext
+  context: {
+    timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night'
+    page: 'today'
+    appLanguage?: string
+  }
 }
 import { apiFetch, getStoredToken, setStoredToken } from './http'
 
@@ -214,6 +245,70 @@ export const httpData = {
 
   async getMealPhotoQuota(): Promise<MealPhotoQuota> {
     return apiFetch('/ai/meal-photo-quota')
+  },
+
+  async getFoxCompanion(): Promise<FoxCompanionSummary> {
+    return apiFetch('/ai/fox-companion')
+  },
+
+  async getFoxEncouragement(
+    request: FoxEncouragementRequest,
+    init?: { signal?: AbortSignal },
+  ): Promise<FoxEncouragementResponse> {
+    return apiFetch('/ai/fox-encouragement', {
+      method: 'POST',
+      body: JSON.stringify(request),
+      signal: init?.signal,
+    })
+  },
+
+  async ensureLatestUserWeeklyReport(): Promise<{
+    report: UserWeeklyReport | null
+    generated: boolean
+    eligible: boolean
+  }> {
+    return apiFetch('/weekly-reports/ensure-latest', { method: 'POST' })
+  },
+
+  async listUserWeeklyReports(): Promise<{ reports: UserWeeklyReport[] }> {
+    return apiFetch('/weekly-reports')
+  },
+
+  async getUserWeeklyReport(reportId: string): Promise<UserWeeklyReport> {
+    return apiFetch(`/weekly-reports/${encodeURIComponent(reportId)}`)
+  },
+
+  async markUserWeeklyReportViewed(reportId: string): Promise<UserWeeklyReport> {
+    return apiFetch(`/weekly-reports/${encodeURIComponent(reportId)}/viewed`, {
+      method: 'PATCH',
+    })
+  },
+
+  async shareUserWeeklyReportToCommunity(reportId: string): Promise<UserWeeklyReport> {
+    return apiFetch(`/weekly-reports/${encodeURIComponent(reportId)}/share-community`, {
+      method: 'POST',
+    })
+  },
+
+  async unshareUserWeeklyReportFromCommunity(reportId: string): Promise<UserWeeklyReport> {
+    return apiFetch(`/weekly-reports/${encodeURIComponent(reportId)}/share-community`, {
+      method: 'DELETE',
+    })
+  },
+
+  async listCommunityUserWeeklyReports(
+    userId: string,
+  ): Promise<{ reports: CommunitySharedWeeklyReportSummary[] }> {
+    return apiFetch(`/community/users/${encodeURIComponent(userId)}/weekly-reports`)
+  },
+
+  async getCommunityUserWeeklyReport(
+    userId: string,
+    reportId: string,
+  ): Promise<UserWeeklyReport> {
+    return apiFetch(
+      `/community/users/${encodeURIComponent(userId)}/weekly-reports/${encodeURIComponent(reportId)}`,
+    )
   },
 
   async estimateKcalFromPhoto(

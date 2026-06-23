@@ -149,8 +149,9 @@ export function resolveDeficitGridBadge(input: {
   mealKcal: number
   dailyBmr: number
 }): DeficitGridDayBadge | null {
-  const { foodKing } = evaluateCommunityDayStatus(input)
+  const { needsMealLog, foodKing } = evaluateCommunityDayStatus(input)
   if (foodKing) return 'foodKing'
+  if (needsMealLog) return 'meal'
   return null
 }
 
