@@ -100,6 +100,23 @@ export const httpAuth = {
     return { user: data.user, needsEmailConfirmation: false }
   },
 
+  async requestPasswordReset(email: string) {
+    return apiFetch<{ ok: boolean; message: string }>(
+      '/auth/password-reset/request',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      },
+    )
+  },
+
+  async confirmPasswordReset(token: string, password: string) {
+    return apiFetch<{ ok: boolean }>('/auth/password-reset/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    })
+  },
+
   async signOut() {
     setStoredToken(null)
   },

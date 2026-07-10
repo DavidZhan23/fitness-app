@@ -12,6 +12,14 @@ import { assertRegistrationKey } from '../registrationKey.js'
 import { query } from '../db.js'
 import { getDeepSeekApiKey } from '../ai/providers/deepseekText.js'
 import { getDashScopeApiKey } from '../ai/providers/qwenVision.js'
+import {
+  buildPasswordResetUrl,
+  createPasswordResetToken,
+  findUserByEmail,
+  isValidPassword,
+  resetPasswordWithToken,
+} from '../passwordReset.js'
+import { sendPasswordResetEmail } from '../mailer.js'
 
 const router = Router()
 
@@ -52,6 +60,44 @@ router.post(
     const user = await loginUser(email, password)
     const token = signToken(user)
     res.json({ token, user: toPublicUser(user) })
+  }),
+)
+
+router.post(
+  '/auth/password-reset/request',
+  asyncHandler(async (req, res) => {
+    const { email } = req.body
+    if (!email) {
+      return res.status(400).json({ error: '邮箱必填' })
+    }
+
+    const user = await findUserByEmail(email)
+    if (user) {
+      const { token, expiresAt } = await createPasswordResetToken(user.id)
+      const resetUrl = buildPasswordResetUrl(token)
+      await sendPasswordResetEmail({
+        to: user.email,
+        resetUrl,
+        expiresAt,
+      })
+    }
+
+    res.json({
+      ok: true,
+      message: '如果该邮箱已注册，重置邮件会在几分钟内送达',
+    })
+  }),
+)
+
+router.post(
+  '/auth/password-reset/confirm',
+  asyncHandler(async (req, res) => {
+    const { token, password } = req.body
+    if (!token || !isValidPassword(password)) {
+      return res.status(400).json({ error: '重置链接无效或新密码少于 6 位' })
+    }
+    await resetPasswordWithToken(token, password)
+    res.json({ ok: true })
   }),
 )
 
