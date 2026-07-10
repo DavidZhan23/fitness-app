@@ -25,6 +25,7 @@
 | [M-2026-06-metabolism-mode](M-2026-06-metabolism-mode.md) | done | `main` |
 | [M-2026-06-daji-fox-companion](M-2026-06-daji-fox-companion.md) | done | `main` |
 | [M-2026-06-user-weekly-report](M-2026-06-user-weekly-report.md) | active | `main` |
+| [M-2026-07-password-reset](M-2026-07-password-reset.md) | done | `main` |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）

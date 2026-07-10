@@ -7,7 +7,7 @@ Base URL：
 - 本地：`http://localhost:3001`
 - 生产（Nginx 反代）：`http://<HOST>/api`（前端 `VITE_API_URL` 指向带 `/api` 前缀）
 
-认证：除注册/登录/health 外，Header `Authorization: Bearer <jwt>`。
+认证：除注册、登录、密码找回、health 外，Header `Authorization: Bearer <jwt>`。
 
 ## 公共
 
@@ -21,7 +21,11 @@ Base URL：
 |--------|------|------|------|
 | POST | `/auth/register` | email, password, registration_key | 注册（`registration_key` 须与服务端 `REGISTRATION_KEY` env 一致） |
 | POST | `/auth/login` | email, password | 登录 |
+| POST | `/auth/password-reset/request` | email | 请求密码重置邮件；无论邮箱是否存在均返回 `{ ok, message }`，避免账号枚举 |
+| POST | `/auth/password-reset/confirm` | token, password | 使用邮件链接中的一次性 token 设置新密码；密码至少 6 位 |
 | GET | `/auth/me` | — | 当前用户；响应 `user.isDeveloper`（由 `DEVELOPER_EMAILS` / `ADMIN_EMAILS` 判定） |
+
+密码找回配置：`PASSWORD_RESET_BASE_URL` 决定邮件链接根地址；生产需配置 `SMTP_HOST`、`SMTP_FROM`，可选 `SMTP_PORT`、`SMTP_SECURE`、`SMTP_STARTTLS`、`SMTP_USER`、`SMTP_PASS`。开发环境未配置 SMTP 时，API 会把重置链接打印到日志。
 
 ## 资料
 
