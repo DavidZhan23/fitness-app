@@ -74,8 +74,10 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    # 默认占宿主机 80。若同机还有其他站点要用宿主机 nginx/80，
+    # 在 deploy/.env 设 WEB_HOST_PORT=8080（或其它空闲端口），再由宿主机反代过来。
     ports:
-      - '80:80'
+      - '${WEB_HOST_PORT:-80}:80'
     volumes:
       - ../dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
