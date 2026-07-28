@@ -4,82 +4,55 @@
 
 ## 读这个就够（TL;DR）
 
-- **栈：** Vite/React PWA（`src/`）→ Express API（`server/src/`）→ PostgreSQL；生产 Nginx → API :3001。
-- **主路径：** 注册登录 → 资料（BMR/TDEE）→ 记运动/饮食 → 当日缺口 → 打卡墙 → 社区（可选）。
-- **核心表：** `users` / `profiles` / `day_logs` / `exercises` / `meals` + 社区（follows、likes、comments）+ telemetry / weekly reports。明细见下方 ER。
-- **改契约：** 先读 [api-contract.md](api-contract.md) 文首 TL;DR；schema 加 `server/migrations/NNN_*.sql`，勿改旧迁移。
-- **协作：** 开发闭环见 [ai-playbook.md](../ai-playbook.md)（grill → 实现 → 拟人 → verify → `dev/huanghongli` PR）。
+- **主轴：** **本人当日热量账本**——注册登录 → 身体资料（BMR/TDEE）→ 记运动/饮食 → 当日缺口 → 打卡墙。社区与 AI 是挂在日账本上的增强，不与记账平级。
+- **用户边界：** 熟人小圈子（`REGISTRATION_KEY` 门禁）；社区不做陌生人发现 / 推荐 / 公开放大。
+- **栈：** Vite/React PWA（`src/`）→ Express（`server/src/`）→ PostgreSQL；生产 Nginx → API :3001。
+- **「一天」勿混用：** 记账 / 今日页 / 墙用**浏览器本地日历日**；配额 / 周报 / 狐狸周等用 **`DISPLAY_TIMEZONE`（默认 Asia/Shanghai）**。见 [ADR-0004](../decisions/0004-date-tz-strategy.md)。
+- **热量公式：** 目标为共享包一份源码（`packages/calories`，含 metabolism）；搬迁见 [ADR-0008](../decisions/0008-shared-calories-package.md)。搬迁前仍双端文件，改公式须两端一起改。
+- **改契约：** [api-contract.md](api-contract.md) 文首 TL;DR；schema 只加 `server/migrations/NNN_*.sql`。
+- **协作：** [ai-playbook.md](../ai-playbook.md)（grill → 实现 → 拟人 → verify → `dev/huanghongli` PR）。
 
-## 开发协作流程
-
-与 [ai-playbook.md](../ai-playbook.md) 一致的主流程（深色极简图，`Cmd+Shift+V` 预览）：
-
-![开发协作流程](../assets/diagrams/dev-workflow.svg)
-
-## 从 Issue 到合并（简图）
-
-![Issue 到合并](../assets/diagrams/issue-to-merge.svg)
-
-## 1. 系统架构
+## 1. 系统与主流程
 
 - **生产**：PWA → 腾讯云 Nginx :80 → Node API :3001 → PostgreSQL  
 - **本地**：Vite :5173 → `server npm run dev` → 本机 PostgreSQL  
 
-## 2. 用户主流程
+主流程：注册/登录 → 身体资料 → 记录运动/饮食 → 当日缺口 → 打卡墙 →（可选）社区。
 
-注册/登录 → 身体资料（BMR/TDEE）→ 记录运动/饮食 → 当日缺口 → 打卡墙 → 社区（可选）
+协作简图见 [ai-playbook.md](../ai-playbook.md)；流程图 SVG：`docs/assets/diagrams/`。
 
-## 3. 数据模型（核心）
+## 2. 数据模型（账本主轴）
 
-完整 DDL 见 `server/migrations/`（按文件名顺序执行）。
-
-### 3.1 ER 概览
+完整 DDL：`server/migrations/`（按文件名顺序）。
 
 | 表名 | 说明 | 主要外键 |
 |------|------|---------|
 | `users` | 账号（email + password_hash） | — |
-| `password_reset_tokens` | 密码找回一次性 token 哈希、过期时间与使用状态 | `user_id → users.id` |
-| `profiles` | 身体指标（含 `birthday`）+ 社区开关 + `wall_style`（打卡墙 classic/split）+ `metabolism_mode`（基础代谢全天计入/随时间累计） | `id → users.id` |
-| `day_logs` | 每日打卡汇总（deficit 由触发器计算）；含 `community_visible`（当日动态是否对他人公开，默认 true） | `user_id → users.id` |
-| `exercises` | 单条运动记录 | `day_log_id → day_logs.id`，`user_id → users.id` |
-| `meals` | 单条饮食记录 | `day_log_id → day_logs.id`，`user_id → users.id` |
-| `exercise_templates` | 用户运动模板 | `user_id → users.id` |
-| `meal_templates` | 用户饮食模板 | `user_id → users.id` |
-| `follows` | 关注关系 | `follower_id / followee_id → users.id` |
-| `day_likes` | 对某天打卡点赞 | `liker_id / target_user_id → users.id` |
-| `day_comments` | 对某天打卡评论（含回复） | `author_id / target_user_id → users.id`；`parent_comment_id → day_comments.id` |
-| `day_comment_likes` | 对评论点赞 | `comment_id → day_comments.id`；`liker_id → users.id` |
-| `community_member_order` | 每位用户自定义社区列表顺序 | `viewer_id / member_id → users.id` |
-| `log_item_reactions` | 对单条运动/饮食点赞或点踩（+1/-1） | `voter_id / owner_user_id → users.id` |
-| `telemetry_events` | 前端轻量埋点（路由切换、页面加载、AI 估算成功/超时/错误/fallback 完成）；含 `session_id` / `app_version` / `commit_sha` 上下文列 | `user_id → users.id`（可空，登录上报）|
-| `weekly_reports` | 每周自动聚合的质量周报（metrics_json、AI 解读 markdown、完整 report_md、status draft/final） | — |
-| `user_weekly_reports` | 用户上一自然周的运动、饮食、缺口、成就与小狸文案快照；含已读状态 | `user_id → users.id` |
-| `profiles.community_notify_seen_at` | 通知已读时间戳（profiles 列） | — |
+| `password_reset_tokens` | 密码找回 token | `user_id → users.id` |
+| `profiles` | 身体指标、`wall_style`、`metabolism_mode`、社区总开关等 | `id → users.id` |
+| `day_logs` | 每日汇总；`community_visible` 控制当日是否对他人公开 | `user_id → users.id` |
+| `exercises` / `meals` | 单条运动 / 饮食 | `day_log_id → day_logs.id` |
+| `exercise_templates` / `meal_templates` | 快捷模板 | `user_id → users.id` |
 
-### 3.2 社区可见性规则
+## 3. 卫星能力（点到为止）
 
-**列表候选（`GET /community/members`）**：`profiles.community_visible = true` 且 `onboarding_complete = true`（见 `server/src/community.js#listCommunityMembers`）。
+| 能力 | 要点 | 深读 |
+|------|------|------|
+| **社区** | follows / likes / comments / reactions；列表需 `community_visible` + onboarding；可见性规则见下 | [api-contract 社区节](api-contract.md) |
+| **AI** | 文本/拍照估 kcal、狐狸陪伴；配额按上海日历日 | [api-contract AI 节](api-contract.md) |
+| **遥测** | `telemetry_events` 轻量埋点 | [api-contract 遥测节](api-contract.md) |
+| **周报** | 质量周报 + 用户周报快照 | [api-contract 周报节](api-contract.md) |
 
-**Onboarding 完成**：`PATCH /profile` 将 `onboarding_complete` 设为 `true` 时，若请求未显式传 `community_visible`，默认写入 `community_visible = true`（`server/src/profilePatch.js`）。显式 `community_visible: false` 时不覆盖。
+相关表（摘要）：`follows`、`day_likes`、`day_comments`、`day_comment_likes`、`community_member_order`、`log_item_reactions`、`telemetry_events`、`weekly_reports`、`user_weekly_reports`。
 
-**近日记录自动打开**（`server/src/communityVisibility.js#syncCommunityVisibility`，日记录变更后触发）：
+### 3.1 社区可见性（摘要）
 
-1. **今日或昨日任一有运动/饮食记录** → `profiles.community_visible = true`（仅 auto-open，不 auto-close）
-2. 账号创建当日：若创建时间晚于「昨日」基准，则跳过昨日判断，仅看今日
-3. 调用入口：`server/src/dayLogMutation.js#afterDayLogChanged`
-
-**历史回填**：迁移 `023_backfill_community_visible_onboarded.sql` 将已 onboarding 但未公开的用户设为公开。
-
-### 3.3 当日社区动态可见（per-day）
-
-- 列：`day_logs.community_visible`（迁移 `016_day_logs_visible.sql`）
-- API：`PATCH /community/days/:date/visible`，body `{ visible: boolean }`，仅本人
-- 列表：`GET /community/members` 的 `today.dayCommunityVisible` / `today.hidden`；对他人隐藏时展示「今日已隐藏」，本人仍可见自己的缺口
-- UI：社区页顶栏切换「今日公开/隐藏」（与 `profiles.community_visible` 总开关独立）
+- **列表候选：** `profiles.community_visible` 且 `onboarding_complete`（`community.js#listCommunityMembers`）。
+- **近日自动打开：** 今/昨有记录 → 总开关 auto-open，不 auto-close（`communityVisibility.js`，日记录变更后触发）。
+- **当日隐藏：** `day_logs.community_visible` + `PATCH /community/days/:date/visible`（仅本人）。
 
 ## 更多
 
-- 部署说明：[deploy.md](deploy.md)  
-- 需求入口：[requirements/README.md](../requirements/README.md)  
-- 改图：`docs/assets/diagrams/*.mmd` → `npm run diagrams:regen`
-- 数据库迁移：新增 `server/migrations/NNN_*.sql` 后，API 启动会自动执行未应用 migration（记录在 `public.schema_migrations`）
+- 部署：[deploy.md](deploy.md) · 运维：[ops/README.md](../ops/README.md)  
+- 决策：[decisions/README.md](../decisions/README.md)  
+- 迁移：新 `NNN_*.sql`；API 启动执行未应用 migration（`schema_migrations`）

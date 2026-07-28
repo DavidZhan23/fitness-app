@@ -5,10 +5,11 @@
 ## 读这个就够（TL;DR）
 
 - **Base：** 本地 `http://localhost:3001`；生产经 Nginx `/api`（`VITE_API_URL` 带前缀）。
-- **鉴权：** 除 register/login/password-reset/health 外，`Authorization: Bearer <jwt>`。
-- **常改面：** `/profile`、`/day-logs*`（打卡）、`/ai/*`（估算/狐狸）、`/community/*`（成员/赞评/可见性）、`/telemetry`、周报相关。
-- **约定：** 日期键用项目 dateKey；热量字段 `kcal`；列表/详情字段变更须同步本文 + 前端 `src/lib/api/`。
-- **协作：** 动 API 先更新本文件再写代码；闭环见 [ai-playbook.md](../ai-playbook.md)。
+- **鉴权：** 除 register/login/password-reset/health 外，`Authorization: Bearer <jwt>`。注册需 `REGISTRATION_KEY`（熟人圈子门禁）。
+- **常改面：** `/profile`、`/day-logs*`（打卡账本主轴）、`/ai/*`、`/community/*`、`/telemetry`、周报相关。
+- **日期：** 记账日键多为客户端本地日；配额/周报/狐狸周等服务端逻辑用 `DISPLAY_TIMEZONE`（默认 Asia/Shanghai）——见 [overview](overview.md) / [ADR-0004](../decisions/0004-date-tz-strategy.md)。
+- **约定：** 热量字段 `kcal`；列表/详情变更须同步本文 + `src/lib/api/`。
+- **协作：** 动 API 先更新本文件；闭环见 [ai-playbook.md](../ai-playbook.md)。
 
 Base URL：
 
@@ -50,7 +51,7 @@ Base URL：
 | POST | `/ai/estimate-kcal` | AI 估算千卡。文本：`{ type: 'exercise'\|'meal', description: string }`。拍照（仅 meal）：`{ type: 'meal', modality: 'image', image: 'data:image/jpeg;base64,...', description?: string }`。拍照成功响应可含 **`mealPhotoQuota`**；超额返回 **429** 且带 `mealPhotoQuota`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**（同下） |
 | GET | `/ai/fox-companion` | 今日页狐狸陪伴资格。仅狐狸逻辑按 Asia/Shanghai 周六到周五作为一周，只检查本周六到今天：历史日期按全天结算并固定解锁，今天按当前记录实时结算，若今天吃多后不再是运动大王且没有历史命中，小狸会消失；其他周统计仍按各自原规则。响应 `{ eligible, today, weekStart, weekEnd, todayChampion, historicalChampionDates, championDates, latestChampionDate? }` |
 | POST | `/ai/fox-encouragement` | 小狸结构化对话；仅当前用户狐狸周达成过运动大王时可用。Body 为 `{ trigger, user?: { displayName?, locale? }, fitness, context: { timeOfDay, page: 'today', appLanguage? } }`，服务端只保留白名单运动上下文。响应 `{ text, mood, motion, expression, bubbleStyle, duration, fallback }`；枚举/文本/时长均经服务端校验，AI 未配置、超时、非法 JSON 或限频时返回同形本地 fallback，不暴露 DeepSeek 密钥或错误细节 |
-| （同上 items 格式） | | `[{ name, quantity, unit, kcal, confidence?, reason? }]` |
+| （同上 items 格式） | | `[{ name, quantity, unit, kcal, confidence?, reason? }]`；**`items[].kcal` = 该 `unit` 的单位热量**（可为小数）；顶层 **`kcal` = Σ round(quantity × 单位热量)** |
 
 拍照识别配额：普通用户 **30 次/人/日**（Asia/Shanghai 日历日）；`DEVELOPER_EMAILS` 白名单用户不限次、不计数。
 

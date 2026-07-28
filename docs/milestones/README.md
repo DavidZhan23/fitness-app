@@ -27,6 +27,9 @@
 | [M-2026-06-user-weekly-report](M-2026-06-user-weekly-report.md) | active | `main` |
 | [M-2026-07-password-reset](M-2026-07-password-reset.md) | done | `main` |
 | [M-2026-07-dev-loop-skills](M-2026-07-dev-loop-skills.md) | active | `dev/huanghongli`（开发闭环范式） |
+| [M-2026-07-today-wall-merge](M-2026-07-today-wall-merge.md) | active | `dev/huanghongli` |
+| [M-2026-07-ai-log-no-voice-per-unit-kcal](M-2026-07-ai-log-no-voice-per-unit-kcal.md) | active | `dev/huanghongli` |
+| [M-2026-07-architecture-grill](M-2026-07-architecture-grill.md) | active | `dev/huanghongli` |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）
