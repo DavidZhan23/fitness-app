@@ -2,6 +2,14 @@
 
 > 导航：[文档中心](../README.md) · [API 契约](api-contract.md) · [部署说明](deploy.md)
 
+## 读这个就够（TL;DR）
+
+- **栈：** Vite/React PWA（`src/`）→ Express API（`server/src/`）→ PostgreSQL；生产 Nginx → API :3001。
+- **主路径：** 注册登录 → 资料（BMR/TDEE）→ 记运动/饮食 → 当日缺口 → 打卡墙 → 社区（可选）。
+- **核心表：** `users` / `profiles` / `day_logs` / `exercises` / `meals` + 社区（follows、likes、comments）+ telemetry / weekly reports。明细见下方 ER。
+- **改契约：** 先读 [api-contract.md](api-contract.md) 文首 TL;DR；schema 加 `server/migrations/NNN_*.sql`，勿改旧迁移。
+- **协作：** 开发闭环见 [ai-playbook.md](../ai-playbook.md)（grill → 实现 → 拟人 → verify → `dev/huanghongli` PR）。
+
 ## 开发协作流程
 
 与 [ai-playbook.md](../ai-playbook.md) 一致的主流程（深色极简图，`Cmd+Shift+V` 预览）：

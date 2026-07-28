@@ -12,6 +12,17 @@
 | 手动部署与回滚 | [architecture/deploy.md](architecture/deploy.md) | [ops/README.md](ops/README.md) |
 | 需求管理 | [requirements/README.md](requirements/README.md) | `npm run req:list` |
 
+## 开发闭环 / skills
+
+范式：**提需求 → grill 确认 → Agent 实现 / 拟人测 / verify / 自动提交**（分支 `dev/huanghongli` → PR `main`）。
+
+| 入口 | 说明 |
+|------|------|
+| [ai-playbook.md](ai-playbook.md) | 闭环短清单（≤1 屏） |
+| [`.cursor/skills/`](../.cursor/skills/) | `grill-me` · `explain-code` · `persona-ui-test` |
+| `bash scripts/dev-loop.sh` | 打印触发词与路径 |
+| [milestones/M-2026-07-dev-loop-skills.md](milestones/M-2026-07-dev-loop-skills.md) | 本范式 milestone |
+
 ## 文档分区
 
 | 目录 | 说明 |

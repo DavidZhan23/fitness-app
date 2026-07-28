@@ -1,51 +1,66 @@
-# AI 协作手册（Cursor + 本项目）
+# AI 协作手册（开发闭环）
 
-给 **Cursor Agent** 与使用 Cursor 的开发者：按本页和 `.cursor/rules/` 协作，目标是稳定交付、避免范围失控。
+给 Cursor Agent 与开发者的**短清单**。细则在 `.cursor/rules/` 与 `.cursor/skills/`。
 
-## 读文档顺序（新功能）
-
-| 顺序 | 文件 | 何时读 |
-|------|------|--------|
-| 1 | 用户提到的 GitHub Issue（`gh issue view N`） | 从「开始 #N」接手时 |
-| 2 | `docs/milestones/<slug>.md` 或 [_TEMPLATE.md](milestones/_TEMPLATE.md) | 规划与实现全程 |
-| 3 | `docs/architecture/api-contract.md` | 动 API 时 |
-| 4 | `docs/architecture/overview.md` | 不确定表结构 / 模块边界时 |
-| 5 | `docs/architecture/deploy.md` | 涉及交付与部署说明时 |
-
-## 标准流程（Agent 检查清单）
+## 闭环（默认）
 
 ```text
-[ ] 0. 开分支：先同步最新 main（bash scripts/new-feature.sh <slug>，勿从旧 feature 分支直接拉新分支）
-[ ] 1. 澄清：≤5 问/轮，先收敛边界再写代码
-[ ] 2. 规划：补齐 milestone（Goal / 验收 / Non-goals / 风险）
-[ ] 3. 实现：最小 diff，优先复用既有模块
-[ ] 4. 本地门禁：npm run verify
-[ ] 4.1 若涉及主题/皮肤：npm run check:theme-contrast（不通过先修复）
-[ ] 5. 提交：经用户确认后提交并 push 到 main
-[ ] 6. 交付：提醒 owner 进行手动部署（npm run deploy:tencent）
+提需求
+  → /grill-me（一次一问 + 推荐答案；决策写入 milestone）
+  → 用户确认 shared understanding
+  → 实现（按需 /explain-code）+ 必要文档
+  → UI 变更：/persona-ui-test（Browser 拟人；默认可记缺陷不大改）
+  → npm run verify（docs-only 可 --skip-e2e）
+  → 自动 commit + push：dev/huanghongli → PR → main
+  → 打印 PR URL；合并后提醒手动部署
 ```
 
-## 模糊需求时 Agent 应做什么
+触发：`/grill-me` · `/explain-code` · `/persona-ui-test`，或口语「grill / 压需求」「讲解」「拟人测」。也可 `bash scripts/dev-loop.sh` 看路径。
 
-1. **规划**：澄清边界，更新 milestone
-2. **实现**：按 milestone 改代码；同一问题失败两次就停下复盘
-3. **确认**：给出变更与验证结果，等用户确认后再提交
+## Skills
 
-## Agent 禁止事项
+| Skill | 路径 | 作用 |
+|-------|------|------|
+| grill-me | [`.cursor/skills/grill-me/`](../.cursor/skills/grill-me/SKILL.md) | 严苛澄清；未确认不写生产代码 |
+| explain-code | [`.cursor/skills/explain-code/`](../.cursor/skills/explain-code/SKILL.md) | 短调用链讲解 |
+| persona-ui-test | [`.cursor/skills/persona-ui-test/`](../.cursor/skills/persona-ui-test/SKILL.md) | 拟人探边 → 通过/缺陷/建议 e2e |
 
-- 未经确认直接 `git commit` / `git push`
-- 超出 milestone 边界擅自扩 scope
-- 把 Secret 写入代码或文档
-- 把部署步骤描述成自动流水线（当前为手动部署）
+## 分支
+
+- 日常：`dev/huanghongli`（`DEV_BRANCH` 可覆盖）
+- 同步 + milestone：`bash scripts/new-feature.sh <slug>`（**不开**每功能 `feat/<slug>`，除非用户要求）
+- PR 目标：`main`
+
+## Commit 两种模式
+
+| 模式 | 何时 | 行为 |
+|------|------|------|
+| Closed-loop | grill 已确认 shared understanding | 可自动 commit/push/PR，事后摘要 + PR URL |
+| Adhoc | 其它「帮我提交」等 | 打印确认块，等 `go` |
+
+## 读文档顺序（按需）
+
+1. Issue（`gh issue view N`）或用户原话  
+2. `docs/milestones/<slug>.md`  
+3. 动 API → `architecture/api-contract.md`（先看文首 TL;DR）  
+4. 表/模块不清 → `architecture/overview.md`（先看文首 TL;DR）  
+
+## 短路
+
+- `直接修复`：小 bug、范围清楚 → 可跳过 grill；实现后仍 verify，提交走 **Adhoc** 确认（除非用户已明确授权本轮闭环）。
+- 同一问题失败两次 → 停，复盘后再问。
+
+## 禁止
+
+- 未 shared understanding 就写 `src/` / `server/src/` 生产代码（直接修复除外）
+- Closed-loop 外擅自 commit/push
+- Secret 入仓；把部署写成「已有自动 CD」（当前为手动 `deploy:tencent`）
 
 ## 常用命令
 
 ```bash
-# 需求
-npm run req:list
-npm run req:list -- --all
-
-# 验证
+bash scripts/new-feature.sh <slug>
 npm run verify
 bash scripts/verify-local.sh --skip-e2e
+npm run req:list
 ```

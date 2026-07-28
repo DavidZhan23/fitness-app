@@ -1,5 +1,5 @@
 ---
-description: Planning mode — clarify fuzzy requirements and boundaries before coding
+description: Planning mode — grill fuzzy requirements; then hand off to closed-loop implement
 globs:
 alwaysApply: false
 ---
@@ -8,50 +8,41 @@ alwaysApply: false
 
 When the user describes a **new feature**, **change**, or **fuzzy requirement**, enter planning mode before writing production code.
 
-## Clarification (max 5 questions per round)
+## Prefer grill-me
 
-Ask only what is still unknown. Prefer concrete questions:
+For **fuzzy requirements** or soft designs (triage `需澄清`), use [`.cursor/skills/grill-me/SKILL.md`](../skills/grill-me/SKILL.md):
 
-1. **Who** uses this and **when** (family only / self / future strangers)?
-2. **Success criteria** — what must work for this to be "done"?
-3. **Non-goals** — what is explicitly out of scope?
-4. **Inputs/outputs** — fields, units, UI vs API vs export?
-5. **Edge cases** — empty data, offline, cross-day, cross-user, errors?
+- One question at a time + recommended answer
+- Read the codebase before asking
+- Write decisions into the milestone
+- **No production code** until shared understanding is confirmed
 
-## Boundary checklist (must cover in milestone doc)
+Suggest `/grill-me` or「grill 一下」if the user has not invoked it. Keep the ≤5-question round below only as a **lightweight fallback** when a full grill is unnecessary (tiny scoped change with 1–2 unknowns).
 
-Document answers for:
+## Clarification fallback (max 5 questions per round)
 
-- Target user and trigger frequency
-- Non-goals / boundaries
-- Input shape (required vs optional fields)
-- Output shape (screen, API response, file)
-- Failure modes (network, auth, validation, concurrency)
-- DB/API impact (new tables, columns, endpoints, migrations)
-- Performance and privacy constraints
+Ask only what is still unknown:
 
-## Four-dimension reflection (before freezing plan)
+1. **Who** uses this and **when**?
+2. **Success criteria** — what must work to be "done"?
+3. **Non-goals** — what is out of scope?
+4. **Inputs/outputs** — fields, units, UI vs API?
+5. **Edge cases** — empty, offline, cross-day, cross-user, errors?
 
-- **Requirements**: success criteria testable; non-goals clear
-- **Architecture**: complexity matches MVP; tradeoffs stated
-- **Engineering**: scope, deps, deliverables, testability
-- **Risks**: top 3 risks, signals, fallback
+## Boundary checklist (milestone)
+
+Document: target user, non-goals, input/output shape, failure modes, DB/API impact, performance/privacy.
+
+## Four-dimension reflection (before freezing)
+
+Requirements · Architecture · Engineering · Risks — success criteria testable; MVP complexity; deliverables/testability; top 3 risks + fallback.
 
 ## Deliverable
 
-Create or update `docs/milestones/<slug>.md` (structure: `docs/milestones/_TEMPLATE.md`) with:
+Create or update `docs/milestones/<slug>.md` (`_TEMPLATE.md`) with Goal, acceptance, non-goals, edges, modules, risks, **已阅读文档清单**, **已检查可复用模块**. Index in `docs/milestones/README.md`.
 
-- Goal, acceptance criteria, non-goals
-- Inputs/outputs and edge cases
-- Files/modules likely touched
-- Risks and rollback
-- **已阅读文档清单**（Section 2）：列出本次规划阅读过的文档（≥ 2 个）
-- **已检查可复用模块**（Section 3）：对照 `06-reuse-first.mdc` 表格，标注命中或未命中
+> Incomplete Section 5–6 = do not enter coding.
 
-Index in `docs/milestones/README.md` as **active**. Read `docs/ai-playbook.md` for doc order.
+## After shared understanding → closed loop
 
-> Plan 冻结前须确认上述两项已填写；否则视为规划不完整，不进入编码阶段。
-
-## After planning
-
-Hand off to coding per `02-coding.mdc`. Do not `git commit` until user confirms via `03-commit-and-push.mdc`.
+Hand off to `02-coding.mdc`: implement → (UI: `persona-ui-test`) → `npm run verify` → commit/push/PR on `dev/huanghongli` per **closed-loop mode** in `03-commit-and-push.mdc` (no second `go` after grill confirm).

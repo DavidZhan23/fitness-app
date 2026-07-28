@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Start a feature branch and milestone doc skeleton.
+# Sync personal long-lived branch with main and scaffold a milestone doc.
 # Usage: bash scripts/new-feature.sh <slug>
 # Example: bash scripts/new-feature.sh csv-export
+# Does NOT create feat/<slug> — work stays on DEV_BRANCH (default: dev/huanghongli).
 # Template: docs/milestones/_TEMPLATE.md
 
 set -euo pipefail
@@ -16,11 +17,11 @@ if [ -z "$SLUG" ]; then
   exit 1
 fi
 
-BRANCH="feat/${SLUG}"
+DEV_BRANCH="${DEV_BRANCH:-dev/huanghongli}"
 MILESTONE="docs/milestones/${SLUG}.md"
 
 if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-  echo "Error: working tree has uncommitted changes. Commit or stash before starting a feature."
+  echo "Error: working tree has uncommitted changes. Commit or stash before syncing."
   exit 1
 fi
 
@@ -33,13 +34,18 @@ else
 fi
 git pull --ff-only origin main
 
-if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
-  echo "Branch $BRANCH already exists."
-  git checkout "$BRANCH"
-  echo "Tip: rebase onto main if needed: git fetch origin && git rebase origin/main"
+if git rev-parse --verify "$DEV_BRANCH" >/dev/null 2>&1; then
+  git checkout "$DEV_BRANCH"
+  echo "Updating $DEV_BRANCH with latest main..."
+  if git merge --ff-only main; then
+    echo "Fast-forwarded $DEV_BRANCH to main."
+  else
+    echo "Cannot fast-forward. Merging main into $DEV_BRANCH..."
+    git merge main -m "chore: merge main into ${DEV_BRANCH}"
+  fi
 else
-  git checkout -b "$BRANCH"
-  echo "Created and checked out $BRANCH (from up-to-date main)"
+  git checkout -b "$DEV_BRANCH"
+  echo "Created and checked out $DEV_BRANCH (from up-to-date main)"
 fi
 
 if [ ! -f "$MILESTONE" ]; then
@@ -49,7 +55,7 @@ if [ ! -f "$MILESTONE" ]; then
 # Milestone: ${SLUG}
 
 **Status:** active
-**Branch:** \`${BRANCH}\`
+**Branch:** \`${DEV_BRANCH}\`
 **Issue:** #（可选）
 **Started:** ${TODAY}
 
@@ -112,6 +118,8 @@ if [ ! -f "$MILESTONE" ]; then
 ## 11. 测试方案
 
 - Smoke：\`npm run lint && npm run typecheck\`；server 改动则 \`node --check server/src/index.js\`
+- **拟人探查结论**（\`persona-ui-test\`）：
+- **拟沉淀 e2e**：
 
 ## 12. 风险与缓解
 
@@ -139,5 +147,6 @@ else
 fi
 
 echo ""
-echo "Next: clarify in Cursor (docs/ai-playbook.md), implement, then:"
-echo "  bash scripts/ai-flow.sh --message \"feat(${SLUG}): ...\""
+echo "On branch: $DEV_BRANCH"
+echo "Next: /grill-me → implement → /persona-ui-test (UI) → npm run verify → closed-loop commit"
+echo "See docs/ai-playbook.md"

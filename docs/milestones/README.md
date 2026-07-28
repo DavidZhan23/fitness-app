@@ -26,6 +26,7 @@
 | [M-2026-06-daji-fox-companion](M-2026-06-daji-fox-companion.md) | done | `main` |
 | [M-2026-06-user-weekly-report](M-2026-06-user-weekly-report.md) | active | `main` |
 | [M-2026-07-password-reset](M-2026-07-password-reset.md) | done | `main` |
+| [M-2026-07-dev-loop-skills](M-2026-07-dev-loop-skills.md) | active | `dev/huanghongli`（开发闭环范式） |
 
 **Status 取值：** `active` | `done` | `cancelled`
 （`npm run check:milestones` 会对未知值报警，如 `partial` / `superseded`。）
@@ -36,7 +37,7 @@
 bash scripts/new-feature.sh <slug>
 ```
 
-生成 `feat/<slug>` 分支与 `docs/milestones/<slug>.md` 骨架。复杂功能可复制 [_TEMPLATE.md](_TEMPLATE.md) 为 `M-YYYY-MM-<slug>.md` 并上表登记。
+生成/更新长期个人分支 `dev/huanghongli`（同步 main）与 `docs/milestones/<slug>.md` 骨架。**不**再开 `feat/<slug>`。复杂功能可复制 [_TEMPLATE.md](_TEMPLATE.md) 为 `M-YYYY-MM-<slug>.md` 并上表登记。
 
 ## 文档里应有什么
 

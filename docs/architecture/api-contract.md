@@ -2,6 +2,14 @@
 
 > 导航：[文档中心](../README.md) · [架构总览](overview.md)
 
+## 读这个就够（TL;DR）
+
+- **Base：** 本地 `http://localhost:3001`；生产经 Nginx `/api`（`VITE_API_URL` 带前缀）。
+- **鉴权：** 除 register/login/password-reset/health 外，`Authorization: Bearer <jwt>`。
+- **常改面：** `/profile`、`/day-logs*`（打卡）、`/ai/*`（估算/狐狸）、`/community/*`（成员/赞评/可见性）、`/telemetry`、周报相关。
+- **约定：** 日期键用项目 dateKey；热量字段 `kcal`；列表/详情字段变更须同步本文 + 前端 `src/lib/api/`。
+- **协作：** 动 API 先更新本文件再写代码；闭环见 [ai-playbook.md](../ai-playbook.md)。
+
 Base URL：
 
 - 本地：`http://localhost:3001`

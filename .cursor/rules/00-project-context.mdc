@@ -44,5 +44,5 @@ alwaysApply: true
 
 - Repo: `DavidZhan23/fitness-app` (public)
 - Default owner: **@DavidZhan23**
-- Current delivery flow: local verify → direct push `main` → owner manual deploy
-- **New branches:** sync latest `main` first (`git fetch` + `git pull --ff-only origin main`), then `feat/<slug>` — use `bash scripts/new-feature.sh <slug>` (see `.cursor/rules/03-commit-and-push.mdc`)
+- **开发闭环：** 提需求 → grill-me → 实现 → persona-ui-test（UI）→ verify → auto-commit on `dev/huanghongli` → PR `main` — see `docs/ai-playbook.md` / `AGENTS.md`
+- Personal branch: `dev/huanghongli`（`bash scripts/new-feature.sh <slug>` 同步 main + milestone；见 `03-commit-and-push.mdc`）

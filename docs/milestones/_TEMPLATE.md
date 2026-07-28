@@ -1,7 +1,7 @@
 # Milestone: <一句话标题>
 
 **Status:** active | done | cancelled（仅允许这 3 个值）
-**Branch:** `feat/<slug>`
+**Branch:** `dev/huanghongli`（或其它约定长驻/功能分支）
 **Issue:** #<n>（可选）
 **Started:** YYYY-MM-DD
 
@@ -74,6 +74,8 @@
 - 纯函数单测：`server/test/...` 或 `src/lib/__tests__/...`
 - Smoke：`npm run lint && npm run typecheck && npm run test && npm run test:e2e`（docs-only 可跳过 test/e2e）；touch server 则 `node --check server/src/*.js`
 - 手动验证步骤 / curl：
+- **拟人探查结论**（`persona-ui-test`）：人设 / 通过项 / 缺陷（可空至探查后填）
+- **拟沉淀 e2e**：稳定主路径 → 建议的 `e2e/*.spec.ts` 用例要点（可空至探查后填）
 
 ## 12. 风险与缓解
 
@@ -101,5 +103,5 @@
 
 ---
 
-创建方式：`bash scripts/new-feature.sh <slug>` 会生成同名骨架；
+创建方式：`bash scripts/new-feature.sh <slug>` 会同步 `dev/huanghongli` 并生成同名骨架；
 复杂功能复制本模板到 `M-YYYY-MM-<slug>.md` 并在 [README](README.md) 登记。

@@ -111,7 +111,7 @@ npm run check:site-responsive
 bash scripts/new-feature.sh <slug>
 ```
 
-会先 `git fetch` 并以 `origin/main` 快进到本地 `main`，再创建 `feat/<slug>`（工作区须干净）。会同时生成 [milestones/_TEMPLATE.md](milestones/_TEMPLATE.md) 结构的规格文档（可用于大功能拆分）。
+同步 `main` 到个人长驻分支 `dev/huanghongli`（可用 `DEV_BRANCH` 覆盖），并生成 milestone 骨架——**默认不再**每功能开 `feat/<slug>`。协作闭环见 [ai-playbook.md](ai-playbook.md)。
 
 ## 查看文档里的流程图
 
@@ -120,5 +120,5 @@ bash scripts/new-feature.sh <slug>
 ## 下一步
 
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — 需求与提交流程
-- [ai-playbook.md](ai-playbook.md) — Cursor 协作
+- [ai-playbook.md](ai-playbook.md) — Cursor 协作（含 `.cursor/skills/`：grill-me / explain-code / persona-ui-test）
 - [architecture/overview.md](architecture/overview.md) — 系统与数据模型

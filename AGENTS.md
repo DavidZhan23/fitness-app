@@ -30,7 +30,7 @@ Start each non-trivial task with a one-line triage that the user may override:
 - `需澄清`: fuzzy requirement, larger impact, API/data/key interaction change, or multiple reasonable designs.
 - `先看一下再说`: inspect first when impact is unclear.
 
-For new features or fuzzy requirements, clarify before coding. Cover:
+For new features or fuzzy requirements, clarify with **grill-me** (`.cursor/skills/grill-me/`) before coding. Cover:
 
 - target user and usage trigger;
 - testable success criteria;
@@ -133,10 +133,17 @@ If work touches community, inbox, follow, comments, likes, or dislikes, report t
 
 ## 6. Git Workflow
 
-- Do not commit or push without explicit user approval.
-- Use Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
-- Keep one user-facing change per commit.
-- Before any commit/push, print this confirm gate and stop:
+- Default branch: **`dev/huanghongli`** (long-lived). Sync `main` into it; push and open/update **one PR → `main`**. Do not open `feat/<slug>` per feature unless asked.
+- Conventional Commits; one user-facing change per commit when practical.
+- Sync + milestone skeleton: `bash scripts/new-feature.sh <slug>` (uses `DEV_BRANCH`, default `dev/huanghongli`). Clean tree required.
+- If e2e/QA seed ran this session: `npm run cleanup:qa-seed` before commit/push.
+- After PR merge to `main`, remind owner to manually deploy (`npm run deploy:tencent` / `deploy:tencent:api`).
+
+### Commit modes
+
+**Closed-loop** (grill shared understanding already confirmed for this scoped task): agent **may commit + push + PR without waiting for `go`**. Print a short post-commit summary with PR URL.
+
+**Adhoc** (everything else): print confirm gate and stop until `go` / `ok` / `yes`:
 
 ```text
 准备执行：
@@ -151,30 +158,18 @@ If work touches community, inbox, follow, comments, likes, or dislikes, report t
 回复 go 继续，或告诉我需要调整哪里。
 ```
 
-After the user says `go` / `ok` / `yes`:
+## 7. 开发闭环（项目范式）
 
-1. Commit on the current branch.
-2. Push to `origin/<current-branch>`.
-3. Create or update a PR to `main`.
-4. Return the PR URL.
+User 提需求并答 grill；确认 shared understanding 后 Agent **一条龙**：
 
-Before creating a new feature branch, sync latest `main` first:
-
-```bash
-bash scripts/new-feature.sh <slug>
+```text
+需求 → /grill-me（一次一问）→ milestone
+  → 实现（按需 /explain-code）
+  → UI 则 /persona-ui-test
+  → npm run verify
+  → commit + push on dev/huanghongli → PR → main
 ```
 
-Manual equivalent:
-
-```bash
-git fetch origin
-git checkout main
-git pull --ff-only origin main
-git checkout -b feat/<slug>
-```
-
-Require a clean working tree before branching; stash or commit first. Do not branch from a stale feature branch unless the user explicitly asks.
-
-If e2e/QA seed ran in this work session, run `npm run cleanup:qa-seed` successfully before commit/push.
-
-After PR merge to `main`, remind the owner to run manual deploy with `npm run deploy:tencent` or `npm run deploy:tencent:api`.
+- Skills: `.cursor/skills/{grill-me,explain-code,persona-ui-test}/`
+- Checklist: `docs/ai-playbook.md`
+- Tiny bug「直接修复」可跳过 grill；仍建议 verify 后再按 adhoc/closed-loop 规则提交

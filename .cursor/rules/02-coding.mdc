@@ -10,7 +10,7 @@ alwaysApply: true
 接手 issue / 模糊需求时，**先输出一行判断**，让用户随时覆盖：
 
 - `直接修复` — 现象清楚、改动 ≤ 2 文件、不动 API / Schema / 关键交互 → 跳过 milestone，直接进 `Before editing`
-- `需澄清` — 任一不满足（现象不清、影响范围大、动接口/数据/重要交互、有多种合理实现）→ 进 `01-planning-clarify`，最多 5 问，结果写进 `docs/milestones/<slug>.md`
+- `需澄清` — 任一不满足 → 进 `01-planning-clarify` / **grill-me**；shared understanding 后再编码
 
 用户可用 `走澄清` / `直接修` / `先看一下再说` 一句话覆盖判断。判断时**列出做出该判断的 1–2 条关键依据**（如「只改 1 个组件、无契约变更」），不要只给结论。
 
@@ -27,17 +27,20 @@ alwaysApply: true
 - API changes: note updates needed in `docs/architecture/api-contract.md` (M2+).
 - Schema changes: add numbered SQL under `server/migrations/`, never edit old migrations.
 
-## Local smoke (before asking to commit / push)
+## After implement (closed loop)
 
-Run from repo root before `03-commit-and-push` confirm gate:
+1. **UI changed?** Run `.cursor/skills/persona-ui-test/SKILL.md` (Browser persona probe). Fix only if user asked or P0 blocks verify; otherwise record defects in milestone.
+2. **Verify** from repo root:
 
 ```bash
 npm run verify
 ```
 
 - `verify` wraps lint / typecheck / unit / e2e / server syntax / rule guards.
-- `test:e2e` needs **PostgreSQL** on `postgres://localhost:5432/fitness` (`docs/ops/本地数据库启停.md`). Playwright auto-starts API (3101) + Vite (4173); default `REGISTRATION_KEY=e2e-test-key`. Details: `docs/GETTING-START.md` §5.
-- **Docs-only** (`docs/**` only, no `src/` / `server/`): may run `bash scripts/verify-local.sh --skip-e2e`.
+- `test:e2e` needs PostgreSQL `postgres://localhost:5432/fitness` — see `docs/GETTING-START.md` §5.
+- **Docs-only**: `bash scripts/verify-local.sh --skip-e2e` is enough.
+
+3. **Commit**: if this task had grill **shared understanding**, use closed-loop auto-commit on `dev/huanghongli` (`03-commit-and-push.mdc` mode A). Otherwise use adhoc confirm gate (mode B).
 
 ## Stuck rule
 
@@ -46,7 +49,3 @@ If the **same problem fails twice**, stop and summarize: what was tried, hypothe
 ## Requirement changes
 
 Update the milestone doc **before** more code changes. Note what changed and why.
-
-## Handoff to git
-
-When implementation is done and smoke passes, follow `03-commit-and-push.mdc` — show confirm summary and wait for `go`.
