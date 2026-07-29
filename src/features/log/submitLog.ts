@@ -1,5 +1,11 @@
 import { addExercise, addMeal, getOrCreateDayLog } from '../../lib/dayLogService'
-import { formatDateKey } from '../../lib/streaks'
+import {
+  formatDateKey,
+  getAccountStartDateKey,
+  isBeforeAccountStart,
+  normalizeDateKey,
+} from '../../lib/streaks'
+import { resolveDateFromSearchParams } from '../../lib/communityInboxNav'
 
 type SubmitKind = 'exercise' | 'meal'
 
@@ -9,6 +15,8 @@ interface SubmitLogInput {
   kind: SubmitKind
   name: string
   kcal: number
+  /** Target log_date (YYYY-MM-DD). Defaults to today after validation. */
+  logDate?: string
 }
 
 export class BatchSavePartialError extends Error {
@@ -25,11 +33,40 @@ export class BatchSavePartialError extends Error {
   }
 }
 
-export async function submitLog(input: SubmitLogInput): Promise<void> {
+/** Resolve a writable log_date: not future, not before account start; else today. */
+export function resolveWritableLogDate(
+  rawDate: string | null | undefined,
+  accountCreatedAt?: string | null,
+): string {
   const today = formatDateKey()
+  if (!rawDate) return today
+  const key = normalizeDateKey(rawDate)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return today
+  if (key > today) return today
+  const accountStartKey = getAccountStartDateKey(accountCreatedAt)
+  if (isBeforeAccountStart(key, accountStartKey)) return today
+  return key
+}
+
+export function resolveWritableLogDateFromSearchParams(
+  searchParams: URLSearchParams,
+  accountCreatedAt?: string | null,
+): string {
+  const fromQuery = resolveDateFromSearchParams(searchParams, null)
+  return resolveWritableLogDate(fromQuery, accountCreatedAt)
+}
+
+export function todayReturnPath(logDate: string): string {
+  const today = formatDateKey()
+  if (logDate === today) return '/'
+  return `/?date=${encodeURIComponent(logDate)}`
+}
+
+export async function submitLog(input: SubmitLogInput): Promise<void> {
+  const logDate = resolveWritableLogDate(input.logDate)
   const dayLog = await getOrCreateDayLog(
     input.userId,
-    today,
+    logDate,
     input.profileTdee ?? 0,
   )
   if (input.kind === 'exercise') {
@@ -44,6 +81,7 @@ interface SubmitLogsBatchInput {
   profileTdee: number | null | undefined
   kind: SubmitKind
   items: { name: string; kcal: number }[]
+  logDate?: string
 }
 
 function createBatchId(): string {
@@ -67,10 +105,10 @@ function createBatchId(): string {
 export async function submitLogsBatch(input: SubmitLogsBatchInput): Promise<void> {
   if (input.items.length === 0) return
 
-  const today = formatDateKey()
+  const logDate = resolveWritableLogDate(input.logDate)
   const dayLog = await getOrCreateDayLog(
     input.userId,
-    today,
+    logDate,
     input.profileTdee ?? 0,
   )
 

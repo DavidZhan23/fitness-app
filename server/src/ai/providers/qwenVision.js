@@ -26,8 +26,9 @@ export const MEAL_PHOTO_SHOOTING_GUIDE =
 
 const JSON_OUTPUT_RULES =
   '只输出一个 JSON object，不要 Markdown，不要代码块，不要解释文字。' +
-  '格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":整数,"confidence":"high|medium|low","reason":"简短估算依据"},...]}。' +
-  '每条 item 的 kcal 在 1-5000；quantity 为正数。' +
+  '格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":单位热量,"confidence":"high|medium|low","reason":"简短估算依据"},...]}。' +
+  '重要：每条 item 的 kcal 是该 unit 的单位热量（可为小数，如 1.15 表示每 g），不是整行总热。' +
+  '顶层 kcal = 各行 quantity×单位热量之和（取整）。单位热量须 >0 且 ≤5000；quantity 为正数。' +
   'reason 只能是面向用户的简短估算依据（中文 8-40 字，说明份量或单位假设），禁止 chain-of-thought 或推理过程。' +
   'confidence 规则：能看清品种且份量依据充分（如标准碗、明确个数）→ high；' +
   '品种清楚但份量主要靠猜测 → medium；画面模糊/过远/过暗/遮挡严重 → low。' +

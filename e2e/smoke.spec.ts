@@ -25,8 +25,8 @@ test.describe.serial('main flow smoke', () => {
     await logMeal(page, mealName, '250')
 
     const nav = mainNav(page)
-    await nav.getByRole('link', { name: '打卡' }).click()
     await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: '打卡' })).toHaveCount(0)
 
     await openCommunity(page)
 
@@ -86,7 +86,7 @@ test.describe.serial('main flow smoke', () => {
     await logExercise(page, 'E2E 墙样式运动', '200')
 
     const nav = mainNav(page)
-    await nav.getByRole('link', { name: '打卡' }).click()
+    await nav.getByRole('link', { name: '今日' }).click()
     await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
     await expect(page.getByText('运动量少')).toBeVisible()
     await expect(page.getByText('盈余少')).toBeVisible()
@@ -105,7 +105,8 @@ test.describe.serial('main flow smoke', () => {
     await expect(splitRadio).toBeChecked()
     await wallStyleSaved
 
-    await nav.getByRole('link', { name: '打卡' }).click()
+    await nav.getByRole('link', { name: '今日' }).click()
+    await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
     await expect(page.getByRole('tab', { name: '运动墙' })).toBeVisible()
     await expect(page.getByText('运动量少')).toBeVisible()
     await expect(page.getByText('盈余少')).toBeHidden()

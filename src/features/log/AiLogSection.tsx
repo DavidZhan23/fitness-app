@@ -15,8 +15,10 @@ import {
   type AiEstimateConfidence,
 } from '../../lib/aiEstimateDisplay'
 import {
+  computeDraftKcal,
   formatApproxKcal,
   formatQtyForDisplay,
+  sumAiItemsLineKcal,
   toFinitePositive,
   validateAiItems,
 } from '../../lib/logTemplate'
@@ -39,56 +41,16 @@ type SelectedPhoto = {
   dataUrl: string
 }
 
-interface SpeechRecognitionEventLike {
-  resultIndex: number
-  results: {
-    length: number
-    [index: number]: {
-      0?: { transcript?: string }
-      isFinal?: boolean
-    }
-  }
-}
-
-interface SpeechRecognitionErrorEventLike {
-  error?: string
-}
-
-interface SpeechRecognitionLike {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  maxAlternatives: number
-  onstart: (() => void) | null
-  onend: (() => void) | null
-  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null
-  start: () => void
-  stop: () => void
-  abort: () => void
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
-
 export interface AiEstimateItemState {
   id: string
   name: string
   quantityInput: string
   unit: string
-  kcalInput: string
+  /** 单位热量（kcal / unit），来自 AI item.kcal */
+  kcalPerUnitInput: string
   confidence: AiEstimateConfidence
   reason: string
   saveAsTemplate: boolean
-}
-
-function VoiceIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M5 10v4h3l4 4V6L8 10H5Z" />
-      <path d="M15 9.2a4 4 0 0 1 0 5.6" />
-      <path d="M17.7 6.5a8 8 0 0 1 0 11" />
-    </svg>
-  )
 }
 
 function CameraIcon() {
@@ -178,22 +140,6 @@ function readMealPhotoQuotaFromError(err: unknown): MealPhotoQuota | null {
   return null
 }
 
-function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
-  if (typeof window === 'undefined') return null
-  const maybeWindow = window as Window & {
-    SpeechRecognition?: SpeechRecognitionConstructor
-    webkitSpeechRecognition?: SpeechRecognitionConstructor
-  }
-  return maybeWindow.SpeechRecognition ?? maybeWindow.webkitSpeechRecognition ?? null
-}
-
-function appendTranscript(current: string, transcript: string): string {
-  const cleanTranscript = transcript.trim()
-  if (!cleanTranscript) return current
-  const cleanCurrent = current.trim()
-  return cleanCurrent ? `${cleanCurrent} ${cleanTranscript}` : cleanTranscript
-}
-
 function createItemId() {
   return `ai-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
@@ -204,26 +150,16 @@ function createPhotoId() {
 
 function formatItemSummaryMeta(item: AiEstimateItemState): string {
   const qty = toFinitePositive(item.quantityInput)
-  const kcal = toFinitePositive(item.kcalInput)
+  const perUnit = toFinitePositive(item.kcalPerUnitInput)
+  const lineKcal =
+    qty != null && perUnit != null ? computeDraftKcal(qty, perUnit) : null
   const qtyText =
     qty != null
       ? formatQtyForDisplay(qty)
       : item.quantityInput.trim() || '—'
   const unit = item.unit.trim() || '—'
-  const kcalText = kcal != null ? formatApproxKcal(kcal) : '—'
+  const kcalText = lineKcal != null ? formatApproxKcal(lineKcal) : '—'
   return `${qtyText} ${unit} · ${kcalText}`
-}
-
-function sumAiItemsKcal(items: AiEstimateItemState[]): number | null {
-  let total = 0
-  let hasValue = false
-  for (const item of items) {
-    const kcal = toFinitePositive(item.kcalInput)
-    if (kcal == null) continue
-    total += kcal
-    hasValue = true
-  }
-  return hasValue ? total : null
 }
 
 function mapResponseItems(
@@ -251,7 +187,7 @@ function mapResponseItems(
         name: item.name,
         quantityInput: String(item.quantity ?? 1),
         unit: item.unit?.trim() || defaultUnit,
-        kcalInput: String(item.kcal),
+        kcalPerUnitInput: String(item.kcal),
         confidence,
         reason: resolveReason(item.reason, confidence),
         saveAsTemplate: false,
@@ -265,7 +201,7 @@ function mapResponseItems(
       name: description,
       quantityInput: '1',
       unit: defaultUnit,
-      kcalInput: String(response.kcal),
+      kcalPerUnitInput: String(response.kcal),
       confidence: 'medium',
       reason: FALLBACK_REASON,
       saveAsTemplate: false,
@@ -286,7 +222,6 @@ export function AiLogSection({
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const [items, setItems] = useState<AiEstimateItemState[]>([])
   const [expandedItemIds, setExpandedItemIds] = useState<Record<string, boolean>>({})
   const [estimating, setEstimating] = useState(false)
@@ -299,9 +234,6 @@ export function AiLogSection({
   const [photoGuideOpen, setPhotoGuideOpen] = useState(false)
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoQuota, setPhotoQuota] = useState<MealPhotoQuota | null>(null)
-  const [speechSupported, setSpeechSupported] = useState(false)
-  const [listening, setListening] = useState(false)
-  const [speechError, setSpeechError] = useState('')
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteItem | null>(
     null,
   )
@@ -315,7 +247,7 @@ export function AiLogSection({
   const fuzzyHint = isExercise
     ? '支持模糊输入：像聊天一样写，比如“晚饭后散步一会儿”。'
     : '支持模糊输入，也可以上传图片 / 拍照后补充描述。'
-  const placeholder = '发消息或点语音说话...'
+  const placeholder = kind === 'exercise' ? '描述运动或时长…' : '描述饮食…'
 
   const busy = disabled || saving || estimating || photoLoading
   const photoQuotaBlocked = isMealPhotoQuotaExhausted(photoQuota)
@@ -340,14 +272,6 @@ export function AiLogSection({
     if (!isMeal) return
     void loadPhotoQuota()
   }, [isMeal, loadPhotoQuota])
-
-  useEffect(() => {
-    setSpeechSupported(getSpeechRecognitionConstructor() != null)
-    return () => {
-      recognitionRef.current?.abort()
-      recognitionRef.current = null
-    }
-  }, [])
 
   const applyEstimateResponse = (
     response: {
@@ -513,65 +437,7 @@ export function AiLogSection({
     setPendingDelete(null)
   }
 
-  const totalKcal = sumAiItemsKcal(items)
-
-  const toggleSpeechInput = () => {
-    if (busy) return
-    if (!speechSupported) {
-      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
-      return
-    }
-    if (listening) {
-      recognitionRef.current?.stop()
-      return
-    }
-
-    const Recognition = getSpeechRecognitionConstructor()
-    if (!Recognition) {
-      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
-      setSpeechSupported(false)
-      return
-    }
-
-    const recognition = new Recognition()
-    recognition.lang = 'zh-CN'
-    recognition.continuous = false
-    recognition.interimResults = false
-    recognition.maxAlternatives = 1
-    recognition.onstart = () => {
-      setListening(true)
-      setSpeechError('')
-      setEstimateError('')
-    }
-    recognition.onend = () => {
-      setListening(false)
-    }
-    recognition.onerror = (event) => {
-      setListening(false)
-      setSpeechError(
-        event.error === 'not-allowed'
-          ? '没有麦克风权限，请允许后再试。'
-          : '语音识别失败，请再试一次。',
-      )
-    }
-    recognition.onresult = (event) => {
-      let transcript = ''
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        transcript += event.results[index]?.[0]?.transcript ?? ''
-      }
-      const nextDescription = appendTranscript(description, transcript)
-      onDescriptionChange(nextDescription)
-      setEstimateError('')
-      setSpeechError('')
-    }
-    recognitionRef.current = recognition
-    try {
-      recognition.start()
-    } catch {
-      setListening(false)
-      setSpeechError('语音输入启动失败，请再试一次。')
-    }
-  }
+  const totalKcal = sumAiItemsLineKcal(items)
 
   const triggerPhotoPicker = (source: PhotoPickerSource) => {
     if (!isMeal || busy) return
@@ -720,17 +586,6 @@ export function AiLogSection({
           <div className={`log-ai-unified-input${photoMenuOpen ? ' log-ai-unified-input--menu-open' : ''}`}>
             {showDescriptionInput ? (
               <div className="log-ai-composer" role="group" aria-label="AI 输入">
-                <button
-                  type="button"
-                  className={`log-ai-composer__icon-btn log-ai-composer__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
-                  aria-label={listening ? '停止语音输入' : '语音输入'}
-                  aria-pressed={listening}
-                  disabled={busy}
-                  onClick={toggleSpeechInput}
-                >
-                  <VoiceIcon />
-                </button>
-
                 <textarea
                   rows={1}
                   wrap="off"
@@ -739,7 +594,6 @@ export function AiLogSection({
                     onDescriptionChange(e.target.value)
                     setEstimateError('')
                     setPhotoError('')
-                    setSpeechError('')
                   }}
                   onPaste={handleInputPaste}
                   disabled={busy}
@@ -922,7 +776,6 @@ export function AiLogSection({
               估算中…
             </p>
           ) : null}
-          {speechError ? <p className="text-xs text-red-400">{speechError}</p> : null}
           {photoError ? <p className="text-xs text-red-400">{photoError}</p> : null}
           {estimateError ? (
             <p className="text-xs text-red-400">{estimateError}</p>
@@ -1008,7 +861,7 @@ export function AiLogSection({
 
                           <div className="log-ai-item-card__edit">
                             <p className="log-ai-item-card__edit-hint">
-                              可以在保存前调整名称、份量、单位和热量。
+                              可以在保存前调整名称、份量、单位和单位热量；改数量会按单位热自动同步总热。
                             </p>
 
                             <div className="log-ai-item-card__fields">
@@ -1060,19 +913,21 @@ export function AiLogSection({
                                 </label>
                                 <label className="log-ai-item-card__field">
                                   <span className="log-ai-item-card__field-label">
-                                    热量 (kcal)
+                                    单位热量
                                   </span>
                                   <input
                                     type="number"
                                     min="0"
                                     step="any"
-                                    value={item.kcalInput}
+                                    value={item.kcalPerUnitInput}
                                     onChange={(e) =>
-                                      updateItem(item.id, { kcalInput: e.target.value })
+                                      updateItem(item.id, {
+                                        kcalPerUnitInput: e.target.value,
+                                      })
                                     }
                                     disabled={busy}
                                     className="input w-full min-w-0 tabular-nums"
-                                    aria-label={`${itemLabel} 热量`}
+                                    aria-label={`${itemLabel} 单位热量`}
                                   />
                                 </label>
                               </div>

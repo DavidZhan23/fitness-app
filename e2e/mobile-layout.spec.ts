@@ -23,12 +23,14 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await logExercise(page, 'E2E 布局检查运动', '180')
 
       const nav = mainNav(page)
-      await expect(nav.getByRole('link')).toHaveCount(3)
+      await expect(nav.getByRole('link')).toHaveCount(2)
       await expect(nav.getByRole('link', { name: '设置' })).toHaveCount(0)
+      await expect(nav.getByRole('link', { name: '打卡' })).toHaveCount(0)
 
-      // Today
+      // Today (+ wall)
       await nav.getByRole('link', { name: '今日' }).click()
       await expect(page.getByRole('link', { name: '+ 记运动' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
       await assertLayoutShell(page, `${viewport.name} /`)
       await assertLocatorInScrollport(
         page,
@@ -40,11 +42,6 @@ for (const viewport of MOBILE_VIEWPORTS) {
         page.getByRole('link', { name: '+ 记饮食' }),
         '今日 + 记饮食',
       )
-
-      // Calendar
-      await nav.getByRole('link', { name: '打卡' }).click()
-      await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
-      await assertLayoutShell(page, `${viewport.name} /calendar`)
       await assertLocatorInScrollport(
         page,
         page.getByRole('heading', { name: '打卡墙' }),
@@ -66,8 +63,9 @@ for (const viewport of MOBILE_VIEWPORTS) {
         '社区 全部 tab',
       )
       await page.getByRole('link', { name: '打开我的个人主页' }).click()
-      await expect(page.getByText('这是你的公开主页')).toBeVisible()
-      await assertLayoutShell(page, `${viewport.name} /community/self`)
+      await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
+      await expect(page.getByRole('link', { name: '+ 记运动' })).toBeVisible()
+      await assertLayoutShell(page, `${viewport.name} / (self redirect)`)
 
       // Templates (via log templates mode; no tab bar item)
       await nav.getByRole('link', { name: '今日' }).click()

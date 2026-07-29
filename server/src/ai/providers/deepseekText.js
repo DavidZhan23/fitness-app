@@ -178,9 +178,10 @@ export function normalizeEstimateItems(rawItems, kind) {
 
     const unit = String(raw.unit ?? '').trim() || defaultUnit
 
-    const kcalRaw = Math.round(Number(raw.kcal))
+    // item.kcal = 单位热量（可为小数，如 g 的 kcal/g）；允许 (0, 5000]
+    const kcalRaw = Number(raw.kcal)
     if (!Number.isFinite(kcalRaw) || kcalRaw <= 0) continue
-    const kcal = Math.min(5000, Math.max(1, kcalRaw))
+    const kcal = Math.min(5000, kcalRaw)
 
     const confidence = normalizeConfidence(raw.confidence)
     const reason = normalizeReason(raw.reason, confidence)
@@ -210,7 +211,11 @@ export function normalizeEstimateItems(rawItems, kind) {
 export function buildEstimateResult(parsed, kind, options = {}) {
   const items = normalizeEstimateItems(parsed.items, kind)
   if (items.length >= 1) {
-    const kcal = items.reduce((sum, item) => sum + item.kcal, 0)
+    // 顶层 kcal = Σ round(quantity × 单位热量)
+    const kcal = items.reduce(
+      (sum, item) => sum + Math.round(item.quantity * item.kcal),
+      0,
+    )
     return { kcal, items }
   }
 
@@ -262,8 +267,9 @@ function buildSystemPrompt(type, profile) {
 
   const jsonOnly =
     '只输出一个 JSON object，不要 Markdown，不要代码块，不要解释文字。' +
-    '格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":整数,"confidence":"high|medium|low","reason":"简短估算依据"},...]}。' +
-    '每条 item 的 kcal 在 1-5000；quantity 为正数。' +
+    '格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":单位热量,"confidence":"high|medium|low","reason":"简短估算依据"},...]}。' +
+    '重要：每条 item 的 kcal 是该 unit 的单位热量（可为小数，如 1.15 表示每 g；78 表示每个），不是整行总热。' +
+    '顶层 kcal = 各行 quantity×单位热量之和（取整）。单位热量须 >0 且 ≤5000；quantity 为正数。' +
     'reason 只能是面向用户的简短估算依据（中文 8-40 字，说明份量或单位假设），禁止 chain-of-thought、step-by-step reasoning 或推理过程。' +
     'confidence 规则：明确 g/ml/分钟 → high；一碗/一个/一杯 → medium；一盘/一些/一顿/正常吃了 → low。' +
     '缺单位时 meal 默认 份×1；exercise 默认 分钟或按描述。'

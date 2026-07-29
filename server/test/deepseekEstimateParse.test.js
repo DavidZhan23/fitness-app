@@ -87,10 +87,10 @@ describe('normalizeReason', () => {
 })
 
 describe('normalizeEstimateItems', () => {
-  it('filters invalid items and applies defaults for meal', () => {
+  it('filters invalid items and applies defaults for meal (kcal = per unit)', () => {
     const items = normalizeEstimateItems(
       [
-        { name: ' 米饭 ', quantity: 200, unit: 'g', kcal: 230 },
+        { name: ' 米饭 ', quantity: 200, unit: 'g', kcal: 1.15 },
         { name: '', quantity: 1, unit: '份', kcal: 100 },
         { name: '无效', quantity: 0, unit: '份', kcal: 100 },
         { name: '牛奶', kcal: 120 },
@@ -102,7 +102,7 @@ describe('normalizeEstimateItems', () => {
         name: '米饭',
         quantity: 200,
         unit: 'g',
-        kcal: 230,
+        kcal: 1.15,
         confidence: 'medium',
         reason: defaultReason('medium'),
       },
@@ -139,23 +139,30 @@ describe('normalizeEstimateItems', () => {
 
   it('defaults exercise unit to 分钟', () => {
     const items = normalizeEstimateItems(
-      [{ name: '慢跑', quantity: 40, kcal: 300 }],
+      [{ name: '慢跑', quantity: 40, kcal: 8 }],
       'exercise',
     )
     expect(items[0]?.unit).toBe('分钟')
+    expect(items[0]?.kcal).toBe(8)
   })
 
-  it('clamps item kcal to 1-5000', () => {
-    const items = normalizeEstimateItems(
+  it('clamps item kcal (per unit) to max 5000 and allows fractional < 1', () => {
+    const high = normalizeEstimateItems(
       [{ name: '超大餐', quantity: 1, unit: '份', kcal: 9000 }],
       'meal',
     )
-    expect(items[0]?.kcal).toBe(5000)
+    expect(high[0]?.kcal).toBe(5000)
+
+    const fractional = normalizeEstimateItems(
+      [{ name: '牛奶', quantity: 250, unit: 'ml', kcal: 0.6 }],
+      'meal',
+    )
+    expect(fractional[0]?.kcal).toBe(0.6)
   })
 })
 
 describe('buildEstimateResult', () => {
-  it('sums item kcal and ignores top-level kcal', () => {
+  it('sums quantity × per-unit kcal and ignores top-level kcal', () => {
     const result = buildEstimateResult(
       {
         kcal: 999,
@@ -170,7 +177,7 @@ describe('buildEstimateResult', () => {
           },
           {
             name: '鸡蛋',
-            quantity: 1,
+            quantity: 2,
             unit: '个',
             kcal: 78,
             confidence: 'high',
@@ -180,13 +187,29 @@ describe('buildEstimateResult', () => {
       },
       'meal',
     )
-    expect(result.kcal).toBe(728)
+    expect(result.kcal).toBe(650 + 156)
     expect(result.items).toHaveLength(2)
     expect(result.items?.[0]).toMatchObject({
       name: '牛肉面',
+      kcal: 650,
       confidence: 'medium',
       reason: '按一碗估算',
     })
+    expect(result.items?.[1]).toMatchObject({
+      quantity: 2,
+      kcal: 78,
+    })
+  })
+
+  it('rounds each line quantity × per-unit before summing', () => {
+    const result = buildEstimateResult(
+      {
+        items: [{ name: '鸡胸肉', quantity: 150, unit: 'g', kcal: 1.65 }],
+      },
+      'meal',
+    )
+    expect(result.kcal).toBe(248)
+    expect(result.items?.[0]?.kcal).toBe(1.65)
   })
 
   it('returns fallback item when no valid items but top-level kcal', () => {
@@ -235,19 +258,20 @@ describe('buildEstimateResult', () => {
     })
   })
 
-  it('handles exercise multi-item sample', () => {
+  it('handles exercise multi-item sample (kcal = per minute)', () => {
     const result = buildEstimateResult(
       {
         items: [
-          { name: '慢跑', quantity: 40, unit: '分钟', kcal: 320 },
-          { name: '跳绳', quantity: 10, unit: '分钟', kcal: 90 },
+          { name: '慢跑', quantity: 40, unit: '分钟', kcal: 8 },
+          { name: '跳绳', quantity: 10, unit: '分钟', kcal: 9 },
         ],
       },
       'exercise',
     )
-    expect(result.kcal).toBe(410)
+    expect(result.kcal).toBe(320 + 90)
     expect(result.items).toHaveLength(2)
     expect(result.items?.[0]).toMatchObject({
+      kcal: 8,
       confidence: 'medium',
       reason: defaultReason('medium'),
     })

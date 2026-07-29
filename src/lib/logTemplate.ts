@@ -294,14 +294,17 @@ export interface AiEstimateItemInput {
   name: string
   quantityInput: string
   unit: string
-  kcalInput: string
+  /** 单位热量（kcal / unit）；落库行总热 = round(quantity × kcalPerUnit) */
+  kcalPerUnitInput: string
 }
 
 export interface ValidatedAiItem {
   name: string
   quantity: number
   unit: string
+  /** 行总热（已按 quantity × kcalPerUnit 取整） */
   kcal: number
+  kcalPerUnit: number
 }
 
 export function validateAiItems(
@@ -316,13 +319,32 @@ export function validateAiItems(
     const name = item.name.trim()
     const unit = item.unit.trim()
     const quantity = toFinitePositive(item.quantityInput)
-    const kcal = toFinitePositive(item.kcalInput)
-    if (!name || !unit || quantity == null || kcal == null) {
-      return { ok: false, error: '请检查每条记录的名称、数量、单位与热量' }
+    const kcalPerUnit = toFinitePositive(item.kcalPerUnitInput)
+    const kcal = computeDraftKcal(quantity ?? 0, kcalPerUnit ?? 0)
+    if (!name || !unit || quantity == null || kcalPerUnit == null || kcal == null) {
+      return { ok: false, error: '请检查每条记录的名称、数量、单位与单位热量' }
     }
-    validated.push({ name, quantity, unit, kcal })
+    validated.push({ name, quantity, unit, kcal, kcalPerUnit })
   }
   return { ok: true, items: validated }
+}
+
+/** 按 quantity × 单位热量汇总行总热（用于合计展示） */
+export function sumAiItemsLineKcal(
+  items: Pick<AiEstimateItemInput, 'quantityInput' | 'kcalPerUnitInput'>[],
+): number | null {
+  let total = 0
+  let hasValue = false
+  for (const item of items) {
+    const quantity = toFinitePositive(item.quantityInput)
+    const kcalPerUnit = toFinitePositive(item.kcalPerUnitInput)
+    if (quantity == null || kcalPerUnit == null) continue
+    const line = computeDraftKcal(quantity, kcalPerUnit)
+    if (line == null) continue
+    total += line
+    hasValue = true
+  }
+  return hasValue ? total : null
 }
 
 export function aiItemsToLogPayload(

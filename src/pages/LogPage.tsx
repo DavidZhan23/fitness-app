@@ -12,8 +12,10 @@ import {
 import { SecondaryManualLogSection } from '../features/log/SecondaryManualLogSection'
 import {
   BatchSavePartialError,
+  resolveWritableLogDateFromSearchParams,
   submitLog,
   submitLogsBatch,
+  todayReturnPath,
 } from '../features/log/submitLog'
 import { useAiEstimateFallbackTracker } from '../hooks/useAiEstimateFallbackTracker'
 import { useLogForm } from '../hooks/useLogForm'
@@ -22,7 +24,6 @@ import { usePendingLogDrafts } from '../hooks/usePendingLogDrafts'
 import { httpData } from '../lib/api'
 import {
   aiItemsToLogPayload,
-  buildTemplateFromLogItem,
   formatTemplateSaveNotice,
   saveTemplatesFromItems,
   templateKey,
@@ -54,6 +55,11 @@ export function LogPage() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const logDate = resolveWritableLogDateFromSearchParams(
+    searchParams,
+    profile?.created_at,
+  )
+  const returnPath = todayReturnPath(logDate)
   const [activeMode, setActiveMode] = useState<LogTabMode>(() =>
     normalizeMode(searchParams.get('mode')),
   )
@@ -167,9 +173,10 @@ export function LogPage() {
         profileTdee: profile.tdee,
         kind,
         items: result.items,
+        logDate,
       })
       pendingDrafts.clear()
-      navigate('/')
+      navigate(returnPath)
     } catch (err) {
       if (err instanceof BatchSavePartialError) {
         setBatchError(err.message)
@@ -197,6 +204,7 @@ export function LogPage() {
         kind,
         name: logItems[0].name,
         kcal: logItems[0].kcal,
+        logDate,
       })
     } else {
       await submitLogsBatch({
@@ -204,6 +212,7 @@ export function LogPage() {
         profileTdee: profile.tdee,
         kind,
         items: logItems,
+        logDate,
       })
     }
 
@@ -212,12 +221,12 @@ export function LogPage() {
     const templateSeeds = validated.items
       .map((item, index) =>
         items[index]?.saveAsTemplate
-          ? buildTemplateFromLogItem({
+          ? {
               name: item.name,
-              quantity: item.quantity,
               unit: item.unit,
-              kcal: item.kcal,
-            })
+              defaultQuantity: item.quantity,
+              kcalPerUnit: item.kcalPerUnit,
+            }
           : null,
       )
       .filter((item): item is NonNullable<typeof item> => item != null)
@@ -238,7 +247,7 @@ export function LogPage() {
     setAiSaving(true)
     try {
       await saveLogsFromAiItems(items)
-      navigate('/')
+      navigate(returnPath)
       return null
     } finally {
       setAiSaving(false)
@@ -253,11 +262,12 @@ export function LogPage() {
       kind,
       name,
       kcal,
+      logDate,
     })
   }
 
   const handleManualComplete = () => {
-    navigate('/')
+    navigate(returnPath)
   }
 
   const switchMode = (mode: LogTabMode) => {
@@ -350,7 +360,7 @@ export function LogPage() {
         <header className="log-page-header">
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate(returnPath)}
             className="log-pill-btn log-page-back"
           >
             ← 返回

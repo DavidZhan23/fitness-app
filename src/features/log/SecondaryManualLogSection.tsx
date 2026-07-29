@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState,
   type FormEvent,
 } from 'react'
@@ -15,62 +14,6 @@ import {
 } from '../../lib/logTemplate'
 import type { MealInputMode } from '../../hooks/useLogForm'
 import type { LogTemplate } from '../../types'
-
-interface SpeechRecognitionEventLike {
-  resultIndex: number
-  results: {
-    length: number
-    [index: number]: {
-      0?: { transcript?: string }
-    }
-  }
-}
-
-interface SpeechRecognitionErrorEventLike {
-  error?: string
-}
-
-interface SpeechRecognitionLike {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  maxAlternatives: number
-  onstart: (() => void) | null
-  onend: (() => void) | null
-  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null
-  start: () => void
-  stop: () => void
-  abort: () => void
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
-
-function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
-  if (typeof window === 'undefined') return null
-  const maybeWindow = window as Window & {
-    SpeechRecognition?: SpeechRecognitionConstructor
-    webkitSpeechRecognition?: SpeechRecognitionConstructor
-  }
-  return maybeWindow.SpeechRecognition ?? maybeWindow.webkitSpeechRecognition ?? null
-}
-
-function appendTranscript(current: string, transcript: string): string {
-  const cleanTranscript = transcript.trim()
-  if (!cleanTranscript) return current
-  const cleanCurrent = current.trim()
-  return cleanCurrent ? `${cleanCurrent} ${cleanTranscript}` : cleanTranscript
-}
-
-function VoiceIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M5 10v4h3l4 4V6L8 10H5Z" />
-      <path d="M15 9.2a4 4 0 0 1 0 5.6" />
-      <path d="M17.7 6.5a8 8 0 0 1 0 11" />
-    </svg>
-  )
-}
 
 interface SecondaryManualLogSectionProps {
   isExercise: boolean
@@ -169,7 +112,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     packageKcal,
   } = props
   const isCollapsible = props.collapsible ?? true
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const [expanded, setExpanded] = useState(!isCollapsible)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateDetailsExpanded, setTemplateDetailsExpanded] = useState(false)
@@ -178,9 +120,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
   const [templateUnit, setTemplateUnit] = useState('')
   const [templateDefaultQuantity, setTemplateDefaultQuantity] = useState('')
   const [templateKcalPerUnit, setTemplateKcalPerUnit] = useState('')
-  const [speechSupported, setSpeechSupported] = useState(false)
-  const [listening, setListening] = useState(false)
-  const [speechError, setSpeechError] = useState('')
 
   const applySuggestion = useCallback(() => {
     const kcalValue = resolveKcal()
@@ -229,71 +168,11 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
     if (!isCollapsible) setExpanded(true)
   }, [isCollapsible])
 
-  useEffect(() => {
-    setSpeechSupported(getSpeechRecognitionConstructor() != null)
-    return () => {
-      recognitionRef.current?.abort()
-      recognitionRef.current = null
-    }
-  }, [])
-
   const sectionTitle = isExercise ? '做了什么运动？' : '吃了什么？'
   const sectionHint = isExercise
     ? '精确填写，直接输入运动名称和消耗热量。'
     : '精确填写，直接输入热量或者食物包装上的营养表填写。'
   const nameAriaLabel = sectionTitle
-  const manualBusy = props.loading
-
-  const toggleSpeechInput = () => {
-    if (manualBusy) return
-    if (!speechSupported) {
-      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
-      return
-    }
-    if (listening) {
-      recognitionRef.current?.stop()
-      return
-    }
-    const Recognition = getSpeechRecognitionConstructor()
-    if (!Recognition) {
-      setSpeechSupported(false)
-      setSpeechError('当前浏览器不支持语音输入，可以先用键盘输入。')
-      return
-    }
-    const recognition = new Recognition()
-    recognition.lang = 'zh-CN'
-    recognition.continuous = false
-    recognition.interimResults = false
-    recognition.maxAlternatives = 1
-    recognition.onstart = () => {
-      setListening(true)
-      setSpeechError('')
-    }
-    recognition.onend = () => setListening(false)
-    recognition.onerror = (event) => {
-      setListening(false)
-      setSpeechError(
-        event.error === 'not-allowed'
-          ? '没有麦克风权限，请允许后再试。'
-          : '语音识别失败，请再试一次。',
-      )
-    }
-    recognition.onresult = (event) => {
-      let transcript = ''
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        transcript += event.results[index]?.[0]?.transcript ?? ''
-      }
-      props.onNameChange(appendTranscript(props.name, transcript))
-      setSpeechError('')
-    }
-    recognitionRef.current = recognition
-    try {
-      recognition.start()
-    } catch {
-      setListening(false)
-      setSpeechError('语音输入启动失败，请再试一次。')
-    }
-  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -360,40 +239,6 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
             isCollapsible ? (
               <div className="log-manual-secondary__field">
                 <span className="log-manual-secondary__field-label">名称</span>
-                <div
-                  className={`log-manual-secondary__name-input${!props.isExercise ? ' log-manual-secondary__name-input--with-voice' : ''}`}
-                >
-                  <input
-                    value={props.name}
-                    onChange={(e) => props.onNameChange(e.target.value)}
-                    disabled={props.loading}
-                    className="input w-full min-w-0"
-                    placeholder={
-                      props.isExercise
-                        ? '例如：慢跑 40 分钟'
-                        : '例如：牛肉面 1 碗'
-                    }
-                    aria-label="名称"
-                    required
-                  />
-                  {!props.isExercise ? (
-                    <button
-                      type="button"
-                      className={`log-ai-composer__icon-btn log-manual-secondary__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
-                      aria-label={listening ? '停止语音输入' : '语音输入'}
-                      aria-pressed={listening}
-                      disabled={manualBusy}
-                      onClick={toggleSpeechInput}
-                    >
-                      <VoiceIcon />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ) : (
-              <div
-                className={`log-manual-secondary__name-input${!props.isExercise ? ' log-manual-secondary__name-input--with-voice' : ''}`}
-              >
                 <input
                   value={props.name}
                   onChange={(e) => props.onNameChange(e.target.value)}
@@ -404,27 +249,25 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                       ? '例如：慢跑 40 分钟'
                       : '例如：牛肉面 1 碗'
                   }
-                  aria-label={nameAriaLabel}
+                  aria-label="名称"
                   required
                 />
-                {!props.isExercise ? (
-                  <button
-                    type="button"
-                    className={`log-ai-composer__icon-btn log-manual-secondary__voice-btn${listening ? ' log-ai-composer__icon-btn--active' : ''}`}
-                    aria-label={listening ? '停止语音输入' : '语音输入'}
-                    aria-pressed={listening}
-                    disabled={manualBusy}
-                    onClick={toggleSpeechInput}
-                  >
-                    <VoiceIcon />
-                  </button>
-                ) : null}
               </div>
+            ) : (
+              <input
+                value={props.name}
+                onChange={(e) => props.onNameChange(e.target.value)}
+                disabled={props.loading}
+                className="input w-full min-w-0"
+                placeholder={
+                  props.isExercise
+                    ? '例如：慢跑 40 分钟'
+                    : '例如：牛肉面 1 碗'
+                }
+                aria-label={nameAriaLabel}
+                required
+              />
             )
-          ) : null}
-
-          {!props.isExercise && speechError ? (
-            <p className="text-xs text-red-400">{speechError}</p>
           ) : null}
 
                     {!props.isExercise && (
