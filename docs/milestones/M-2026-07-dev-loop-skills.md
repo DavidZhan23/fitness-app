@@ -1,6 +1,6 @@
 # Milestone: 开发闭环（grill → 实现 → 拟人 → verify → auto-commit）
 
-**Status:** active
+**Status:** done
 **Branch:** `dev/huanghongli`
 **Issue:** —
 **Started:** 2026-07-28

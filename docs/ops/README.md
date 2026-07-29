@@ -1,26 +1,28 @@
 # 运维与部署
 
-环境与上线相关文档索引（中文专题，按场景选读）。
+按场景选读，**不是**日常开发必读。交付模型见 [architecture/deploy.md](../architecture/deploy.md)。
+
+## 常用
 
 | 场景 | 文档 |
 |------|------|
-| 本地 PostgreSQL 安装、启停、migrate | [本地数据库启停.md](本地数据库启停.md) |
-| 首次部署到腾讯云（手动一步步） | [腾讯云部署-一步步做.md](腾讯云部署-一步步做.md) |
-| 腾讯云方案概览 | [tencent-cloud.md](tencent-cloud.md) |
-| 服务器 `.env`、DeepSeek Key | [修改服务器env.md](修改服务器env.md) |
-| 同机另一应用与健身 App 共用 80 端口 | [同机多应用-nginx共存.md](同机多应用-nginx共存.md) |
-| 安卓 / iPhone PWA 安装 | [安卓安装与PWA说明.md](安卓安装与PWA说明.md) |
-| iOS 社区评论回复防回归 | [iOS-社区评论回复防回归清单.md](iOS-社区评论回复防回归清单.md) |
+| 本地 PostgreSQL | [本地数据库启停.md](本地数据库启停.md) |
+| 腾讯云部署（一步步） | [腾讯云部署-一步步做.md](腾讯云部署-一步步做.md) |
+| 服务器 env / API Key | [修改服务器env.md](修改服务器env.md) |
+| 同机 Nginx 共存 | [同机多应用-nginx共存.md](同机多应用-nginx共存.md) |
 
-## 交付与部署
+## 按需 / 专题
 
-| 文档 | 读者 |
+| 场景 | 文档 |
 |------|------|
-| [../architecture/deploy.md](../architecture/deploy.md) | 所有人：当前交付模型、手动部署、回滚 |
+| 腾讯云方案概览 | [tencent-cloud.md](tencent-cloud.md) |
+| 安卓 / iPhone PWA | [安卓安装与PWA说明.md](安卓安装与PWA说明.md) |
+| iOS 评论回复防回归 | [iOS-社区评论回复防回归清单.md](iOS-社区评论回复防回归清单.md) |
+| 主题对比检查 | [theme-contrast-subagent.md](theme-contrast-subagent.md) |
+| 主题抠图工作流 | [theme-cutout-workflow.md](theme-cutout-workflow.md) |
+| 响应式 / 布局检查 | [site-responsive-check.md](site-responsive-check.md) · [mobile-layout-check.md](mobile-layout-check.md) |
+| QA 手动种子 | [qa-manual-seed.md](qa-manual-seed.md) |
 
-手动部署命令见根目录 [README.md](../../README.md#部署到腾讯云)。
+## 回到开发
 
-## 回到开发流程
-
-- [../GETTING-START.md](../GETTING-START.md)
-- [../README.md](../README.md)
+- [../GETTING-START.md](../GETTING-START.md) · [../ai-playbook.md](../ai-playbook.md) · [../README.md](../README.md)

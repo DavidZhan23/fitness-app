@@ -2,6 +2,8 @@
 
 > 导航：[文档中心](../README.md)
 
+只记录**会后悔的技术选择**（换了就贵）。流程/一时的 milestone 结论不必开 ADR。
+
 | ID | Title | Status |
 |----|-------|--------|
 | [0001](0001-keep-public-repo.md) | 保持 public 仓库与免费 CI | accepted |

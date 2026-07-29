@@ -37,5 +37,5 @@ Issues → **Feature request** / **Bug report**。标题一句话即可。详见
 | 总导航 | [docs/README.md](docs/README.md) |
 | 架构 / API | [docs/architecture/](docs/architecture/) |
 | 运维 / 部署 | [docs/ops/README.md](docs/ops/README.md) |
-| Milestones | [docs/milestones/](docs/milestones/) |
+| Milestones（Active） | [docs/milestones/README.md](docs/milestones/README.md) |
 | ADR | [docs/decisions/](docs/decisions/) |

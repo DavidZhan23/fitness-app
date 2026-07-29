@@ -1,6 +1,6 @@
 # Milestone: 架构 grill 结论落文档
 
-**Status:** active
+**Status:** done
 **Branch:** `dev/huanghongli`
 **Started:** 2026-07-28
 
