@@ -2120,7 +2120,7 @@ select:focus-visible {
 
 .log-ai-composer {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.625rem;
   min-width: 0;
@@ -2132,7 +2132,7 @@ select:focus-visible {
 }
 
 .log-ai-composer--compact {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   padding-block: 0.5rem;
   border-radius: 1rem;
@@ -2220,10 +2220,6 @@ select:focus-visible {
 .log-ai-photo-preview__remove:disabled {
   cursor: not-allowed;
   opacity: 0.55;
-}
-
-.log-ai-composer__voice-btn {
-  align-self: center;
 }
 
 .log-ai-composer-menu {
@@ -3367,24 +3363,6 @@ select:focus-visible {
 .log-manual-secondary__name-input {
   position: relative;
   min-width: 0;
-}
-
-.log-manual-secondary__name-input--with-voice .input {
-  padding-right: 3.25rem;
-}
-
-.log-manual-secondary__voice-btn {
-  position: absolute;
-  top: 50%;
-  right: 0.25rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  transform: translateY(-50%);
-}
-
-.log-manual-secondary__voice-btn:hover:not(:disabled),
-.log-manual-secondary__voice-btn.log-ai-composer__icon-btn--active {
-  transform: translateY(-50%);
 }
 
 .log-manual-secondary__field-label {

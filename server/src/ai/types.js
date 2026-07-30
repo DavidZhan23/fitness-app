@@ -14,7 +14,7 @@
  * @property {string} name
  * @property {number} quantity
  * @property {string} unit
- * @property {number} kcal
+ * @property {number} kcal 单位热量（该 unit 的 kcal/单位；行总热 = quantity × kcal）
  */
 
 /**

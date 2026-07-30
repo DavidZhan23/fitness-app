@@ -13,9 +13,6 @@ import { TodayPage } from './pages/TodayPage'
 import { WeeklyReportsPage } from './pages/WeeklyReportsPage'
 import { CommunityWeeklyReportPage, WeeklyReportPage } from './pages/WeeklyReportPage'
 
-const CalendarPage = lazy(() =>
-  import('./pages/CalendarPage').then((m) => ({ default: m.CalendarPage })),
-)
 const LogPage = lazy(() =>
   import('./pages/LogPage.tsx').then((m) => ({ default: m.LogPage })),
 )
@@ -97,7 +94,7 @@ export default function App() {
                 }
               >
                 <Route index element={<TodayPage />} />
-                <Route path="calendar" element={<CalendarPage />} />
+                <Route path="calendar" element={<Navigate to="/" replace />} />
                 <Route path="community" element={<CommunityPage />} />
                 <Route path="community/inbox" element={<CommunityInboxPage />} />
                 <Route path="community/followers" element={<CommunityFollowersPage />} />

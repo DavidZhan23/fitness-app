@@ -12,6 +12,7 @@ import {
   parseNameQuantityUnit,
   saveTemplatesFromItems,
   sortTemplatesForPicker,
+  sumAiItemsLineKcal,
   toFinitePositive,
   validateAiItems,
 } from '../logTemplate'
@@ -324,19 +325,34 @@ describe('saveTemplatesFromItems', () => {
 })
 
 describe('validateAiItems', () => {
-  it('validates all fields', () => {
+  it('validates all fields and stores line kcal as quantity × per-unit', () => {
     const result = validateAiItems([
       {
         name: '牛肉面',
         quantityInput: '1',
         unit: '碗',
-        kcalInput: '650',
+        kcalPerUnitInput: '650',
+      },
+      {
+        name: '鸡蛋',
+        quantityInput: '2',
+        unit: '个',
+        kcalPerUnitInput: '78',
       },
     ])
     expect(result.ok).toBe(true)
     if (result.ok) {
+      expect(result.items[0]).toMatchObject({
+        kcal: 650,
+        kcalPerUnit: 650,
+      })
+      expect(result.items[1]).toMatchObject({
+        kcal: 156,
+        kcalPerUnit: 78,
+      })
       expect(aiItemsToLogPayload(result.items)).toEqual([
         { name: '牛肉面 1碗', kcal: 650 },
+        { name: '鸡蛋 2个', kcal: 156 },
       ])
     }
   })
@@ -344,8 +360,25 @@ describe('validateAiItems', () => {
   it('rejects invalid item', () => {
     expect(
       validateAiItems([
-        { name: '', quantityInput: '1', unit: '碗', kcalInput: '650' },
+        { name: '', quantityInput: '1', unit: '碗', kcalPerUnitInput: '650' },
       ]).ok,
     ).toBe(false)
+  })
+})
+
+describe('quantity → line kcal sync (computeDraftKcal / sumAiItemsLineKcal)', () => {
+  it('resyncs line and total when quantity changes at fixed per-unit', () => {
+    const perUnit = 1.65
+    expect(computeDraftKcal(100, perUnit)).toBe(165)
+    expect(computeDraftKcal(150, perUnit)).toBe(248)
+
+    const items = [
+      { quantityInput: '100', kcalPerUnitInput: String(perUnit) },
+      { quantityInput: '2', kcalPerUnitInput: '78' },
+    ]
+    expect(sumAiItemsLineKcal(items)).toBe(165 + 156)
+
+    items[0] = { quantityInput: '150', kcalPerUnitInput: String(perUnit) }
+    expect(sumAiItemsLineKcal(items)).toBe(248 + 156)
   })
 })

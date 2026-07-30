@@ -1,23 +1,35 @@
 # 文档中心
 
-健身打卡 PWA 的文档导航入口。按角色直达，不重复流程说明。
+按场景点开即可。**不必通读全库。**
 
-## 快速导航
+## 必读（日常）
 
-| 场景 | 先看 | 再看 |
-|------|------|------|
-| 本地启动项目 | [GETTING-START.md](GETTING-START.md) | [../CONTRIBUTING.md](../CONTRIBUTING.md) |
-| Cursor 协作开发 | [ai-playbook.md](ai-playbook.md) | [milestones/README.md](milestones/README.md) |
-| API / 表结构变更 | [architecture/api-contract.md](architecture/api-contract.md) | [architecture/overview.md](architecture/overview.md) |
-| 手动部署与回滚 | [architecture/deploy.md](architecture/deploy.md) | [ops/README.md](ops/README.md) |
-| 需求管理 | [requirements/README.md](requirements/README.md) | `npm run req:list` |
-
-## 文档分区
-
-| 目录 | 说明 |
+| 场景 | 文档 |
 |------|------|
-| [architecture/](architecture/) | 架构、API 契约、部署说明 |
-| [milestones/](milestones/) | 功能里程碑与验收标准 |
-| [requirements/](requirements/) | GitHub Issue 需求流 |
-| [ops/](ops/) | 运维手册 |
-| [decisions/](decisions/) | ADR 决策记录 |
+| 本地跑起来 | [GETTING-START.md](GETTING-START.md) |
+| 开发闭环（grill → 实现 → PR） | [ai-playbook.md](ai-playbook.md) |
+| 改 API / 表 | [architecture/api-contract.md](architecture/api-contract.md)（先 TL;DR）→ [overview.md](architecture/overview.md) |
+| 部署 | [architecture/deploy.md](architecture/deploy.md) |
+
+闭环触发词 / skills 路径：`bash scripts/dev-loop.sh` · [`.cursor/skills/`](../.cursor/skills/)
+
+## 按需
+
+| 场景 | 文档 |
+|------|------|
+| 进行中的功能规格 | [milestones/README.md](milestones/README.md)（仅 Active） |
+| 历史 milestone | [milestones/archive.md](milestones/archive.md) |
+| 贡献说明 | [../CONTRIBUTING.md](../CONTRIBUTING.md) |
+| 运维细项（DB / 腾讯云 / PWA） | [ops/README.md](ops/README.md) |
+| 架构决策 ADR | [decisions/README.md](decisions/README.md) |
+| GitHub Issue 需求 | [requirements/README.md](requirements/README.md) · `npm run req:list` |
+
+## 目录说明
+
+| 目录 | 用途 |
+|------|------|
+| `architecture/` | 系统怎么构成（精简） |
+| `milestones/` | 功能规格；Active 进主表，done 进 archive |
+| `ops/` | 运维手册（按场景，非必读） |
+| `decisions/` | 会后悔才记的 ADR |
+| `requirements/` | Issue 需求流 |

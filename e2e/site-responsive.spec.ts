@@ -38,12 +38,6 @@ const SITE_ROUTES: SiteRoute[] = [
         label: '记运动',
         getLocator: (p) => p.getByRole('link', { name: '+ 记运动' }),
       },
-    ],
-  },
-  {
-    name: 'calendar',
-    path: '/calendar',
-    anchors: [
       {
         label: '打卡墙',
         getLocator: (p) => p.getByRole('heading', { name: '打卡墙' }),
@@ -54,8 +48,8 @@ const SITE_ROUTES: SiteRoute[] = [
       },
     ],
     bottomAnchor: {
-      label: '返回今日',
-      getLocator: (p) => p.getByRole('link', { name: '返回今日' }),
+      label: '墙样式设置提示',
+      getLocator: (p) => p.getByText(/打卡墙样式可在/),
     },
   },
   {
@@ -306,23 +300,14 @@ for (const viewport of RESPONSIVE_VIEWPORTS) {
 
       const manual = page.getByRole('region', { name: '手动填写' })
       const nameInput = manual.getByRole('textbox', { name: '吃了什么？' })
-      const voiceButton = manual.getByRole('button', { name: '语音输入' })
       await expect(nameInput).toBeVisible()
-      await expect(voiceButton).toBeVisible()
+      await expect(manual.getByRole('button', { name: '语音输入' })).toHaveCount(0)
       await expect(manual.getByRole('button', { name: '拍照识别营养表' })).toHaveCount(0)
       await expect(manual.getByRole('button', { name: '展开营养表图片菜单' })).toHaveCount(
         0,
       )
       await expect(manual.locator('input[type="file"]')).toHaveCount(0)
 
-      const nameInputBox = await nameInput.boundingBox()
-      const voiceButtonBox = await voiceButton.boundingBox()
-      expect(nameInputBox, `${composerLabel} name input box`).not.toBeNull()
-      expect(voiceButtonBox, `${composerLabel} voice button box`).not.toBeNull()
-      expect(
-        voiceButtonBox!.x + voiceButtonBox!.width,
-        `${composerLabel} voice button should stay inside name input`,
-      ).toBeLessThanOrEqual(nameInputBox!.x + nameInputBox!.width + 1)
       await assertStandaloneNoHorizontalOverflow(page, composerLabel)
     })
   })

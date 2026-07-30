@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CommunityDaySummary } from '../components/CommunityDaySummary'
 import { CommunityDayStatus } from '../components/CommunityDayStatus'
 import { CommunityWeeklyReportsSection } from '../components/CommunityWeeklyReportsSection'
@@ -59,7 +59,7 @@ function resolveWallStyle(
 }
 
 export function CommunityUserPage() {
-  const { profile } = useAuth()
+  const { user, profile } = useAuth()
   const { userId } = useParams<{ userId: string }>()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -315,6 +315,14 @@ export function CommunityUserPage() {
         }}
       />
     ) : null
+
+  if (user?.id && userId && user.id === userId) {
+    const urlDate = resolveDateFromSearchParams(searchParams, null)
+    const to = urlDate
+      ? `/?date=${encodeURIComponent(urlDate)}`
+      : '/'
+    return <Navigate to={to} replace />
+  }
 
   if (loading && !snapshot) {
     return <p className="py-12 text-center text-muted">加载中…</p>

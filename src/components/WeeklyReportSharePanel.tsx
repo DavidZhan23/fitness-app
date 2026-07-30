@@ -80,7 +80,7 @@ export function WeeklyReportSharePanel({ report, onReportChange }: Props) {
       </p>
       {message && <p role="status">{message}</p>}
       <div>
-        <Link to="/calendar">查看详细记录</Link>
+        <Link to="/">查看详细记录</Link>
         <Link to="/settings">返回设置</Link>
       </div>
     </footer>
