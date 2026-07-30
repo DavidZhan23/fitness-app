@@ -1,7 +1,10 @@
-import { getDeepSeekApiKey } from './deepseekText.js'
+import {
+  deepSeekNonThinkingExtras,
+  getDeepSeekApiKey,
+  resolveDeepSeekModel,
+} from './deepseekText.js'
 
 const API_URL = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/chat/completions'
-const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
 const TIMEOUT_MS = Math.min(Number(process.env.DEEPSEEK_TIMEOUT_MS || 12_000), 20_000)
 
 const TRIGGERS = new Set([
@@ -104,10 +107,11 @@ async function requestDeepSeekFox(request, summary) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: MODEL,
+        model: resolveDeepSeekModel(),
         max_tokens: 240,
         temperature: 0.82,
         response_format: { type: 'json_object' },
+        ...deepSeekNonThinkingExtras(),
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: buildUserPrompt(request, summary) },

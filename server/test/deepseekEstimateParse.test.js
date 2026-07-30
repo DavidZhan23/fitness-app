@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildEstimateResult,
+  DEFAULT_DEEPSEEK_MODEL,
+  deepSeekNonThinkingExtras,
   defaultReason,
   EXERCISE_NET_ACTIVITY_RULES,
   FALLBACK_REASON,
@@ -8,7 +10,21 @@ import {
   normalizeEstimateItems,
   normalizeReason,
   parseEstimatePayload,
+  resolveDeepSeekModel,
 } from '../src/ai/providers/deepseekText.js'
+
+describe('resolveDeepSeekModel', () => {
+  it('defaults to v4-flash and remaps retired aliases', () => {
+    expect(resolveDeepSeekModel('')).toBe(DEFAULT_DEEPSEEK_MODEL)
+    expect(resolveDeepSeekModel('deepseek-chat')).toBe('deepseek-v4-flash')
+    expect(resolveDeepSeekModel('deepseek-reasoner')).toBe('deepseek-v4-flash')
+    expect(resolveDeepSeekModel('deepseek-v4-pro')).toBe('deepseek-v4-pro')
+  })
+
+  it('disables thinking for chat-style requests', () => {
+    expect(deepSeekNonThinkingExtras()).toEqual({ thinking: { type: 'disabled' } })
+  })
+})
 
 describe('EXERCISE_NET_ACTIVITY_RULES', () => {
   it('requires net activity kcal excluding basal metabolism', () => {
