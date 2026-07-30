@@ -1,11 +1,45 @@
 /**
- * DeepSeek 文本估算 provider（deepseek-chat，非 reasoner）
+ * DeepSeek 文本估算 provider（默认 deepseek-v4-flash，非 thinking）
+ *
+ * 2026-07-24 起 deepseek-chat / deepseek-reasoner 已停用。
  */
 
 const API_URL =
   process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/chat/completions'
-const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
+/** 对齐旧 deepseek-chat：快、非思考 */
+export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-v4-flash'
 const TIMEOUT_MS = Number(process.env.DEEPSEEK_TIMEOUT_MS || 25_000)
+
+/**
+ * 解析可用模型名；旧别名自动映射，避免服务器 .env 未改时继续 400。
+ * @param {string} [raw]
+ */
+export function resolveDeepSeekModel(raw = process.env.DEEPSEEK_MODEL) {
+  const model = String(raw ?? '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+  if (!model || model === 'deepseek-chat') {
+    if (model === 'deepseek-chat') {
+      console.warn(
+        '[deepseek] deepseek-chat 已于 2026-07-24 停用，自动改用 deepseek-v4-flash',
+      )
+    }
+    return DEFAULT_DEEPSEEK_MODEL
+  }
+  if (model === 'deepseek-reasoner') {
+    console.warn(
+      '[deepseek] deepseek-reasoner 已于 2026-07-24 停用，自动改用 deepseek-v4-flash（thinking disabled）',
+    )
+    return DEFAULT_DEEPSEEK_MODEL
+  }
+  return model
+}
+
+/** V4 请求体附加项：显式关闭 thinking，对齐旧 chat 行为 */
+export function deepSeekNonThinkingExtras() {
+  return { thinking: { type: 'disabled' } }
+}
+
 const MAX_HTTP_RETRIES = 3
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503])
 const MAX_TOKENS = 768
@@ -318,6 +352,19 @@ function mapDeepSeekHttpError(status, data) {
   if (status === 503 || status === 502 || status === 500) {
     return 'DeepSeek 服务暂时繁忙，请稍后重试'
   }
+  if (
+    status === 400 &&
+    (msg.includes('Model Not Exist') ||
+      msg.includes('model') ||
+      msg.includes('Invalid') ||
+      msg.includes('deepseek-chat') ||
+      msg.includes('deepseek-reasoner'))
+  ) {
+    return 'DeepSeek 模型名已失效（deepseek-chat 已停用），请将 DEEPSEEK_MODEL 改为 deepseek-v4-flash 并重建 api'
+  }
+  if (status === 400 && msg) {
+    return `AI 服务返回错误 (400)：${msg}`
+  }
   return `AI 服务返回错误 (${status})`
 }
 
@@ -390,9 +437,10 @@ function contentPreview(data) {
 
 function buildPayload({ type, description, profile, mode }) {
   const base = {
-    model: MODEL,
+    model: resolveDeepSeekModel(),
     max_tokens: MAX_TOKENS,
     temperature: 0.1,
+    ...deepSeekNonThinkingExtras(),
   }
 
   if (mode === 'minimal') {
@@ -448,9 +496,12 @@ export async function estimateKcalFromDescription(input) {
     throw err
   }
 
-  if (MODEL.includes('reasoner')) {
+  const model = resolveDeepSeekModel()
+  if (model.includes('reasoner') || model.includes('pro')) {
     console.warn(
-      '[deepseek] DEEPSEEK_MODEL 含 reasoner，易变慢或返回空内容，建议改为 deepseek-chat',
+      '[deepseek] 当前模型',
+      model,
+      '；饮食/运动估算建议使用 deepseek-v4-flash 并保持 thinking disabled',
     )
   }
 

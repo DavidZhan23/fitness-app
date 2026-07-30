@@ -4,12 +4,15 @@
  * 所有函数均为纯函数（除 explainWithDeepSeek 需要网络），可单独单测。
  */
 
-import { getDeepSeekApiKey } from './ai/providers/deepseekText.js'
+import {
+  deepSeekNonThinkingExtras,
+  getDeepSeekApiKey,
+  resolveDeepSeekModel,
+} from './ai/providers/deepseekText.js'
 
 const TZ = process.env.DISPLAY_TIMEZONE || 'Asia/Shanghai'
 const DEEPSEEK_API_URL =
   process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/chat/completions'
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
 const DEEPSEEK_TIMEOUT_MS = Number(process.env.DEEPSEEK_TIMEOUT_MS || 30_000)
 
 /** 样本量低于此值则标"数据不足"，不喂给 DeepSeek */
@@ -508,9 +511,10 @@ async function callDeepSeek(prompt, apiKey) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        model: resolveDeepSeekModel(),
         max_tokens: 512,
         temperature: 0.3,
+        ...deepSeekNonThinkingExtras(),
         messages: [{ role: 'user', content: prompt }],
       }),
       signal: controller.signal,
