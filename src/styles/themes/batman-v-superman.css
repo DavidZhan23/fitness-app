@@ -1,0 +1,279 @@
+/* 超蝙对决 / Ink Duel */
+/*
+ * 宣纸灰白底 + 墨黑正文；朱砂红承担主操作、饮食与盈余，
+ * 石墨黑灰承担运动与缺口。主卡使用用户提供海报扩展的横版水墨图。
+ */
+[data-style='batman-v-superman'] {
+  --accent-pop: #a32933;
+  --accent-pop-strong: #741923;
+  --accent-pop-soft: #f0dadd;
+  --accent-pop-ring: #c45e66;
+
+  --color-brand: #a32933;
+  --color-brand-dark: #67171f;
+  --color-surface: #e8e4dd;
+  --color-card: #f6f3ed;
+  --color-muted: #625c58;
+  --color-tabbar: #ded9d1;
+
+  --surface-page: #e8e4dd;
+  --surface-card: #f6f3ed;
+  --surface-card-soft: #ebe6de;
+  --surface-card-blue: #dfe1e3;
+  --surface-card-pink: #f0dadd;
+  --surface-card-border: #c7beb5;
+
+  --text-ink: #242323;
+  --text-primary: #242323;
+  --text-secondary: #4f4b48;
+  --text-muted: #625c58;
+  --text-link: #67171f;
+  --text-on-accent: #fffaf7;
+
+  /* 石墨墨阶：运动与缺口 */
+  --accent-exercise: #4c5258;
+  --accent-exercise-strong: #2e3237;
+  --accent-exercise-soft: #dfe1e3;
+
+  /* 朱砂墨阶：饮食与盈余 */
+  --accent-meal: #a32933;
+  --accent-meal-strong: #741923;
+  --accent-meal-soft: #f0dadd;
+
+  --danger: #efd5d8;
+  --danger-strong: #8d1f2a;
+
+  --btn-primary-bg: #8d1f2a;
+  --btn-primary-hover: #67171f;
+  --btn-primary-text: #fffaf7;
+
+  --heatmap-empty: #f6f3ed;
+  --heatmap-exercise-1: #ecebea;
+  --heatmap-exercise-2: #c9c9c8;
+  --heatmap-exercise-3: #85898d;
+  --heatmap-exercise-4: #3f4449;
+  --heatmap-surplus-1: #f5e8e7;
+  --heatmap-surplus-2: #e8bec0;
+  --heatmap-surplus-3: #c7666d;
+  --heatmap-surplus-4: #8d1f2a;
+  --heatmap-day-selected-ring: #8d1f2a;
+  --heatmap-day-selected-shadow:
+    0 0 12px rgb(141 31 42 / 0.34),
+    0 0 20px rgb(36 35 35 / 0.12);
+  --heatmap-day-today-label-text: #67171f;
+
+  --text-strong: var(--text-primary);
+  --app-shell-bg: var(--surface-page);
+  --app-shell-overlay: transparent;
+  --tabbar-border: #c7beb5;
+  --tabbar-active-bg: #f6f3ed;
+  --notify-active-ring: rgb(141 31 42 / 0.42);
+
+  --surface-panel-bg: var(--surface-card);
+  --surface-panel-border: var(--surface-card-border);
+  --surface-panel-soft-bg: var(--surface-card-soft);
+  --surface-panel-soft-hover: #ded8cf;
+  --input-bg: #fbf9f5;
+  --input-ring: #c7beb5;
+
+  --hero-card-bg:
+    radial-gradient(circle at 88% 20%, rgb(163 41 51 / 0.14), transparent 28%),
+    linear-gradient(140deg, #f6f3ed 0%, #e6e1d9 62%, #d8d1c8 100%);
+  --hero-card-ring: #9d938a;
+  --hero-card-shadow:
+    0 16px 34px rgb(55 45 41 / 0.18),
+    0 0 0 1px rgb(141 31 42 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --hero-card-atmosphere:
+    linear-gradient(
+      90deg,
+      rgb(246 243 237 / 0.92) 0%,
+      rgb(246 243 237 / 0.78) 34%,
+      rgb(246 243 237 / 0.24) 58%,
+      transparent 78%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(246 243 237 / 0.2) 0%,
+      transparent 52%,
+      rgb(30 28 28 / 0.08) 100%
+    );
+  --hero-card-image: url('/theme/batman-v-superman-hero.jpg');
+  --hero-card-image-opacity: 1;
+  --hero-card-image-blur: 0;
+  --hero-card-image-blend: normal;
+  --hero-card-image-filter: saturate(0.96) contrast(1.03) brightness(0.98);
+  --hero-card-image-position: center;
+  --hero-card-image-top: 0;
+  --hero-card-image-right: 0;
+  --hero-card-image-size: 100%;
+  --hero-card-image-mask: none;
+
+  --hero-card-corner-art: var(--hero-card-image);
+  --hero-card-corner-opacity: var(--hero-card-image-opacity);
+  --hero-card-corner-blur: var(--hero-card-image-blur);
+  --hero-card-corner-blend: var(--hero-card-image-blend);
+  --hero-card-corner-filter: var(--hero-card-image-filter);
+  --hero-card-corner-top: var(--hero-card-image-top);
+  --hero-card-corner-right: var(--hero-card-image-right);
+  --hero-card-corner-width: var(--hero-card-image-size);
+  --hero-card-corner-mask: var(--hero-card-image-mask);
+
+  --hero-deficit-positive: #2e3237;
+  --hero-deficit-surplus: #8d1f2a;
+  --hero-deficit-neutral: #5f5955;
+  --hero-stat-bg: rgb(246 243 237 / 0.84);
+  --hero-stat-ring: rgb(85 78 73 / 0.24);
+  --hero-stat-shadow: 0 12px 24px rgb(48 40 37 / 0.12);
+  --hero-stat-blur: 10px;
+  --hero-stat-metabolism-bg: rgb(235 230 222 / 0.9);
+  --hero-stat-metabolism-value: #242323;
+  --hero-stat-exercise-bg: rgb(223 225 227 / 0.9);
+  --hero-stat-exercise-value: #2e3237;
+  --hero-stat-meal-bg: rgb(240 218 221 / 0.9);
+  --hero-stat-meal-value: #741923;
+
+  --calendar-stat-exercise-bg: #dfe1e3;
+  --calendar-stat-exercise-border: #85898d;
+  --calendar-stat-exercise-value: #2e3237;
+  --calendar-stat-deficit-bg: #dfe1e3;
+  --calendar-stat-deficit-border: #85898d;
+  --calendar-stat-deficit-value: #2e3237;
+
+  --quick-action-exercise-bg: #dfe1e3;
+  --quick-action-exercise-ring: #85898d;
+  --quick-action-exercise-text: #2e3237;
+  --quick-action-meal-bg: #f0dadd;
+  --quick-action-meal-ring: #c7666d;
+  --quick-action-meal-text: #741923;
+
+  --achievement-exercise-border: #85898d;
+  --achievement-exercise-bg: #dfe1e3;
+  --achievement-exercise-icon-bg: #d4d6d8;
+  --achievement-meal-border: #c7666d;
+  --achievement-meal-bg: #f0dadd;
+  --achievement-meal-icon-bg: #e8bec0;
+
+  --community-hero-bg:
+    radial-gradient(circle at 88% 12%, rgb(163 41 51 / 0.12), transparent 30%),
+    linear-gradient(135deg, #f6f3ed 0%, #ebe6de 56%, #f0dadd 100%);
+  --community-hero-border: #9d938a;
+  --community-segment-bg: #ded9d1;
+  --community-segment-border: #c7beb5;
+  --community-segment-active-bg: #8d1f2a;
+  --community-segment-active-text: #fffaf7;
+  --community-segment-active-ring: #67171f;
+  --community-segment-badge-bg: #f0dadd;
+  --community-segment-badge-text: #741923;
+
+  --community-member-card-bg: #f6f3ed;
+  --community-member-card-border: #c7beb5;
+  --community-member-card-hover-bg: #ebe6de;
+  --community-member-card-hover-ring: #9d938a;
+  --community-avatar-bg: #3f4449;
+  --community-avatar-text: #fffaf7;
+  --community-avatar-ring: #85898d;
+  --community-avatar-self-bg: #8d1f2a;
+  --community-avatar-self-text: #fffaf7;
+  --community-avatar-self-ring: #c7666d;
+  --community-stat-exercise-bg: #dfe1e3;
+  --community-stat-exercise-text: #2e3237;
+  --community-stat-meal-bg: #f0dadd;
+  --community-stat-meal-text: #741923;
+  --community-card-footer-border: #c7beb5;
+  --community-hidden-panel-bg: #f6f3ed;
+  --community-hidden-panel-border: #c7beb5;
+
+  --community-visibility-on-bg: #dfe1e3;
+  --community-visibility-on-text: #2e3237;
+  --community-visibility-on-ring: #85898d;
+  --community-visibility-on-dot: #2e3237;
+  --community-visibility-off-bg: #f0dadd;
+  --community-visibility-off-ring: #c7666d;
+  --community-visibility-off-dot: #8d1f2a;
+  --community-drag-handle-bg: #ebe6de;
+  --community-drag-handle-ring: #c7beb5;
+  --community-drag-handle-text: #8d8580;
+  --community-drag-handle-hover-bg: #dfe1e3;
+  --community-drag-handle-active-bg: #3f4449;
+  --community-drag-handle-active-text: #fffaf7;
+
+  --install-guide-tip-bg: #f6f3ed;
+  --install-guide-tip-border: #c7beb5;
+  --install-guide-tip-text: #5f5955;
+  --install-guide-note-bg: #f0dadd;
+  --install-guide-note-border: #c7666d;
+  --install-guide-note-text: #741923;
+  --follow-btn-idle-bg: #8d1f2a;
+  --follow-btn-idle-bg-hover: #67171f;
+  --follow-btn-idle-text: #fffaf7;
+  --follow-btn-following-bg: #ebe6de;
+  --follow-btn-following-text: #5f5955;
+  --follow-btn-following-ring: #c7beb5;
+  --day-like-idle-bg: #f6f3ed;
+  --day-like-idle-text: #741923;
+  --day-like-idle-ring: #c7666d;
+  --day-like-idle-ring-hover: #a32933;
+  --day-like-active-bg: #e8bec0;
+  --day-like-active-text: #67171f;
+  --day-like-active-ring: #a32933;
+
+  --log-template-chip-bg: #f6f3ed;
+  --log-template-chip-bg-hover: #dfe1e3;
+  --log-template-chip-ring: #9fa2a5;
+  --log-template-chip-text: #242323;
+  --log-template-chip-kcal: #625c58;
+  --log-ai-card-bg: #dfe1e3;
+  --log-ai-card-ring: #85898d;
+  --log-ai-card-border: #85898d;
+  --log-ai-btn-bg: #3f4449;
+  --log-ai-btn-bg-hover: #2e3237;
+  --log-ai-btn-text: #fffaf7;
+  --log-ai-input-bg: #fbf9f5;
+  --log-ai-input-ring: #9fa2a5;
+  --log-meal-mode-bg: #ded9d1;
+  --log-meal-mode-active-bg: #e8bec0;
+  --log-meal-mode-active-text: #67171f;
+  --log-meal-mode-idle-text: #5f5955;
+  --log-meal-mode-idle-hover-text: #741923;
+  --log-package-kcal-bg: #f0dadd;
+  --log-package-kcal-text: #741923;
+  --log-package-kcal-ring: #c7666d;
+
+  --template-add-border: #9fa2a5;
+  --template-add-text: #2e3237;
+  --template-add-hover-bg: #dfe1e3;
+  --template-tab-active-bg: #3f4449;
+  --template-tab-active-text: #fffaf7;
+  --template-tab-active-ring: #2e3237;
+  --template-tab-inactive-bg: #f6f3ed;
+  --template-tab-inactive-text: #5f5955;
+  --template-tab-inactive-ring: #c7beb5;
+  --template-tab-inactive-hover-bg: #ebe6de;
+  --template-tab-exercise-active-bg: #dfe1e3;
+  --template-tab-exercise-active-text: #2e3237;
+  --template-tab-exercise-active-ring: #85898d;
+  --template-tab-meal-active-bg: #f0dadd;
+  --template-tab-meal-active-text: #741923;
+  --template-tab-meal-active-ring: #c7666d;
+
+  --bmr-formula-panel-bg: #ebe6de;
+  --bmr-formula-panel-border: #c7beb5;
+  --bmr-formula-card-bg: #f6f3ed;
+  --bmr-formula-card-ring: #9d938a;
+  --bmr-formula-text: #242323;
+  --bmr-formula-subtitle: #5f5955;
+  --bmr-formula-legend: #5f5955;
+  --bmr-formula-sex-male: var(--accent-exercise-strong);
+  --bmr-formula-sex-female: var(--accent-meal-strong);
+  --bmr-formula-var-bg: #dfe1e3;
+  --bmr-formula-var-text: #2e3237;
+  --bmr-formula-constant: #8d1f2a;
+
+  --settings-menu-text: var(--text-link);
+  --settings-menu-chevron: var(--text-muted);
+  --btn-sign-out-text: #67171f;
+  --btn-sign-out-bg: #f0dadd;
+  --btn-sign-out-border: #c7666d;
+  --btn-sign-out-hover-bg: #e8bec0;
+}

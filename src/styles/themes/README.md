@@ -15,6 +15,7 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 | `eva-unit02.css` | `[data-style='eva-unit02']` | 烈焰二号机 |
 | `gundam-hangar.css` | `[data-style='gundam-hangar']` | 格纳库提坦斯 |
 | `jojo-stardust-duel.css` | `[data-style='jojo-stardust-duel']` | 时停入侵 |
+| `batman-v-superman.css` | `[data-style='batman-v-superman']` | 超蝙对决 |
 
 ## Edit workflow
 

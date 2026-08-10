@@ -19,6 +19,7 @@ export type AppStyle =
   | 'eva-unit02'
   | 'gundam-hangar'
   | 'jojo-stardust-duel'
+  | 'batman-v-superman'
   | 'soy-tea'
   | 'wood-zen'
 
@@ -27,6 +28,7 @@ const HERO_COLLAB_STYLES: AppStyle[] = [
   'eva-unit02',
   'gundam-hangar',
   'jojo-stardust-duel',
+  'batman-v-superman',
 ]
 
 interface StyleContextValue {
@@ -55,6 +57,7 @@ function normalizeStyle(value: string | null): AppStyle {
   if (value === 'eva-unit02') return 'eva-unit02'
   if (value === 'gundam-hangar') return 'gundam-hangar'
   if (value === 'jojo-stardust-duel') return 'jojo-stardust-duel'
+  if (value === 'batman-v-superman') return 'batman-v-superman'
   // 已下线「深海能量 2」，旧 cookie 迁移到深海能量
   if (value === 'abyssal-jade') return 'default'
   if (value === 'soy-tea') return 'soy-tea'
