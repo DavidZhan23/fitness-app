@@ -3850,7 +3850,7 @@ select:focus-visible {
   background: #101b3d;
 }
 
-/* 水墨对决：记饮食页朱砂 chip / 记运动页石墨 hover */
+/* 超蝙对决：记饮食页朱砂 chip / 记运动页石墨 hover */
 [data-style='batman-v-superman'] .page-standalone[data-log-kind='meal'],
 [data-style='batman-v-superman'] .templates-page[data-template-kind='meal'] {
   --log-template-chip-bg: #f6f3ed;
@@ -4689,7 +4689,7 @@ select:focus-visible {
   box-shadow: 0 0 0 1px rgb(255 243 90 / 0.55);
 }
 
-/* 水墨对决：宣纸底 + 墨黑 / 朱砂预览选项 */
+/* 超蝙对决：宣纸底 + 墨黑 / 朱砂预览选项 */
 .style-option-batman-v-superman {
   border-color: #9d938a;
   background: #f6f3ed;
@@ -5075,7 +5075,7 @@ select:focus-visible {
   mask-image: none;
 }
 
-/* 水墨对决：联名 ON 使用扩展后的 16:9 宣纸水墨图；OFF 回退到浅纸纹氛围 */
+/* 超蝙对决：联名 ON 使用扩展后的 16:9 宣纸水墨图；OFF 回退到浅纸纹氛围 */
 [data-style='batman-v-superman'] .theme-hero-card {
   border-top: 2px solid #8d1f2a;
 }

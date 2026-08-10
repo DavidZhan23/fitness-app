@@ -244,11 +244,11 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       defaultEnabled: true,
     },
     heroGreeting: {
-      titleTemplate: '墨意已醒，{name}。',
+      titleTemplate: '准备好迎接你的 fitness day 了吗？',
       subtitle: '今天，让力量落在每一次记录。',
       fontFamily:
         '"Songti SC", "STSong", "Noto Serif CJK SC", "PingFang SC", serif',
-      titleSize: 'clamp(38px, 6vw, 54px)',
+      titleSize: 'clamp(30px, 5vw, 46px)',
       fontWeight: '760',
       lineHeight: '1.08',
       letterSpacing: '0.018em',

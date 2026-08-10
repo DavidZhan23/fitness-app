@@ -80,7 +80,7 @@ export const STYLE_OPTIONS: StyleOption[] = [
     id: 'batman-v-superman',
     group: 'light',
     sortHue: 354,
-    title: '水墨对决',
+    title: '超蝙对决',
     description: '宣纸灰白底、墨黑运动缺口、朱砂红饮食盈余、水墨双雄主卡',
     swatchClassName: 'style-swatch-batman-v-superman',
     optionClassName: 'style-option-batman-v-superman',
