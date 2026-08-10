@@ -92,9 +92,14 @@ for (const file of THEME_FILES) {
   failed += checkPair('primary-btn', primaryText, primaryBg)
   failed += checkPair('bmr-value/panel', bmrValue, panel)
 
-  const isLight = ['lavender', 'sakura', 'sakura-blush', 'active-mint', 'soy-tea'].includes(
-    slug,
-  )
+  const isLight = [
+    'lavender',
+    'sakura',
+    'sakura-blush',
+    'active-mint',
+    'soy-tea',
+    'batman-v-superman',
+  ].includes(slug)
   if (isLight) {
     for (const [label, token] of [
       ['primary', 'text-primary'],

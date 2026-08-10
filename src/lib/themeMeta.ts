@@ -236,6 +236,30 @@ export const themeMeta: Record<AppStyle, ThemeMeta> = {
       textShadow: '0 0 12px rgb(49 81 201 / 0.22)',
     },
   },
+  'batman-v-superman': {
+    heroCollab: {
+      label: '展示水墨双雄',
+      imageUrl: '/theme/batman-v-superman-hero.jpg',
+      layout: 'cover',
+      defaultEnabled: true,
+    },
+    heroGreeting: {
+      titleTemplate: '墨意已醒，{name}。',
+      subtitle: '今天，让力量落在每一次记录。',
+      fontFamily:
+        '"Songti SC", "STSong", "Noto Serif CJK SC", "PingFang SC", serif',
+      titleSize: 'clamp(38px, 6vw, 54px)',
+      fontWeight: '760',
+      lineHeight: '1.08',
+      letterSpacing: '0.018em',
+      titleColor: '#242323',
+      nameColor: '#8d1f2a',
+      subtitleColor: '#5f5955',
+      layout: 'single-line',
+      background: 'transparent',
+      textShadow: '0 1px 0 rgb(255 255 255 / 0.42)',
+    },
+  },
   'soy-tea': {
     heroGreeting: {
       titleTemplate: '清茶微醒，{name}。',
@@ -285,4 +309,3 @@ export function getHeroCollabConfig(style: AppStyle): HeroCollabConfig | undefin
 export function styleSupportsHeroCollab(style: AppStyle): boolean {
   return getHeroCollabConfig(style) != null
 }
-

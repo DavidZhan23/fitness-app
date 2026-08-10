@@ -9,6 +9,7 @@
 | [M-2026-06-user-weekly-report](M-2026-06-user-weekly-report.md) | `main` |
 | [M-2026-07-today-wall-merge](M-2026-07-today-wall-merge.md) | `dev/huanghongli` |
 | [M-2026-07-ai-log-no-voice-per-unit-kcal](M-2026-07-ai-log-no-voice-per-unit-kcal.md) | `dev/huanghongli` |
+| [M-2026-08-batman-v-superman-theme](M-2026-08-batman-v-superman-theme.md) | `dev/huanghongli` |
 
 **Status 取值：** `active` | `done` | `cancelled`（`npm run check:milestones` 校验文件头 Status）
 

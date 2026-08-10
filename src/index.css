@@ -847,6 +847,16 @@ body {
   color: #fff35a;
 }
 
+[data-style='batman-v-superman'] .app-tabbar__link--active {
+  color: #fffaf7;
+  background-color: #8d1f2a;
+  box-shadow: inset 0 0 0 1px #67171f;
+}
+
+[data-style='batman-v-superman'] .app-tabbar__link--active .app-tabbar__icon {
+  color: #fffaf7;
+}
+
 [data-style='eva-unit02'] .app-tabbar__link--active {
   color: #fff6f2;
   background-color: #d7192a;
@@ -3840,6 +3850,20 @@ select:focus-visible {
   background: #101b3d;
 }
 
+/* 水墨对决：记饮食页朱砂 chip / 记运动页石墨 hover */
+[data-style='batman-v-superman'] .page-standalone[data-log-kind='meal'],
+[data-style='batman-v-superman'] .templates-page[data-template-kind='meal'] {
+  --log-template-chip-bg: #f6f3ed;
+  --log-template-chip-bg-hover: #f0dadd;
+  --log-template-chip-ring: #c7666d;
+  --log-template-chip-text: #242323;
+}
+
+[data-style='batman-v-superman'] .page-standalone[data-log-kind='exercise'] .log-template-chip:hover {
+  color: #2e3237;
+  background: #dfe1e3;
+}
+
 /* 烈焰二号机：记饮食页橙黄 chip / AI */
 [data-style='eva-unit02'] .page-standalone[data-log-kind='meal'],
 [data-style='eva-unit02'] .templates-page[data-template-kind='meal'] {
@@ -4665,6 +4689,22 @@ select:focus-visible {
   box-shadow: 0 0 0 1px rgb(255 243 90 / 0.55);
 }
 
+/* 水墨对决：宣纸底 + 墨黑 / 朱砂预览选项 */
+.style-option-batman-v-superman {
+  border-color: #9d938a;
+  background: #f6f3ed;
+}
+
+.style-option-batman-v-superman:hover {
+  background: #ebe6de;
+}
+
+.style-option-batman-v-superman--active {
+  border-color: #8d1f2a;
+  background: #f0dadd;
+  box-shadow: 0 0 0 1px rgb(141 31 42 / 0.38);
+}
+
 /* 主题预览卡文字：与卡片背景绑定，不随当前 data-style 全局字色变化 */
 .style-option-ocean:not(.style-option-ocean--active) .text-primary {
   color: #ecfdf5;
@@ -4796,6 +4836,16 @@ select:focus-visible {
   color: #c2c9e6;
 }
 
+.style-option-batman-v-superman .text-primary,
+.style-option-batman-v-superman--active .text-primary {
+  color: #242323;
+}
+
+.style-option-batman-v-superman .text-muted,
+.style-option-batman-v-superman--active .text-muted {
+  color: #5f5955;
+}
+
 /* 风格预览色条：避免被浅色主题全局重映射盖成灰 */
 .style-swatch-ocean {
   background: linear-gradient(90deg, #0f766e 0%, #14b8a6 42%, #06b6d4 100%);
@@ -4918,6 +4968,16 @@ select:focus-visible {
   background-color: transparent;
 }
 
+.style-swatch-batman-v-superman {
+  background: linear-gradient(135deg, #f6f3ed 0%, #b8b6b3 38%, #242323 62%, #a32933 100%);
+  box-shadow: inset 0 0 0 1px rgb(103 23 31 / 0.42);
+}
+
+[data-style='default'] .style-swatch-batman-v-superman {
+  background: linear-gradient(135deg, #f6f3ed 0%, #b8b6b3 38%, #242323 62%, #a32933 100%);
+  background-color: transparent;
+}
+
 .hero-collab-switch--eva.hero-collab-switch--on {
   background: #6b35d7;
   color: #fff;
@@ -4956,6 +5016,16 @@ select:focus-visible {
 .hero-collab-switch--jojo-stardust-duel.hero-collab-switch--off {
   background: rgb(49 81 201 / 0.22);
   color: #c2c9e6;
+}
+
+.hero-collab-switch--batman-v-superman.hero-collab-switch--on {
+  background: #8d1f2a;
+  color: #fffaf7;
+}
+
+.hero-collab-switch--batman-v-superman.hero-collab-switch--off {
+  background: #f0dadd;
+  color: #67171f;
 }
 
 [data-style='eva'] .theme-hero-card {
@@ -5003,6 +5073,41 @@ select:focus-visible {
   background-position: 72% center;
   -webkit-mask-image: none;
   mask-image: none;
+}
+
+/* 水墨对决：联名 ON 使用扩展后的 16:9 宣纸水墨图；OFF 回退到浅纸纹氛围 */
+[data-style='batman-v-superman'] .theme-hero-card {
+  border-top: 2px solid #8d1f2a;
+}
+
+[data-style='batman-v-superman'][data-hero-collab='on'] .theme-hero-card::after {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  opacity: 1;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 68% center;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+[data-style='batman-v-superman'] .theme-hero-card .text-muted {
+  color: #5f5955;
+}
+
+[data-style='batman-v-superman'] .theme-deficit-value {
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+[data-style='batman-v-superman'] .theme-hero-stat__label {
+  color: #5f5955;
+}
+
+[data-style='batman-v-superman'] .theme-hero-stat__divider {
+  border-top-color: color-mix(in oklab, #5f5955 42%, transparent);
+  opacity: 0.76;
 }
 
 [data-style='gundam-hangar'][data-hero-collab='on'] .theme-hero-card::after {
@@ -9056,6 +9161,23 @@ select:focus-visible {
   color: #c2c9e6;
 }
 
+[data-style='batman-v-superman'] .wall-style-option input[type='radio'] {
+  accent-color: #8d1f2a;
+}
+
+[data-style='batman-v-superman'] .wall-style-option:has(:checked) {
+  border-color: #8d1f2a;
+  background: #f0dadd;
+}
+
+[data-style='batman-v-superman'] .wall-style-option:has(:checked) .text-primary {
+  color: #242323;
+}
+
+[data-style='batman-v-superman'] .wall-style-option:has(:checked) .text-muted {
+  color: #5f5955;
+}
+
 [data-style='eva-unit02'] .wall-style-option input[type='radio'] {
   accent-color: #ff8a1c;
 }
@@ -9901,6 +10023,12 @@ select:focus-visible {
   box-shadow: inset 0 0 0 1px #7c6cff;
 }
 
+[data-style='batman-v-superman'] .community-pill--champion {
+  background: #dfe1e3;
+  color: #2e3237;
+  box-shadow: inset 0 0 0 1px #85898d;
+}
+
 [data-style='eva-unit02'] .community-pill--champion {
   background: #1f3a16;
   color: #c8ff7a;
@@ -9961,6 +10089,12 @@ select:focus-visible {
   box-shadow: inset 0 0 0 1px #476cff;
 }
 
+[data-style='batman-v-superman'] .community-pill--elite {
+  background: #ebe6de;
+  color: #3f4449;
+  box-shadow: inset 0 0 0 1px #9fa2a5;
+}
+
 [data-style='eva-unit02'] .community-pill--elite {
   background: #223b18;
   color: #9dff3a;
@@ -10019,6 +10153,12 @@ select:focus-visible {
   background: #2d2f08;
   color: #fff35a;
   box-shadow: inset 0 0 0 1px #a5aa1e;
+}
+
+[data-style='batman-v-superman'] .community-pill--foodKing {
+  background: #f0dadd;
+  color: #741923;
+  box-shadow: inset 0 0 0 1px #c7666d;
 }
 
 [data-style='eva-unit02'] .community-pill--foodKing {
@@ -10087,6 +10227,12 @@ select:focus-visible {
   box-shadow: inset 0 0 0 1px var(--accent-meal);
 }
 
+[data-style='batman-v-superman'] .community-pill--meal {
+  background: var(--accent-meal-soft);
+  color: var(--accent-meal-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-meal);
+}
+
 [data-style='eva-unit02'] .community-pill--meal {
   background: #4b2812;
   color: #ffd34d;
@@ -10105,6 +10251,7 @@ select:focus-visible {
 
 [data-style='gundam-hangar'] .text-red-400,
 [data-style='jojo-stardust-duel'] .text-red-400,
+[data-style='batman-v-superman'] .text-red-400,
 [data-style='eva-unit02'] .text-red-400 {
   color: var(--danger-strong);
 }
