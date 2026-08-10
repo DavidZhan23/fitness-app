@@ -9178,6 +9178,116 @@ select:focus-visible {
   color: #5f5955;
 }
 
+/* 超蝙对决：打卡墙日期格交替使用蝙翼与力量盾牌水印 */
+[data-style='batman-v-superman'] button[data-heatmap-day] {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+[data-style='batman-v-superman'] button[data-heatmap-day]::before {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+}
+
+/* 蝙翼：石墨剪影，尖耳与展开双翼保持在日期数字后方 */
+[data-style='batman-v-superman']
+  [data-heatmap-root]
+  [data-heatmap-day]:nth-child(odd)::before {
+  width: 78%;
+  height: 48%;
+  content: '';
+  background: rgb(36 35 35 / 0.14);
+  clip-path: polygon(
+    0 16%,
+    17% 25%,
+    27% 4%,
+    39% 36%,
+    46% 22%,
+    50% 42%,
+    54% 22%,
+    61% 36%,
+    73% 4%,
+    83% 25%,
+    100% 16%,
+    88% 55%,
+    72% 48%,
+    58% 72%,
+    50% 96%,
+    42% 72%,
+    28% 48%,
+    12% 55%
+  );
+}
+
+/* 力量盾牌：朱砂菱盾与衬线 S，作为超人元素的低对比底纹 */
+[data-style='batman-v-superman']
+  [data-heatmap-root]
+  [data-heatmap-day]:nth-child(even)::before {
+  width: 58%;
+  height: 64%;
+  content: 'S';
+  color: rgb(103 23 31 / 0.42);
+  background: rgb(163 41 51 / 0.13);
+  clip-path: polygon(50% 0, 94% 24%, 78% 70%, 50% 100%, 22% 70%, 6% 24%);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(0.5rem, 2.1vw, 0.72rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+[data-style='batman-v-superman'] button[data-heatmap-day] .heatmap-day-number {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 0 rgb(255 250 247 / 0.56);
+}
+
+[data-style='batman-v-superman']
+  button[data-heatmap-day]:is(
+    .heatmap-exercise-3,
+    .heatmap-exercise-4,
+    .heatmap-deficit-3,
+    .heatmap-deficit-4,
+    .heatmap-surplus-3,
+    .heatmap-surplus-4
+  )::before {
+  filter: invert(1) grayscale(1);
+  opacity: 0.54;
+}
+
+[data-style='batman-v-superman']
+  button[data-heatmap-day]:is(
+    .heatmap-exercise-3,
+    .heatmap-deficit-3,
+    .heatmap-surplus-3
+  ) {
+  color: #171717;
+}
+
+[data-style='batman-v-superman']
+  button[data-heatmap-day]:is(
+    .heatmap-exercise-4,
+    .heatmap-deficit-4,
+    .heatmap-surplus-4
+  ) {
+  color: #fffaf7;
+}
+
+[data-style='batman-v-superman']
+  button[data-heatmap-day]:is(
+    .heatmap-exercise-4,
+    .heatmap-deficit-4,
+    .heatmap-surplus-4
+  )
+  .heatmap-day-number {
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
+}
+
 [data-style='eva-unit02'] .wall-style-option input[type='radio'] {
   accent-color: #ff8a1c;
 }

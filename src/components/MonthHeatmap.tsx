@@ -191,7 +191,7 @@ export function MonthGrid({
                   今日
                 </span>
               )}
-              {dayNum}
+              <span className="heatmap-day-number">{dayNum}</span>
               {gridBadge && (
                 <span
                   className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-bl-md rounded-tr-md bg-slate-950/75 text-[8px] leading-none"
