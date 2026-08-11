@@ -19,6 +19,7 @@ import type {
   DayLog,
   Exercise,
   Meal,
+  MealMacrosInput,
   Profile,
   WeeklyReportDetail,
   WeeklyReportSummary,
@@ -26,6 +27,7 @@ import type {
   CommunitySharedWeeklyReportSummary,
   DeveloperCommunityMember,
 } from '../../types'
+import type { MacroAmounts } from '../macroTargets'
 
 export interface AppUser {
   id: string
@@ -128,7 +130,7 @@ export const httpData = {
   },
 
   async updateProfile(
-    data: Partial<Profile> | Record<string, string | number | boolean>,
+    data: Partial<Profile> | Record<string, unknown>,
   ): Promise<Profile> {
     return apiFetch<Profile>('/profile', {
       method: 'PATCH',
@@ -159,6 +161,7 @@ export const httpData = {
     name: string,
     kcal: number,
     batchId?: string,
+    macros?: MealMacrosInput,
   ): Promise<void> {
     await apiFetch('/meals', {
       method: 'POST',
@@ -167,7 +170,17 @@ export const httpData = {
         name,
         kcal,
         ...(batchId ? { batch_id: batchId } : {}),
+        ...macros,
       }),
+    })
+  },
+
+  async backfillMealMacros(
+    logDate: string,
+  ): Promise<{ attempted: number; completed: number }> {
+    return apiFetch('/meals/macros/backfill', {
+      method: 'POST',
+      body: JSON.stringify({ log_date: logDate }),
     })
   },
 
@@ -182,10 +195,15 @@ export const httpData = {
     })
   },
 
-  async updateMeal(id: string, name: string, kcal: number): Promise<Meal> {
+  async updateMeal(
+    id: string,
+    name: string,
+    kcal: number,
+    macros?: MealMacrosInput,
+  ): Promise<Meal> {
     return apiFetch<Meal>(`/meals/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ name, kcal }),
+      body: JSON.stringify({ name, kcal, ...macros }),
     })
   },
 
@@ -238,6 +256,10 @@ export const httpData = {
       kcal: number
       confidence?: 'high' | 'medium' | 'low'
       reason?: string
+      protein_g?: number
+      fat_g?: number
+      carbs_g?: number
+      sugar_g?: number
     }[]
   }> {
     const cleanDescription = description.trim()
@@ -262,6 +284,16 @@ export const httpData = {
 
   async getMealPhotoQuota(): Promise<MealPhotoQuota> {
     return apiFetch('/ai/meal-photo-quota')
+  },
+
+  async getMacroAdvice(
+    actual: MacroAmounts,
+    targets: MacroAmounts,
+  ): Promise<{ advice: string; targets: MacroAmounts }> {
+    return apiFetch('/ai/macro-advice', {
+      method: 'POST',
+      body: JSON.stringify({ actual, targets }),
+    })
   },
 
   async getFoxCompanion(): Promise<FoxCompanionSummary> {
@@ -694,7 +726,11 @@ export const httpData = {
   async setDeveloperCommunityVisibility(
     userId: string,
     communityVisible: boolean,
-  ): Promise<{ id: string; communityVisible: boolean }> {
+  ): Promise<{
+    id: string
+    communityVisible: boolean
+    communityVisibleLockedByDeveloper: boolean
+  }> {
     return apiFetch(
       `/developer/community-members/${encodeURIComponent(userId)}/visibility`,
       {

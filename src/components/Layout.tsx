@@ -4,6 +4,7 @@ import { useCommunityInbox } from '../hooks/useCommunityInbox'
 const navItems = [
   { to: '/', label: '今日', icon: '◉' },
   { to: '/community', label: '社区', icon: '◎', notify: true },
+  { to: '/nutrition', label: '营养', icon: '◔' },
 ]
 
 export function Layout() {

@@ -51,6 +51,10 @@ export interface AiEstimateItemState {
   confidence: AiEstimateConfidence
   reason: string
   saveAsTemplate: boolean
+  protein_g?: number
+  fat_g?: number
+  carbs_g?: number
+  sugar_g?: number
 }
 
 function CameraIcon() {
@@ -174,6 +178,10 @@ function mapResponseItems(
       kcal: number
       confidence?: AiEstimateConfidence
       reason?: string
+      protein_g?: number
+      fat_g?: number
+      carbs_g?: number
+      sugar_g?: number
     }[]
   },
 ): AiEstimateItemState[] {
@@ -191,6 +199,10 @@ function mapResponseItems(
         confidence,
         reason: resolveReason(item.reason, confidence),
         saveAsTemplate: false,
+        protein_g: item.protein_g,
+        fat_g: item.fat_g,
+        carbs_g: item.carbs_g,
+        sugar_g: item.sugar_g,
       }
     })
   }
@@ -283,6 +295,10 @@ export function AiLogSection({
         kcal: number
         confidence?: AiEstimateConfidence
         reason?: string
+        protein_g?: number
+        fat_g?: number
+        carbs_g?: number
+        sugar_g?: number
       }[]
     },
     labelFallback: string,
@@ -358,6 +374,10 @@ export function AiLogSection({
         kcal: number
         confidence?: AiEstimateConfidence
         reason?: string
+        protein_g?: number
+        fat_g?: number
+        carbs_g?: number
+        sugar_g?: number
       }[]
     }>,
     labelFallback: string,

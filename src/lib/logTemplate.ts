@@ -1,4 +1,4 @@
-import type { LogTemplate } from '../types'
+import type { LogTemplate, MealMacrosInput } from '../types'
 
 export type LogTemplateKind = LogTemplate['kind']
 
@@ -296,6 +296,10 @@ export interface AiEstimateItemInput {
   unit: string
   /** 单位热量（kcal / unit）；落库行总热 = round(quantity × kcalPerUnit) */
   kcalPerUnitInput: string
+  protein_g?: number
+  fat_g?: number
+  carbs_g?: number
+  sugar_g?: number
 }
 
 export interface ValidatedAiItem {
@@ -305,6 +309,10 @@ export interface ValidatedAiItem {
   /** 行总热（已按 quantity × kcalPerUnit 取整） */
   kcal: number
   kcalPerUnit: number
+  protein_g?: number
+  fat_g?: number
+  carbs_g?: number
+  sugar_g?: number
 }
 
 export function validateAiItems(
@@ -324,7 +332,17 @@ export function validateAiItems(
     if (!name || !unit || quantity == null || kcalPerUnit == null || kcal == null) {
       return { ok: false, error: '请检查每条记录的名称、数量、单位与单位热量' }
     }
-    validated.push({ name, quantity, unit, kcal, kcalPerUnit })
+    validated.push({
+      name,
+      quantity,
+      unit,
+      kcal,
+      kcalPerUnit,
+      protein_g: item.protein_g,
+      fat_g: item.fat_g,
+      carbs_g: item.carbs_g,
+      sugar_g: item.sugar_g,
+    })
   }
   return { ok: true, items: validated }
 }
@@ -349,11 +367,22 @@ export function sumAiItemsLineKcal(
 
 export function aiItemsToLogPayload(
   items: ValidatedAiItem[],
-): { name: string; kcal: number }[] {
-  return items.map((item) => ({
-    name: buildDraftRecordName(item.name, item.quantity, item.unit),
-    kcal: Math.round(item.kcal),
-  }))
+): ({ name: string; kcal: number } & MealMacrosInput)[] {
+  return items.map((item) => {
+    const macroEntries = (
+      ['protein_g', 'fat_g', 'carbs_g', 'sugar_g'] as const
+    ).flatMap((field) =>
+      item[field] == null
+        ? []
+        : [[field, item[field] * item.quantity] as const],
+    )
+    return {
+      name: buildDraftRecordName(item.name, item.quantity, item.unit),
+      kcal: Math.round(item.kcal),
+      ...Object.fromEntries(macroEntries),
+      ...(macroEntries.length > 0 ? { macros_source: 'ai' as const } : {}),
+    }
+  })
 }
 
 export function formatTemplateSaveNotice(result: SaveTemplatesResult): string | null {

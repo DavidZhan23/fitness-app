@@ -49,26 +49,39 @@ describe('buildProfileUpdate', () => {
   })
 
   it('sets community_visible true when completing onboarding without explicit flag', () => {
-    const { updates, values } = buildProfileUpdate({ onboarding_complete: true })
+    const {
+      updates,
+      values,
+      updatesCommunityVisibility,
+      communityVisibilityExplicit,
+    } = buildProfileUpdate({ onboarding_complete: true })
     expect(updates).toContain('onboarding_complete = $1')
-    expect(updates).toContain('community_visible = $2')
+    expect(updates[1]).toContain(
+      'community_visible = case when community_visible_locked_by_developer then false else $2 end',
+    )
     expect(values).toEqual([true, true])
+    expect(updatesCommunityVisibility).toBe(true)
+    expect(communityVisibilityExplicit).toBe(false)
   })
 
   it('respects explicit community_visible false when completing onboarding', () => {
-    const { updates, values } = buildProfileUpdate({
+    const { updates, values, communityVisibilityExplicit } = buildProfileUpdate({
       onboarding_complete: true,
       community_visible: false,
     })
     expect(updates).toContain('onboarding_complete = $1')
     expect(updates).toContain('community_visible = $2')
     expect(values).toEqual([true, false])
+    expect(communityVisibilityExplicit).toBe(true)
   })
 
   it('does not auto-open community when onboarding_complete is false', () => {
-    const { updates } = buildProfileUpdate({ onboarding_complete: false })
+    const { updates, updatesCommunityVisibility } = buildProfileUpdate({
+      onboarding_complete: false,
+    })
     expect(updates).toContain('onboarding_complete = $1')
     expect(updates.some((u) => u.startsWith('community_visible'))).toBe(false)
+    expect(updatesCommunityVisibility).toBe(false)
   })
 
   it('accepts only known metabolism modes', () => {
@@ -78,5 +91,36 @@ describe('buildProfileUpdate', () => {
 
     const rejected = buildProfileUpdate({ metabolism_mode: 'hourly' })
     expect(rejected.updates.some((u) => u.startsWith('metabolism_mode'))).toBe(false)
+  })
+
+  it('accepts app style and normalizes invalid values to default', () => {
+    const accepted = buildProfileUpdate({ app_style: 'batman-v-superman' })
+    expect(accepted.updates).toContain('app_style = $1')
+    expect(accepted.values).toEqual(['batman-v-superman'])
+
+    const normalized = buildProfileUpdate({ app_style: 'unknown-theme' })
+    expect(normalized.values).toEqual(['default'])
+  })
+
+  it('keeps only boolean hero collab preferences for known themes', () => {
+    const result = buildProfileUpdate({
+      hero_collab: {
+        'batman-v-superman': false,
+        eva: true,
+        default: true,
+        unknown: false,
+      },
+    })
+    expect(result.updates).toContain('hero_collab = $1')
+    expect(result.values).toEqual([
+      { 'batman-v-superman': false, eva: true },
+    ])
+  })
+
+  it('does not let profile PATCH change the developer visibility lock', () => {
+    const result = buildProfileUpdate({
+      community_visible_locked_by_developer: false,
+    })
+    expect(result.updates).toEqual([])
   })
 })

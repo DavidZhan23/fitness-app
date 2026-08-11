@@ -33,6 +33,7 @@ describe('developerCommunity', () => {
           id: 'u1',
           nickname: 'Amy',
           community_visible: true,
+          community_visible_locked_by_developer: false,
           onboarding_complete: true,
           created_at: '2026-01-01T00:00:00.000Z',
           email: 'amy@example.com',
@@ -47,20 +48,41 @@ describe('developerCommunity', () => {
         email: 'amy@example.com',
         nickname: 'Amy',
         communityVisible: true,
+        communityVisibleLockedByDeveloper: false,
         onboardingComplete: true,
         createdAt: '2026-01-01T00:00:00.000Z',
       },
     ])
   })
 
-  it('updates community visibility', async () => {
+  it('hides and locks community visibility', async () => {
     queryMock.mockResolvedValueOnce({ rows: [] })
 
     const result = await setDeveloperCommunityVisibility('u1', false)
-    expect(result).toEqual({ id: 'u1', communityVisible: false })
+    expect(result).toEqual({
+      id: 'u1',
+      communityVisible: false,
+      communityVisibleLockedByDeveloper: true,
+    })
     expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining('update profiles set community_visible'),
-      [false, 'u1'],
+      expect.stringContaining('community_visible = $1'),
+      [false, true, 'u1'],
+    )
+  })
+
+  it('shows and unlocks community visibility again', async () => {
+    queryMock.mockResolvedValueOnce({ rows: [] })
+
+    const result = await setDeveloperCommunityVisibility('u1', true)
+
+    expect(result).toEqual({
+      id: 'u1',
+      communityVisible: true,
+      communityVisibleLockedByDeveloper: false,
+    })
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining('community_visible_locked_by_developer = $2'),
+      [true, false, 'u1'],
     )
   })
 

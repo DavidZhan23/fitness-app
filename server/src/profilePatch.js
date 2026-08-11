@@ -12,6 +12,8 @@ const ALLOWED = [
   'welcome_subtitle',
   'avatar_url',
   'community_visible',
+  'app_style',
+  'hero_collab',
   'wall_style',
   'metabolism_mode',
   'weight_kg',
@@ -25,6 +27,29 @@ const ALLOWED = [
   'deficit_threshold',
   'onboarding_complete',
 ]
+
+const APP_STYLES = new Set([
+  'default',
+  'lavender',
+  'sakura',
+  'sakura-blush',
+  'active-mint',
+  'eva',
+  'eva-unit02',
+  'gundam-hangar',
+  'jojo-stardust-duel',
+  'batman-v-superman',
+  'soy-tea',
+  'wood-zen',
+])
+
+const HERO_COLLAB_STYLES = new Set([
+  'eva',
+  'eva-unit02',
+  'gundam-hangar',
+  'jojo-stardust-duel',
+  'batman-v-superman',
+])
 
 /** @param {unknown} value */
 export function parseBirthdayKey(value) {
@@ -50,6 +75,7 @@ export function buildProfileUpdate(body) {
   const updates = []
   const values = []
   let i = 1
+  let communityVisibilityExplicit = false
 
   const push = (col, val) => {
     updates.push(`${col} = $${i++}`)
@@ -125,11 +151,32 @@ export function buildProfileUpdate(body) {
     const completing = Boolean(body.onboarding_complete)
     push('onboarding_complete', completing)
     if (completing && body.community_visible === undefined) {
-      push('community_visible', true)
+      updates.push(
+        `community_visible = case when community_visible_locked_by_developer then false else $${i++} end`,
+      )
+      values.push(true)
     }
   }
   if (body.community_visible !== undefined) {
+    communityVisibilityExplicit = true
     push('community_visible', Boolean(body.community_visible))
+  }
+  if (body.app_style !== undefined) {
+    push('app_style', APP_STYLES.has(body.app_style) ? body.app_style : 'default')
+  }
+  if (
+    body.hero_collab !== undefined &&
+    body.hero_collab !== null &&
+    typeof body.hero_collab === 'object' &&
+    !Array.isArray(body.hero_collab)
+  ) {
+    const heroCollab = {}
+    for (const [style, enabled] of Object.entries(body.hero_collab)) {
+      if (HERO_COLLAB_STYLES.has(style) && typeof enabled === 'boolean') {
+        heroCollab[style] = enabled
+      }
+    }
+    push('hero_collab', heroCollab)
   }
   if (body.wall_style === 'classic' || body.wall_style === 'split') {
     push('wall_style', body.wall_style)
@@ -154,5 +201,13 @@ export function buildProfileUpdate(body) {
     }
   }
 
-  return { updates, values, allowed: ALLOWED }
+  return {
+    updates,
+    values,
+    allowed: ALLOWED,
+    updatesCommunityVisibility: updates.some((update) =>
+      update.startsWith('community_visible ='),
+    ),
+    communityVisibilityExplicit,
+  }
 }

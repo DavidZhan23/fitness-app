@@ -7,6 +7,7 @@ export async function listDeveloperCommunityMembers() {
     `select p.id,
             p.nickname,
             p.community_visible,
+            p.community_visible_locked_by_developer,
             p.onboarding_complete,
             p.created_at,
             u.email
@@ -22,6 +23,9 @@ export async function listDeveloperCommunityMembers() {
     email: row.email,
     nickname: publicNickname(row),
     communityVisible: Boolean(row.community_visible),
+    communityVisibleLockedByDeveloper: Boolean(
+      row.community_visible_locked_by_developer,
+    ),
     onboardingComplete: Boolean(row.onboarding_complete),
     createdAt: row.created_at,
   }))
@@ -37,12 +41,17 @@ export async function setDeveloperCommunityVisibility(userId, visible) {
 
   const flag = Boolean(visible)
   await query(
-    `update profiles set community_visible = $1, updated_at = now() where id = $2`,
-    [flag, userId],
+    `update profiles
+     set community_visible = $1,
+         community_visible_locked_by_developer = $2,
+         updated_at = now()
+     where id = $3`,
+    [flag, !flag, userId],
   )
 
   return {
     id: userId,
     communityVisible: flag,
+    communityVisibleLockedByDeveloper: !flag,
   }
 }

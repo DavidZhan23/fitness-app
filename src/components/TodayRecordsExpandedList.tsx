@@ -3,7 +3,7 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { TodayMealGroupRow } from './TodayMealGroupRow'
 import { TodayRecordRow } from './TodayRecordRow'
 import { groupMealsForDisplay } from '../lib/todayMealGroups'
-import type { Exercise, Meal } from '../types'
+import type { Exercise, Meal, MealMacrosInput } from '../types'
 
 type RecordKey = { kind: 'exercise' | 'meal'; id: string }
 
@@ -22,7 +22,12 @@ interface TodayRecordsExpandedListProps {
   onDeleteMeal: (id: string) => void
   onBatchDelete: (exerciseIds: string[], mealIds: string[]) => Promise<void>
   onUpdateExercise: (id: string, name: string, kcal: number) => Promise<void>
-  onUpdateMeal: (id: string, name: string, kcal: number) => Promise<void>
+  onUpdateMeal: (
+    id: string,
+    name: string,
+    kcal: number,
+    macros?: MealMacrosInput,
+  ) => Promise<void>
 }
 
 export function TodayRecordsExpandedList({

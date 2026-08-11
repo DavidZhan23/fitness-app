@@ -28,6 +28,9 @@ const TemplatesPage = lazy(() =>
 const CommunityPage = lazy(() =>
   import('./pages/CommunityPage').then((m) => ({ default: m.CommunityPage })),
 )
+const NutritionPage = lazy(() =>
+  import('./pages/NutritionPage').then((m) => ({ default: m.NutritionPage })),
+)
 const CommunityUserPage = lazy(() =>
   import('./pages/CommunityUserPage').then((m) => ({
     default: m.CommunityUserPage,
@@ -69,8 +72,8 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <StyleProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <StyleProvider>
         <BrowserRouter>
           <CommunityInboxProvider>
             <TelemetryListener />
@@ -96,6 +99,7 @@ export default function App() {
                 <Route index element={<TodayPage />} />
                 <Route path="calendar" element={<Navigate to="/" replace />} />
                 <Route path="community" element={<CommunityPage />} />
+                <Route path="nutrition" element={<NutritionPage />} />
                 <Route path="community/inbox" element={<CommunityInboxPage />} />
                 <Route path="community/followers" element={<CommunityFollowersPage />} />
                 <Route path="community/:userId" element={<CommunityUserPage />} />
@@ -147,7 +151,7 @@ export default function App() {
             </Suspense>
           </CommunityInboxProvider>
         </BrowserRouter>
-      </AuthProvider>
-    </StyleProvider>
+      </StyleProvider>
+    </AuthProvider>
   )
 }

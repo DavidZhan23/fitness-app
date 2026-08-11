@@ -127,16 +127,35 @@ router.patch(
   '/profile',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const { updates, values } = buildProfileUpdate(req.body)
+    const { updates, values, communityVisibilityExplicit } = buildProfileUpdate(
+      req.body,
+    )
     if (updates.length === 0) {
       return res.status(400).json({ error: '无有效更新字段' })
     }
     values.push(req.userId)
     const idParam = values.length
     const { rows } = await query(
-      `update profiles set ${updates.join(', ')} where id = $${idParam} returning *`,
+      `update profiles
+       set ${updates.join(', ')}
+       where id = $${idParam}
+       ${
+         communityVisibilityExplicit
+           ? 'and community_visible_locked_by_developer = false'
+           : ''
+       }
+       returning *`,
       values,
     )
+    if (!rows[0] && communityVisibilityExplicit) {
+      const existing = await query(
+        `select community_visible_locked_by_developer from profiles where id = $1`,
+        [req.userId],
+      )
+      if (existing.rows[0]?.community_visible_locked_by_developer) {
+        return res.status(409).json({ error: '该账号已被管理员隐藏，无法修改社区公开状态' })
+      }
+    }
     if (!rows[0]) return res.status(404).json({ error: '资料不存在' })
     res.json(rows[0])
   }),

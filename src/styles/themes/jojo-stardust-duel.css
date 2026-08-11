@@ -41,6 +41,12 @@
 
   /* DIO / The World：饮食金黄绿，不走普通荧光绿 */
   --accent-meal: #d6d930;
+  --macro-protein: #6c7cff;
+  --macro-fat: #e7c84b;
+  --macro-carbs: #b9d936;
+  --macro-sugar: #d867d7;
+  --macro-track: #202943;
+  --macro-muted: #7782a3;
   --accent-meal-strong: #fff35a;
   --accent-meal-soft: #2d2f08;
 

@@ -23,7 +23,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await logExercise(page, 'E2E 布局检查运动', '180')
 
       const nav = mainNav(page)
-      await expect(nav.getByRole('link')).toHaveCount(2)
+      await expect(nav.getByRole('link')).toHaveCount(3)
       await expect(nav.getByRole('link', { name: '设置' })).toHaveCount(0)
       await expect(nav.getByRole('link', { name: '打卡' })).toHaveCount(0)
 
@@ -46,6 +46,16 @@ for (const viewport of MOBILE_VIEWPORTS) {
         page,
         page.getByRole('heading', { name: '打卡墙' }),
         '打卡墙标题',
+      )
+
+      // Nutrition
+      await nav.getByRole('link', { name: '营养' }).click()
+      await expect(page.getByRole('heading', { name: '蛋白 · 脂肪 · 碳水' })).toBeVisible()
+      await assertLayoutShell(page, `${viewport.name} /nutrition`)
+      await assertLocatorInScrollport(
+        page,
+        page.getByRole('heading', { name: '蛋白 · 脂肪 · 碳水' }),
+        '营养构成标题',
       )
 
       // Community

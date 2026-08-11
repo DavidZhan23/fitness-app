@@ -153,6 +153,28 @@ describe('normalizeEstimateItems', () => {
     })
   })
 
+  it('keeps valid per-unit meal macros and drops them for exercise', () => {
+    const raw = {
+      name: '牛奶',
+      quantity: 250,
+      unit: 'ml',
+      kcal: 0.6,
+      protein_g: 0.032,
+      fat_g: 0.036,
+      carbs_g: 0.048,
+      sugar_g: 0.048,
+    }
+    expect(normalizeEstimateItems([raw], 'meal')[0]).toMatchObject({
+      protein_g: 0.032,
+      fat_g: 0.036,
+      carbs_g: 0.048,
+      sugar_g: 0.048,
+    })
+    expect(normalizeEstimateItems([raw], 'exercise')[0]).not.toHaveProperty(
+      'protein_g',
+    )
+  })
+
   it('defaults exercise unit to 分钟', () => {
     const items = normalizeEstimateItems(
       [{ name: '慢跑', quantity: 40, kcal: 8 }],

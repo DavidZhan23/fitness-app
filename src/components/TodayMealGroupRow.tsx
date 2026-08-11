@@ -1,6 +1,6 @@
 import { TodayRecordRow } from './TodayRecordRow'
 import type { MealDisplayGroup } from '../lib/todayMealGroups'
-import type { Meal } from '../types'
+import type { Meal, MealMacrosInput } from '../types'
 
 type RecordKey = { kind: 'meal'; id: string }
 
@@ -17,7 +17,12 @@ interface TodayMealGroupRowProps {
   onStartEdit: (key: RecordKey) => void
   onCancelEdit: () => void
   onDelete: (meal: Meal) => void
-  onUpdateMeal: (id: string, name: string, kcal: number) => Promise<void>
+  onUpdateMeal: (
+    id: string,
+    name: string,
+    kcal: number,
+    macros?: MealMacrosInput,
+  ) => Promise<void>
 }
 
 function renderMealRow(meal: Meal, props: TodayMealGroupRowProps) {
@@ -37,7 +42,10 @@ function renderMealRow(meal: Meal, props: TodayMealGroupRowProps) {
       onStartEdit={() => props.onStartEdit({ kind: 'meal', id: meal.id })}
       onCancelEdit={props.onCancelEdit}
       onDelete={() => props.onDelete(meal)}
-      onSave={(name, kcal) => props.onUpdateMeal(meal.id, name, kcal)}
+      meal={meal}
+      onSave={(name, kcal, macros) =>
+        props.onUpdateMeal(meal.id, name, kcal, macros)
+      }
     />
   )
 }

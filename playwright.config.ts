@@ -13,6 +13,9 @@ const e2eEnv = {
     process.env.JWT_SECRET ??
     'e2e_jwt_secret_min_32_chars_for_local_dev_xx',
   REGISTRATION_KEY: process.env.REGISTRATION_KEY ?? 'e2e-test-key',
+  // Saving a meal may attempt best-effort macro completion. Keep E2E deterministic
+  // and verify the documented fail-open path instead of calling a live model.
+  DEEPSEEK_API_KEY: '',
   CORS_ORIGIN: webUrl,
   PORT: String(apiPort),
 }

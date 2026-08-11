@@ -37,6 +37,12 @@
 
   /* 朱砂墨阶：饮食与盈余 */
   --accent-meal: #a32933;
+  --macro-protein: #4c5663;
+  --macro-fat: #a32933;
+  --macro-carbs: #73849a;
+  --macro-sugar: #b88a3b;
+  --macro-track: #d8d2c8;
+  --macro-muted: #766e65;
   --accent-meal-strong: #741923;
   --accent-meal-soft: #f0dadd;
 

@@ -21,6 +21,12 @@
   --accent-exercise-strong: #0d9488;
   --accent-exercise-soft: rgb(19 78 74 / 0.4);
   --accent-meal: #f59e0b;
+  --macro-protein: #2dd4bf;
+  --macro-fat: #fb7185;
+  --macro-carbs: #fbbf24;
+  --macro-sugar: #a78bfa;
+  --macro-track: #243247;
+  --macro-muted: #64748b;
   --accent-meal-strong: #d97706;
   --accent-meal-soft: rgb(120 53 15 / 0.32);
   /* 醒目点缀（链接、主按钮、选中态等；深海=青绿运动色） */

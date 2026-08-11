@@ -114,6 +114,13 @@ function clampKcal(n) {
   return Math.min(9999, v)
 }
 
+function normalizeMacroGram(raw) {
+  if (raw == null || raw === '') return undefined
+  const value = Number(raw)
+  if (!Number.isFinite(value) || value < 0 || value > 10_000) return undefined
+  return Math.round(value * 10_000) / 10_000
+}
+
 function stripCodeFence(text) {
   const match = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
   return match ? match[1].trim() : text
@@ -220,7 +227,34 @@ export function normalizeEstimateItems(rawItems, kind) {
     const confidence = normalizeConfidence(raw.confidence)
     const reason = normalizeReason(raw.reason, confidence)
 
-    out.push({ name, quantity, unit, kcal, confidence, reason })
+    const macros =
+      kind === 'meal'
+        ? {
+            protein_g: normalizeMacroGram(raw.protein_g),
+            fat_g: normalizeMacroGram(raw.fat_g),
+            carbs_g: normalizeMacroGram(raw.carbs_g),
+            sugar_g: normalizeMacroGram(raw.sugar_g),
+          }
+        : {}
+    if (
+      macros.sugar_g != null &&
+      macros.carbs_g != null &&
+      macros.sugar_g > macros.carbs_g
+    ) {
+      macros.sugar_g = macros.carbs_g
+    }
+
+    out.push({
+      name,
+      quantity,
+      unit,
+      kcal,
+      confidence,
+      reason,
+      ...Object.fromEntries(
+        Object.entries(macros).filter(([, value]) => value != null),
+      ),
+    })
   }
 
   return out
@@ -299,9 +333,14 @@ function buildSystemPrompt(type, profile) {
   const weightHint =
     weight && weight > 0 ? `参考体重约 ${weight} kg。` : '参考普通成年人体重。'
 
+  const itemMacroSchema =
+    type === 'meal'
+      ? ',"protein_g":单位蛋白质克数,"fat_g":单位脂肪克数,"carbs_g":单位碳水克数,"sugar_g":单位糖克数'
+      : ''
+
   const jsonOnly =
     '只输出一个 JSON object，不要 Markdown，不要代码块，不要解释文字。' +
-    '格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":单位热量,"confidence":"high|medium|low","reason":"简短估算依据"},...]}。' +
+    `格式：{"kcal":总热量整数,"items":[{"name":"名称","quantity":数量,"unit":"单位","kcal":单位热量${itemMacroSchema},"confidence":"high|medium|low","reason":"简短估算依据"},...]}。` +
     '重要：每条 item 的 kcal 是该 unit 的单位热量（可为小数，如 1.15 表示每 g；78 表示每个），不是整行总热。' +
     '顶层 kcal = 各行 quantity×单位热量之和（取整）。单位热量须 >0 且 ≤5000；quantity 为正数。' +
     'reason 只能是面向用户的简短估算依据（中文 8-40 字，说明份量或单位假设），禁止 chain-of-thought、step-by-step reasoning 或推理过程。' +
@@ -320,6 +359,7 @@ function buildSystemPrompt(type, profile) {
   return (
     '你是饮食摄入估算器。将用户中文描述拆成多条食物分别估算摄入千卡。' +
     '例如「一碗牛肉，一盘鸡蛋」应拆成两条并分别估算。' +
+    '饮食 items 还须尽量给出 protein_g、fat_g、carbs_g、sugar_g，表示该 unit 的单位营养素克数；糖是碳水子集，必须 sugar_g≤carbs_g。' +
     `${jsonOnly}单位可用：份、碗、g、ml、个 等。`
   )
 }
@@ -550,5 +590,82 @@ export async function deepseekTextEstimator(input) {
     kcal: result.kcal,
     ...(result.items?.length ? { items: result.items } : {}),
     providerId: DEEPSEEK_TEXT_PROVIDER_ID,
+  }
+}
+
+function normalizeAdviceAmounts(raw, baseTargets) {
+  const adjusted = {}
+  for (const field of ['protein_g', 'fat_g', 'carbs_g', 'sugar_g']) {
+    const base = Number(baseTargets?.[field])
+    const value = Number(raw?.[field])
+    if (!Number.isFinite(base) || base <= 0) continue
+    const min = base * 0.85
+    const max = base * 1.15
+    adjusted[field] = Math.round(
+      Math.min(max, Math.max(min, Number.isFinite(value) ? value : base)),
+    )
+  }
+  if (
+    adjusted.sugar_g != null &&
+    adjusted.carbs_g != null &&
+    adjusted.sugar_g > adjusted.carbs_g
+  ) {
+    adjusted.sugar_g = adjusted.carbs_g
+  }
+  return adjusted
+}
+
+export async function generateMacroAdvice({ actual, targets }) {
+  const apiKey = getDeepSeekApiKey()
+  if (!apiKey) {
+    const err = new Error('AI 建议未配置，请稍后再试')
+    err.status = 503
+    throw err
+  }
+  const safeActual = {}
+  const safeTargets = {}
+  for (const field of ['protein_g', 'fat_g', 'carbs_g', 'sugar_g']) {
+    const actualValue = Number(actual?.[field])
+    const targetValue = Number(targets?.[field])
+    if (!Number.isFinite(targetValue) || targetValue <= 0) {
+      const err = new Error('营养素规则目标无效')
+      err.status = 400
+      throw err
+    }
+    safeActual[field] = Math.max(0, Number.isFinite(actualValue) ? actualValue : 0)
+    safeTargets[field] = targetValue
+  }
+  const body = {
+    model: resolveDeepSeekModel(),
+    max_tokens: 256,
+    temperature: 0.2,
+    ...deepSeekNonThinkingExtras(),
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content:
+          '你是简洁的中文营养建议助手。根据匿名的今日实际克数与规则目标，输出一条不超过60字、非医疗诊断的可执行建议，并可在规则目标上下15%内微调。' +
+          '只输出 JSON：{"advice":"短建议","targets":{"protein_g":数字,"fat_g":数字,"carbs_g":数字,"sugar_g":数字}}。',
+      },
+      {
+        role: 'user',
+        content: JSON.stringify({ actual: safeActual, ruleTargets: safeTargets }),
+      },
+    ],
+  }
+  const { data } = await requestDeepSeekWithRetry(apiKey, body)
+  const parsed = parseEstimatePayload(extractMessageContent(data?.choices?.[0]))
+  const advice = Array.from(String(parsed?.advice ?? '').trim())
+    .slice(0, 60)
+    .join('')
+  if (!advice) {
+    const err = new Error('AI 未返回可用建议，请稍后再试')
+    err.status = 502
+    throw err
+  }
+  return {
+    advice,
+    targets: normalizeAdviceAmounts(parsed.targets, safeTargets),
   }
 }

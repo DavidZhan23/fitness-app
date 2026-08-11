@@ -125,6 +125,9 @@ export async function runMigrations() {
     await pool.query(
       `alter table public.profiles add column if not exists community_visible boolean not null default false`,
     )
+    await pool.query(
+      `alter table public.profiles add column if not exists community_visible_locked_by_developer boolean not null default false`,
+    )
   } catch {
     /* 表未建等 */
   }
@@ -345,13 +348,16 @@ export async function runMigrations() {
   }
   try {
     await pool.query(
-      `update public.profiles
-       set community_visible = true, updated_at = now()
-       where onboarding_complete = true and community_visible = false`,
+      `alter table public.profiles add column if not exists app_style text`,
+    )
+    await pool.query(
+      `alter table public.profiles add column if not exists hero_collab jsonb`,
     )
   } catch {
     /* 表未建等 */
   }
+  // 023 的 community_visible 数据回填只能由 SQL migration 一次性执行；
+  // 禁止在启动兼容路径重复加入数据 UPDATE，否则会覆盖用户/开发者的隐藏选择。
   for (const table of ['exercise_templates', 'meal_templates']) {
     try {
       await pool.query(
@@ -395,6 +401,24 @@ export async function runMigrations() {
     await pool.query(`
       create index if not exists idx_meals_day_log_batch
         on public.meals (day_log_id, batch_id)`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(`
+      alter table public.meals
+        add column if not exists protein_g numeric,
+        add column if not exists fat_g numeric,
+        add column if not exists carbs_g numeric,
+        add column if not exists sugar_g numeric,
+        add column if not exists macros_source text`)
+    await pool.query(`
+      alter table public.meals
+        drop constraint if exists meals_macros_source_check`)
+    await pool.query(`
+      alter table public.meals
+        add constraint meals_macros_source_check
+        check (macros_source is null or macros_source in ('user', 'ai'))`)
   } catch {
     /* 表未建等 */
   }

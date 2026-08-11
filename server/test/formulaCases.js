@@ -16,7 +16,8 @@ export const spreadDeficitCases = [
     exerciseKcal: 300,
     mealKcal: 800,
     dateKey: '2026-05-24',
-    now: new Date('2026-05-24T12:00:00'),
+    // 12:00 in the default DISPLAY_TIMEZONE (Asia/Shanghai).
+    now: new Date('2026-05-24T04:00:00Z'),
     expected: 500,
   },
 ]
