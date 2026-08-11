@@ -1,6 +1,6 @@
 import { httpData } from './api'
 import { invalidateCommunityListCache } from './communityListCache'
-import type { DayLog, Exercise, Meal, Profile } from '../types'
+import type { DayLog, Exercise, Meal, MealMacrosInput, Profile } from '../types'
 
 function bumpCommunityListAfterLogChange() {
   invalidateCommunityListCache()
@@ -42,9 +42,18 @@ export async function addMeal(
   name: string,
   kcal: number,
   batchId?: string,
+  macros?: MealMacrosInput,
 ): Promise<void> {
-  await httpData.addMeal(dayLogId, name, kcal, batchId)
+  await httpData.addMeal(dayLogId, name, kcal, batchId, macros)
   bumpCommunityListAfterLogChange()
+}
+
+export async function backfillMealMacros(
+  logDate: string,
+): Promise<{ attempted: number; completed: number }> {
+  const result = await httpData.backfillMealMacros(logDate)
+  if (result.attempted > 0) bumpCommunityListAfterLogChange()
+  return result
 }
 
 export async function updateExercise(
@@ -60,8 +69,9 @@ export async function updateMeal(
   id: string,
   name: string,
   kcal: number,
+  macros?: MealMacrosInput,
 ): Promise<void> {
-  await httpData.updateMeal(id, name, kcal)
+  await httpData.updateMeal(id, name, kcal, macros)
   bumpCommunityListAfterLogChange()
 }
 

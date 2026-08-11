@@ -11,9 +11,16 @@ function meal(
   return {
     day_log_id: 'day-1',
     user_id: 'user-1',
+    id: partial.id,
+    name: partial.name,
+    created_at: partial.created_at,
     kcal: partial.kcal ?? 100,
     batch_id: partial.batch_id ?? null,
-    ...partial,
+    protein_g: partial.protein_g ?? null,
+    fat_g: partial.fat_g ?? null,
+    carbs_g: partial.carbs_g ?? null,
+    sugar_g: partial.sugar_g ?? null,
+    macros_source: partial.macros_source ?? null,
   }
 }
 

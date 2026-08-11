@@ -13,7 +13,8 @@ import {
   saveTemplatesFromItems,
 } from '../../lib/logTemplate'
 import type { MealInputMode } from '../../hooks/useLogForm'
-import type { LogTemplate } from '../../types'
+import { parseMacroDraft, type MacroDraft, type MacroField } from '../../lib/macroTargets'
+import type { LogTemplate, MealMacrosInput } from '../../types'
 
 interface SecondaryManualLogSectionProps {
   isExercise: boolean
@@ -34,7 +35,7 @@ interface SecondaryManualLogSectionProps {
   onKjPer100gChange: (value: string) => void
   packageKcal: number | null
   resolveKcal: () => number | null
-  onSubmitLog: (name: string, kcal: number) => Promise<void>
+  onSubmitLog: (name: string, kcal: number, macros?: MealMacrosInput) => Promise<void>
   onComplete: () => void
   addTemplate: (payload: {
     name: string
@@ -45,6 +46,9 @@ interface SecondaryManualLogSectionProps {
   onNotice: (message: string) => void
   onError: (message: string) => void
   onSubmittingChange: (loading: boolean) => void
+  macroDraft: MacroDraft
+  onMacroChange: (field: MacroField, value: string) => void
+  onToast: (message: string) => void
   showNameField?: boolean
   collapsible?: boolean
   titleText?: string
@@ -186,11 +190,30 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
       return
     }
 
+    const parsedMacros = props.isExercise
+      ? null
+      : parseMacroDraft(props.macroDraft)
+    if (parsedMacros && !parsedMacros.ok) {
+      props.onError(parsedMacros.error)
+      return
+    }
+    if (parsedMacros?.sugarClamped) {
+      props.onMacroChange('sugar_g', String(parsedMacros.macros.sugar_g ?? ''))
+      props.onToast('糖不能高于碳水，已自动夹紧')
+    }
+
     props.onSubmittingChange(true)
     props.onError('')
     props.onNotice('')
     try {
-      await props.onSubmitLog(props.name.trim(), kcalValue)
+      if (parsedMacros?.sugarClamped) {
+        await new Promise((resolve) => window.setTimeout(resolve, 900))
+      }
+      await props.onSubmitLog(
+        props.name.trim(),
+        kcalValue,
+        parsedMacros?.macros,
+      )
 
       if (saveAsTemplate) {
         const templatePayload = templateFieldsTouched
@@ -372,6 +395,41 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                         ) : null}
                       </>
                     )}
+                    {!props.isExercise ? (
+                      <details className="macro-input-disclosure">
+                        <summary>营养素（选填）</summary>
+                        <p className="macro-input-disclosure__hint">
+                          留空会在保存时尝试 AI 补全；只补空项，不覆盖你填写的数值。
+                        </p>
+                        <div className="macro-input-grid">
+                          {([
+                            ['protein_g', '蛋白质'],
+                            ['fat_g', '脂肪'],
+                            ['carbs_g', '碳水'],
+                            ['sugar_g', '糖'],
+                          ] as const).map(([field, label]) => (
+                            <label key={field} className="log-manual-secondary__field">
+                              <span className="log-manual-secondary__field-label">
+                                {label} (g)
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                inputMode="decimal"
+                                value={props.macroDraft[field]}
+                                onChange={(event) =>
+                                  props.onMacroChange(field, event.target.value)
+                                }
+                                className="input w-full min-w-0 tabular-nums"
+                                aria-label={`${label} (g)`}
+                                disabled={props.loading}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
                   </div>
 
                   <div className="log-manual-secondary__template-block">

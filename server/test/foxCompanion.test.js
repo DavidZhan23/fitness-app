@@ -145,6 +145,35 @@ describe('getWeeklyChampionSummary', () => {
     expect(noLongerChampion.championDates).toEqual([])
   })
 
+  it('shows the fox immediately when a time-spread user qualifies in Shanghai evening', async () => {
+    queryMock.mockImplementation(async (sql) => {
+      if (sql.includes('from profiles')) {
+        return { rows: [profile({ bmr: 1500, metabolism_mode: 'time_spread' })] }
+      }
+      if (sql.includes('from day_logs')) {
+        return {
+          rows: [
+            {
+              log_date: '2026-06-23',
+              exercise_kcal: 700,
+              meal_kcal: 1100,
+            },
+          ],
+        }
+      }
+      return { rows: [] }
+    })
+
+    const summary = await getWeeklyChampionSummary(
+      USER_ID,
+      new Date('2026-06-23T12:00:00Z'),
+    )
+
+    expect(summary.eligible).toBe(true)
+    expect(summary.todayChampion).toBe(true)
+    expect(summary.championDates).toEqual(['2026-06-23'])
+  })
+
   it('keeps a past champion day fixed even if today does not qualify', async () => {
     queryMock.mockImplementation(async (sql, params) => {
       if (sql.includes('from profiles')) return { rows: [profile({ bmr: 1500 })] }

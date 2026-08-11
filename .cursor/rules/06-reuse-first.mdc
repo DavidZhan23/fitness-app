@@ -23,6 +23,7 @@ Before adding any new file to `src/lib/`, `src/hooks/`, `src/context/`, `server/
 | Month calendar grid | `src/lib/monthCalendar.ts` | `getMonthGrid`, `getMonthRange`, `shiftMonth`, `formatMonthTitle` |
 | Month heatmap data | `src/lib/monthData.ts` | `buildMonthDayMap` — builds `MonthDayCell[]` from `DayLog[]` |
 | Community list cache | `src/lib/communityListCache.ts` | sessionStorage + memory cache with TTL; `saveCommunityListCache`, `invalidateCommunityListCache`, `loadCommunityListCache`, scroll restore |
+| Theme persistence | `src/lib/themePersistence.ts` | `AppStyle` normalize/whitelist; theme + Hero collab localStorage/Cookie priority, account ownership, dual-write, serialized profile sync |
 | Community deficit (frontend) | `src/lib/communityDeficit.ts` | `computeCommunityDeficit`, `computeCommunityMetabolism` — same algorithm as TodayPage |
 | Community member sort | `src/lib/communityMemberOrder.ts` | `reorderCommunityMembers` (self pinned-top), `memberIdsForOrder` |
 | Community badges | `src/lib/communityBadges.ts` | `resolveHeatmapDayBadge` |
@@ -62,7 +63,7 @@ Before adding any new file to `src/lib/`, `src/hooks/`, `src/context/`, `server/
 ## Hard Rules
 
 - **Do NOT** duplicate `calculateBmr`, `calculateTdee`, `calculateSpreadDeficit`, `formatDateKey*`, or `toKcal` anywhere outside the files listed above.
-- **Do NOT** read `localStorage` / `sessionStorage` outside `src/lib/api/http.ts`, `src/lib/communityListCache.ts`, and `src/lib/telemetry.ts`.
+- **Do NOT** read `localStorage` / `sessionStorage` outside `src/lib/api/http.ts`, `src/lib/communityListCache.ts`, `src/lib/telemetry.ts`, and `src/lib/themePersistence.ts`.
 - **Do NOT** write raw `fetch()` calls — always go through `apiFetch` (except telemetry transport in `src/lib/telemetry.ts`).
 - **Do NOT** write a new `publicNickname` function — use `server/src/publicProfile.js`.
 - Schema changes: add a new `server/migrations/NNN_<slug>.sql` **and** add the same idempotent DDL to `server/src/db.js#runMigrations()` until the two sources are merged.

@@ -67,7 +67,13 @@ export function DeveloperCommunityPage() {
       await httpData.setDeveloperCommunityVisibility(member.id, next)
       setMembers((prev) =>
         prev.map((row) =>
-          row.id === member.id ? { ...row, communityVisible: next } : row,
+          row.id === member.id
+            ? {
+                ...row,
+                communityVisible: next,
+                communityVisibleLockedByDeveloper: !next,
+              }
+            : row,
         ),
       )
     } catch (err) {
@@ -159,6 +165,11 @@ export function DeveloperCommunityPage() {
                     {!member.onboardingComplete ? (
                       <p className="mt-1 text-[10px] text-amber-400">
                         未完成资料（本就不会出现在社区）
+                      </p>
+                    ) : null}
+                    {member.communityVisibleLockedByDeveloper ? (
+                      <p className="mt-1 text-[10px] text-amber-400">
+                        开发者锁定（近日打卡不会自动恢复）
                       </p>
                     ) : null}
                   </div>

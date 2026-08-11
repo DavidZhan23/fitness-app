@@ -6,6 +6,7 @@ import {
   normalizeDateKey,
 } from '../../lib/streaks'
 import { resolveDateFromSearchParams } from '../../lib/communityInboxNav'
+import type { MealMacrosInput } from '../../types'
 
 type SubmitKind = 'exercise' | 'meal'
 
@@ -15,6 +16,7 @@ interface SubmitLogInput {
   kind: SubmitKind
   name: string
   kcal: number
+  macros?: MealMacrosInput
   /** Target log_date (YYYY-MM-DD). Defaults to today after validation. */
   logDate?: string
 }
@@ -73,14 +75,14 @@ export async function submitLog(input: SubmitLogInput): Promise<void> {
     await addExercise(input.userId, dayLog.id, input.name, input.kcal)
     return
   }
-  await addMeal(input.userId, dayLog.id, input.name, input.kcal)
+  await addMeal(input.userId, dayLog.id, input.name, input.kcal, undefined, input.macros)
 }
 
 interface SubmitLogsBatchInput {
   userId: string
   profileTdee: number | null | undefined
   kind: SubmitKind
-  items: { name: string; kcal: number }[]
+  items: ({ name: string; kcal: number } & MealMacrosInput)[]
   logDate?: string
 }
 
@@ -129,6 +131,13 @@ export async function submitLogsBatch(input: SubmitLogsBatchInput): Promise<void
           item.name,
           item.kcal,
           batchId,
+          {
+            protein_g: item.protein_g,
+            fat_g: item.fat_g,
+            carbs_g: item.carbs_g,
+            sugar_g: item.sugar_g,
+            macros_source: item.macros_source,
+          },
         )
       }
       savedCount += 1

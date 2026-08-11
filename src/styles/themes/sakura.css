@@ -31,6 +31,12 @@
   --accent-exercise-strong: #5e97e8;
   --accent-exercise-soft: #eef7ff;
   --accent-meal: #f8c6dc;
+  --macro-protein: #5e97e8;
+  --macro-fat: #d97cac;
+  --macro-carbs: #e7b84b;
+  --macro-sugar: #f0a8c8;
+  --macro-track: #dceafa;
+  --macro-muted: #6b7d8f;
   --accent-meal-strong: #c97aa4;
   --accent-meal-soft: #fff1f7;
   --danger: #ffeaf1;

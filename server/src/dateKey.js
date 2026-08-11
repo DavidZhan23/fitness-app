@@ -10,6 +10,23 @@ export function formatDateKeyInTz(d = new Date()) {
   }).format(d)
 }
 
+/** Return elapsed wall-clock minutes for a date in DISPLAY_TIMEZONE. */
+export function getMinutesElapsedForDateInTz(dateKey, now = new Date()) {
+  const today = formatDateKeyInTz(now)
+  if (dateKey < today) return 24 * 60
+  if (dateKey > today) return 0
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now)
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0)
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0)
+  return Math.min(Math.max(hour * 60 + minute, 0), 24 * 60)
+}
+
 export function isValidDateKey(s) {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
 }

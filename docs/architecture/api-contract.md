@@ -40,8 +40,8 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/profile` | 读取资料 |
-| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换）。支持 `metabolism_mode`：`full_day`（默认，当天立即计入全天基础代谢）或 `time_spread`（随时间逐分钟累计）。支持 `avatar_url`：`data:image/(jpeg\|png\|webp);base64,...`（≤120KB），传 `null` 清除 |
+| GET | `/profile` | 读取资料；含账号主题 `app_style`、联名开关 `hero_collab`，以及只读的 `community_visible_locked_by_developer` |
+| PATCH | `/profile` | 更新资料（BMR/TDEE 等）；支持 `birthday`（`YYYY-MM-DD`，不可为未来日期）。若传 `birthday`，服务端按 Asia/Shanghai 今日反算 `age` 并写入（优先于请求体中的 `age`）。支持 `wall_style`：`classic`（默认，同页双热力图）或 `split`（运动墙/代谢墙分屏切换）；`metabolism_mode`：`full_day` 或 `time_spread`；`avatar_url`：`data:image/(jpeg\|png\|webp);base64,...`（≤120KB），传 `null` 清除；`app_style`：当前 `AppStyle` 白名单（非法值归一为 `default`）；`hero_collab`：已有联名主题键的 boolean map。开发者隐藏锁定期间若提交 `community_visible`，返回 409，其他资料仍可正常修改 |
 
 ## AI
 
@@ -49,9 +49,10 @@ Base URL：
 |--------|------|------|
 | GET | `/ai/meal-photo-quota` | 饮食拍照识别当日额度。响应 `{ limit, used, remaining, unlimited, dateKey }`；`remaining` 在开发者无限额时为 `null`；`unlimited: true` 表示不受 30 次/日限制 |
 | POST | `/ai/estimate-kcal` | AI 估算千卡。文本：`{ type: 'exercise'\|'meal', description: string }`。拍照（仅 meal）：`{ type: 'meal', modality: 'image', image: 'data:image/jpeg;base64,...', description?: string }`。拍照成功响应可含 **`mealPhotoQuota`**；超额返回 **429** 且带 `mealPhotoQuota`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**（同下） |
+| POST | `/ai/macro-advice` | 用户主动点营养页「重新评估」时调用。Body `{ actual: {protein_g,fat_g,carbs_g,sugar_g}, targets: 同形 }`；响应 `{ advice, targets }`。AI 目标仅可在规则目标 ±15% 内微调；营养页默认打开不调用 |
 | GET | `/ai/fox-companion` | 今日页狐狸陪伴资格。仅狐狸逻辑按 Asia/Shanghai 周六到周五作为一周，只检查本周六到今天：历史日期按全天结算并固定解锁，今天按当前记录实时结算，若今天吃多后不再是运动大王且没有历史命中，小狸会消失；其他周统计仍按各自原规则。响应 `{ eligible, today, weekStart, weekEnd, todayChampion, historicalChampionDates, championDates, latestChampionDate? }` |
 | POST | `/ai/fox-encouragement` | 小狸结构化对话；仅当前用户狐狸周达成过运动大王时可用。Body 为 `{ trigger, user?: { displayName?, locale? }, fitness, context: { timeOfDay, page: 'today', appLanguage? } }`，服务端只保留白名单运动上下文。响应 `{ text, mood, motion, expression, bubbleStyle, duration, fallback }`；枚举/文本/时长均经服务端校验，AI 未配置、超时、非法 JSON 或限频时返回同形本地 fallback，不暴露 DeepSeek 密钥或错误细节 |
-| （同上 items 格式） | | `[{ name, quantity, unit, kcal, confidence?, reason? }]`；**`items[].kcal` = 该 `unit` 的单位热量**（可为小数）；顶层 **`kcal` = Σ round(quantity × 单位热量)** |
+| （同上 items 格式） | | `[{ name, quantity, unit, kcal, protein_g?, fat_g?, carbs_g?, sugar_g?, confidence?, reason? }]`；**`items[].kcal` = 该 `unit` 的单位热量**（可为小数）；meal 四项宏量同样是该 `unit` 的单位克数；顶层 **`kcal` = Σ round(quantity × 单位热量)** |
 
 拍照识别配额：普通用户 **30 次/人/日**（Asia/Shanghai 日历日）；`DEVELOPER_EMAILS` 白名单用户不限次、不计数。
 
@@ -82,8 +83,8 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/developer/community-members` | 全部注册用户及 `community_visible` 状态；需开发者 |
-| PATCH | `/developer/community-members/:userId/visibility` | Body: `{ community_visible: boolean }`；隐藏后他人社区列表不展示该名片 |
+| GET | `/developer/community-members` | 全部注册用户及 `communityVisible`、`communityVisibleLockedByDeveloper` 状态；需开发者 |
+| PATCH | `/developer/community-members/:userId/visibility` | Body: `{ community_visible: boolean }`；`false` 会隐藏并加开发者锁，API 重启、近日打卡与社区同步都不得自动恢复；`true` 会重新展示并解除锁 |
 
 详见 [`docs/reports/weekly/README.md`](../reports/weekly/README.md)。
 
@@ -96,8 +97,9 @@ Base URL：
 | POST | `/day-logs/ensure` | 确保当日 log 存在 |
 | POST | `/exercises` | 添加运动 |
 | PATCH/DELETE | `/exercises/:id` | 更新/删除运动 |
-| POST | `/meals` | 添加饮食；body 可选 `batch_id`（UUID，同批多条饮食共享，仅客户端批量保存时使用） |
-| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；`Meal` 含 `batch_id`（nullable） |
+| POST | `/meals` | 添加饮食；body 必填 `day_log_id,name,kcal`，可选 `batch_id` 及 `protein_g/fat_g/carbs_g/sugar_g`（nullable numeric）、`macros_source`（`user\|ai`）。四项全空时保存端尝试 AI 补全；部分填写时只补空项；AI 失败不阻断保存，并以 `macros_source=ai` 标记已尝试，避免页面重复调用 |
+| POST | `/meals/macros/backfill` | 本人旧餐食一次性后台补全。Body `{ log_date: 'YYYY-MM-DD' }`；仅处理该日四项全 null 且 `macros_source is null` 的 meal，校准后落库，失败也标记已尝试。响应 `{ attempted, completed }` |
+| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；PATCH 同样支持四项宏量。完整 P/F/C 按 `P×4+C×4+F×9≈kcal` 缩放，糖随碳水缩放且夹紧到 `≤carbs_g`。`Meal` 返回宏量列、`macros_source` 与 `batch_id` |
 
 ## 模板
 
@@ -111,7 +113,7 @@ Base URL：
 
 ## 用户周报
 
-自然周按 `DISPLAY_TIMEZONE`（默认 `Asia/Shanghai`）的周一至周日计算。报告生成后固化统计快照；同一用户、同一 `week_start_date` 仅一份。当前记录模型没有运动时长、三大营养素和体重历史，对应字段返回 `null`，客户端不得推测。
+自然周按 `DISPLAY_TIMEZONE`（默认 `Asia/Shanghai`）的周一至周日计算。报告生成后固化统计快照；同一用户、同一 `week_start_date` 仅一份。周报本期仍未接入运动时长、宏量营养素和体重历史，对应字段返回 `null`，客户端不得从 meal 宏量列自行拼入旧周报快照。
 
 | Method | Path | 说明 |
 |--------|------|------|
@@ -126,7 +128,7 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为 `community_visible = true` 且 `onboarding_complete = true` 的用户（onboarding 完成时默认 `community_visible=true`，无固定条数上限，默认昵称排序）；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日）及 `metabolismMode`（卡片主人的基础代谢计入方式） |
+| GET | `/community/members` | 成员列表；`?filter=all\|following`；候选为 `community_visible = true` 且 `onboarding_complete = true` 的用户（onboarding 完成时默认 `community_visible=true`，无固定条数上限，默认昵称排序）；今/昨有记录时仅对未被开发者锁定的账号 auto-open；`today` 含 `dayCommunityVisible`、`hidden`（对他人隐藏当日）及 `metabolismMode`（卡片主人的基础代谢计入方式） |
 | GET | `/community/followers` | 关注我的用户列表；`{ total, followers[] }`，每项含 `id`、`nickname`、`avatarUrl`、`followedAt`、`isFollowing`（我是否已回关）、`canViewProfile` |
 | PUT | `/community/member-order` | 排序 |
 | PATCH | `/community/days/:date/visible` | 设置当日社区动态是否公开；body `{ visible: boolean }`；`:date` 为 `YYYY-MM-DD`，仅本人 |

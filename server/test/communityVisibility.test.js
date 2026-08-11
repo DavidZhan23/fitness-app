@@ -84,7 +84,7 @@ describe('syncCommunityVisibility', () => {
       ...emptySnap(today),
       exerciseCount: 1,
     }))
-    queryMock.mockResolvedValue({ rows: [] })
+    queryMock.mockResolvedValue({ rows: [{ community_visible: true }] })
 
     const result = await syncCommunityVisibility('user-1', '2026-05-29')
 
@@ -93,5 +93,49 @@ describe('syncCommunityVisibility', () => {
       expect.stringContaining('community_visible = true'),
       ['user-1'],
     )
+    expect(queryMock.mock.calls[0][0]).toContain(
+      'community_visible_locked_by_developer = false',
+    )
+  })
+
+  it('never auto-shows a profile hidden by a developer', async () => {
+    loadProfileMock.mockResolvedValue({
+      id: 'user-1',
+      community_visible: false,
+      community_visible_locked_by_developer: true,
+    })
+    computeDaySnapshotMock.mockImplementation(async (_profile, today) => ({
+      ...emptySnap(today),
+      exerciseCount: 1,
+    }))
+
+    const result = await syncCommunityVisibility('user-1', '2026-05-29')
+
+    expect(result).toEqual({ community_visible: false, changed: false })
+    expect(computeDaySnapshotMock).not.toHaveBeenCalled()
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  it('honors a developer lock added while recent logs are being checked', async () => {
+    loadProfileMock
+      .mockResolvedValueOnce({
+        id: 'user-1',
+        community_visible: false,
+        community_visible_locked_by_developer: false,
+      })
+      .mockResolvedValueOnce({
+        id: 'user-1',
+        community_visible: false,
+        community_visible_locked_by_developer: true,
+      })
+    computeDaySnapshotMock.mockImplementation(async (_profile, today) => ({
+      ...emptySnap(today),
+      mealCount: 1,
+    }))
+    queryMock.mockResolvedValue({ rows: [] })
+
+    const result = await syncCommunityVisibility('user-1', '2026-05-29')
+
+    expect(result).toEqual({ community_visible: false, changed: false })
   })
 })

@@ -29,7 +29,9 @@ vi.mock('../src/communityVisibility.js', () => ({
   ),
 }))
 
-const { listCommunityMembers } = await import('../src/community.js')
+const { assertCanViewCommunity, listCommunityMembers } = await import(
+  '../src/community.js'
+)
 
 const VIEWER_ID = 'viewer-1'
 
@@ -83,6 +85,7 @@ describe('listCommunityMembers', () => {
       if (sql.includes('community_visible = true')) {
         expect(sql).not.toMatch(/limit\s+80/i)
         expect(sql).not.toMatch(/updated_at/i)
+        expect(sql).toContain('community_visible_locked_by_developer = false')
         return { rows: [viewerProfile(), noLogUser] }
       }
       return { rows: [] }
@@ -177,5 +180,19 @@ describe('listCommunityMembers', () => {
     expect(others.map((m) => m.nickname)).toEqual(
       expected.map((m) => m.nickname),
     )
+  })
+})
+
+describe('assertCanViewCommunity', () => {
+  it('rejects other viewers when the developer lock is set', () => {
+    expect(() =>
+      assertCanViewCommunity(
+        profile('locked-user', '锁定用户', {
+          community_visible: true,
+          community_visible_locked_by_developer: true,
+        }),
+        VIEWER_ID,
+      ),
+    ).toThrow('该用户未公开社区动态')
   })
 })

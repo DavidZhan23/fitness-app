@@ -56,7 +56,14 @@ import {
   parseDateKey,
 } from '../lib/streaks'
 import { buildTodayHonors } from '../lib/todayHonors'
-import type { DayComment, DayLog, Exercise, HeatmapDay, Meal } from '../types'
+import type {
+  DayComment,
+  DayLog,
+  Exercise,
+  HeatmapDay,
+  Meal,
+  MealMacrosInput,
+} from '../types'
 
 function resolveViewDate(
   searchParams: URLSearchParams,
@@ -121,8 +128,25 @@ export function TodayPage() {
 
   useEffect(() => {
     if (!isViewingToday) return
-    const id = setInterval(() => tick((n) => n + 1), 60_000)
-    return () => clearInterval(id)
+    let active = true
+    const refreshLiveState = () => {
+      tick((n) => n + 1)
+      void httpData.getFoxCompanion()
+        .then((summary) => {
+          if (active) setFoxSummary(summary)
+        })
+        .catch(() => undefined)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshLiveState()
+    }
+    const id = setInterval(refreshLiveState, 60_000)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      active = false
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [isViewingToday])
 
   const loadDay = useCallback(async () => {
@@ -259,8 +283,13 @@ export function TodayPage() {
     await refreshAfterMutation()
   }
 
-  const handleUpdateMeal = async (id: string, name: string, kcal: number) => {
-    await updateMeal(id, name, kcal)
+  const handleUpdateMeal = async (
+    id: string,
+    name: string,
+    kcal: number,
+    macros?: MealMacrosInput,
+  ) => {
+    await updateMeal(id, name, kcal, macros)
     await refreshAfterMutation()
   }
 

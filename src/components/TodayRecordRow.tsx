@@ -1,5 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { RecordDeleteButton, RecordEditButton } from './RecordActionIcons'
+import {
+  MACRO_FIELDS,
+  mealMacroDraft,
+  parseMacroDraft,
+  type MacroField,
+} from '../lib/macroTargets'
+import type { Meal, MealMacrosInput } from '../types'
 
 interface TodayRecordRowProps {
   name: string
@@ -15,7 +22,8 @@ interface TodayRecordRowProps {
   onStartEdit?: () => void
   onCancelEdit?: () => void
   onDelete?: () => void
-  onSave?: (name: string, kcal: number) => Promise<void>
+  meal?: Meal
+  onSave?: (name: string, kcal: number, macros?: MealMacrosInput) => Promise<void>
 }
 
 export function TodayRecordRow({
@@ -32,19 +40,30 @@ export function TodayRecordRow({
   onCancelEdit,
   onDelete,
   onSave,
+  meal,
 }: TodayRecordRowProps) {
   const [name, setName] = useState(savedName)
   const [kcal, setKcal] = useState(String(Math.round(savedKcal)))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [macroDraft, setMacroDraft] = useState(() => mealMacroDraft(meal))
+  const [macroTouched, setMacroTouched] = useState(false)
+  const [macroToast, setMacroToast] = useState('')
 
   useEffect(() => {
     if (!isEditing) {
       setName(savedName)
       setKcal(String(Math.round(savedKcal)))
       setError('')
+      setMacroDraft(mealMacroDraft(meal))
+      setMacroTouched(false)
     }
-  }, [savedName, savedKcal, isEditing])
+  }, [savedName, savedKcal, meal, isEditing])
+
+  const setMacroField = (field: MacroField, value: string) => {
+    setMacroTouched(true)
+    setMacroDraft((current) => ({ ...current, [field]: value }))
+  }
 
   const handleSave = async () => {
     if (!onSave || !onCancelEdit) return
@@ -54,10 +73,23 @@ export function TodayRecordRow({
       setError('请填写名称和有效热量')
       return
     }
+    const parsedMacros = meal && macroTouched ? parseMacroDraft(macroDraft) : null
+    if (parsedMacros && !parsedMacros.ok) {
+      setError(parsedMacros.error)
+      return
+    }
+    if (parsedMacros?.sugarClamped) {
+      setMacroField('sugar_g', String(parsedMacros.macros.sugar_g ?? ''))
+      setMacroToast('糖不能高于碳水，已自动夹紧')
+      window.setTimeout(() => setMacroToast(''), 2600)
+    }
     setSaving(true)
     setError('')
     try {
-      await onSave(trimmed, k)
+      if (parsedMacros?.sugarClamped) {
+        await new Promise((resolve) => window.setTimeout(resolve, 900))
+      }
+      await onSave(trimmed, k, parsedMacros?.macros)
       onCancelEdit()
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败')
@@ -91,7 +123,41 @@ export function TodayRecordRow({
               className="input mt-1 w-full min-w-0 py-2 text-sm tabular-nums"
             />
           </label>
+          {meal ? (
+            <details className="macro-input-disclosure">
+              <summary>营养素（选填）</summary>
+              <div className="macro-input-grid">
+                {MACRO_FIELDS.map((field) => {
+                  const label = {
+                    protein_g: '蛋白质',
+                    fat_g: '脂肪',
+                    carbs_g: '碳水',
+                    sugar_g: '糖',
+                  }[field]
+                  return (
+                    <label key={field} className="block">
+                      <span className="text-xs text-muted">{label} (g)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        inputMode="decimal"
+                        value={macroDraft[field]}
+                        onChange={(event) => setMacroField(field, event.target.value)}
+                        className="input mt-1 w-full min-w-0 py-2 text-sm tabular-nums"
+                      />
+                    </label>
+                  )
+                })}
+              </div>
+            </details>
+          ) : null}
           {error ? <p className="text-xs text-danger">{error}</p> : null}
+          {macroToast ? (
+            <div className="macro-toast" role="status" aria-live="polite">
+              {macroToast}
+            </div>
+          ) : null}
           <div className="flex justify-end gap-2">
             <button
               type="button"

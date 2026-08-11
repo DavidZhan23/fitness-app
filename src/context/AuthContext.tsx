@@ -23,7 +23,7 @@ import {
 import { buildProfilePatchBody, mergeProfileForCalc } from '../lib/profilePayload'
 import { seedDefaultTemplates } from '../lib/dayLogService'
 import { isBackendConfigured } from '../lib/config'
-import type { Profile, Sex } from '../types'
+import type { AppStyle, Profile, Sex } from '../types'
 
 interface AuthContextValue {
   user: AppUser | null
@@ -45,6 +45,7 @@ interface AuthContextValue {
     sex: Sex
     activity_factor: number
     deficit_threshold?: number
+    app_style: AppStyle
   }) => Promise<void>
 }
 
@@ -201,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sex: Sex
     activity_factor: number
     deficit_threshold?: number
+    app_style: AppStyle
   }) => {
     if (!user) return
     const parsedBirthday = parseBirthdayKey(data.birthday)

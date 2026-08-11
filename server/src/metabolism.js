@@ -1,4 +1,8 @@
 import { toKcal } from './calories.js'
+import {
+  formatDateKeyInTz,
+  getMinutesElapsedForDateInTz,
+} from './dateKey.js'
 
 const MINUTES_PER_DAY = 24 * 60
 
@@ -9,13 +13,7 @@ function getMetabolismPerMinute(tdee) {
 }
 
 export function getMinutesElapsedForDate(dateKey, now = new Date()) {
-  const [y, m, d] = dateKey.split('-').map(Number)
-  const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0)
-  const dayEnd = new Date(y, m - 1, d, 23, 59, 59, 999)
-  if (now < dayStart) return 0
-  if (now > dayEnd) return MINUTES_PER_DAY
-  const elapsed = Math.floor((now.getTime() - dayStart.getTime()) / 60_000)
-  return Math.min(Math.max(elapsed, 0), MINUTES_PER_DAY)
+  return getMinutesElapsedForDateInTz(dateKey, now)
 }
 
 export function getAccumulatedMetabolism(tdee, dateKey, now = new Date()) {
@@ -34,8 +32,11 @@ export function getMetabolismByMode(
   now = new Date(),
 ) {
   const minutes = getMinutesElapsedForDate(dateKey, now)
-  if (minutes >= MINUTES_PER_DAY) return Math.round(toKcal(dailyBmr))
-  if (now < new Date(`${dateKey}T00:00:00`)) return 0
+  const today = formatDateKeyInTz(now)
+  if (dateKey < today || minutes >= MINUTES_PER_DAY) {
+    return Math.round(toKcal(dailyBmr))
+  }
+  if (dateKey > today) return 0
   return normalizeMetabolismMode(mode) === 'full_day'
     ? Math.round(toKcal(dailyBmr))
     : getAccumulatedMetabolism(dailyBmr, dateKey, now)

@@ -1,5 +1,9 @@
 import { ageFromBirthdayKey, parseBirthdayKey } from './birthday'
 import { toKcal } from './calories'
+import {
+  HERO_COLLAB_STYLES,
+  normalizeAppStyle,
+} from './themePersistence'
 import type { Profile, Sex } from '../types'
 
 /** 发给后端的资料字段（去掉 NaN / null，避免 PG 报错） */
@@ -7,8 +11,8 @@ export function buildProfilePatchBody(
   data: Partial<Profile>,
   bmr: number | null,
   tdee: number | null,
-): Record<string, string | number | boolean | null> {
-  const body: Record<string, string | number | boolean | null> = {}
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {}
 
   const num = (v: unknown): number | undefined => {
     const n = Number(v)
@@ -73,6 +77,20 @@ export function buildProfilePatchBody(
 
   if (data.community_visible !== undefined) {
     body.community_visible = Boolean(data.community_visible)
+  }
+
+  if (data.app_style !== undefined) {
+    body.app_style = normalizeAppStyle(data.app_style)
+  }
+
+  if (data.hero_collab !== undefined && data.hero_collab !== null) {
+    body.hero_collab = Object.fromEntries(
+      HERO_COLLAB_STYLES.flatMap((style) =>
+        typeof data.hero_collab?.[style] === 'boolean'
+          ? [[style, data.hero_collab[style]]]
+          : [],
+      ),
+    )
   }
 
   if (data.wall_style === 'classic' || data.wall_style === 'split') {

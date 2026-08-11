@@ -72,6 +72,24 @@ const SITE_ROUTES: SiteRoute[] = [
     },
   },
   {
+    name: 'nutrition',
+    path: '/nutrition',
+    anchors: [
+      {
+        label: '营养构成',
+        getLocator: (p) => p.getByRole('heading', { name: '蛋白 · 脂肪 · 碳水' }),
+      },
+      {
+        label: '建议对照',
+        getLocator: (p) => p.getByRole('heading', { name: '实际 vs 今日建议' }),
+      },
+    ],
+    bottomAnchor: {
+      label: '餐食明细',
+      getLocator: (p) => p.getByText('餐食明细', { exact: true }),
+    },
+  },
+  {
     name: 'templates',
     path: '/templates',
     anchors: [

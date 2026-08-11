@@ -6,6 +6,7 @@ import { getKcalEstimator, getKcalVisionEstimator } from '../ai/registry.js'
 import { generateFoxEncouragement } from '../ai/providers/deepseekFox.js'
 import { parseMealNutritionLabelFromImage } from '../ai/providers/qwenVision.js'
 import { getWeeklyChampionSummary } from '../foxCompanion.js'
+import { generateMacroAdvice } from '../ai/providers/deepseekText.js'
 import {
   assertMealPhotoQuotaAvailable,
   getMealPhotoQuota,
@@ -130,6 +131,19 @@ router.post(
     const body = { kcal: result.kcal }
     if (result.items?.length) body.items = result.items
     res.json(body)
+  }),
+)
+
+router.post(
+  '/ai/macro-advice',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { actual, targets } = req.body ?? {}
+    if (!actual || !targets || typeof actual !== 'object' || typeof targets !== 'object') {
+      return res.status(400).json({ error: '缺少营养素实际值或规则目标' })
+    }
+    const result = await generateMacroAdvice({ actual, targets })
+    res.json(result)
   }),
 )
 

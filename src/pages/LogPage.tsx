@@ -22,6 +22,7 @@ import { useLogForm } from '../hooks/useLogForm'
 import { useLogTemplates } from '../hooks/useLogTemplates'
 import { usePendingLogDrafts } from '../hooks/usePendingLogDrafts'
 import { httpData } from '../lib/api'
+import type { MealMacrosInput } from '../types'
 import {
   aiItemsToLogPayload,
   formatTemplateSaveNotice,
@@ -81,6 +82,7 @@ export function LogPage() {
   const [templateAddError, setTemplateAddError] = useState('')
   const [manualError, setManualError] = useState('')
   const [manualNotice, setManualNotice] = useState('')
+  const [macroToast, setMacroToast] = useState('')
 
   const anySaving = batchSaving || aiSaving || manualSaving
   const touchStartXRef = useRef<number | null>(null)
@@ -254,7 +256,16 @@ export function LogPage() {
     }
   }
 
-  const handleManualSubmitLog = async (name: string, kcal: number) => {
+  const showMacroToast = (message: string) => {
+    setMacroToast(message)
+    window.setTimeout(() => setMacroToast(''), 2600)
+  }
+
+  const handleManualSubmitLog = async (
+    name: string,
+    kcal: number,
+    macros?: MealMacrosInput,
+  ) => {
     if (!user || !profile) throw new Error('未登录')
     await submitLog({
       userId: user.id,
@@ -262,6 +273,7 @@ export function LogPage() {
       kind,
       name,
       kcal,
+      macros,
       logDate,
     })
   }
@@ -499,12 +511,20 @@ export function LogPage() {
                   onNotice={setManualNotice}
                   onError={setManualError}
                   onSubmittingChange={setManualSaving}
+                  macroDraft={form.macroDraft}
+                  onMacroChange={form.setMacroField}
+                  onToast={showMacroToast}
                 />
               </LogModePanel>
             </div>
           ) : null}
         </div>
       </PageShell>
+      {macroToast ? (
+        <div className="macro-toast" role="status" aria-live="polite">
+          {macroToast}
+        </div>
+      ) : null}
     </div>
   )
 }

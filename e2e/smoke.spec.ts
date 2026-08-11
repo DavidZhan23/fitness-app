@@ -28,6 +28,12 @@ test.describe.serial('main flow smoke', () => {
     await expect(page.getByRole('heading', { name: '打卡墙' })).toBeVisible()
     await expect(nav.getByRole('link', { name: '打卡' })).toHaveCount(0)
 
+    await nav.getByRole('link', { name: '营养' }).click()
+    const targetTiers = page.getByRole('group', { name: '油糖建议档次' })
+    await expect(targetTiers.getByRole('button')).toHaveCount(3)
+    await targetTiers.getByRole('button', { name: '少油少糖' }).click()
+    await expect(page.getByText(/\d+(?:\.\d+)?g \/ 30g/)).toHaveCount(2)
+
     await openCommunity(page)
 
     await nav.getByRole('link', { name: '今日' }).click()

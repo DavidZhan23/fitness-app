@@ -121,6 +121,7 @@ export function OnboardingPage() {
         sex,
         activity_factor: activity,
         deficit_threshold: threshold,
+        app_style: finalStyle,
       })
       navigate('/')
     } catch (err) {

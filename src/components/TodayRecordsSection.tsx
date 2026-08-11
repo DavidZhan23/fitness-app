@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { TodayRecordsExpandedList } from './TodayRecordsExpandedList'
 import { countMealDisplayEntries } from '../lib/todayMealGroups'
-import type { Exercise, Meal } from '../types'
+import type { Exercise, Meal, MealMacrosInput } from '../types'
 
 interface TodayRecordsSectionProps {
   exercises: Exercise[]
@@ -12,7 +12,12 @@ interface TodayRecordsSectionProps {
   onDeleteMeal: (id: string) => void
   onBatchDelete: (exerciseIds: string[], mealIds: string[]) => Promise<void>
   onUpdateExercise: (id: string, name: string, kcal: number) => Promise<void>
-  onUpdateMeal: (id: string, name: string, kcal: number) => Promise<void>
+  onUpdateMeal: (
+    id: string,
+    name: string,
+    kcal: number,
+    macros?: MealMacrosInput,
+  ) => Promise<void>
 }
 
 export function TodayRecordsSection({

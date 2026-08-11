@@ -4,32 +4,33 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+import { useAuth } from './AuthContext'
+import { httpData } from '../lib/api'
 import { getHeroCollabConfig } from '../lib/themeMeta'
+import {
+  HERO_COLLAB_STYLES,
+  createSerialThemeWriter,
+  isAppStyle,
+  normalizeAppStyle,
+  readHeroCollabPreference,
+  readStylePreference,
+  readThemePreferenceOwner,
+  writeHeroCollabPreference,
+  writeStylePreference,
+  writeThemePreferenceOwner,
+  type BooleanPreference,
+} from '../lib/themePersistence'
+import type {
+  AppStyle,
+  HeroCollabPreferences,
+  Profile,
+} from '../types'
 
-export type AppStyle =
-  | 'default'
-  | 'lavender'
-  | 'sakura'
-  | 'sakura-blush'
-  | 'active-mint'
-  | 'eva'
-  | 'eva-unit02'
-  | 'gundam-hangar'
-  | 'jojo-stardust-duel'
-  | 'batman-v-superman'
-  | 'soy-tea'
-  | 'wood-zen'
-
-const HERO_COLLAB_STYLES: AppStyle[] = [
-  'eva',
-  'eva-unit02',
-  'gundam-hangar',
-  'jojo-stardust-duel',
-  'batman-v-superman',
-]
+export type { AppStyle } from '../types'
 
 interface StyleContextValue {
   style: AppStyle
@@ -38,113 +39,246 @@ interface StyleContextValue {
   setHeroCollabEnabled: (style: AppStyle, next: boolean) => void
 }
 
-const STYLE_COOKIE_KEY = 'fitness_style'
-const STYLE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
-const HERO_COLLAB_COOKIE_PREFIX = 'fitness_hero_collab_'
+interface InitialHeroPreferences {
+  values: HeroCollabPreferences
+  sources: Partial<Record<AppStyle, BooleanPreference['source']>>
+}
 
 const StyleContext = createContext<StyleContextValue | null>(null)
 
-function normalizeStyle(value: string | null): AppStyle {
-  if (value === 'lavender') return 'lavender'
-  // 旧 cookie「奶霜马卡龙」迁移到薰衣云梦
-  if (value === 'cream') return 'lavender'
-  if (value === 'sakura') return 'sakura'
-  if (value === 'sakura-blush') return 'sakura-blush'
-  // 已下线「雾海潮蓝」，旧 cookie 迁移到碧空樱缀
-  if (value === 'aqua') return 'sakura'
-  if (value === 'active-mint') return 'active-mint'
-  if (value === 'eva') return 'eva'
-  if (value === 'eva-unit02') return 'eva-unit02'
-  if (value === 'gundam-hangar') return 'gundam-hangar'
-  if (value === 'jojo-stardust-duel') return 'jojo-stardust-duel'
-  if (value === 'batman-v-superman') return 'batman-v-superman'
-  // 已下线「深海能量 2」，旧 cookie 迁移到深海能量
-  if (value === 'abyssal-jade') return 'default'
-  if (value === 'soy-tea') return 'soy-tea'
-  if (value === 'wood-zen') return 'wood-zen'
-  // 旧 cookie 'dream' 自动迁移到蓝调主题「碧空樱缀」
-  if (value === 'dream') return 'sakura'
-  return 'default'
+function buildInitialHeroPreferences(): InitialHeroPreferences {
+  const values: HeroCollabPreferences = {}
+  const sources: InitialHeroPreferences['sources'] = {}
+  for (const style of HERO_COLLAB_STYLES) {
+    const config = getHeroCollabConfig(style)
+    if (!config) continue
+    const preference = readHeroCollabPreference(style, config.defaultEnabled)
+    values[style] = preference.enabled
+    sources[style] = preference.source
+  }
+  return { values, sources }
 }
 
-function readStyleFromCookie(): AppStyle {
-  if (typeof document === 'undefined') return 'default'
-  const item = document.cookie
-    .split('; ')
-    .find((pair) => pair.startsWith(`${STYLE_COOKIE_KEY}=`))
-  if (!item) return 'default'
-  const raw = item.slice(STYLE_COOKIE_KEY.length + 1)
-  return normalizeStyle(decodeURIComponent(raw))
+function defaultHeroCollabPreferences(): HeroCollabPreferences {
+  const values: HeroCollabPreferences = {}
+  for (const style of HERO_COLLAB_STYLES) {
+    const config = getHeroCollabConfig(style)
+    if (config) values[style] = config.defaultEnabled
+  }
+  return values
 }
 
-function writeStyleCookie(next: AppStyle) {
-  if (typeof document === 'undefined') return
-  document.cookie = `${STYLE_COOKIE_KEY}=${encodeURIComponent(next)}; Max-Age=${STYLE_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`
-}
-
-function heroCollabCookieKey(style: AppStyle) {
-  return `${HERO_COLLAB_COOKIE_PREFIX}${style}`
-}
-
-function readHeroCollabCookie(style: AppStyle): boolean | null {
-  if (typeof document === 'undefined') return null
-  const item = document.cookie
-    .split('; ')
-    .find((pair) => pair.startsWith(`${heroCollabCookieKey(style)}=`))
-  if (!item) return null
-  const raw = item.slice(heroCollabCookieKey(style).length + 1)
-  if (raw === '1') return true
-  if (raw === '0') return false
-  return null
-}
-
-function writeHeroCollabCookie(style: AppStyle, enabled: boolean) {
-  if (typeof document === 'undefined') return
-  document.cookie = `${heroCollabCookieKey(style)}=${enabled ? '1' : '0'}; Max-Age=${STYLE_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`
-}
-
-function resolveHeroCollabEnabled(style: AppStyle): boolean {
-  const config = getHeroCollabConfig(style)
-  if (!config) return false
-  return readHeroCollabCookie(style) ?? config.defaultEnabled
-}
-
-function buildHeroCollabByStyle(): Partial<Record<AppStyle, boolean>> {
-  const out: Partial<Record<AppStyle, boolean>> = {}
-  for (const s of HERO_COLLAB_STYLES) {
-    out[s] = resolveHeroCollabEnabled(s)
+function normalizeServerHeroCollab(value: Profile['hero_collab']) {
+  const out: HeroCollabPreferences = {}
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return out
+  for (const style of HERO_COLLAB_STYLES) {
+    if (typeof value[style] === 'boolean') out[style] = value[style]
   }
   return out
 }
 
 export function StyleProvider({ children }: { children: ReactNode }) {
-  const [style, setStyle] = useState<AppStyle>(() => readStyleFromCookie())
-  const [heroCollabByStyle, setHeroCollabByStyle] = useState(buildHeroCollabByStyle)
+  const { user, profile } = useAuth()
+  const [initialStylePreference] = useState(readStylePreference)
+  const [initialHeroPreferences] = useState(buildInitialHeroPreferences)
+  const [style, setStyleState] = useState<AppStyle>(initialStylePreference.style)
+  const [heroCollabByStyle, setHeroCollabByStyle] =
+    useState<HeroCollabPreferences>(initialHeroPreferences.values)
+
+  const styleRef = useRef(style)
+  const heroCollabRef = useRef(heroCollabByStyle)
+  const userRef = useRef(user)
+  const profileRef = useRef(profile)
+  const hydratedUserRef = useRef<string | null>(null)
+  const preferenceOwnerRef = useRef(readThemePreferenceOwner())
+  const styleExplicitRef = useRef(initialStylePreference.source !== 'default')
+  const heroExplicitStylesRef = useRef<Set<AppStyle>>(
+    new Set<AppStyle>(
+      HERO_COLLAB_STYLES.filter(
+        (target) => initialHeroPreferences.sources[target] !== 'default',
+      ),
+    ),
+  )
+  const writerRef = useRef<
+    ReturnType<typeof createSerialThemeWriter<Partial<Profile>>> | undefined
+  >(undefined)
+
+  userRef.current = user
+  profileRef.current = profile
+  if (!writerRef.current) {
+    writerRef.current = createSerialThemeWriter<Partial<Profile>>(
+      (payload) => httpData.updateProfile(payload),
+      (userId) => userRef.current?.id === userId,
+    )
+  }
+
+  const enqueueProfilePreference = useCallback(
+    (userId: string, payload: Partial<Profile>) => {
+      void writerRef.current?.enqueue(userId, payload).catch(console.error)
+    },
+    [],
+  )
+
+  const bindLocalPreferencesToUser = useCallback((userId: string | null) => {
+    preferenceOwnerRef.current = userId
+    writeThemePreferenceOwner(userId)
+  }, [])
+
+  const applyLocalStyle = useCallback((next: AppStyle) => {
+    styleRef.current = next
+    setStyleState(next)
+    writeStylePreference(next)
+  }, [])
+
+  const applyLocalHeroPreferences = useCallback(
+    (next: HeroCollabPreferences) => {
+      heroCollabRef.current = next
+      setHeroCollabByStyle(next)
+      for (const target of HERO_COLLAB_STYLES) {
+        const enabled = next[target]
+        if (typeof enabled === 'boolean') {
+          writeHeroCollabPreference(target, enabled)
+        }
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     if (typeof document === 'undefined') return
     document.documentElement.dataset.style = style
-    writeStyleCookie(style)
+    writeStylePreference(style)
   }, [style])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
     const config = getHeroCollabConfig(style)
-    const enabled = heroCollabByStyle[style] ?? resolveHeroCollabEnabled(style)
+    const enabled = heroCollabByStyle[style] ?? config?.defaultEnabled ?? false
     document.documentElement.dataset.heroCollab =
       config && enabled ? 'on' : 'off'
   }, [style, heroCollabByStyle])
 
-  const isHeroCollabEnabled = useCallback(
-    (target: AppStyle) =>
-      heroCollabByStyle[target] ?? resolveHeroCollabEnabled(target),
-    [heroCollabByStyle],
+  useEffect(() => {
+    if (!user || !profile) {
+      if (!user) hydratedUserRef.current = null
+      return
+    }
+    if (hydratedUserRef.current === user.id) return
+    hydratedUserRef.current = user.id
+
+    const ownerBeforeHydration = preferenceOwnerRef.current
+    const canMigrateLocal =
+      ownerBeforeHydration == null || ownerBeforeHydration === user.id
+
+    const rawServerStyle = profile.app_style
+    if (rawServerStyle == null) {
+      if (
+        profile.onboarding_complete &&
+        canMigrateLocal &&
+        styleExplicitRef.current
+      ) {
+        enqueueProfilePreference(user.id, { app_style: styleRef.current })
+      } else if (!profile.onboarding_complete || !canMigrateLocal) {
+        styleExplicitRef.current = false
+        applyLocalStyle('default')
+      }
+    } else {
+      const serverStyle = normalizeAppStyle(rawServerStyle)
+      styleExplicitRef.current = true
+      applyLocalStyle(serverStyle)
+      if (profile.onboarding_complete && !isAppStyle(rawServerStyle)) {
+        enqueueProfilePreference(user.id, { app_style: serverStyle })
+      }
+    }
+
+    if (profile.hero_collab == null) {
+      if (profile.onboarding_complete && canMigrateLocal) {
+        const localOverrides = Object.fromEntries(
+          [...heroExplicitStylesRef.current].map((target) => [
+            target,
+            heroCollabRef.current[target],
+          ]),
+        ) as HeroCollabPreferences
+        if (Object.keys(localOverrides).length > 0) {
+          enqueueProfilePreference(user.id, { hero_collab: localOverrides })
+        }
+      } else if (!profile.onboarding_complete || !canMigrateLocal) {
+        heroExplicitStylesRef.current.clear()
+        applyLocalHeroPreferences(defaultHeroCollabPreferences())
+      }
+    } else {
+      const serverOverrides = normalizeServerHeroCollab(profile.hero_collab)
+      heroExplicitStylesRef.current = new Set(
+        Object.keys(serverOverrides) as AppStyle[],
+      )
+      applyLocalHeroPreferences({
+        ...defaultHeroCollabPreferences(),
+        ...serverOverrides,
+      })
+      if (
+        typeof profile.hero_collab !== 'object' ||
+        Array.isArray(profile.hero_collab)
+      ) {
+        enqueueProfilePreference(user.id, { hero_collab: {} })
+      }
+    }
+
+    bindLocalPreferencesToUser(user.id)
+  }, [
+    applyLocalHeroPreferences,
+    applyLocalStyle,
+    bindLocalPreferencesToUser,
+    enqueueProfilePreference,
+    profile,
+    user,
+  ])
+
+  const setStyle = useCallback(
+    (next: AppStyle) => {
+      styleExplicitRef.current = true
+      applyLocalStyle(next)
+
+      const activeUser = userRef.current
+      if (!activeUser) {
+        bindLocalPreferencesToUser(null)
+        return
+      }
+      bindLocalPreferencesToUser(activeUser.id)
+
+      // Onboarding 只做本地预览，完成时由 completeOnboarding await 最终主题。
+      if (!profileRef.current?.onboarding_complete) return
+      enqueueProfilePreference(activeUser.id, { app_style: next })
+    },
+    [applyLocalStyle, bindLocalPreferencesToUser, enqueueProfilePreference],
   )
 
-  const setHeroCollabEnabled = useCallback((target: AppStyle, next: boolean) => {
-    setHeroCollabByStyle((prev) => ({ ...prev, [target]: next }))
-    writeHeroCollabCookie(target, next)
+  const isHeroCollabEnabled = useCallback((target: AppStyle) => {
+    return (
+      heroCollabRef.current[target] ??
+      getHeroCollabConfig(target)?.defaultEnabled ??
+      false
+    )
   }, [])
+
+  const setHeroCollabEnabled = useCallback(
+    (target: AppStyle, next: boolean) => {
+      const updated = { ...heroCollabRef.current, [target]: next }
+      heroCollabRef.current = updated
+      heroExplicitStylesRef.current.add(target)
+      setHeroCollabByStyle(updated)
+      writeHeroCollabPreference(target, next)
+
+      const activeUser = userRef.current
+      if (!activeUser) {
+        bindLocalPreferencesToUser(null)
+        return
+      }
+      bindLocalPreferencesToUser(activeUser.id)
+      if (!profileRef.current?.onboarding_complete) return
+      enqueueProfilePreference(activeUser.id, { hero_collab: updated })
+    },
+    [bindLocalPreferencesToUser, enqueueProfilePreference],
+  )
 
   const value = useMemo(
     () => ({
@@ -153,7 +287,7 @@ export function StyleProvider({ children }: { children: ReactNode }) {
       isHeroCollabEnabled,
       setHeroCollabEnabled,
     }),
-    [style, isHeroCollabEnabled, setHeroCollabEnabled],
+    [style, setStyle, isHeroCollabEnabled, setHeroCollabEnabled],
   )
 
   return <StyleContext.Provider value={value}>{children}</StyleContext.Provider>

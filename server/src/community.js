@@ -42,7 +42,10 @@ export function assertCanViewCommunity(profile, viewerId) {
     throw err
   }
   if (profile.id === viewerId) return
-  if (!profile.community_visible) {
+  if (
+    !profile.community_visible ||
+    profile.community_visible_locked_by_developer
+  ) {
     const err = new Error('该用户未公开社区动态')
     err.status = 403
     throw err
@@ -187,7 +190,9 @@ export async function listCommunityMembers(viewerId, clientToday, filter = 'all'
   const { rows } = await query(
     // TODO: cursor pagination when public member count grows; do not reintroduce a fixed LIMIT.
     `select * from profiles
-     where community_visible = true and onboarding_complete = true`,
+     where community_visible = true
+       and community_visible_locked_by_developer = false
+       and onboarding_complete = true`,
   )
 
   let profiles = rows

@@ -9,24 +9,33 @@ interface CommunityShareToggleProps {
 export function CommunityShareToggle({ compact = false }: CommunityShareToggleProps) {
   const { profile, updateProfile } = useAuth()
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const visible = Boolean(profile?.community_visible)
+  const developerLocked = Boolean(
+    profile?.community_visible_locked_by_developer,
+  )
 
   const toggle = async () => {
-    if (!profile || saving) return
+    if (!profile || saving || developerLocked) return
     setSaving(true)
+    setError('')
     try {
       await updateProfile({ community_visible: !visible })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '更新失败')
     } finally {
       setSaving(false)
     }
   }
 
   if (compact) {
-    const label = visible ? '已公开' : '未公开'
+    const label = developerLocked ? '管理员隐藏' : visible ? '已公开' : '未公开'
     return (
       <span
         role="status"
-        aria-label={visible ? '社区已公开' : '社区未公开'}
+        aria-label={
+          developerLocked ? '社区已被管理员隐藏' : visible ? '社区已公开' : '社区未公开'
+        }
         className={`inline-flex shrink-0 cursor-default select-none items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${
           visible
             ? 'bg-violet-500/25 text-violet-200 ring-1 ring-violet-400/40'
@@ -50,12 +59,18 @@ export function CommunityShareToggle({ compact = false }: CommunityShareTogglePr
           <p className="mt-1 text-sm text-muted leading-relaxed">
             开启后，其他用户可在社区看到你的<strong className="font-normal text-slate-300">今日缺口、运动与饮食记录</strong>、<strong className="font-normal text-slate-300">打卡墙</strong>，并可对你的每日打卡<strong className="font-normal text-slate-300">点赞与留言</strong>。体重等私密资料不会展示。
           </p>
+          {developerLocked ? (
+            <p className="mt-2 text-xs text-amber-400">
+              该账号已被管理员隐藏；需要管理员重新展示后才能修改。
+            </p>
+          ) : null}
+          {error ? <p className="mt-2 text-xs text-red-400">{error}</p> : null}
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={visible}
-          disabled={saving}
+          disabled={saving || developerLocked}
           onClick={toggle}
           className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
             visible ? 'bg-violet-500' : 'bg-slate-600'

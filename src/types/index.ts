@@ -1,5 +1,21 @@
 export type Sex = 'male' | 'female'
 
+export type AppStyle =
+  | 'default'
+  | 'lavender'
+  | 'sakura'
+  | 'sakura-blush'
+  | 'active-mint'
+  | 'eva'
+  | 'eva-unit02'
+  | 'gundam-hangar'
+  | 'jojo-stardust-duel'
+  | 'batman-v-superman'
+  | 'soy-tea'
+  | 'wood-zen'
+
+export type HeroCollabPreferences = Partial<Record<AppStyle, boolean>>
+
 /** 打卡墙展示：classic 同页双热力图；split 运动墙/代谢墙分屏切换 */
 export type WallStyle = 'classic' | 'split'
 
@@ -32,6 +48,12 @@ export interface Profile {
   onboarding_complete: boolean
   /** 是否在社区公开今日动态与打卡墙 */
   community_visible?: boolean
+  /** 开发者隐藏锁；锁定时本人不能公开，近日记录也不会自动打开 */
+  community_visible_locked_by_developer?: boolean
+  /** 账号级主题；null 表示老账号尚未迁移本地偏好 */
+  app_style?: AppStyle | string | null
+  /** 账号级联名主视觉开关，只保存显式设置的主题键 */
+  hero_collab?: HeroCollabPreferences | null
   /** 打卡墙样式，默认 classic */
   wall_style?: WallStyle
   /** 基础代谢计入方式，默认 full_day */
@@ -219,6 +241,19 @@ export interface Meal {
   kcal: number
   created_at: string
   batch_id?: string | null
+  protein_g: number | null
+  fat_g: number | null
+  carbs_g: number | null
+  sugar_g: number | null
+  macros_source: 'user' | 'ai' | null
+}
+
+export interface MealMacrosInput {
+  protein_g?: number | null
+  fat_g?: number | null
+  carbs_g?: number | null
+  sugar_g?: number | null
+  macros_source?: 'user' | 'ai' | null
 }
 
 export interface LogTemplate {
@@ -266,6 +301,7 @@ export interface DeveloperCommunityMember {
   email: string
   nickname: string
   communityVisible: boolean
+  communityVisibleLockedByDeveloper: boolean
   onboardingComplete: boolean
   createdAt: string
 }
