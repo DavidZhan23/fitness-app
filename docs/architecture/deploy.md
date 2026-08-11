@@ -7,9 +7,9 @@ merge 到 `main` 不会触发任何 GitHub Actions 流水线。
 
 ## 当前交付模型
 
-1. 开发者本地执行 `npm run verify`
-2. 通过后直接 push 到 `main`
-3. owner 在本地手动执行部署脚本
+1. 开发者在 `dev/huanghongli`（或约定个人分支）完成改动，本地执行 `npm run verify`
+2. 通过后 push，并开 / 更新 PR → `main`
+3. PR 合并后，owner 在本地手动执行部署脚本（**无**自动 CD）
 
 ## 手动部署命令（owner）
 
