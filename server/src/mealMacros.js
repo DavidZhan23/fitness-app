@@ -85,7 +85,7 @@ export function macrosFromEstimateItems(items) {
 
 /**
  * When P/F/C are complete, scale their 4/9/4 energy to the saved meal kcal.
- * Sugar is a carbs subset: it follows the carbs scale and is then clamped.
+ * `sugar_g` tracks added/free sugar independently and is intentionally preserved.
  */
 export function calibrateMealMacros(macros, kcal) {
   const next = fillMissingMealMacros(macros, null)
@@ -107,19 +107,8 @@ export function calibrateMealMacros(macros, kcal) {
       next.protein_g = roundGram(protein * scale)
       next.fat_g = roundGram(fat * scale)
       next.carbs_g = roundGram(carbs * scale)
-      if (next.sugar_g != null) next.sugar_g = roundGram(next.sugar_g * scale)
     }
   }
 
-  let sugarClamped = false
-  if (
-    next.sugar_g != null &&
-    next.carbs_g != null &&
-    next.sugar_g > next.carbs_g
-  ) {
-    next.sugar_g = next.carbs_g
-    sugarClamped = true
-  }
-
-  return { macros: next, sugarClamped }
+  return { macros: next, sugarClamped: false }
 }

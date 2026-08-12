@@ -222,6 +222,44 @@ export interface DayLog {
   meal_kcal: number
   deficit: number
   community_visible?: boolean
+  micronutrient_status?: 'idle' | 'pending' | 'ready' | 'error' | null
+  micronutrient_fingerprint?: string | null
+  micronutrient_summary?: MicronutrientSummary | null
+  micronutrient_updated_at?: string | null
+  micronutrient_error?: string | null
+}
+
+export type MicronutrientId =
+  | 'vit_a'
+  | 'vit_c'
+  | 'vit_d'
+  | 'vit_e'
+  | 'vit_k'
+  | 'vit_b1'
+  | 'vit_b2'
+  | 'vit_b6'
+  | 'vit_b9'
+  | 'vit_b12'
+  | 'calcium'
+  | 'iron'
+  | 'zinc'
+  | 'magnesium'
+  | 'potassium'
+  | 'iodine'
+
+export type MicronutrientStatus = 'adequate' | 'low' | 'unknown'
+
+export interface MicronutrientItem {
+  id: MicronutrientId
+  status: MicronutrientStatus
+  note?: string
+  food_suggestions?: string[]
+}
+
+export interface MicronutrientSummary {
+  version: 1
+  items: MicronutrientItem[]
+  advice?: string
 }
 
 export interface Exercise {
@@ -245,6 +283,7 @@ export interface Meal {
   fat_g: number | null
   carbs_g: number | null
   sugar_g: number | null
+  sugar_scope: 'added' | null
   macros_source: 'user' | 'ai' | null
 }
 

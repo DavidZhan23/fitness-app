@@ -15,6 +15,13 @@ describe('qwenVision meal photo prompts', () => {
     expect(MEAL_PHOTO_SHOOTING_GUIDE).toMatch(/30–40 cm/)
   })
 
+  it('defines sugar as added/free sugar instead of natural total sugar', () => {
+    const prompt = buildMealVisionSystemPrompt()
+    expect(prompt).toMatch(/添加糖\/游离糖/)
+    expect(prompt).toMatch(/不计完整水果或牛奶中天然糖/)
+    expect(prompt).toMatch(/省略 sugar_g/)
+  })
+
   it('asks model to assess photo quality in user prompt', () => {
     const prompt = buildMealVisionUserPrompt('小份')
     expect(prompt).toContain('用户补充说明：小份')

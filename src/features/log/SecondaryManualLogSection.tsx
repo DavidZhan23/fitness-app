@@ -48,7 +48,6 @@ interface SecondaryManualLogSectionProps {
   onSubmittingChange: (loading: boolean) => void
   macroDraft: MacroDraft
   onMacroChange: (field: MacroField, value: string) => void
-  onToast: (message: string) => void
   showNameField?: boolean
   collapsible?: boolean
   titleText?: string
@@ -197,18 +196,10 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
       props.onError(parsedMacros.error)
       return
     }
-    if (parsedMacros?.sugarClamped) {
-      props.onMacroChange('sugar_g', String(parsedMacros.macros.sugar_g ?? ''))
-      props.onToast('糖不能高于碳水，已自动夹紧')
-    }
-
     props.onSubmittingChange(true)
     props.onError('')
     props.onNotice('')
     try {
-      if (parsedMacros?.sugarClamped) {
-        await new Promise((resolve) => window.setTimeout(resolve, 900))
-      }
       await props.onSubmitLog(
         props.name.trim(),
         kcalValue,
@@ -406,7 +397,7 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                             ['protein_g', '蛋白质'],
                             ['fat_g', '脂肪'],
                             ['carbs_g', '碳水'],
-                            ['sugar_g', '糖'],
+                            ['sugar_g', '添加糖'],
                           ] as const).map(([field, label]) => (
                             <label key={field} className="log-manual-secondary__field">
                               <span className="log-manual-secondary__field-label">
@@ -428,6 +419,10 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                             </label>
                           ))}
                         </div>
+                        <p className="macro-input-disclosure__hint">
+                          添加糖只记制作或加工时加入的蔗糖、葡萄糖、果糖、糖浆、蜂蜜等；
+                          完整水果和牛奶中的天然糖不填。包装只写「糖」时，请结合配料表判断。
+                        </p>
                       </details>
                     ) : null}
                   </div>

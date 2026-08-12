@@ -8,7 +8,7 @@ import {
 } from '../src/mealMacros.js'
 
 describe('meal macro normalization', () => {
-  it('scales complete P/F/C to saved kcal and scales sugar with carbs', () => {
+  it('scales complete P/F/C to saved kcal but preserves added sugar', () => {
     const result = calibrateMealMacros(
       { protein_g: 20, fat_g: 10, carbs_g: 30, sugar_g: 8 },
       580,
@@ -17,12 +17,12 @@ describe('meal macro normalization', () => {
       protein_g: 40,
       fat_g: 20,
       carbs_g: 60,
-      sugar_g: 16,
+      sugar_g: 8,
     })
     expect(result.sugarClamped).toBe(false)
   })
 
-  it('clamps sugar to carbs and leaves incomplete macros unscaled', () => {
+  it('keeps added sugar independent and leaves incomplete macros unscaled', () => {
     const result = calibrateMealMacros(
       { protein_g: 25, fat_g: null, carbs_g: 10, sugar_g: 18 },
       500,
@@ -31,9 +31,9 @@ describe('meal macro normalization', () => {
       protein_g: 25,
       fat_g: null,
       carbs_g: 10,
-      sugar_g: 10,
+      sugar_g: 18,
     })
-    expect(result.sugarClamped).toBe(true)
+    expect(result.sugarClamped).toBe(false)
   })
 
   it('fills only empty fields and aggregates AI per-unit grams by quantity', () => {

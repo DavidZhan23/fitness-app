@@ -35,6 +35,7 @@ function meal(id: string, macros: Partial<Meal>): Meal {
     fat_g: null,
     carbs_g: null,
     sugar_g: null,
+    sugar_scope: 'added',
     macros_source: null,
     ...macros,
   }
@@ -46,7 +47,7 @@ describe('macro targets', () => {
       protein_g: 126,
       fat_g: 63,
       carbs_g: 296,
-      sugar_g: 56,
+      sugar_g: 25,
     })
   })
 
@@ -55,13 +56,13 @@ describe('macro targets', () => {
       protein_g: 126,
       fat_g: 77,
       carbs_g: 265,
-      sugar_g: 85,
+      sugar_g: 50,
     })
     expect(calculateMacroTargets(profile, 'low-oil-sugar')).toEqual({
       protein_g: 126,
       fat_g: 30,
       carbs_g: 371,
-      sugar_g: 30,
+      sugar_g: 15,
     })
   })
 
@@ -84,7 +85,16 @@ describe('macro targets', () => {
     })
   })
 
-  it('clamps manual sugar and marks hand-entered macros as user', () => {
+  it('does not expose a legacy total-sugar value as added sugar while backfilling', () => {
+    expect(
+      summarizeMealMacros([
+        meal('legacy', { sugar_g: 25, sugar_scope: null }),
+        meal('added', { sugar_g: 8, sugar_scope: 'added' }),
+      ]).sugar_g,
+    ).toBe(8)
+  })
+
+  it('keeps added sugar independent and marks hand-entered macros as user', () => {
     expect(
       parseMacroDraft({
         protein_g: '20',
@@ -98,15 +108,15 @@ describe('macro targets', () => {
         protein_g: 20,
         fat_g: null,
         carbs_g: 12,
-        sugar_g: 12,
+        sugar_g: 18,
         macros_source: 'user',
       },
-      sugarClamped: true,
+      sugarClamped: false,
     })
   })
 
-  it('backfills only untouched all-null legacy meals', () => {
-    expect(needsMealMacroBackfill(meal('legacy', {}))).toBe(true)
+  it('backfills every meal that has not adopted the added-sugar scope', () => {
+    expect(needsMealMacroBackfill(meal('legacy', { sugar_scope: null }))).toBe(true)
     expect(needsMealMacroBackfill(meal('attempted', { macros_source: 'ai' }))).toBe(false)
     expect(needsMealMacroBackfill(meal('partial', { protein_g: 20 }))).toBe(false)
   })

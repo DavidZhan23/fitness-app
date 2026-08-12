@@ -424,6 +424,41 @@ export async function runMigrations() {
   }
   try {
     await pool.query(`
+      alter table public.day_logs
+        add column if not exists micronutrient_status text,
+        add column if not exists micronutrient_fingerprint text,
+        add column if not exists micronutrient_summary jsonb,
+        add column if not exists micronutrient_updated_at timestamptz,
+        add column if not exists micronutrient_error text`)
+    await pool.query(`
+      alter table public.day_logs
+        drop constraint if exists day_logs_micronutrient_status_check`)
+    await pool.query(`
+      alter table public.day_logs
+        add constraint day_logs_micronutrient_status_check
+        check (
+          micronutrient_status is null
+          or micronutrient_status in ('idle', 'pending', 'ready', 'error')
+        )`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(`
+      alter table public.meals
+        add column if not exists sugar_scope text`)
+    await pool.query(`
+      alter table public.meals
+        drop constraint if exists meals_sugar_scope_check`)
+    await pool.query(`
+      alter table public.meals
+        add constraint meals_sugar_scope_check
+        check (sugar_scope is null or sugar_scope = 'added')`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(`
       create table if not exists public.meal_photo_daily_usage (
         user_id uuid not null references public.profiles (id) on delete cascade,
         usage_date date not null,

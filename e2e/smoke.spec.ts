@@ -32,7 +32,13 @@ test.describe.serial('main flow smoke', () => {
     const targetTiers = page.getByRole('group', { name: '油糖建议档次' })
     await expect(targetTiers.getByRole('button')).toHaveCount(3)
     await targetTiers.getByRole('button', { name: '少油少糖' }).click()
-    await expect(page.getByText(/\d+(?:\.\d+)?g \/ 30g/)).toHaveCount(2)
+    await expect(page.getByText(/\d+(?:\.\d+)?g \/ 30g/)).toHaveCount(1)
+    const addedSugarCard = page.locator('.nutrition-added-sugar-card')
+    await expect(addedSugarCard.getByRole('heading', { name: '添加糖' })).toBeVisible()
+    await expect(addedSugarCard.getByText('本档目标 ≤ 15g')).toBeVisible()
+    const micronutrientCard = page.locator('.micronutrient-card')
+    await expect(micronutrientCard.getByRole('heading', { name: '微量元素' })).toBeVisible()
+    await expect(micronutrientCard.getByText('AI 估算，非检测/非医疗建议。')).toBeVisible()
 
     await openCommunity(page)
 

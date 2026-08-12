@@ -48,7 +48,6 @@ export function TodayRecordRow({
   const [error, setError] = useState('')
   const [macroDraft, setMacroDraft] = useState(() => mealMacroDraft(meal))
   const [macroTouched, setMacroTouched] = useState(false)
-  const [macroToast, setMacroToast] = useState('')
 
   useEffect(() => {
     if (!isEditing) {
@@ -78,17 +77,9 @@ export function TodayRecordRow({
       setError(parsedMacros.error)
       return
     }
-    if (parsedMacros?.sugarClamped) {
-      setMacroField('sugar_g', String(parsedMacros.macros.sugar_g ?? ''))
-      setMacroToast('糖不能高于碳水，已自动夹紧')
-      window.setTimeout(() => setMacroToast(''), 2600)
-    }
     setSaving(true)
     setError('')
     try {
-      if (parsedMacros?.sugarClamped) {
-        await new Promise((resolve) => window.setTimeout(resolve, 900))
-      }
       await onSave(trimmed, k, parsedMacros?.macros)
       onCancelEdit()
     } catch (err) {
@@ -132,7 +123,7 @@ export function TodayRecordRow({
                     protein_g: '蛋白质',
                     fat_g: '脂肪',
                     carbs_g: '碳水',
-                    sugar_g: '糖',
+                    sugar_g: '添加糖',
                   }[field]
                   return (
                     <label key={field} className="block">
@@ -150,14 +141,12 @@ export function TodayRecordRow({
                   )
                 })}
               </div>
+              <p className="macro-input-disclosure__hint">
+                仅记配料中额外加入的糖；不记完整水果、牛奶中天然糖。
+              </p>
             </details>
           ) : null}
           {error ? <p className="text-xs text-danger">{error}</p> : null}
-          {macroToast ? (
-            <div className="macro-toast" role="status" aria-live="polite">
-              {macroToast}
-            </div>
-          ) : null}
           <div className="flex justify-end gap-2">
             <button
               type="button"
