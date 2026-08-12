@@ -175,6 +175,7 @@ export function MonthGrid({
               disabled={isBlocked}
               data-heatmap-day={dateKey}
               data-heatmap-grid={type}
+              data-heatmap-emblem={dayNum % 2 === 0 ? 'bat' : 'shield'}
               title={isToday ? `${titleText} · 今日` : titleText}
               aria-label={ariaLabel}
               onClick={() => !isBlocked && onDayClick?.(dateKey, type)}
@@ -194,7 +195,7 @@ export function MonthGrid({
               <span className="heatmap-day-number">{dayNum}</span>
               {gridBadge && (
                 <span
-                  className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-bl-md rounded-tr-md bg-slate-950/75 text-[8px] leading-none"
+                  className="pointer-events-none absolute right-0 top-0 z-[4] flex h-3.5 min-w-3.5 items-center justify-center rounded-bl-md rounded-tr-md bg-slate-950/75 text-[8px] leading-none"
                   aria-hidden
                 >
                   {heatmapBadgeEmoji(gridBadge)}

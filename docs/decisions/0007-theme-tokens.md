@@ -24,7 +24,7 @@ We want a path toward uploading a color palette from a developer console without
    - `[data-style='eva-unit02']` — **烈焰二号机** (EVA Unit-02 Asuka Overdrive): 深黑红驾驶舱 `#17080C`、二号机红主操 `#D7192A`、荧光绿运动、明日香橙黄饮食；Hero 橙顶能量线；底栏红胶囊 + 橙边（`index.css` 覆盖）；BMR 公式条 `#A80F1F`。
    - `[data-style='gundam-hangar']` — **格纳库提坦斯** (Titans Hangar): 深黑蓝底 `#0E1624`、装甲面板 `#182638` / `#203249`；钢蓝主操 `#425F8A`、高亮 `#7FA5D1`；冷青运动、暗红饮食/盈余；代谢墙缺口格与运动墙同色阶；打卡墙 Tab / 社区分段选中为暗红；BMR 公式条 `#101A28`；底栏选中钢蓝胶囊 `#203249` + 浅字（`index.css` 覆盖）。
    - `[data-style='jojo-stardust-duel']` — **时停入侵** (Time Stop Intrusion): 实色黑蓝底 `#070a12` / `#11182a`；承太郎钴蓝主操 `#3151c9`、运动蓝紫 `#476cff` / `#9b8cff`；DIO 金黄绿入侵 `#fff35a` / `#d6d930`（饮食/盈余/关注/今日标记）；热力图运动蓝紫阶、盈余金黄绿阶；Hero 联名图可选；底栏钴蓝胶囊 + 酸性黄图标（`index.css` 覆盖）。
-   - `[data-style='batman-v-superman']` — **超蝙对决** (Ink Duel): 宣纸灰白页底 `#E8E4DD`、纸白卡 `#F6F3ED`；墨黑正文与运动/缺口石墨阶，朱砂红 `#A32933` / `#8D1F2A` 承担主操作、饮食和盈余；Hero 使用用户提供海报扩展的 16:9 水墨双雄图并可关闭；打卡墙日期交替使用低透明度蝙翼与力量盾牌水印；底栏选中朱砂胶囊。
+   - `[data-style='batman-v-superman']` — **超蝙对决** (Ink Duel): 宣纸灰白页底 `#E8E4DD`、纸白卡 `#F6F3ED`；墨黑正文与运动/缺口石墨阶，朱砂红 `#A32933` / `#8D1F2A` 承担主操作、饮食和盈余；Hero 使用用户提供海报扩展的 16:9 水墨双雄图并可关闭；打卡墙日期下缘交替使用无字力量菱盾与蝙翼徽记，深色点亮格自动切换纸白/暖金高对比色；底栏选中朱砂胶囊。
    - Tokens include surfaces, text, accent families (exercise / meal), **`--accent-pop*`** (醒目点缀：薰衣=薰衣草紫、碧空樱缀=樱粉、樱雾漫境=蓝、轻氧薄荷=薄荷青、豆乳清茶=奶绿、木隐茶庭=竹叶黄绿、暴走初号机=初号机紫、烈焰二号机=二号机红、格纳库=钢蓝、深海=运动色), danger, heatmap level colors (`--heatmap-*`), and daily nutrition colors (`--macro-protein/fat/carbs/sugar/track/muted`). Macro charts and progress bars consume only these semantic tokens; every palette defines its own set.
 
 1b. **Readable text contrast (light themes, 2026-05-28)**
