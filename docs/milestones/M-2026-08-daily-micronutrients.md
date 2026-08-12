@@ -1,4 +1,4 @@
-# Milestone: 每日微量元素（整日 AI 快照 + 三态对照 + 食物建议）
+# Milestone: 每日微量元素（独立页 + 整日 AI 快照 + 三态科普）
 
 **Status:** done
 **Branch:** `dev/huanghongli`
@@ -11,15 +11,20 @@
 
 ## 2. 目标 (Goal)
 
-本人在营养页查看当日（可切历史日）**整日**微量元素估算：固定 16 项三态（可能充足 / 可能不足 / 信息不足）；对不足项给出日常食物建议；餐食增删改后保存立刻成功，后台异步重算并在未完成时给出「更新中」提示。
+本人从营养页轻量入口进入独立 `/micronutrients` 页面，查看当日（可切历史日）**整日**微量元素估算。新页以紧凑网格呈现固定 16 项三态（可能充足 / 可能不足 / 信息不足），支持按状态/类别筛选；点开单项后查看 AI 当日说明、不足食物建议，以及静态「人体作用 / 常见食物」科普。餐食增删改后保存立刻成功，后台异步重算并在未完成时给出「更新中」提示。
 
 ## 3. 成功标准 (Success criteria)
 
 - [x] `day_logs` 持久化整日微量快照（JSON）+ 餐食指纹 + 状态（`idle|pending|ready|error`）
 - [x] 今日：meal POST/PATCH/DELETE 成功后触发异步重算；失败不挡记餐
-- [x] 异步进行中：营养页微量区有明确「正在根据今日饮食更新微量元素…」类提示
+- [x] `/nutrition` 仅保留微量元素轻量入口卡，不再铺开 16 项长列表；入口带当前日期跳转 `/micronutrients`
+- [x] `/micronutrients` 复用本地日期约定，支持历史日切换、pending 轮询、error 重试、无餐空态
+- [x] 新页显示三态数量芯片、`全部/可能不足/维生素/矿物质` 筛选与紧凑网格，窄屏 2 列、稍宽 4 列
+- [x] 单项详情使用可关闭、可滚动且不被底栏遮挡的 sheet/全宽面板；网格不直接铺 note/食物长文
+- [x] 16 项均有静态「人体作用 / 常见食物」科普；两个同权按钮页内展开/收起，不调用 AI
+- [x] 异步进行中：独立页有明确「正在根据今日饮食更新微量元素…」类提示
 - [x] 历史日：有快照只读；无快照则打开营养页懒算一次；之后仅餐变再算
-- [x] 固定 16 项清单 + 三态 UI；不足项 1–3 个食物建议；页内免责声明
+- [x] 固定 16 项清单 + 三态 UI；不足项 1–3 个 AI 食物建议；独立页固定免责声明
 - [x] 无餐食空态；AI 未配置/失败不挡宏量，可重试；失败不写「成功」指纹
 - [x] 仅本人；`npm run verify`；api-contract / overview ER / README 功能节同步
 
@@ -45,14 +50,16 @@
 
 | 想做的事 | 已有实现 | 是否复用 |
 |----------|----------|----------|
-| 营养页壳 / 日期切换 / 空态 | `src/pages/NutritionPage.tsx` | 是（加微量区块） |
+| 营养页壳 / 日期切换 / 空态 | `src/pages/NutritionPage.tsx` | 是（入口卡；日期逻辑抽为共享 hook） |
+| 独立页路由 / 底栏 | `src/App.tsx` / `src/components/Layout.tsx` | 是（新增子路由，底栏仍为三项） |
+| 日期、day-log 加载、pending 轮询、重试 | 营养页现有页内逻辑 | 抽为 `src/hooks/useNutritionDay.ts`，两页共用；复用 `dayLogService` 与 `streaks`，仓库暂无同职责 hook |
 | 餐食变更钩子 | `server/src/dayLogMutation.js#afterExerciseOrMealChanged` | 是（meal 路径踢异步；勿因运动误踢） |
 | 日日志拉取 | `dayLogService` / `httpData` day-logs | 是（扩展 DayLog 字段） |
 | DeepSeek 文本 | `server/src/ai/providers/deepseekText.js` | 是（新 estimate 函数，勿破坏 kcal/宏量 prompt） |
 | 按需营养建议模式 | `POST /ai/macro-advice` | 参考模式；微量以写路径异步+懒算为主 |
 | 宏量 backfill 进行中提示 | NutritionPage backfill banner | 是（同类 status UI） |
 | 日期 key | `src/lib/streaks.ts#formatDateKey` | 是 |
-| 微量目录 / 三态 / 指纹 | （无） | 新建 `src/lib/micronutrients.ts` + server 镜像解析模块；**勿**写入 `calories.ts` / `macroTargets.ts` 热量逻辑 |
+| 微量目录 / 三态 / 指纹 | `src/lib/micronutrients.ts` + `server/src/micronutrients.js` | 是（前端目录扩展静态科普；后端核心不改） |
 
 ## 7. Inputs / Outputs
 
@@ -89,7 +96,7 @@
 - `server/src/routes/logs.js` + `dayLogMutation.js`（meal 后 kick）
 - `server/src/routes/ai.js` 或 logs 下 `POST .../micronutrients/refresh`（手动重试）
 - `src/lib/micronutrients.ts`、`src/types/index.ts`、`src/lib/api/index.ts`
-- `src/pages/NutritionPage.tsx` + 必要 CSS
+- `src/pages/NutritionPage.tsx`（轻入口）、`src/pages/MicronutrientsPage.tsx`（独立页）+ 共享 hook + 必要 CSS
 - `docs/architecture/api-contract.md`、`overview.md`、根 `README.md`
 - 单测：指纹 / JSON 校验 / 状态机
 
@@ -100,7 +107,7 @@
 1. Schema + DayLog 映射
 2. 固定目录 + 指纹 + AI prompt/parse
 3. 异步调度（meal 后 + 历史懒算 + 重试）
-4. 营养页 UI：进行中 / 三态列表 / 食物建议 / 免责 / 空态
+4. 营养页轻入口 + 独立微量页：状态 / 筛选网格 / 单项详情 / 静态科普 / 免责 / 空态
 5. 文档 + 单测 + verify
 
 **后续（不做本轮）：** 趋势、手填、社区、补剂、OCR
@@ -121,6 +128,18 @@
 - 通过：320px 无横向溢出；未登录访问 `/nutrition` 重定向 `/login`；浏览器控制台无 error / warning
 - 未调用外部 AI：ready UI 使用隔离本地快照验证；AI 白名单、缺项补 unknown、定量文案过滤与 stale fingerprint 由服务端纯函数测试覆盖
 - 已沉淀 smoke 断言：`e2e/smoke.spec.ts` 校验「微量元素」标题与固定免责声明
+
+### 独立页 UI/IA 调整拟人探查（2026-08-12）
+
+- 人设：`self-today` 为主，补充 `self-history` / `new-empty`
+- 环境：本地 API + Vite；默认视口、320×640 与 500×720；外部 AI 禁用，ready 使用隔离本地快照
+- 通过：`/nutrition` 仅显示标题、短状态和「查看详情」，DOM 中不再存在微量网格/长列表；链接携带当前日期进入 `/micronutrients`
+- 通过：独立页无餐空态、历史日期与补记链接正确；ready 显示 2/3/11 三态芯片与 16 项紧凑网格，状态筛选 2 项、维生素 10 项、矿物质 6 项
+- 通过：点开「铁」后 sheet 仅在详情内显示 AI note 与 3 个当日建议；「人体作用 / 常见食物」同权按钮可分别展开并再次收起，全程无模型调用
+- 通过：pending 保留旧网格并在 1.5 秒轮询后自动结束；error 保留旧结果、明确过期提示并可重试；未登录访问重定向 `/login`
+- 通过：底栏始终只有 今日/社区/营养三项，独立页仍高亮营养；320px 无横向溢出，sheet 修正盒模型后底边位于 tabbar 上方；网格 320px 为 2 列、500px 为 4 列
+- 缺陷：无遗留缺陷。探查中发现 sheet 初版与 tabbar 重叠，已修复并复测通过
+- 已更新 e2e：营养页断言轻入口且无网格，进入独立页断言路由、标题、免责声明与 ready/empty/error/pending 任一有效状态
 
 ## 12. 风险与缓解
 
@@ -145,7 +164,7 @@
 
 ## 15. 是否满足最小可运行闭环
 
-是——记餐成功 → 后台估微量 → 营养页看三态与食物建议。
+是——记餐成功 → 后台估微量 → 营养页入口 → 独立页查看三态、筛选、食物建议与静态科普。
 
 ## Grill 决策摘要（2026-08-12）
 

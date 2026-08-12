@@ -31,6 +31,11 @@ const CommunityPage = lazy(() =>
 const NutritionPage = lazy(() =>
   import('./pages/NutritionPage').then((m) => ({ default: m.NutritionPage })),
 )
+const MicronutrientsPage = lazy(() =>
+  import('./pages/MicronutrientsPage').then((m) => ({
+    default: m.MicronutrientsPage,
+  })),
+)
 const CommunityUserPage = lazy(() =>
   import('./pages/CommunityUserPage').then((m) => ({
     default: m.CommunityUserPage,
@@ -100,6 +105,7 @@ export default function App() {
                 <Route path="calendar" element={<Navigate to="/" replace />} />
                 <Route path="community" element={<CommunityPage />} />
                 <Route path="nutrition" element={<NutritionPage />} />
+                <Route path="micronutrients" element={<MicronutrientsPage />} />
                 <Route path="community/inbox" element={<CommunityInboxPage />} />
                 <Route path="community/followers" element={<CommunityFollowersPage />} />
                 <Route path="community/:userId" element={<CommunityUserPage />} />

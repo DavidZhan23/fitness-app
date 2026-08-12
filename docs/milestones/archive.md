@@ -26,7 +26,7 @@
 | [M-2026-07-dev-loop-skills](M-2026-07-dev-loop-skills.md) | done | `dev/huanghongli`（开发闭环 / skills） |
 | [M-2026-07-architecture-grill](M-2026-07-architecture-grill.md) | done | `dev/huanghongli`（架构文档 + ADR-0008） |
 | [M-2026-08-daily-nutrition-macros](M-2026-08-daily-nutrition-macros.md) | done | `dev/huanghongli`（宏量营养 + 独立添加糖） |
-| [M-2026-08-daily-micronutrients](M-2026-08-daily-micronutrients.md) | done | `dev/huanghongli`（整日微量元素 AI 快照） |
+| [M-2026-08-daily-micronutrients](M-2026-08-daily-micronutrients.md) | done | `dev/huanghongli`（独立微量元素页 + 整日 AI 快照） |
 | [M-2026-08-profile-persistence-fixes](M-2026-08-profile-persistence-fixes.md) | done | `dev/huanghongli`（主题与社区可见性持久化修复） |
 
 ← [回到 Active 表](README.md)

@@ -2383,13 +2383,47 @@ select:focus-visible {
   color: var(--text-muted);
 }
 
-.micronutrient-card__count {
+.micronutrient-entry-card {
+  padding-block: 0.9rem;
+}
+
+.micronutrient-entry-card__link {
+  flex-shrink: 0;
   border-radius: 999px;
-  padding: 0.25rem 0.55rem;
+  padding: 0.45rem 0.7rem;
   background: var(--surface-panel-soft-bg);
+  color: var(--text-link);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.micronutrient-entry-card__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
   color: var(--text-secondary);
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.74rem;
+}
+
+.micronutrient-entry-card__summary span {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 50%;
+  background: var(--macro-muted);
+}
+
+.micronutrient-entry-card__summary[data-status='pending'] span {
+  background: var(--text-link);
+}
+
+.micronutrient-entry-card__summary[data-status='error'] span {
+  background: var(--danger-strong);
+}
+
+.micronutrient-entry-card__summary[data-status='ready'] span {
+  background: var(--accent-exercise-strong);
 }
 
 .micronutrient-empty {
@@ -2412,7 +2446,7 @@ select:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.85rem;
+  margin: 0;
   border-left: 0.2rem solid var(--macro-muted);
   padding: 0.65rem 0.75rem;
   background: var(--surface-panel-soft-bg);
@@ -2430,90 +2464,348 @@ select:focus-visible {
   border-left-color: var(--danger-strong);
 }
 
-.micronutrient-card__advice {
-  margin-bottom: 0.85rem;
-  color: var(--text-secondary);
-  font-size: 0.76rem;
-  line-height: 1.6;
-}
-
-.micronutrient-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.micronutrient-list > li {
-  min-width: 0;
-  border: 1px solid var(--surface-panel-border);
-  border-left: 0.2rem solid var(--macro-muted);
-  border-radius: 0.7rem;
-  padding: 0.65rem;
-  background: var(--surface-panel-soft-bg);
-}
-
-.micronutrient-list > li[data-status='low'] {
-  border-left-color: var(--danger-strong);
-}
-
-.micronutrient-list > li[data-status='adequate'] {
-  border-left-color: var(--accent-exercise-strong);
-}
-
-.micronutrient-item__heading {
+.micronutrients-page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  color: var(--text-primary);
-  font-size: 0.76rem;
+  gap: 0.75rem;
+  padding: 1rem;
 }
 
-.micronutrient-item__heading span {
-  flex-shrink: 0;
+.micronutrients-page-header > div:first-child {
+  min-width: 0;
+}
+
+.micronutrients-page-header__back {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  color: var(--text-link);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.micronutrients-page-header p,
+.micronutrients-page-header span {
   color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.micronutrients-page-header h1 {
+  margin: 0.1rem 0;
+  color: var(--text-primary);
+  font-size: clamp(1.25rem, 5vw, 1.65rem);
+}
+
+.micronutrient-summary-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.micronutrient-summary-chips button {
+  min-width: 0;
+  border: 1px solid var(--surface-panel-border);
+  border-radius: 0.85rem;
+  padding: 0.65rem 0.35rem;
+  background: var(--surface-card-bg);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.micronutrient-summary-chips button[aria-pressed='true'] {
+  border-color: currentColor;
+  background: var(--surface-panel-soft-bg);
+}
+
+.micronutrient-summary-chips button[data-status='low'] {
+  color: var(--danger-strong);
+}
+
+.micronutrient-summary-chips button[data-status='adequate'] {
+  color: var(--accent-exercise-strong);
+}
+
+.micronutrient-summary-chips strong,
+.micronutrient-summary-chips span {
+  display: block;
+}
+
+.micronutrient-summary-chips strong {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.micronutrient-summary-chips span {
+  margin-top: 0.08rem;
   font-size: 0.64rem;
 }
 
-.micronutrient-list > li > p {
-  margin-top: 0.35rem;
+.micronutrient-page-advice {
+  padding: 0.75rem 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.micronutrient-browser {
+  padding: 0.85rem;
+}
+
+.micronutrient-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--surface-panel-border);
+  border-radius: 0.8rem;
+  padding: 0.25rem;
+  background: var(--surface-panel-soft-bg);
+}
+
+.micronutrient-filter-tabs button {
+  min-width: 0;
+  border-radius: 0.6rem;
+  padding: 0.48rem 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.micronutrient-filter-tabs button[aria-pressed='true'] {
+  background: var(--surface-card-bg);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--surface-panel-border);
+}
+
+.micronutrient-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.48rem;
+}
+
+.micronutrient-compact-grid > button {
+  min-width: 0;
+  border: 1px solid var(--surface-panel-border);
+  border-radius: 0.72rem;
+  padding: 0.62rem 0.65rem;
+  background: var(--surface-panel-soft-bg);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.micronutrient-compact-grid > button:hover,
+.micronutrient-compact-grid > button:focus-visible {
+  border-color: var(--text-link);
+}
+
+.micronutrient-compact-grid strong,
+.micronutrient-compact-grid span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.micronutrient-compact-grid strong {
+  font-size: 0.8rem;
+}
+
+.micronutrient-compact-grid span {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.62rem;
+}
+
+.micronutrient-compact-grid i,
+.micronutrient-detail-sheet__today > span {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-right: 0.3rem;
+  border-radius: 50%;
+  background: var(--macro-muted);
+  vertical-align: 0.04rem;
+}
+
+.micronutrient-compact-grid > button[data-status='low'] i,
+.micronutrient-detail-sheet__today[data-status='low'] > span {
+  background: var(--danger-strong);
+}
+
+.micronutrient-compact-grid > button[data-status='adequate'] i,
+.micronutrient-detail-sheet__today[data-status='adequate'] > span {
+  background: var(--accent-exercise-strong);
+}
+
+.micronutrient-filter-empty {
+  padding: 1.5rem 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.micronutrient-page-disclaimer {
+  border-top: 1px solid var(--surface-panel-border);
+  padding: 0.75rem 0.25rem 0;
   color: var(--text-muted);
   font-size: 0.68rem;
   line-height: 1.5;
+  text-align: center;
 }
 
-.micronutrient-list details {
+.micronutrient-detail-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem 1rem calc(var(--tabbar-row-h) + 1rem);
+}
+
+.micronutrient-detail-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgb(0 0 0 / 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.micronutrient-detail-sheet__panel {
+  position: relative;
+  width: min(100%, 32rem);
+  max-height: calc(100dvh - var(--tabbar-row-h) - 2.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: var(--surface-card-bg);
+  box-shadow:
+    inset 0 0 0 1px var(--surface-card-border),
+    0 1rem 3rem rgb(0 0 0 / 0.28);
+}
+
+.micronutrient-detail-sheet__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.micronutrient-detail-sheet__header p {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+.micronutrient-detail-sheet__header h2 {
+  margin-top: 0.15rem;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.micronutrient-detail-sheet__close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-panel-soft-bg);
+  color: var(--text-primary);
+  font-size: 1.2rem;
+}
+
+.micronutrient-detail-sheet__body {
+  margin-top: 0.85rem;
+}
+
+.micronutrient-detail-sheet__today {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+}
+
+.micronutrient-detail-sheet__note {
+  margin-top: 0.55rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.micronutrient-detail-sheet__ai-advice,
+.micronutrient-detail-sheet__education {
+  margin-top: 0.85rem;
+  border: 1px solid var(--surface-panel-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-panel-soft-bg);
+}
+
+.micronutrient-detail-sheet__ai-advice h3,
+.micronutrient-detail-sheet__education h3 {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.micronutrient-detail-sheet__ai-advice ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   margin-top: 0.5rem;
+}
+
+.micronutrient-detail-sheet__ai-advice li {
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  background: var(--surface-card-bg);
   color: var(--text-secondary);
   font-size: 0.68rem;
 }
 
-.micronutrient-list details summary {
-  cursor: pointer;
-  color: var(--text-link);
-  font-weight: 700;
+.micronutrient-detail-sheet__education-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1rem;
 }
 
-.micronutrient-list details ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
+.micronutrient-detail-sheet__education-tabs button {
+  border: 1px solid var(--text-link);
+  border-radius: 0.75rem;
+  padding: 0.62rem 0.5rem;
+  color: var(--text-link);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.micronutrient-detail-sheet__education-tabs button[aria-expanded='true'] {
+  background: var(--text-link);
+  color: var(--surface-card-bg);
+}
+
+.micronutrient-detail-sheet__education p,
+.micronutrient-detail-sheet__education-hint {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.65;
+}
+
+.micronutrient-detail-sheet__education p {
   margin-top: 0.4rem;
 }
 
-.micronutrient-list details li {
-  border-radius: 999px;
-  padding: 0.18rem 0.42rem;
-  background: var(--surface-card-bg);
+.micronutrient-detail-sheet__education-hint {
+  margin-top: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
-.micronutrient-disclaimer {
-  margin-top: 0.9rem;
-  border-top: 1px solid var(--surface-panel-border);
-  padding-top: 0.7rem;
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  line-height: 1.5;
+@media (min-width: 480px) {
+  .micronutrient-compact-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .macro-target-tiers {
@@ -2648,9 +2940,6 @@ select:focus-visible {
     width: 10.5rem;
   }
 
-  .micronutrient-list {
-    grid-template-columns: 1fr;
-  }
 }
 
 .log-page-header {
