@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PageShell } from '../components/ui/responsive'
-import { useAuth } from '../context/AuthContext'
-import { resolveWritableLogDateFromSearchParams } from '../features/log/submitLog'
+import { useNutritionDay } from '../hooks/useNutritionDay'
 import { httpData } from '../lib/api'
-import { backfillMealMacros, fetchDayLogWithItems } from '../lib/dayLogService'
+import { backfillMealMacros } from '../lib/dayLogService'
 import { scrollCommunityMainToTop } from '../lib/communityListCache'
 import {
   MACRO_STATUS_LABELS,
@@ -19,16 +18,9 @@ import {
   type MacroTargetTier,
 } from '../lib/macroTargets'
 import {
-  MICRONUTRIENT_STATUS_LABELS,
   micronutrientItemsForDisplay,
-  micronutrientLabel,
 } from '../lib/micronutrients'
-import {
-  formatDateKey,
-  formatDateKeyLabel,
-  getAccountStartDateKey,
-  parseDateKey,
-} from '../lib/streaks'
+import { formatDateKeyLabel } from '../lib/streaks'
 import type { DayLog, Meal } from '../types'
 
 const MACRO_META: {
@@ -41,12 +33,6 @@ const MACRO_META: {
   { field: 'fat_g', label: '脂肪', shortLabel: '脂肪', kcalPerGram: 9 },
   { field: 'carbs_g', label: '碳水', shortLabel: '碳水', kcalPerGram: 4 },
 ]
-
-function shiftDateKey(dateKey: string, delta: number): string {
-  const date = parseDateKey(dateKey)
-  date.setDate(date.getDate() + delta)
-  return formatDateKey(date)
-}
 
 function grams(value: unknown): number {
   const parsed = Number(value)
@@ -181,117 +167,51 @@ function AddedSugarCard({
   )
 }
 
-function MicronutrientCard({
+function MicronutrientEntryCard({
   dayLog,
   mealCount,
-  mealLogHref,
-  retrying,
-  retryError,
-  onRetry,
+  dateKey,
 }: {
   dayLog: DayLog | null
   mealCount: number
-  mealLogHref: string
-  retrying: boolean
-  retryError: string
-  onRetry: () => void
+  dateKey: string
 }) {
-  const status = dayLog?.micronutrient_status ?? 'idle'
   const summary = dayLog?.micronutrient_summary
   const items = micronutrientItemsForDisplay(summary)
   const lowCount = items.filter((item) => item.status === 'low').length
+  const status = dayLog?.micronutrient_status ?? 'idle'
+  const statusText =
+    mealCount === 0
+      ? '当天暂无餐食'
+      : status === 'pending'
+        ? '更新中…'
+        : status === 'error'
+          ? summary
+            ? `更新失败 · ${lowCount} 项可能不足`
+            : '更新失败，可前往重试'
+          : summary
+            ? lowCount > 0
+              ? `${lowCount} 项可能不足`
+              : '16 项已估算'
+            : '等待生成'
 
   return (
-    <section className="surface-card nutrition-card micronutrient-card">
+    <section className="surface-card nutrition-card micronutrient-entry-card">
       <div className="nutrition-card__heading">
         <div>
           <p className="nutrition-card__eyebrow">整日 AI 快照</p>
           <h2>微量元素</h2>
         </div>
-        {summary ? (
-          <span className="micronutrient-card__count">
-            {lowCount > 0 ? `${lowCount} 项可能不足` : '16 项已估算'}
-          </span>
-        ) : null}
+        <Link
+          to={`/micronutrients?date=${encodeURIComponent(dateKey)}`}
+          className="micronutrient-entry-card__link"
+        >
+          查看详情
+        </Link>
       </div>
-
-      {mealCount === 0 ? (
-        <div className="micronutrient-empty">
-          <p>这一天还没有餐食，暂不调用 AI。</p>
-          <Link to={mealLogHref} className="btn-primary">去记饮食</Link>
-        </div>
-      ) : (
-        <>
-          {status === 'pending' ? (
-            <p className="micronutrient-status micronutrient-status--pending" role="status">
-              正在根据今日饮食更新微量元素…
-              {summary ? ' 下方暂显示上次结果。' : ''}
-            </p>
-          ) : null}
-          {status === 'error' ? (
-            <div className="micronutrient-status micronutrient-status--error" role="alert">
-              <p>
-                {dayLog?.micronutrient_error || '微量元素更新失败，请稍后重试'}
-                {summary ? '；下方保留的结果可能已过期。' : ''}
-              </p>
-              <button
-                type="button"
-                className="nutrition-reassess-btn"
-                disabled={retrying}
-                onClick={onRetry}
-              >
-                {retrying ? '重试中…' : '重试'}
-              </button>
-            </div>
-          ) : null}
-          {status === 'idle' && !summary ? (
-            <div className="micronutrient-status">
-              <p>微量元素快照尚未生成。</p>
-              <button
-                type="button"
-                className="nutrition-reassess-btn"
-                disabled={retrying}
-                onClick={onRetry}
-              >
-                {retrying ? '生成中…' : '立即生成'}
-              </button>
-            </div>
-          ) : null}
-          {retryError ? <p className="text-sm text-danger">{retryError}</p> : null}
-
-          {summary ? (
-            <>
-              {summary.advice ? (
-                <p className="micronutrient-card__advice">{summary.advice}</p>
-              ) : null}
-              <ul className="micronutrient-list">
-                {items.map((item) => (
-                  <li key={item.id} data-status={item.status}>
-                    <div className="micronutrient-item__heading">
-                      <strong>{micronutrientLabel(item.id)}</strong>
-                      <span>{MICRONUTRIENT_STATUS_LABELS[item.status]}</span>
-                    </div>
-                    {item.note ? <p>{item.note}</p> : null}
-                    {item.status === 'low' && item.food_suggestions?.length ? (
-                      <details open>
-                        <summary>日常食物建议</summary>
-                        <ul>
-                          {item.food_suggestions.slice(0, 3).map((food) => (
-                            <li key={food}>{food}</li>
-                          ))}
-                        </ul>
-                      </details>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-        </>
-      )}
-
-      <p className="micronutrient-disclaimer">
-        AI 估算，非检测/非医疗建议。
+      <p className="micronutrient-entry-card__summary" data-status={status}>
+        <span aria-hidden />
+        {statusText}
       </p>
     </section>
   )
@@ -337,19 +257,23 @@ function MealMacroLine({ meal }: { meal: Meal }) {
 }
 
 export function NutritionPage() {
-  const { user, profile } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const today = formatDateKey()
-  const dateKey = resolveWritableLogDateFromSearchParams(
-    searchParams,
-    profile?.created_at,
-  )
-  const accountStart = getAccountStartDateKey(profile?.created_at)
-  const [dayLog, setDayLog] = useState<DayLog | null>(null)
-  const [meals, setMeals] = useState<Meal[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const {
+    user,
+    profile,
+    today,
+    dateKey,
+    accountStart,
+    previous,
+    next,
+    dayLog,
+    meals,
+    loading,
+    error,
+    loadDay,
+    refreshDay,
+    goToDate,
+    mealLogHref,
+  } = useNutritionDay('/nutrition')
   const [targetTier, setTargetTier] = useState<MacroTargetTier>('normal')
   const ruleTargets = useMemo(
     () => calculateMacroTargets(profile, targetTier),
@@ -360,12 +284,7 @@ export function NutritionPage() {
   const [adviceError, setAdviceError] = useState('')
   const [adviceLoading, setAdviceLoading] = useState(false)
   const [backfillPending, setBackfillPending] = useState(false)
-  const [micronutrientRetrying, setMicronutrientRetrying] = useState(false)
-  const [micronutrientRetryError, setMicronutrientRetryError] = useState('')
   const backfillDatesRef = useRef(new Set<string>())
-  const currentDateRef = useRef(dateKey)
-  const mountedRef = useRef(true)
-  currentDateRef.current = dateKey
 
   const totals = useMemo(() => summarizeMealMacros(meals), [meals])
   const hasChartData = macroEnergyKcal(totals) > 0
@@ -374,36 +293,8 @@ export function NutritionPage() {
     setTargets(ruleTargets)
     setAiAdvice('')
     setAdviceError('')
-    setMicronutrientRetryError('')
     scrollCommunityMainToTop()
   }, [ruleTargets, dateKey])
-
-  const loadDay = useCallback(async () => {
-    if (!user || !profile) return
-    setLoading(true)
-    setError('')
-    setDayLog(null)
-    try {
-      const result = await fetchDayLogWithItems(user.id, dateKey, profile)
-      setDayLog(result.dayLog)
-      setMeals(result.meals)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [user, profile, dateKey])
-
-  useEffect(() => {
-    void loadDay()
-  }, [loadDay])
-
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
 
   useEffect(() => {
     if (
@@ -418,59 +309,22 @@ export function NutritionPage() {
 
     backfillDatesRef.current.add(dateKey)
     setBackfillPending(true)
+    let cancelled = false
     void (async () => {
       try {
         await backfillMealMacros(dateKey)
-        const refreshed = await fetchDayLogWithItems(user.id, dateKey, profile)
-        if (mountedRef.current && currentDateRef.current === dateKey) {
-          setDayLog(refreshed.dayLog)
-          setMeals(refreshed.meals)
-        }
+        if (!cancelled) await refreshDay()
       } catch {
         // Best effort: keep the meal visible and retry on a future page visit.
       } finally {
-        if (mountedRef.current && currentDateRef.current === dateKey) {
-          setBackfillPending(false)
-        }
+        if (!cancelled) setBackfillPending(false)
       }
     })()
-  }, [dateKey, loading, meals, profile, user])
-
-  useEffect(() => {
-    if (
-      dayLog?.micronutrient_status !== 'pending' ||
-      !user ||
-      !profile
-    ) {
-      return
-    }
-    let cancelled = false
-    let polling = false
-    const poll = async () => {
-      if (polling) return
-      polling = true
-      try {
-        const result = await fetchDayLogWithItems(user.id, dateKey, profile)
-        if (!cancelled && currentDateRef.current === dateKey) {
-          setDayLog(result.dayLog)
-          setMeals(result.meals)
-        }
-      } catch {
-        // Keep the visible pending state; the next short poll can recover.
-      } finally {
-        polling = false
-      }
-    }
-    const timer = window.setInterval(() => void poll(), 1_500)
     return () => {
       cancelled = true
-      window.clearInterval(timer)
+      setBackfillPending(false)
     }
-  }, [dateKey, dayLog?.micronutrient_status, profile, user])
-
-  const goToDate = (next: string) => {
-    navigate(next === today ? '/nutrition' : `/nutrition?date=${encodeURIComponent(next)}`)
-  }
+  }, [dateKey, loading, meals, profile, refreshDay, user])
 
   const requestAdvice = async () => {
     setAdviceLoading(true)
@@ -489,26 +343,6 @@ export function NutritionPage() {
       setAdviceLoading(false)
     }
   }
-
-  const retryMicronutrients = async () => {
-    setMicronutrientRetrying(true)
-    setMicronutrientRetryError('')
-    try {
-      const refreshed = await httpData.refreshMicronutrients(dateKey)
-      setDayLog(refreshed)
-    } catch (err) {
-      setMicronutrientRetryError(
-        err instanceof Error ? err.message : '重试失败，请稍后再试',
-      )
-    } finally {
-      setMicronutrientRetrying(false)
-    }
-  }
-
-  const previous = shiftDateKey(dateKey, -1)
-  const next = shiftDateKey(dateKey, 1)
-  const mealLogHref =
-    dateKey === today ? '/log/meal' : `/log/meal?date=${encodeURIComponent(dateKey)}`
 
   return (
     <PageShell className="nutrition-page-shell">
@@ -573,13 +407,10 @@ export function NutritionPage() {
             backfillPending={backfillPending}
           />
 
-          <MicronutrientCard
+          <MicronutrientEntryCard
             dayLog={dayLog}
             mealCount={meals.length}
-            mealLogHref={mealLogHref}
-            retrying={micronutrientRetrying}
-            retryError={micronutrientRetryError}
-            onRetry={() => void retryMicronutrients()}
+            dateKey={dateKey}
           />
 
           <section className="surface-card nutrition-card">

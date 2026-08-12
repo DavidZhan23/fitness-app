@@ -26,6 +26,9 @@ export function Layout() {
             const active =
               item.to === '/community'
                 ? location.pathname.startsWith('/community')
+                : item.to === '/nutrition'
+                  ? location.pathname.startsWith('/nutrition') ||
+                    location.pathname.startsWith('/micronutrients')
                 : item.to === '/'
                   ? location.pathname === '/'
                   : location.pathname.startsWith(item.to)

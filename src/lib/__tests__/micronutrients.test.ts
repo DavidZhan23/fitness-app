@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MICRONUTRIENT_CATALOG,
+  filterMicronutrientItems,
   micronutrientItemsForDisplay,
 } from '../micronutrients'
 
@@ -20,5 +21,32 @@ describe('micronutrient display catalog', () => {
     expect(new Set(items.map((item) => item.id))).toEqual(
       new Set(MICRONUTRIENT_CATALOG.map((item) => item.id)),
     )
+  })
+
+  it('provides family-readable role and food education for all 16 ids', () => {
+    expect(MICRONUTRIENT_CATALOG).toHaveLength(16)
+    expect(new Set(MICRONUTRIENT_CATALOG.map((item) => item.id)).size).toBe(16)
+    for (const item of MICRONUTRIENT_CATALOG) {
+      expect(item.shortLabel.trim()).not.toBe('')
+      expect(item.role.split('。').filter(Boolean)).toHaveLength(2)
+      expect(item.foods.split('。').filter(Boolean)).toHaveLength(2)
+      expect(`${item.role}${item.foods}`).not.toMatch(/保健品|补充剂|品牌|\d+\s*(?:mg|μg|ug)/i)
+    }
+  })
+
+  it('filters the compact grid by status and catalog group', () => {
+    const items = micronutrientItemsForDisplay({
+      version: 1,
+      items: [
+        { id: 'vit_c', status: 'low' },
+        { id: 'iron', status: 'adequate' },
+      ],
+    })
+
+    expect(filterMicronutrientItems(items, 'low').map((item) => item.id)).toEqual([
+      'vit_c',
+    ])
+    expect(filterMicronutrientItems(items, 'vitamins')).toHaveLength(10)
+    expect(filterMicronutrientItems(items, 'minerals')).toHaveLength(6)
   })
 })
