@@ -10110,6 +10110,7 @@ select:focus-visible {
   --superbat-bat-ink: #3b3d41;
   --superbat-shield-ink: #741923;
   --superbat-shield-fill: rgb(163 41 51 / 0.24);
+  --superbat-shield-letter: #67171f;
   --superbat-mark-opacity: 0.62;
   isolation: isolate;
   overflow: hidden;
@@ -10157,15 +10158,23 @@ select:focus-visible {
   filter: drop-shadow(0 0 0.5px rgb(255 250 247 / 0.56));
 }
 
-/* 超人元素改为无字菱盾：避免字符 S 在字体缩放时再次压住日期。 */
+/* 微型 S 锁在菱盾内部；整个徽记停靠下缘，不占用日期数字区域。 */
 [data-style='batman-v-superman']
   [data-heatmap-root]
   [data-heatmap-emblem='shield']::before {
   width: 31%;
   height: 23%;
-  content: '';
+  content: 'S';
+  color: var(--superbat-shield-letter);
   background: var(--superbat-shield-fill);
   clip-path: polygon(50% 0, 94% 24%, 78% 70%, 50% 100%, 22% 70%, 6% 24%);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(0.28rem, 1.35vw, 0.38rem);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  text-indent: -0.02em;
+  text-shadow: 0 0.4px 0 rgb(255 250 247 / 0.5);
   filter:
     drop-shadow(0 0 0.7px var(--superbat-shield-ink))
     drop-shadow(0 0.5px 0 rgb(255 250 247 / 0.42));
@@ -10203,6 +10212,7 @@ select:focus-visible {
   --superbat-bat-ink: #fffaf7;
   --superbat-shield-ink: #ffe0a3;
   --superbat-shield-fill: rgb(255 224 163 / 0.56);
+  --superbat-shield-letter: #67171f;
   --superbat-mark-opacity: 0.92;
 }
 
