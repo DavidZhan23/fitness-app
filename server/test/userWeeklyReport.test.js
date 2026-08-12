@@ -1,4 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+const { loadProfileMock } = vi.hoisted(() => ({
+  loadProfileMock: vi.fn(),
+}))
+
+vi.mock('../src/community.js', () => ({
+  assertCanViewCommunity: vi.fn(),
+  loadProfile: loadProfileMock,
+}))
+
 import {
   buildWeeklyReportSnapshot,
   generateNextWeekSuggestions,
@@ -7,6 +17,7 @@ import {
   isPublishableUserWeeklyReport,
   isoWeekInfo,
   levelForAverageDeficit,
+  listCommunitySharedWeeklyReports,
   rowDateKey,
   weekHasReportableActivity,
 } from '../src/userWeeklyReport.js'
@@ -119,5 +130,17 @@ describe('user weekly report', () => {
   expect(levelForAverageDeficit(200)).toBe('mild')
   expect(levelForAverageDeficit(500)).toBe('good')
   expect(levelForAverageDeficit(900)).toBe('aggressive')
+  })
+
+  it('loads only the latest shared report for a community profile', async () => {
+    loadProfileMock.mockResolvedValue({ id: 'owner-1' })
+    const queryFn = vi.fn().mockResolvedValue({ rows: [] })
+
+    await listCommunitySharedWeeklyReports('owner-1', 'viewer-1', queryFn)
+
+    const sql = queryFn.mock.calls[0][0].replace(/\s+/g, ' ').trim()
+    expect(sql).toContain(
+      'order by week_start_date desc, shared_to_community_at desc limit 1',
+    )
   })
 })
