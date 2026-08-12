@@ -124,6 +124,10 @@ Base URL：
 | GET | `/weekly-reports` | 当前用户历史周报，按周倒序，最多 104 份。响应 `{ reports: UserWeeklyReport[] }` |
 | GET | `/weekly-reports/:id` | 当前用户指定周报详情；跨用户 id 返回 404 |
 | PATCH | `/weekly-reports/:id/viewed` | 标记已读；首次写入 `viewedAt`，重复调用幂等 |
+| POST | `/weekly-reports/:id/share-community` | 将指定周报分享到社区；用户须已公开社区名片 |
+| DELETE | `/weekly-reports/:id/share-community` | 从社区撤下指定周报 |
+| GET | `/community/users/:userId/weekly-reports` | 用户社区主页最近一份已分享周报；不返回更早的历史分享 |
+| GET | `/community/users/:userId/weekly-reports/:reportId` | 指定的已分享周报详情；遵循社区可见性 |
 
 热量缺口仅在当天有饮食记录且用户 BMR 可计算时统计：`BMR + 运动消耗 - 摄入`。缺少任一条件时为 `null / unknown`，避免把未记录饮食误判为巨大缺口。每日成就复用社区既有规则，并固化在周报 JSON 快照中。
 

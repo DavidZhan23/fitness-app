@@ -618,8 +618,8 @@ export async function listCommunitySharedWeeklyReports(ownerId, viewerId, queryF
   const result = await queryFn(
     `select * from user_weekly_reports
      where user_id = $1 and shared_to_community_at is not null
-     order by shared_to_community_at desc
-     limit 52`,
+     order by week_start_date desc, shared_to_community_at desc
+     limit 1`,
     [ownerId],
   )
   return result.rows
