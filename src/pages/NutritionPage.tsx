@@ -160,9 +160,6 @@ function AddedSugarCard({
         完整水果和牛奶中天然存在的糖不记。添加糖在营养学上仍属于碳水，
         本页只是单独追踪，不重复计算热量。
       </p>
-      <p className="nutrition-added-sugar-card__label-tip">
-        包装上优先抄「添加糖」；若只写「糖」，该数值可能还含乳糖或水果天然糖，需结合配料表判断。
-      </p>
     </section>
   )
 }

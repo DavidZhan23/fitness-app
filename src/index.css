@@ -2368,19 +2368,11 @@ select:focus-visible {
   font-size: 0.64rem;
 }
 
-.nutrition-added-sugar-card__reference,
-.nutrition-added-sugar-card__label-tip {
+.nutrition-added-sugar-card__reference {
   margin-top: 0.8rem;
   color: var(--text-secondary);
   font-size: 0.72rem;
   line-height: 1.6;
-}
-
-.nutrition-added-sugar-card__label-tip {
-  border-left: 0.18rem solid var(--macro-sugar);
-  padding: 0.55rem 0.65rem;
-  background: var(--surface-panel-soft-bg);
-  color: var(--text-muted);
 }
 
 .micronutrient-entry-card {
