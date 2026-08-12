@@ -10105,8 +10105,13 @@ select:focus-visible {
   color: #5f5955;
 }
 
-/* 超蝙对决：打卡墙日期格交替使用蝙翼与力量盾牌水印 */
+/* 超蝙对决：数字居中，英雄徽记独立停靠在下缘，避免信息重叠。 */
 [data-style='batman-v-superman'] button[data-heatmap-day] {
+  --superbat-bat-ink: #3b3d41;
+  --superbat-shield-ink: #741923;
+  --superbat-shield-fill: rgb(163 41 51 / 0.24);
+  --superbat-shield-letter: #67171f;
+  --superbat-mark-opacity: 0.62;
   isolation: isolate;
   overflow: hidden;
 }
@@ -10115,63 +10120,84 @@ select:focus-visible {
   pointer-events: none;
   position: absolute;
   left: 50%;
-  top: 54%;
-  z-index: 0;
+  bottom: 3px;
+  z-index: 1;
   display: grid;
   place-items: center;
-  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  opacity: var(--superbat-mark-opacity);
 }
 
-/* 蝙翼：石墨剪影，尖耳与展开双翼保持在日期数字后方 */
+/* 蝙翼使用横向轮廓；缩在格子下缘，不再作为日期背后的大水印。 */
 [data-style='batman-v-superman']
   [data-heatmap-root]
-  [data-heatmap-day]:nth-child(odd)::before {
-  width: 78%;
-  height: 48%;
+  [data-heatmap-emblem='bat']::before {
+  width: 44%;
+  height: 18%;
   content: '';
-  background: rgb(36 35 35 / 0.14);
+  background: var(--superbat-bat-ink);
   clip-path: polygon(
-    0 16%,
-    17% 25%,
-    27% 4%,
-    39% 36%,
-    46% 22%,
-    50% 42%,
-    54% 22%,
-    61% 36%,
-    73% 4%,
-    83% 25%,
-    100% 16%,
-    88% 55%,
-    72% 48%,
-    58% 72%,
-    50% 96%,
-    42% 72%,
-    28% 48%,
-    12% 55%
+    0 18%,
+    18% 30%,
+    29% 2%,
+    40% 43%,
+    47% 26%,
+    50% 48%,
+    53% 26%,
+    60% 43%,
+    71% 2%,
+    82% 30%,
+    100% 18%,
+    86% 66%,
+    68% 52%,
+    50% 100%,
+    32% 52%,
+    14% 66%
   );
+  filter: drop-shadow(0 0 0.5px rgb(255 250 247 / 0.56));
 }
 
-/* 力量盾牌：朱砂菱盾与衬线 S，作为超人元素的低对比底纹 */
+/* 微型 S 锁在菱盾内部；整个徽记停靠下缘，不占用日期数字区域。 */
 [data-style='batman-v-superman']
   [data-heatmap-root]
-  [data-heatmap-day]:nth-child(even)::before {
-  width: 58%;
-  height: 64%;
+  [data-heatmap-emblem='shield']::before {
+  width: 31%;
+  height: 23%;
   content: 'S';
-  color: rgb(103 23 31 / 0.42);
-  background: rgb(163 41 51 / 0.13);
+  color: var(--superbat-shield-letter);
+  background: var(--superbat-shield-fill);
   clip-path: polygon(50% 0, 94% 24%, 78% 70%, 50% 100%, 22% 70%, 6% 24%);
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(0.5rem, 2.1vw, 0.72rem);
+  font-size: clamp(0.28rem, 1.35vw, 0.38rem);
   font-weight: 900;
+  font-style: italic;
   line-height: 1;
+  text-indent: -0.02em;
+  text-shadow: 0 0.4px 0 rgb(255 250 247 / 0.5);
+  filter:
+    drop-shadow(0 0 0.7px var(--superbat-shield-ink))
+    drop-shadow(0 0.5px 0 rgb(255 250 247 / 0.42));
 }
 
 [data-style='batman-v-superman'] button[data-heatmap-day] .heatmap-day-number {
   position: relative;
-  z-index: 1;
-  text-shadow: 0 1px 0 rgb(255 250 247 / 0.56);
+  z-index: 2;
+  transform: translateY(-0.16rem);
+  text-shadow: 0 1px 0 rgb(255 250 247 / 0.64);
+}
+
+/* 浅阶点亮：提高徽记实度；深阶点亮：改为纸白/暖金并加细轮廓。 */
+[data-style='batman-v-superman']
+  button[data-heatmap-day]:is(
+    .heatmap-exercise-1,
+    .heatmap-exercise-2,
+    .heatmap-deficit-1,
+    .heatmap-deficit-2,
+    .heatmap-surplus-1,
+    .heatmap-surplus-2
+  ) {
+  --superbat-mark-opacity: 0.78;
 }
 
 [data-style='batman-v-superman']
@@ -10182,9 +10208,30 @@ select:focus-visible {
     .heatmap-deficit-4,
     .heatmap-surplus-3,
     .heatmap-surplus-4
-  )::before {
-  filter: invert(1) grayscale(1);
-  opacity: 0.54;
+  ) {
+  --superbat-bat-ink: #fffaf7;
+  --superbat-shield-ink: #ffe0a3;
+  --superbat-shield-fill: rgb(255 224 163 / 0.56);
+  --superbat-shield-letter: #67171f;
+  --superbat-mark-opacity: 0.92;
+}
+
+[data-style='batman-v-superman'] button[data-heatmap-day].heatmap-day--selected {
+  --superbat-mark-opacity: 1;
+}
+
+[data-style='batman-v-superman'] .heatmap-day-today-label {
+  z-index: 3;
+  text-shadow: 0 1px 0 rgb(255 250 247 / 0.78);
+}
+
+[data-style='batman-v-superman']
+  button[data-heatmap-day].heatmap-day--before-account::before {
+  display: none;
+}
+
+[data-style='batman-v-superman'] button[data-heatmap-day]:disabled::before {
+  opacity: 0.16;
 }
 
 [data-style='batman-v-superman']
