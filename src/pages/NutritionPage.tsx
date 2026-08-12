@@ -19,12 +19,17 @@ import {
   type MacroTargetTier,
 } from '../lib/macroTargets'
 import {
+  MICRONUTRIENT_STATUS_LABELS,
+  micronutrientItemsForDisplay,
+  micronutrientLabel,
+} from '../lib/micronutrients'
+import {
   formatDateKey,
   formatDateKeyLabel,
   getAccountStartDateKey,
   parseDateKey,
 } from '../lib/streaks'
-import type { Meal } from '../types'
+import type { DayLog, Meal } from '../types'
 
 const MACRO_META: {
   field: MacroField
@@ -110,23 +115,194 @@ function MacroDonut({ totals }: { totals: MacroAmounts }) {
             </div>
           )
         })}
-        <p className="macro-legend__sugar">
-          其中糖 {formatGrams(totals.sugar_g)}g（占碳水{' '}
-          {totals.carbs_g > 0
-            ? Math.round(Math.min(100, totals.sugar_g / totals.carbs_g * 100))
-            : 0}
-          %）
-        </p>
       </div>
     </div>
   )
 }
 
+function AddedSugarCard({
+  actual,
+  target,
+  backfillPending,
+}: {
+  actual: number
+  target: number
+  backfillPending: boolean
+}) {
+  const withinTarget = actual <= target
+  const progress = Math.min(100, actual / 50 * 100)
+  const targetMarker = Math.min(100, target / 50 * 100)
+
+  return (
+    <section className="surface-card nutrition-card nutrition-added-sugar-card">
+      <div className="nutrition-card__heading">
+        <div>
+          <p className="nutrition-card__eyebrow">单独记录</p>
+          <h2>添加糖</h2>
+        </div>
+        <em
+          className="nutrition-added-sugar-card__status"
+          data-status={withinTarget ? 'near' : 'high'}
+        >
+          {withinTarget ? '范围内' : '已超出'}
+        </em>
+      </div>
+      {backfillPending ? (
+        <p className="nutrition-backfill-status" role="status">
+          正在后台按新口径重新估算旧餐食的添加糖…
+        </p>
+      ) : null}
+      <div className="nutrition-added-sugar-card__amount">
+        <strong>{formatGrams(actual)}g</strong>
+        <span>本档目标 ≤ {formatGrams(target)}g</span>
+      </div>
+      <div
+        className="added-sugar-progress"
+        aria-label={`已记录 ${formatGrams(actual)} 克添加糖`}
+      >
+        <span className="added-sugar-progress__fill" style={{ width: `${progress}%` }} />
+        <i style={{ left: `${targetMarker}%` }} aria-hidden />
+      </div>
+      <div className="nutrition-added-sugar-card__scale" aria-hidden>
+        <span>0g</span>
+        <span>推荐 25g</span>
+        <span>上限 50g</span>
+      </div>
+      <p className="nutrition-added-sugar-card__reference">
+        健康成人每日添加糖不宜超过 50g，最好控制在 25g 以下。
+        这里记作为配料加入的蔗糖、葡萄糖、果糖、糖浆、蜂蜜等；
+        完整水果和牛奶中天然存在的糖不记。添加糖在营养学上仍属于碳水，
+        本页只是单独追踪，不重复计算热量。
+      </p>
+      <p className="nutrition-added-sugar-card__label-tip">
+        包装上优先抄「添加糖」；若只写「糖」，该数值可能还含乳糖或水果天然糖，需结合配料表判断。
+      </p>
+    </section>
+  )
+}
+
+function MicronutrientCard({
+  dayLog,
+  mealCount,
+  mealLogHref,
+  retrying,
+  retryError,
+  onRetry,
+}: {
+  dayLog: DayLog | null
+  mealCount: number
+  mealLogHref: string
+  retrying: boolean
+  retryError: string
+  onRetry: () => void
+}) {
+  const status = dayLog?.micronutrient_status ?? 'idle'
+  const summary = dayLog?.micronutrient_summary
+  const items = micronutrientItemsForDisplay(summary)
+  const lowCount = items.filter((item) => item.status === 'low').length
+
+  return (
+    <section className="surface-card nutrition-card micronutrient-card">
+      <div className="nutrition-card__heading">
+        <div>
+          <p className="nutrition-card__eyebrow">整日 AI 快照</p>
+          <h2>微量元素</h2>
+        </div>
+        {summary ? (
+          <span className="micronutrient-card__count">
+            {lowCount > 0 ? `${lowCount} 项可能不足` : '16 项已估算'}
+          </span>
+        ) : null}
+      </div>
+
+      {mealCount === 0 ? (
+        <div className="micronutrient-empty">
+          <p>这一天还没有餐食，暂不调用 AI。</p>
+          <Link to={mealLogHref} className="btn-primary">去记饮食</Link>
+        </div>
+      ) : (
+        <>
+          {status === 'pending' ? (
+            <p className="micronutrient-status micronutrient-status--pending" role="status">
+              正在根据今日饮食更新微量元素…
+              {summary ? ' 下方暂显示上次结果。' : ''}
+            </p>
+          ) : null}
+          {status === 'error' ? (
+            <div className="micronutrient-status micronutrient-status--error" role="alert">
+              <p>
+                {dayLog?.micronutrient_error || '微量元素更新失败，请稍后重试'}
+                {summary ? '；下方保留的结果可能已过期。' : ''}
+              </p>
+              <button
+                type="button"
+                className="nutrition-reassess-btn"
+                disabled={retrying}
+                onClick={onRetry}
+              >
+                {retrying ? '重试中…' : '重试'}
+              </button>
+            </div>
+          ) : null}
+          {status === 'idle' && !summary ? (
+            <div className="micronutrient-status">
+              <p>微量元素快照尚未生成。</p>
+              <button
+                type="button"
+                className="nutrition-reassess-btn"
+                disabled={retrying}
+                onClick={onRetry}
+              >
+                {retrying ? '生成中…' : '立即生成'}
+              </button>
+            </div>
+          ) : null}
+          {retryError ? <p className="text-sm text-danger">{retryError}</p> : null}
+
+          {summary ? (
+            <>
+              {summary.advice ? (
+                <p className="micronutrient-card__advice">{summary.advice}</p>
+              ) : null}
+              <ul className="micronutrient-list">
+                {items.map((item) => (
+                  <li key={item.id} data-status={item.status}>
+                    <div className="micronutrient-item__heading">
+                      <strong>{micronutrientLabel(item.id)}</strong>
+                      <span>{MICRONUTRIENT_STATUS_LABELS[item.status]}</span>
+                    </div>
+                    {item.note ? <p>{item.note}</p> : null}
+                    {item.status === 'low' && item.food_suggestions?.length ? (
+                      <details open>
+                        <summary>日常食物建议</summary>
+                        <ul>
+                          {item.food_suggestions.slice(0, 3).map((food) => (
+                            <li key={food}>{food}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </>
+      )}
+
+      <p className="micronutrient-disclaimer">
+        AI 估算，非检测/非医疗建议。
+      </p>
+    </section>
+  )
+}
+
 function MealMacroLine({ meal }: { meal: Meal }) {
-  const hasAnyMacro = [meal.protein_g, meal.fat_g, meal.carbs_g, meal.sugar_g].some(
+  const addedSugar = meal.sugar_scope === 'added' ? meal.sugar_g : null
+  const hasAnyMacro = [meal.protein_g, meal.fat_g, meal.carbs_g, addedSugar].some(
     (value) => value != null,
   )
-  const pending = [meal.protein_g, meal.fat_g, meal.carbs_g, meal.sugar_g].some(
+  const pending = [meal.protein_g, meal.fat_g, meal.carbs_g, addedSugar].some(
     (value) => value == null,
   )
   const sourceLabel =
@@ -145,7 +321,7 @@ function MealMacroLine({ meal }: { meal: Meal }) {
         蛋白 {meal.protein_g == null ? '—' : `${formatGrams(meal.protein_g)}g`} ·{' '}
         脂肪 {meal.fat_g == null ? '—' : `${formatGrams(meal.fat_g)}g`} ·{' '}
         碳水 {meal.carbs_g == null ? '—' : `${formatGrams(meal.carbs_g)}g`} ·{' '}
-        糖 {meal.sugar_g == null ? '—' : `${formatGrams(meal.sugar_g)}g`}
+        添加糖 {addedSugar == null ? '—' : `${formatGrams(addedSugar)}g`}
       </p>
       <p className="nutrition-meal-row__source">
         {!hasAnyMacro
@@ -170,6 +346,7 @@ export function NutritionPage() {
     profile?.created_at,
   )
   const accountStart = getAccountStartDateKey(profile?.created_at)
+  const [dayLog, setDayLog] = useState<DayLog | null>(null)
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -183,6 +360,8 @@ export function NutritionPage() {
   const [adviceError, setAdviceError] = useState('')
   const [adviceLoading, setAdviceLoading] = useState(false)
   const [backfillPending, setBackfillPending] = useState(false)
+  const [micronutrientRetrying, setMicronutrientRetrying] = useState(false)
+  const [micronutrientRetryError, setMicronutrientRetryError] = useState('')
   const backfillDatesRef = useRef(new Set<string>())
   const currentDateRef = useRef(dateKey)
   const mountedRef = useRef(true)
@@ -195,6 +374,7 @@ export function NutritionPage() {
     setTargets(ruleTargets)
     setAiAdvice('')
     setAdviceError('')
+    setMicronutrientRetryError('')
     scrollCommunityMainToTop()
   }, [ruleTargets, dateKey])
 
@@ -202,8 +382,10 @@ export function NutritionPage() {
     if (!user || !profile) return
     setLoading(true)
     setError('')
+    setDayLog(null)
     try {
       const result = await fetchDayLogWithItems(user.id, dateKey, profile)
+      setDayLog(result.dayLog)
       setMeals(result.meals)
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败')
@@ -241,6 +423,7 @@ export function NutritionPage() {
         await backfillMealMacros(dateKey)
         const refreshed = await fetchDayLogWithItems(user.id, dateKey, profile)
         if (mountedRef.current && currentDateRef.current === dateKey) {
+          setDayLog(refreshed.dayLog)
           setMeals(refreshed.meals)
         }
       } catch {
@@ -253,6 +436,38 @@ export function NutritionPage() {
     })()
   }, [dateKey, loading, meals, profile, user])
 
+  useEffect(() => {
+    if (
+      dayLog?.micronutrient_status !== 'pending' ||
+      !user ||
+      !profile
+    ) {
+      return
+    }
+    let cancelled = false
+    let polling = false
+    const poll = async () => {
+      if (polling) return
+      polling = true
+      try {
+        const result = await fetchDayLogWithItems(user.id, dateKey, profile)
+        if (!cancelled && currentDateRef.current === dateKey) {
+          setDayLog(result.dayLog)
+          setMeals(result.meals)
+        }
+      } catch {
+        // Keep the visible pending state; the next short poll can recover.
+      } finally {
+        polling = false
+      }
+    }
+    const timer = window.setInterval(() => void poll(), 1_500)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [dateKey, dayLog?.micronutrient_status, profile, user])
+
   const goToDate = (next: string) => {
     navigate(next === today ? '/nutrition' : `/nutrition?date=${encodeURIComponent(next)}`)
   }
@@ -262,16 +477,31 @@ export function NutritionPage() {
     setAdviceError('')
     try {
       const result = await httpData.getMacroAdvice(totals, ruleTargets)
-      setTargets(
-        targetTier === 'low-oil-sugar'
-          ? { ...result.targets, fat_g: 30, sugar_g: 30 }
-          : result.targets,
-      )
+      setTargets({
+        ...result.targets,
+        sugar_g: ruleTargets.sugar_g,
+        ...(targetTier === 'low-oil-sugar' ? { fat_g: 30 } : {}),
+      })
       setAiAdvice(result.advice)
     } catch (err) {
       setAdviceError(err instanceof Error ? err.message : '重新评估失败')
     } finally {
       setAdviceLoading(false)
+    }
+  }
+
+  const retryMicronutrients = async () => {
+    setMicronutrientRetrying(true)
+    setMicronutrientRetryError('')
+    try {
+      const refreshed = await httpData.refreshMicronutrients(dateKey)
+      setDayLog(refreshed)
+    } catch (err) {
+      setMicronutrientRetryError(
+        err instanceof Error ? err.message : '重试失败，请稍后再试',
+      )
+    } finally {
+      setMicronutrientRetrying(false)
     }
   }
 
@@ -325,11 +555,6 @@ export function NutritionPage() {
                 <h2>蛋白 · 脂肪 · 碳水</h2>
               </div>
             </div>
-            {backfillPending ? (
-              <p className="nutrition-backfill-status" role="status">
-                正在后台补全旧餐食的营养素…
-              </p>
-            ) : null}
             {hasChartData ? (
               <MacroDonut totals={totals} />
             ) : (
@@ -341,6 +566,21 @@ export function NutritionPage() {
               </div>
             )}
           </section>
+
+          <AddedSugarCard
+            actual={totals.sugar_g}
+            target={targets.sugar_g}
+            backfillPending={backfillPending}
+          />
+
+          <MicronutrientCard
+            dayLog={dayLog}
+            mealCount={meals.length}
+            mealLogHref={mealLogHref}
+            retrying={micronutrientRetrying}
+            retryError={micronutrientRetryError}
+            onRetry={() => void retryMicronutrients()}
+          />
 
           <section className="surface-card nutrition-card">
             <div className="nutrition-card__heading">
@@ -370,7 +610,7 @@ export function NutritionPage() {
               ))}
             </div>
             <div className="macro-target-list">
-              {[...MACRO_META, { field: 'sugar_g' as const, label: '糖', shortLabel: '糖', kcalPerGram: 4 }].map(
+              {MACRO_META.map(
                 (macro) => {
                   const actual = totals[macro.field]
                   const target = targets[macro.field]

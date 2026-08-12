@@ -236,14 +236,6 @@ export function normalizeEstimateItems(rawItems, kind) {
             sugar_g: normalizeMacroGram(raw.sugar_g),
           }
         : {}
-    if (
-      macros.sugar_g != null &&
-      macros.carbs_g != null &&
-      macros.sugar_g > macros.carbs_g
-    ) {
-      macros.sugar_g = macros.carbs_g
-    }
-
     out.push({
       name,
       quantity,
@@ -335,7 +327,7 @@ function buildSystemPrompt(type, profile) {
 
   const itemMacroSchema =
     type === 'meal'
-      ? ',"protein_g":单位蛋白质克数,"fat_g":单位脂肪克数,"carbs_g":单位碳水克数,"sugar_g":单位糖克数'
+      ? ',"protein_g":单位蛋白质克数,"fat_g":单位脂肪克数,"carbs_g":单位碳水克数,"sugar_g":单位添加糖克数'
       : ''
 
   const jsonOnly =
@@ -359,7 +351,9 @@ function buildSystemPrompt(type, profile) {
   return (
     '你是饮食摄入估算器。将用户中文描述拆成多条食物分别估算摄入千卡。' +
     '例如「一碗牛肉，一盘鸡蛋」应拆成两条并分别估算。' +
-    '饮食 items 还须尽量给出 protein_g、fat_g、carbs_g、sugar_g，表示该 unit 的单位营养素克数；糖是碳水子集，必须 sugar_g≤carbs_g。' +
+    '饮食 items 还须尽量给出 protein_g、fat_g、carbs_g、sugar_g，表示该 unit 的单位营养素克数。' +
+    'sugar_g 仅估算制作、烹饪或加工时加入的添加糖/游离糖，包括作为配料加入的蔗糖、葡萄糖、果糖、蜂蜜、糖浆和果汁浓缩物；不计完整水果、牛奶、无加糖乳制品中天然存在的糖。' +
+    '若只知「总糖」而无法区分添加糖，应省略 sugar_g，不得把总糖直接填入。' +
     `${jsonOnly}单位可用：份、碗、g、ml、个 等。`
   )
 }
@@ -593,9 +587,95 @@ export async function deepseekTextEstimator(input) {
   }
 }
 
+const MICRONUTRIENT_IDS = [
+  'vit_a',
+  'vit_c',
+  'vit_d',
+  'vit_e',
+  'vit_k',
+  'vit_b1',
+  'vit_b2',
+  'vit_b6',
+  'vit_b9',
+  'vit_b12',
+  'calcium',
+  'iron',
+  'zinc',
+  'magnesium',
+  'potassium',
+  'iodine',
+]
+
+export function buildMicronutrientSystemPrompt() {
+  return (
+    '你是谨慎的整日饮食微量元素估算助手。只能根据当天餐食名称和热量，判断固定营养素是否“可能充足、可能不足、信息不足”，不能当作检测或医疗诊断。' +
+    `只允许以下 id：${MICRONUTRIENT_IDS.join(',')}。` +
+    'status 只允许 adequate、low、unknown；资料不充分时必须用 unknown，不要假装确定。' +
+    '严禁输出毫克、微克、达标率或任何精确摄入量。' +
+    'low 项给出 1–3 个普通日常食物，禁止保健品、补充剂、品牌和服用剂量；adequate/unknown 不给食物建议。' +
+    '只输出严格 JSON object，不要 Markdown 或解释文字。格式：' +
+    '{"version":1,"items":[{"id":"iron","status":"low","note":"简短可能性说明","food_suggestions":["瘦肉","菠菜"]}],"advice":"可选总评，不超过80字"}。' +
+    '应尽量覆盖 16 项；服务端会把缺项补成 unknown。'
+  )
+}
+
+/**
+ * @param {{ meals: {id?: string, name: string, kcal: number|string}[], sex?: string|null }} input
+ */
+export async function estimateDailyMicronutrients(input) {
+  const apiKey = getDeepSeekApiKey()
+  if (!apiKey) {
+    const err = new Error('AI 微量元素估算未配置')
+    err.status = 503
+    throw err
+  }
+
+  const meals = Array.isArray(input?.meals)
+    ? input.meals.slice(0, 100).map((meal) => ({
+        name: Array.from(String(meal?.name ?? '').trim()).slice(0, 120).join(''),
+        kcal: Math.max(0, Math.round(Number(meal?.kcal) || 0)),
+      }))
+    : []
+  if (meals.length === 0) {
+    const err = new Error('没有可估算的餐食')
+    err.status = 400
+    throw err
+  }
+
+  const body = {
+    model: resolveDeepSeekModel(),
+    max_tokens: 1800,
+    temperature: 0.1,
+    ...deepSeekNonThinkingExtras(),
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: buildMicronutrientSystemPrompt() },
+      {
+        role: 'user',
+        content: JSON.stringify({
+          meals,
+          ...(input?.sex === 'male' || input?.sex === 'female'
+            ? { sex: input.sex }
+            : {}),
+        }),
+      },
+    ],
+  }
+  const { data } = await requestDeepSeekWithRetry(apiKey, body)
+  const content = extractMessageContent(data?.choices?.[0])
+  const unfenced = stripCodeFence(String(content ?? '').trim())
+  const parsed = tryParseJsonObject(unfenced) ?? extractFirstJsonObject(unfenced)
+  if (!parsed) {
+    const err = new Error('AI 返回的微量元素格式无效')
+    err.status = 502
+    throw err
+  }
+  return parsed
+}
+
 function normalizeAdviceAmounts(raw, baseTargets) {
   const adjusted = {}
-  for (const field of ['protein_g', 'fat_g', 'carbs_g', 'sugar_g']) {
+  for (const field of ['protein_g', 'fat_g', 'carbs_g']) {
     const base = Number(baseTargets?.[field])
     const value = Number(raw?.[field])
     if (!Number.isFinite(base) || base <= 0) continue
@@ -605,13 +685,7 @@ function normalizeAdviceAmounts(raw, baseTargets) {
       Math.min(max, Math.max(min, Number.isFinite(value) ? value : base)),
     )
   }
-  if (
-    adjusted.sugar_g != null &&
-    adjusted.carbs_g != null &&
-    adjusted.sugar_g > adjusted.carbs_g
-  ) {
-    adjusted.sugar_g = adjusted.carbs_g
-  }
+  adjusted.sugar_g = Number(baseTargets.sugar_g)
   return adjusted
 }
 

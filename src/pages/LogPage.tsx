@@ -82,7 +82,6 @@ export function LogPage() {
   const [templateAddError, setTemplateAddError] = useState('')
   const [manualError, setManualError] = useState('')
   const [manualNotice, setManualNotice] = useState('')
-  const [macroToast, setMacroToast] = useState('')
 
   const anySaving = batchSaving || aiSaving || manualSaving
   const touchStartXRef = useRef<number | null>(null)
@@ -254,11 +253,6 @@ export function LogPage() {
     } finally {
       setAiSaving(false)
     }
-  }
-
-  const showMacroToast = (message: string) => {
-    setMacroToast(message)
-    window.setTimeout(() => setMacroToast(''), 2600)
   }
 
   const handleManualSubmitLog = async (
@@ -513,18 +507,12 @@ export function LogPage() {
                   onSubmittingChange={setManualSaving}
                   macroDraft={form.macroDraft}
                   onMacroChange={form.setMacroField}
-                  onToast={showMacroToast}
                 />
               </LogModePanel>
             </div>
           ) : null}
         </div>
       </PageShell>
-      {macroToast ? (
-        <div className="macro-toast" role="status" aria-live="polite">
-          {macroToast}
-        </div>
-      ) : null}
     </div>
   )
 }

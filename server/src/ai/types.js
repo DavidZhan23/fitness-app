@@ -18,7 +18,7 @@
  * @property {number} [protein_g] 饮食每单位蛋白质克数
  * @property {number} [fat_g] 饮食每单位脂肪克数
  * @property {number} [carbs_g] 饮食每单位碳水克数
- * @property {number} [sugar_g] 饮食每单位糖克数（不高于 carbs_g）
+ * @property {number} [sugar_g] 饮食每单位添加糖/游离糖克数（不含完整水果、牛奶中天然糖）
  */
 
 /**

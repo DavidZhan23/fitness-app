@@ -162,13 +162,13 @@ describe('normalizeEstimateItems', () => {
       protein_g: 0.032,
       fat_g: 0.036,
       carbs_g: 0.048,
-      sugar_g: 0.048,
+      sugar_g: 0.06,
     }
     expect(normalizeEstimateItems([raw], 'meal')[0]).toMatchObject({
       protein_g: 0.032,
       fat_g: 0.036,
       carbs_g: 0.048,
-      sugar_g: 0.048,
+      sugar_g: 0.06,
     })
     expect(normalizeEstimateItems([raw], 'exercise')[0]).not.toHaveProperty(
       'protein_g',

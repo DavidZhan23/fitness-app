@@ -35,17 +35,17 @@ export const MACRO_TARGET_TIERS: {
   {
     id: 'high-oil-sugar',
     label: '较高油糖',
-    description: '脂肪按体重 1.1g/kg，糖上限约占目标热量 15%',
+    description: '脂肪按体重 1.1g/kg；添加糖 50g 是宽松上限，不是鼓励吃满',
   },
   {
     id: 'normal',
     label: '正常油糖',
-    description: '脂肪按性别与活动水平计算，糖上限约占目标热量 10%',
+    description: '脂肪按性别与活动水平计算；添加糖以 25g 作为推荐目标',
   },
   {
     id: 'low-oil-sugar',
     label: '少油少糖',
-    description: '每日脂肪 30g、糖 30g，碳水按目标热量重新平衡',
+    description: '每日脂肪 30g；添加糖 15g 是自选更严格目标，非官方独立标准',
   },
 ]
 
@@ -77,19 +77,10 @@ export function parseMacroDraft(
     macros[field] = roundGram(value)
   }
 
-  let sugarClamped = false
-  if (
-    macros.sugar_g != null &&
-    macros.carbs_g != null &&
-    macros.sugar_g > macros.carbs_g
-  ) {
-    macros.sugar_g = macros.carbs_g
-    sugarClamped = true
-  }
   if (MACRO_FIELDS.some((field) => macros[field] != null)) {
     macros.macros_source = 'user'
   }
-  return { ok: true, macros, sugarClamped }
+  return { ok: true, macros, sugarClamped: false }
 }
 
 export function mealMacroDraft(meal?: Partial<Meal> | null): MacroDraft {
@@ -110,6 +101,7 @@ export function summarizeMealMacros(meals: Meal[]): MacroAmounts {
   }
   for (const meal of meals) {
     for (const field of MACRO_FIELDS) {
+      if (field === 'sugar_g' && meal.sugar_scope !== 'added') continue
       totals[field] += finiteNonNegative(meal[field]) ?? 0
     }
   }
@@ -118,10 +110,7 @@ export function summarizeMealMacros(meals: Meal[]): MacroAmounts {
 }
 
 export function needsMealMacroBackfill(meal: Meal): boolean {
-  return (
-    meal.macros_source == null &&
-    MACRO_FIELDS.every((field) => meal[field] == null)
-  )
+  return meal.sugar_scope !== 'added'
 }
 
 export function macroEnergyKcal(
@@ -158,11 +147,9 @@ export function calculateMacroTargets(
       ? 30
       : weight * (tier === 'high-oil-sugar' ? 1.1 : normalFatPerKg)
   const remainingCalories = Math.max(0, targetCalories - protein * 4 - fat * 9)
-  const carbs = Math.max(tier === 'low-oil-sugar' ? 30 : 0, remainingCalories / 4)
+  const carbs = Math.max(0, remainingCalories / 4)
   const sugar =
-    tier === 'low-oil-sugar'
-      ? 30
-      : Math.min(carbs, targetCalories * (tier === 'high-oil-sugar' ? 0.15 : 0.1) / 4)
+    tier === 'high-oil-sugar' ? 50 : tier === 'low-oil-sugar' ? 15 : 25
 
   return {
     protein_g: Math.round(protein),

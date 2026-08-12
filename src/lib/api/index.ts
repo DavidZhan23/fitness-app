@@ -184,6 +184,13 @@ export const httpData = {
     })
   },
 
+  async refreshMicronutrients(logDate: string): Promise<DayLog> {
+    return apiFetch(
+      `/day-logs/${encodeURIComponent(logDate)}/micronutrients/refresh`,
+      { method: 'POST' },
+    )
+  },
+
   async updateExercise(
     id: string,
     name: string,

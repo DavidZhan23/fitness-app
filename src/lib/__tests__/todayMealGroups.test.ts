@@ -20,6 +20,7 @@ function meal(
     fat_g: partial.fat_g ?? null,
     carbs_g: partial.carbs_g ?? null,
     sugar_g: partial.sugar_g ?? null,
+    sugar_scope: partial.sugar_scope ?? 'added',
     macros_source: partial.macros_source ?? null,
   }
 }

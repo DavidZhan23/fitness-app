@@ -17,11 +17,16 @@ import {
   parseMealMacroInput,
   resolveMealMacrosSource,
 } from '../mealMacros.js'
+import {
+  ensureMicronutrientsForDayRead,
+  requestMicronutrientRefresh,
+} from '../micronutrients.js'
 
 const router = Router()
 
 /** PG date 经 node-pg 序列化易带 UTC 时刻；对外统一 YYYY-MM-DD 文本 */
-const DAY_LOG_SELECT = `id, user_id, log_date::text as log_date, tdee_snapshot, exercise_kcal, meal_kcal, deficit, created_at, updated_at, community_visible`
+const DAY_LOG_BASE_SELECT = `id, user_id, log_date::text as log_date, tdee_snapshot, exercise_kcal, meal_kcal, deficit, created_at, updated_at, community_visible`
+const DAY_LOG_SELECT = `${DAY_LOG_BASE_SELECT}, micronutrient_status, micronutrient_fingerprint, micronutrient_summary, micronutrient_updated_at, micronutrient_error`
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -123,7 +128,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { from, to } = req.query
     const { rows } = await query(
-      `select ${DAY_LOG_SELECT} from day_logs where user_id = $1 and log_date >= $2 and log_date <= $3 order by log_date`,
+      `select ${DAY_LOG_BASE_SELECT} from day_logs where user_id = $1 and log_date >= $2 and log_date <= $3 order by log_date`,
       [req.userId, from, to],
     )
     res.json(rows)
@@ -139,7 +144,7 @@ router.get(
       req.userId,
     ])
     const tdee = profile.rows[0]?.tdee ?? 0
-    const dayLog = await getOrCreateDayLog(req.userId, date, tdee)
+    let dayLog = await getOrCreateDayLog(req.userId, date, tdee)
     const [ex, meals] = await Promise.all([
       query(
         `select * from exercises where day_log_id = $1 order by created_at desc`,
@@ -149,11 +154,30 @@ router.get(
         dayLog.id,
       ]),
     ])
+    dayLog = await ensureMicronutrientsForDayRead({
+      userId: req.userId,
+      dayLog,
+      meals: meals.rows,
+    })
     res.json({
       dayLog,
       exercises: ex.rows,
       meals: meals.rows,
     })
+  }),
+)
+
+router.post(
+  '/day-logs/:date/micronutrients/refresh',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { date } = req.params
+    if (!isValidDateKey(date)) {
+      return res.status(400).json({ error: '日期格式无效' })
+    }
+    const dayLog = await requestMicronutrientRefresh(req.userId, date)
+    if (!dayLog) return res.status(404).json({ error: '当日记录不存在' })
+    res.json(dayLog)
   }),
 )
 
@@ -259,8 +283,8 @@ router.post(
     await query(
       `insert into meals
          (day_log_id, user_id, name, kcal, batch_id,
-          protein_g, fat_g, carbs_g, sugar_g, macros_source)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          protein_g, fat_g, carbs_g, sugar_g, sugar_scope, macros_source)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'added', $10)`,
       [
         day_log_id,
         req.userId,
@@ -277,7 +301,9 @@ router.post(
     const { rows } = await query(`select * from day_logs where id = $1`, [
       day_log_id,
     ])
-    const visibility = await afterDayLogIdChanged(req.userId, day_log_id)
+    const visibility = await afterDayLogIdChanged(req.userId, day_log_id, {
+      mealChanged: true,
+    })
     res.json({
       ...rows[0],
       community_visible: visibility?.community_visible,
@@ -296,17 +322,15 @@ router.post(
     }
 
     const { rows } = await query(
-      `select m.id, m.day_log_id, m.name, m.kcal
+      `select m.id, m.day_log_id, m.name, m.kcal,
+              m.protein_g, m.fat_g, m.carbs_g, m.sugar_g,
+              m.macros_source, m.sugar_scope
        from meals m
        join day_logs dl on dl.id = m.day_log_id
        where m.user_id = $1
          and dl.user_id = $1
          and dl.log_date = $2
-         and m.macros_source is null
-         and m.protein_g is null
-         and m.fat_g is null
-         and m.carbs_g is null
-         and m.sugar_g is null
+         and m.sugar_scope is null
        order by m.created_at asc`,
       [req.userId, logDate],
     )
@@ -315,21 +339,41 @@ router.post(
     let updated = 0
     await Promise.all(
       rows.map(async (meal) => {
+        const preserveUserSugar =
+          meal.macros_source === 'user' && meal.sugar_g != null
+        if (preserveUserSugar) {
+          const result = await query(
+            `update meals set sugar_scope = 'added'
+             where id = $1 and user_id = $2 and sugar_scope is null
+             returning id`,
+            [meal.id, req.userId],
+          )
+          if (result.rows[0]) {
+            updated += 1
+            completed += 1
+          }
+          return
+        }
+
         const resolved = await resolveMealMacrosForSave({
           userId: req.userId,
           name: meal.name,
           kcal: meal.kcal,
-          macros: null,
-          source: null,
+          macros: {
+            protein_g: meal.protein_g,
+            fat_g: meal.fat_g,
+            carbs_g: meal.carbs_g,
+            // Legacy AI sugar used the total-sugar definition; never carry it over.
+            sugar_g: null,
+          },
+          source: meal.macros_source === 'user' ? 'user' : null,
         })
         const result = await query(
           `update meals
            set protein_g = $1, fat_g = $2, carbs_g = $3, sugar_g = $4,
-               macros_source = $5
+               sugar_scope = 'added', macros_source = $5
            where id = $6 and user_id = $7
-             and macros_source is null
-             and protein_g is null and fat_g is null
-             and carbs_g is null and sugar_g is null
+             and sugar_scope is null
            returning id`,
           [
             resolved.macros.protein_g,
@@ -343,7 +387,7 @@ router.post(
         )
         if (result.rows[0]) {
           updated += 1
-          if (hasAnyMealMacro(resolved.macros)) completed += 1
+          if (resolved.macros.sugar_g != null) completed += 1
         }
       }),
     )
@@ -379,6 +423,10 @@ router.patch(
         field,
         Object.prototype.hasOwnProperty.call(req.body, field)
           ? parsedMacros.macros[field]
+          : field === 'sugar_g' &&
+              existing.sugar_scope == null &&
+              existing.macros_source === 'ai'
+            ? null
           : existing[field],
       ]),
     )
@@ -388,18 +436,24 @@ router.patch(
         ? requestedSource ?? 'user'
         : null
       : existing.macros_source
+    const resolutionSource =
+      existing.sugar_scope == null &&
+      existing.macros_source === 'ai' &&
+      !Object.prototype.hasOwnProperty.call(req.body, 'sugar_g')
+        ? null
+        : source
     const resolved = await resolveMealMacrosForSave({
       userId: req.userId,
       name: name.trim(),
       kcal,
       macros,
-      source,
+      source: resolutionSource,
     })
 
     const { rows } = await query(
       `update meals
        set name = $1, kcal = $2, protein_g = $3, fat_g = $4,
-           carbs_g = $5, sugar_g = $6, macros_source = $7
+           carbs_g = $5, sugar_g = $6, sugar_scope = 'added', macros_source = $7
        where id = $8 and user_id = $9
        returning *`,
       [
@@ -431,15 +485,17 @@ router.delete(
   '/meals/:id',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const visibility = await afterExerciseOrMealChanged(
-      req.userId,
-      req.params.id,
-      'meals',
+    const { rows } = await query(
+      `delete from meals where id = $1 and user_id = $2
+       returning day_log_id`,
+      [req.params.id, req.userId],
     )
-    await query(`delete from meals where id = $1 and user_id = $2`, [
-      req.params.id,
+    if (!rows[0]) return res.status(404).json({ error: '记录不存在' })
+    const visibility = await afterDayLogIdChanged(
       req.userId,
-    ])
+      rows[0].day_log_id,
+      { mealChanged: true },
+    )
     res.json({ ok: true, community_visible: visibility?.community_visible })
   }),
 )

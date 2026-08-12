@@ -49,10 +49,10 @@ Base URL：
 |--------|------|------|
 | GET | `/ai/meal-photo-quota` | 饮食拍照识别当日额度。响应 `{ limit, used, remaining, unlimited, dateKey }`；`remaining` 在开发者无限额时为 `null`；`unlimited: true` 表示不受 30 次/日限制 |
 | POST | `/ai/estimate-kcal` | AI 估算千卡。文本：`{ type: 'exercise'\|'meal', description: string }`。拍照（仅 meal）：`{ type: 'meal', modality: 'image', image: 'data:image/jpeg;base64,...', description?: string }`。拍照成功响应可含 **`mealPhotoQuota`**；超额返回 **429** 且带 `mealPhotoQuota`。`type: 'exercise'` 时服务端 prompt 要求仅估**运动增量消耗**；`meal` 为饮食摄入。响应 **`kcal` 必填**；有合法拆分项时附带 **`items`**（同下） |
-| POST | `/ai/macro-advice` | 用户主动点营养页「重新评估」时调用。Body `{ actual: {protein_g,fat_g,carbs_g,sugar_g}, targets: 同形 }`；响应 `{ advice, targets }`。AI 目标仅可在规则目标 ±15% 内微调；营养页默认打开不调用 |
+| POST | `/ai/macro-advice` | 用户主动点营养页「重新评估」时调用。Body `{ actual: {protein_g,fat_g,carbs_g,sugar_g}, targets: 同形 }`；响应 `{ advice, targets }`。AI 只可将 P/F/C 在规则目标 ±15% 内微调，添加糖保持所选的 50/25/15g 参考值；营养页默认打开不调用 |
 | GET | `/ai/fox-companion` | 今日页狐狸陪伴资格。仅狐狸逻辑按 Asia/Shanghai 周六到周五作为一周，只检查本周六到今天：历史日期按全天结算并固定解锁，今天按当前记录实时结算，若今天吃多后不再是运动大王且没有历史命中，小狸会消失；其他周统计仍按各自原规则。响应 `{ eligible, today, weekStart, weekEnd, todayChampion, historicalChampionDates, championDates, latestChampionDate? }` |
 | POST | `/ai/fox-encouragement` | 小狸结构化对话；仅当前用户狐狸周达成过运动大王时可用。Body 为 `{ trigger, user?: { displayName?, locale? }, fitness, context: { timeOfDay, page: 'today', appLanguage? } }`，服务端只保留白名单运动上下文。响应 `{ text, mood, motion, expression, bubbleStyle, duration, fallback }`；枚举/文本/时长均经服务端校验，AI 未配置、超时、非法 JSON 或限频时返回同形本地 fallback，不暴露 DeepSeek 密钥或错误细节 |
-| （同上 items 格式） | | `[{ name, quantity, unit, kcal, protein_g?, fat_g?, carbs_g?, sugar_g?, confidence?, reason? }]`；**`items[].kcal` = 该 `unit` 的单位热量**（可为小数）；meal 四项宏量同样是该 `unit` 的单位克数；顶层 **`kcal` = Σ round(quantity × 单位热量)** |
+| （同上 items 格式） | | `[{ name, quantity, unit, kcal, protein_g?, fat_g?, carbs_g?, sugar_g?, confidence?, reason? }]`；**`items[].kcal` = 该 `unit` 的单位热量**（可为小数）；meal 四项同样是该 `unit` 的单位克数。`sugar_g` 专指制作/烹饪/加工时加入的添加糖（按游离糖口径纳入蜂蜜、糖浆、果汁浓缩物），不包括完整水果、牛奶中天然糖；无法从配料区分时应省略，不把「总糖」直接填入。顶层 **`kcal` = Σ round(quantity × 单位热量)** |
 
 拍照识别配额：普通用户 **30 次/人/日**（Asia/Shanghai 日历日）；`DEVELOPER_EMAILS` 白名单用户不限次、不计数。
 
@@ -93,13 +93,16 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/day-logs/range` | 日期范围查询 |
-| GET | `/day-logs/:date` | 单日详情 |
+| GET | `/day-logs/:date` | 单日详情；`dayLog` 含整日微量快照字段 `micronutrient_status/fingerprint/summary/updated_at/error`。有餐但从未生成快照时会异步懒算并返回 `pending`；无餐保持 `idle`，不调用 AI |
 | POST | `/day-logs/ensure` | 确保当日 log 存在 |
+| POST | `/day-logs/:date/micronutrients/refresh` | 本人手动重试该日整日微量快照。无餐返回 `idle`；有餐立即返回 `pending`，AI 在后台执行。成功 summary 固定补齐 16 项三态，失败保留旧 summary 且不写新成功指纹 |
 | POST | `/exercises` | 添加运动 |
 | PATCH/DELETE | `/exercises/:id` | 更新/删除运动 |
-| POST | `/meals` | 添加饮食；body 必填 `day_log_id,name,kcal`，可选 `batch_id` 及 `protein_g/fat_g/carbs_g/sugar_g`（nullable numeric）、`macros_source`（`user\|ai`）。四项全空时保存端尝试 AI 补全；部分填写时只补空项；AI 失败不阻断保存，并以 `macros_source=ai` 标记已尝试，避免页面重复调用 |
-| POST | `/meals/macros/backfill` | 本人旧餐食一次性后台补全。Body `{ log_date: 'YYYY-MM-DD' }`；仅处理该日四项全 null 且 `macros_source is null` 的 meal，校准后落库，失败也标记已尝试。响应 `{ attempted, completed }` |
-| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；PATCH 同样支持四项宏量。完整 P/F/C 按 `P×4+C×4+F×9≈kcal` 缩放，糖随碳水缩放且夹紧到 `≤carbs_g`。`Meal` 返回宏量列、`macros_source` 与 `batch_id` |
+| POST | `/meals` | 添加饮食；body 必填 `day_log_id,name,kcal`，可选 `batch_id` 及 `protein_g/fat_g/carbs_g/sugar_g`（nullable numeric）、`macros_source`（`user\|ai`）。四项全空时保存端尝试 AI 补全；部分填写时只补空项；AI 失败不阻断保存。新写入的 `sugar_g` 均标记 `sugar_scope=added`。保存成功后异步重算该日微量快照，不等待 AI 响应 |
+| POST | `/meals/macros/backfill` | 本人旧餐食一次性后台补全。Body `{ log_date: 'YYYY-MM-DD' }`；仅处理该日 `sugar_scope is null` 的 meal。旧 AI 糖值不直接沿用，而是按添加糖口径重新估算；旧手填糖保留。成功或失败均落 `sugar_scope=added` 避免重复调用。响应 `{ attempted, completed }` |
+| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；PATCH 同样支持四项。完整 P/F/C 按 `P×4+C×4+F×9≈kcal` 缩放；`sugar_g` 是独立跟踪的添加糖，不随碳水缩放、不额外参与热量校准。`Meal` 返回宏量列、`sugar_scope`、`macros_source` 与 `batch_id`。成功后异步重算该日微量快照；纯运动变更不触发微量 AI |
+
+微量 summary 为 `{ version: 1, items, advice? }`。`items` 固定补齐 `vit_a,vit_c,vit_d,vit_e,vit_k,vit_b1,vit_b2,vit_b6,vit_b9,vit_b12,calcium,iron,zinc,magnesium,potassium,iodine`；每项状态仅为 `adequate|low|unknown`，low 可含 1–3 个普通食物建议。结果是可能性估算，不返回精确 mg/µg。后台写回以按 `id|name|kcal` 生成的当前餐食指纹做原子校验，过期任务不得覆盖新餐结果。
 
 ## 模板
 
