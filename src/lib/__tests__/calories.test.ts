@@ -11,6 +11,7 @@ import {
   legendSwatchLevel,
   resolveProfileMetabolism,
 } from '../calories'
+import type { Profile } from '../../types'
 
 const bmrCases = [
   { weightKg: 70, heightCm: 175, age: 30, sex: 'male' as const, expected: 1649 },
@@ -52,6 +53,30 @@ describe('calories', () => {
     expect(bmr).toBe(1649)
     expect(tdee).toBe(2267)
   })
+
+  it.each([null, 'unknown'])(
+    'resolveProfileMetabolism falls back to stored values for invalid sex %s',
+    (sex) => {
+      const profile = {
+        id: 'u-invalid-sex',
+        email: 'a@b.c',
+        onboarding_complete: true,
+        weight_kg: 70,
+        height_cm: 175,
+        age: 30,
+        sex,
+        activity_factor: 1.375,
+        bmr: 1500,
+        tdee: 2100,
+        deficit_threshold: 300,
+      } as unknown as Profile
+
+      expect(resolveProfileMetabolism(profile)).toEqual({
+        bmr: 1500,
+        tdee: 2100,
+      })
+    },
+  )
 
   it('getDeficitHeatmapCell classifies by fixed deficit bands', () => {
     expect(getDeficitHeatmapCell(0, 300)).toEqual({ level: 0, tone: 'neutral' })

@@ -20,6 +20,8 @@ import {
 import {
   getDeficitHeatmapCell,
   getLiveWallLegendHighlight,
+  hasDeficitCheck,
+  hasExerciseCheck,
   resolveProfileMetabolism,
   toKcal,
 } from '../lib/calories'
@@ -84,6 +86,8 @@ export function TodayPage() {
   const [searchParams] = useSearchParams()
   const profileRef = useRef(profile)
   profileRef.current = profile
+  const loadDayGenerationRef = useRef(0)
+  const loadWallGenerationRef = useRef(0)
   const onboardingComplete = profile?.onboarding_complete
   const today = formatDateKey()
   const accountStartKey = getAccountStartDateKey(profile?.created_at)
@@ -109,6 +113,7 @@ export function TodayPage() {
   const [selectedGridType, setSelectedGridType] =
     useState<MonthGridType>('deficit')
   const [wallLoading, setWallLoading] = useState(true)
+  const [wallError, setWallError] = useState('')
   const [streakExercise, setStreakExercise] = useState(0)
   const [streakDeficit, setStreakDeficit] = useState(0)
   const [wallPane, setWallPane] = useState<MonthGridType>('exercise')
@@ -150,11 +155,12 @@ export function TodayPage() {
   }, [isViewingToday])
 
   const loadDay = useCallback(async () => {
+    const generation = ++loadDayGenerationRef.current
     const p = profileRef.current
-    if (!user || !p || !onboardingComplete) return
     setLoading(true)
     setError('')
     try {
+      if (!user || !p || !onboardingComplete) return
       const [data, fox, community] = await Promise.all([
         fetchDayLogWithItems(user.id, viewDate, p),
         isViewingToday
@@ -162,71 +168,87 @@ export function TodayPage() {
           : Promise.resolve(null),
         httpData.getCommunityUser(user.id, viewDate).catch(() => null),
       ])
+      if (generation !== loadDayGenerationRef.current) return
       setDayLog(data.dayLog)
       setExercises(data.exercises)
       setMeals(data.meals)
       setFoxSummary(fox)
       setComments(community?.comments ?? [])
     } catch (err) {
+      if (generation !== loadDayGenerationRef.current) return
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
-      setLoading(false)
+      if (generation === loadDayGenerationRef.current) setLoading(false)
     }
   }, [user, onboardingComplete, viewDate, isViewingToday])
 
   const loadWall = useCallback(async () => {
-    if (!user) return
+    const generation = ++loadWallGenerationRef.current
     setWallLoading(true)
-    const { from, to } = getMonthRange(year, month)
+    setWallError('')
+    try {
+      if (!user) return
+      const { from, to } = getMonthRange(year, month)
 
-    const logs = await httpData.fetchDayLogsRange(from, to)
+      const logs = await httpData.fetchDayLogsRange(from, to)
+      if (generation !== loadWallGenerationRef.current) return
 
-    setDayMap(
-      buildMonthDayMap(
-        logs,
+      setDayMap(
+        buildMonthDayMap(
+          logs,
+          threshold,
+          today,
+          accountStartKey,
+          profileBmr,
+          metabolismMode,
+        ),
+      )
+
+      const streakFrom = getLastNDays(120)[0]
+      const streakLogs = await httpData.fetchDayLogsRange(streakFrom, today)
+      if (generation !== loadWallGenerationRef.current) return
+
+      const streakDayMap = buildMonthDayMap(
+        streakLogs,
         threshold,
         today,
         accountStartKey,
         profileBmr,
         metabolismMode,
-      ),
-    )
+      )
+      const streakDays: HeatmapDay[] = getLastNDays(120)
+        .filter((d) => d <= today)
+        .map((date) => {
+          const cell = streakDayMap.get(date)
+          const beforeAccount =
+            isBeforeAccountStart(date, accountStartKey) ||
+            Boolean(cell?.beforeAccount)
+          const exerciseKcal = cell?.exerciseKcal ?? 0
+          const deficit = cell?.deficit ?? 0
+          return {
+            date,
+            exerciseCheck: Boolean(cell) && hasExerciseCheck(exerciseKcal),
+            deficitCheck:
+              Boolean(cell) &&
+              !beforeAccount &&
+              hasDeficitCheck(deficit, threshold),
+            deficit,
+            exerciseKcal,
+          }
+        })
 
-    const streakFrom = getLastNDays(120)[0]
-    const streakLogs = await httpData.fetchDayLogsRange(streakFrom, today)
-
-    const streakDays: HeatmapDay[] = getLastNDays(120)
-      .filter((d) => d <= today)
-      .map((date) => {
-        const beforeAccount = isBeforeAccountStart(date, accountStartKey)
-        const log = streakLogs.find(
-          (l) => normalizeDateKey(String(l.log_date)) === date,
-        )
-        const exerciseKcal = log ? toKcal(log.exercise_kcal) : 0
-        const mealKcal = log ? toKcal(log.meal_kcal) : 0
-        const deficit =
-          beforeAccount || !log
-            ? 0
-            : calculateDeficitByMode(
-                profileBmr,
-                exerciseKcal,
-                mealKcal,
-                date,
-                date === today ? metabolismMode : 'full_day',
-                date === today ? new Date() : new Date(`${date}T23:59:59`),
-              )
-        return {
-          date,
-          exerciseCheck: exerciseKcal > 0,
-          deficitCheck: !beforeAccount && deficit > threshold,
-          deficit,
-          exerciseKcal,
-        }
-      })
-
-    setStreakExercise(computeStreak(streakDays, 'exercise'))
-    setStreakDeficit(computeStreak(streakDays, 'deficit'))
-    setWallLoading(false)
+      setStreakExercise(computeStreak(streakDays, 'exercise', today))
+      setStreakDeficit(
+        computeStreak(streakDays, 'deficit', today, threshold),
+      )
+    } catch (err) {
+      if (generation !== loadWallGenerationRef.current) return
+      setWallError(
+        err instanceof Error ? err.message : '打卡墙加载失败，请稍后重试',
+      )
+    } finally {
+      if (generation === loadWallGenerationRef.current) setWallLoading(false)
+    }
   }, [
     user,
     year,
@@ -240,10 +262,16 @@ export function TodayPage() {
 
   useEffect(() => {
     void loadDay()
+    return () => {
+      loadDayGenerationRef.current += 1
+    }
   }, [loadDay])
 
   useEffect(() => {
     void loadWall()
+    return () => {
+      loadWallGenerationRef.current += 1
+    }
   }, [loadWall])
 
   const refreshAfterMutation = useCallback(async () => {
@@ -657,9 +685,23 @@ export function TodayPage() {
           </button>
         </div>
 
+        {wallError && (
+          <p role="alert" className="mb-4 text-center text-sm text-red-400">
+            {wallError}
+            <button
+              type="button"
+              onClick={() => void loadWall()}
+              disabled={wallLoading}
+              className="ml-2 text-brand underline"
+            >
+              重试
+            </button>
+          </p>
+        )}
+
         {wallLoading && dayMap.size === 0 ? (
           <p className="py-8 text-center text-xs text-muted">加载打卡墙…</p>
-        ) : (
+        ) : wallError && dayMap.size === 0 ? null : (
           <>
             {profile?.wall_style === 'split' ? (
               <SplitMonthWall

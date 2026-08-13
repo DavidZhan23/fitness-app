@@ -65,7 +65,12 @@ export function resolveProfileMetabolism(profile: Profile | null | undefined): {
   const age = Number(profile.age)
   const sex = profile.sex
   const factor = toKcal(profile.activity_factor) || 1.2
-  if (w > 0 && h > 0 && age > 0 && sex) {
+  if (
+    w > 0 &&
+    h > 0 &&
+    age > 0 &&
+    (sex === 'male' || sex === 'female')
+  ) {
     const bmr = calculateBmr(w, h, age, sex)
     return { bmr, tdee: calculateTdee(bmr, factor) }
   }
