@@ -8,13 +8,102 @@ import {
 } from '../streaks'
 
 describe('streaks', () => {
-  it('computeStreak counts consecutive exercise days from most recent hit', () => {
+  const day = (
+    date: string,
+    exerciseKcal = 0,
+    deficit = 0,
+  ) => ({
+    date,
+    exerciseCheck: exerciseKcal > 0,
+    deficitCheck: deficit > 300,
+    deficit,
+    exerciseKcal,
+  })
+
+  it('computeStreak includes today when today and yesterday hit', () => {
+    expect(
+      computeStreak(
+        [day('2026-05-23', 100), day('2026-05-24', 100)],
+        'exercise',
+        '2026-05-24',
+      ),
+    ).toBe(2)
+  })
+
+  it('computeStreak allows today to miss and counts from yesterday', () => {
+    expect(
+      computeStreak(
+        [
+          day('2026-05-22', 100),
+          day('2026-05-23', 100),
+          day('2026-05-24'),
+        ],
+        'exercise',
+        '2026-05-24',
+      ),
+    ).toBe(2)
+  })
+
+  it('computeStreak returns zero when both today and yesterday miss', () => {
+    expect(
+      computeStreak(
+        [
+          day('2026-05-21', 100),
+          day('2026-05-22', 100),
+          day('2026-05-23'),
+          day('2026-05-24'),
+        ],
+        'exercise',
+        '2026-05-24',
+      ),
+    ).toBe(0)
+  })
+
+  it('computeStreak returns zero when no day hits', () => {
+    expect(
+      computeStreak(
+        [day('2026-05-22'), day('2026-05-23'), day('2026-05-24')],
+        'exercise',
+        '2026-05-24',
+      ),
+    ).toBe(0)
+  })
+
+  it('computeStreak returns zero for an empty range', () => {
+    expect(computeStreak([], 'exercise', '2026-05-24')).toBe(0)
+    expect(computeStreak([], 'deficit', '2026-05-24', 300)).toBe(0)
+  })
+
+  it('computeStreak applies the same today grace rule to deficit', () => {
     const days = [
-      { date: '2026-05-22', exerciseCheck: true, deficitCheck: false, deficit: 0, exerciseKcal: 100 },
-      { date: '2026-05-23', exerciseCheck: true, deficitCheck: false, deficit: 0, exerciseKcal: 100 },
-      { date: '2026-05-24', exerciseCheck: false, deficitCheck: false, deficit: 0, exerciseKcal: 0 },
+      day('2026-05-21', 0, 450),
+      day('2026-05-22', 0, 500),
+      day('2026-05-23', 0, 400),
+      day('2026-05-24', 0, 0),
     ]
-    expect(computeStreak(days, 'exercise')).toBe(2)
+    expect(computeStreak(days, 'deficit', '2026-05-24', 300)).toBe(3)
+
+    days[2] = day('2026-05-23', 0, 0)
+    expect(computeStreak(days, 'deficit', '2026-05-24', 300)).toBe(0)
+  })
+
+  it('computeStreak includes today for deficit and returns zero with no hit', () => {
+    expect(
+      computeStreak(
+        [day('2026-05-23', 0, 400), day('2026-05-24', 0, 500)],
+        'deficit',
+        '2026-05-24',
+        300,
+      ),
+    ).toBe(2)
+    expect(
+      computeStreak(
+        [day('2026-05-23'), day('2026-05-24')],
+        'deficit',
+        '2026-05-24',
+        300,
+      ),
+    ).toBe(0)
   })
 
   it('getLastNDays returns ascending keys ending at anchor date', () => {

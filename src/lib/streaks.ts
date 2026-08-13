@@ -1,17 +1,24 @@
 import type { HeatmapDay } from '../types'
+import { hasDeficitCheck, hasExerciseCheck } from './calories'
 
 export function computeStreak(
   days: HeatmapDay[],
   type: 'exercise' | 'deficit',
+  todayKey: string,
+  deficitThreshold = 0,
 ): number {
   const sorted = [...days].sort((a, b) => b.date.localeCompare(a.date))
   const isOk = (day: HeatmapDay) =>
-    type === 'exercise' ? day.exerciseCheck : day.deficitCheck
+    type === 'exercise'
+      ? hasExerciseCheck(day.exerciseKcal)
+      : hasDeficitCheck(day.deficit, deficitThreshold)
 
-  // 从今天往回找；今天尚未打卡时，从最近一次达标日开始计连续天数
-  let i = 0
-  while (i < sorted.length && !isOk(sorted[i])) i++
-  if (i >= sorted.length) return 0
+  const todayIndex = sorted.findIndex((day) => day.date === todayKey)
+  if (todayIndex < 0) return 0
+
+  // 今天未达标仅宽限今天一次；昨天未达标时，连续记录即为 0。
+  let i = isOk(sorted[todayIndex]) ? todayIndex : todayIndex + 1
+  if (i >= sorted.length || !isOk(sorted[i])) return 0
 
   let streak = 0
   for (; i < sorted.length; i++) {

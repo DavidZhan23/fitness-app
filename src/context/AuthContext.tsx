@@ -28,6 +28,7 @@ import type { AppStyle, Profile, Sex } from '../types'
 interface AuthContextValue {
   user: AppUser | null
   profile: Profile | null
+  profileError: string
   loading: boolean
   refreshProfile: () => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
@@ -54,6 +55,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [profileError, setProfileError] = useState('')
   const [loading, setLoading] = useState(true)
 
   const mergeProfileFromApi = useCallback((raw: Profile): Profile => {
@@ -84,10 +86,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applyProfile],
   )
 
+  const loadProfileForUser = useCallback(
+    async (userId: string) => {
+      setProfileError('')
+      try {
+        return await fetchProfile(userId)
+      } catch (err) {
+        setProfile(null)
+        setProfileError(
+          err instanceof Error ? err.message : '个人资料加载失败，请重试',
+        )
+        throw err
+      }
+    },
+    [fetchProfile],
+  )
+
   const refreshProfile = useCallback(async () => {
     if (!user) return
-    await fetchProfile(user.id)
-  }, [user, fetchProfile])
+    await loadProfileForUser(user.id)
+  }, [user, loadProfileForUser])
 
   useEffect(() => {
     if (!isBackendConfigured) {
@@ -104,14 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        const [{ user: u }, profileData] = await Promise.all([
-          httpAuth.getSession(),
-          httpData.getProfile().catch(() => null),
-        ])
+        const { user: u } = await httpAuth.getSession()
         if (cancelled) return
         setUser(u)
-        if (u && profileData) {
-          await applyProfile(profileData as Profile, u.id)
+        if (u) {
+          await loadProfileForUser(u.id).catch(() => undefined)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -121,37 +136,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [applyProfile])
+  }, [loadProfileForUser])
 
-  useEffect(() => {
-    if (!user) {
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const { user: u } = await httpAuth.signIn(email, password)
       setProfile(null)
-      return
-    }
-    if (profile) return
-    fetchProfile(user.id).catch(console.error)
-  }, [user?.id, fetchProfile, profile])
+      setUser(u)
+      await loadProfileForUser(u.id).catch(() => undefined)
+    },
+    [loadProfileForUser],
+  )
 
-  const signIn = async (email: string, password: string) => {
-    const { user: u } = await httpAuth.signIn(email, password)
-    setUser(u)
-  }
-
-  const signUp = async (
-    email: string,
-    password: string,
-    registrationKey: string,
-  ) => {
-    await httpAuth.signUp(email, password, registrationKey)
-    const { user: u } = await httpAuth.getSession()
-    setUser(u)
-    return { needsEmailConfirmation: false }
-  }
+  const signUp = useCallback(
+    async (email: string, password: string, registrationKey: string) => {
+      await httpAuth.signUp(email, password, registrationKey)
+      const { user: u } = await httpAuth.getSession()
+      setProfile(null)
+      setUser(u)
+      if (u) await loadProfileForUser(u.id).catch(() => undefined)
+      return { needsEmailConfirmation: false }
+    },
+    [loadProfileForUser],
+  )
 
   const signOut = async () => {
     await httpAuth.signOut()
     setUser(null)
     setProfile(null)
+    setProfileError('')
   }
 
   const updateProfile = useCallback(
@@ -232,6 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       profile,
+      profileError,
       loading,
       refreshProfile,
       signIn,
@@ -240,7 +254,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       completeOnboarding,
     }),
-    [user, profile, loading, refreshProfile, updateProfile],
+    [
+      user,
+      profile,
+      profileError,
+      loading,
+      refreshProfile,
+      signIn,
+      signUp,
+      updateProfile,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

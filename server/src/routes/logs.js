@@ -122,6 +122,18 @@ async function getOrCreateDayLog(userId, date, tdee) {
   }
 }
 
+async function assertOwnedDayLog(dayLogId, userId) {
+  const { rows } = await query(
+    `select id from day_logs where id = $1 and user_id = $2`,
+    [dayLogId, userId],
+  )
+  if (!rows[0]) {
+    const err = new Error('记录不存在')
+    err.status = 404
+    throw err
+  }
+}
+
 router.get(
   '/day-logs/range',
   authMiddleware,
@@ -200,9 +212,19 @@ router.post(
   authMiddleware,
   asyncHandler(async (req, res) => {
     const { day_log_id, name, kcal } = req.body
+    const normalizedKcal = Number(kcal)
+    if (
+      typeof name !== 'string' ||
+      !name.trim() ||
+      !Number.isFinite(normalizedKcal) ||
+      normalizedKcal <= 0
+    ) {
+      return res.status(400).json({ error: '请填写名称和有效热量' })
+    }
+    await assertOwnedDayLog(day_log_id, req.userId)
     await query(
       `insert into exercises (day_log_id, user_id, name, kcal) values ($1, $2, $3, $4)`,
-      [day_log_id, req.userId, name, kcal],
+      [day_log_id, req.userId, name.trim(), normalizedKcal],
     )
     const { rows } = await query(`select * from day_logs where id = $1`, [
       day_log_id,
@@ -273,6 +295,7 @@ router.post(
     const source = hasAnyMealMacro(parsedMacros.macros)
       ? requestedSource ?? 'user'
       : null
+    await assertOwnedDayLog(day_log_id, req.userId)
     const resolved = await resolveMealMacrosForSave({
       userId: req.userId,
       name: name.trim(),
