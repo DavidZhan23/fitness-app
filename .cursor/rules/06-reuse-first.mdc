@@ -31,6 +31,7 @@ Before adding any new file to `src/lib/`, `src/hooks/`, `src/context/`, `server/
 | Profile payload | `src/lib/profilePayload.ts` | `buildProfilePatchBody`, `mergeProfileForCalc` — profile PATCH body builder |
 | Profile display name | `src/lib/profileDisplay.ts` | `displayName` |
 | Default templates | `src/lib/defaultTemplates.ts` | `DEFAULT_EXERCISE_TEMPLATES`, `DEFAULT_MEAL_TEMPLATES` |
+| Log templates | `src/lib/logTemplate.ts` | 模板 normalize / 存模板去重；饮食宏量用 `scaleMealMacros` / `macrosFromTemplate` 按份量缩放 |
 | Auth errors (Chinese) | `src/lib/authErrors.ts` | Auth/profile error messages |
 | App badge | `src/lib/appBadge.ts` | PWA badge API |
 | API base URL / backend flag | `src/lib/config.ts` | `apiBaseUrl`, `isBackendConfigured` |

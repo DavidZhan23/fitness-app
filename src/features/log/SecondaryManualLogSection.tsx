@@ -9,8 +9,10 @@ import { KJ_PER_KCAL } from '../../lib/calories'
 import {
   buildTemplateFromLogItem,
   formatTemplateSaveNotice,
+  macrosForTemplateDefault,
   parseNameQuantityUnit,
   saveTemplatesFromItems,
+  toFinitePositive,
 } from '../../lib/logTemplate'
 import type { MealInputMode } from '../../hooks/useLogForm'
 import { parseMacroDraft, type MacroDraft, type MacroField } from '../../lib/macroTargets'
@@ -42,6 +44,10 @@ interface SecondaryManualLogSectionProps {
     unit: string
     kcalPerUnit: number
     defaultQuantity: number
+    protein_g?: number | null
+    fat_g?: number | null
+    carbs_g?: number | null
+    sugar_g?: number | null
   }) => Promise<unknown>
   onNotice: (message: string) => void
   onError: (message: string) => void
@@ -102,6 +108,18 @@ function suggestTemplateFields(input: {
     unit: '份',
     kcal: input.kcal,
   })
+}
+
+function resolveLoggedMealQuantity(input: {
+  isExercise: boolean
+  name: string
+  mealInputMode: MealInputMode
+  grams: string
+}): number {
+  if (!input.isExercise && input.mealInputMode === 'package') {
+    return toFinitePositive(input.grams) ?? 1
+  }
+  return parseNameQuantityUnit(input.name.trim())?.quantity ?? 1
 }
 
 export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps) {
@@ -225,9 +243,21 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
             })
 
         if (templatePayload) {
+          const macros = !props.isExercise && parsedMacros?.ok
+            ? macrosForTemplateDefault(
+                parsedMacros.macros,
+                resolveLoggedMealQuantity({
+                  isExercise: props.isExercise,
+                  name: props.name,
+                  mealInputMode: props.mealInputMode,
+                  grams: props.grams,
+                }),
+                templatePayload.defaultQuantity,
+              )
+            : undefined
           const result = await saveTemplatesFromItems({
             existingTemplates: props.templates,
-            items: [templatePayload],
+            items: [{ ...templatePayload, ...macros }],
             addTemplate: props.addTemplate,
           })
           const notice = formatTemplateSaveNotice(result)
@@ -450,7 +480,11 @@ export function SecondaryManualLogSection(props: SecondaryManualLogSectionProps)
                           保存为快捷模板
                         </strong>
                         <span className="log-ai-item-card__template-desc">
-                          下次可直接点选，系统会按数量自动计算热量。
+                          下次可直接点选，系统会按数量自动计算热量
+                          {!props.isExercise
+                            ? '。手填的蛋白质等会一并保存'
+                            : ''}
+                          。
                         </span>
                       </span>
                     </label>

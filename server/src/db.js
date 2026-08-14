@@ -476,6 +476,16 @@ export async function runMigrations() {
   }
   try {
     await pool.query(`
+      alter table public.meal_templates
+        add column if not exists protein_g numeric,
+        add column if not exists fat_g numeric,
+        add column if not exists carbs_g numeric,
+        add column if not exists sugar_g numeric`)
+  } catch {
+    /* 表未建等 */
+  }
+  try {
+    await pool.query(`
       create table if not exists public.meal_photo_daily_usage (
         user_id uuid not null references public.profiles (id) on delete cascade,
         usage_date date not null,

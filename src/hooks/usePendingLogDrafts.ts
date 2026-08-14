@@ -2,10 +2,11 @@ import { useCallback, useMemo, useState } from 'react'
 import {
   buildDraftRecordName,
   computeDraftKcal,
+  macrosFromTemplate,
   templateKey,
   toFinitePositive,
 } from '../lib/logTemplate'
-import type { LogTemplate } from '../types'
+import type { LogTemplate, MealMacrosInput } from '../types'
 
 export interface PendingLogDraft {
   key: string
@@ -67,13 +68,13 @@ export function usePendingLogDrafts() {
   }, [])
 
   const toSubmitItems = useCallback(():
-    | { ok: true; items: { name: string; kcal: number }[] }
+    | { ok: true; items: ({ name: string; kcal: number } & MealMacrosInput)[] }
     | { ok: false; error: string } => {
     if (drafts.length === 0) {
       return { ok: false, error: '请先选择模板' }
     }
 
-    const items: { name: string; kcal: number }[] = []
+    const items: ({ name: string; kcal: number } & MealMacrosInput)[] = []
     for (const draft of drafts) {
       const quantity = toFinitePositive(draft.quantityInput)
       const kcal = computeDraftKcal(
@@ -88,7 +89,11 @@ export function usePendingLogDrafts() {
       if (quantity == null || kcal == null || !name) {
         return { ok: false, error: '请检查数量与热量后再保存' }
       }
-      items.push({ name, kcal })
+      items.push({
+        name,
+        kcal,
+        ...macrosFromTemplate(draft.template, quantity),
+      })
     }
     return { ok: true, items }
   }, [drafts])

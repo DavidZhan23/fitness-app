@@ -455,7 +455,7 @@ router.delete(
 
 // /templates/seed must be registered before /templates/:type to avoid `:type` capturing "seed"
 
-function parseTemplateFields(body) {
+function parseTemplateFields(body, { macros = false } = {}) {
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   const unit = typeof body?.unit === 'string' ? body.unit.trim() : ''
   const kcalPerUnit = Number(body?.kcalPerUnit ?? body?.kcal_per_unit)
@@ -469,7 +469,22 @@ function parseTemplateFields(body) {
     return { error: '请填写有效的默认数量' }
   }
   const kcal = Math.round(kcalPerUnit * defaultQuantity)
-  return { name, unit, kcalPerUnit, defaultQuantity, kcal }
+  if (!macros) return { name, unit, kcalPerUnit, defaultQuantity, kcal }
+
+  const parsedMacros = parseMealMacroInput(body)
+  if (parsedMacros.error) return { error: parsedMacros.error }
+  return {
+    name,
+    unit,
+    kcalPerUnit,
+    defaultQuantity,
+    kcal,
+    macros: parsedMacros.macros,
+  }
+}
+
+function isMealTemplateType(type) {
+  return type !== 'exercise'
 }
 
 function parseSeedTemplate(raw) {
@@ -558,11 +573,34 @@ router.post(
   '/templates/:type',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const table =
-      req.params.type === 'exercise' ? 'exercise_templates' : 'meal_templates'
-    const parsed = parseTemplateFields(req.body)
+    const isMeal = isMealTemplateType(req.params.type)
+    const table = isMeal ? 'meal_templates' : 'exercise_templates'
+    const parsed = parseTemplateFields(req.body, { macros: isMeal })
     if (parsed.error) {
       res.status(400).json({ error: parsed.error })
+      return
+    }
+    if (isMeal) {
+      const { rows } = await query(
+        `insert into meal_templates
+           (user_id, name, unit, kcal_per_unit, default_quantity, kcal,
+            protein_g, fat_g, carbs_g, sugar_g)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         returning *`,
+        [
+          req.userId,
+          parsed.name,
+          parsed.unit,
+          parsed.kcalPerUnit,
+          parsed.defaultQuantity,
+          parsed.kcal,
+          parsed.macros.protein_g,
+          parsed.macros.fat_g,
+          parsed.macros.carbs_g,
+          parsed.macros.sugar_g,
+        ],
+      )
+      res.json(rows[0])
       return
     }
     const { rows } = await query(
@@ -587,28 +625,49 @@ router.patch(
   '/templates/:type/:id',
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const table =
-      req.params.type === 'exercise' ? 'exercise_templates' : 'meal_templates'
-    const parsed = parseTemplateFields(req.body)
+    const isMeal = isMealTemplateType(req.params.type)
+    const table = isMeal ? 'meal_templates' : 'exercise_templates'
+    const parsed = parseTemplateFields(req.body, { macros: isMeal })
     if (parsed.error) {
       res.status(400).json({ error: parsed.error })
       return
     }
-    const { rows } = await query(
-      `update ${table}
-       set name = $3, unit = $4, kcal_per_unit = $5, default_quantity = $6, kcal = $7
-       where id = $1 and user_id = $2
-       returning *`,
-      [
-        req.params.id,
-        req.userId,
-        parsed.name,
-        parsed.unit,
-        parsed.kcalPerUnit,
-        parsed.defaultQuantity,
-        parsed.kcal,
-      ],
-    )
+    const { rows } = isMeal
+      ? await query(
+          `update meal_templates
+           set name = $3, unit = $4, kcal_per_unit = $5, default_quantity = $6, kcal = $7,
+               protein_g = $8, fat_g = $9, carbs_g = $10, sugar_g = $11
+           where id = $1 and user_id = $2
+           returning *`,
+          [
+            req.params.id,
+            req.userId,
+            parsed.name,
+            parsed.unit,
+            parsed.kcalPerUnit,
+            parsed.defaultQuantity,
+            parsed.kcal,
+            parsed.macros.protein_g,
+            parsed.macros.fat_g,
+            parsed.macros.carbs_g,
+            parsed.macros.sugar_g,
+          ],
+        )
+      : await query(
+          `update ${table}
+           set name = $3, unit = $4, kcal_per_unit = $5, default_quantity = $6, kcal = $7
+           where id = $1 and user_id = $2
+           returning *`,
+          [
+            req.params.id,
+            req.userId,
+            parsed.name,
+            parsed.unit,
+            parsed.kcalPerUnit,
+            parsed.defaultQuantity,
+            parsed.kcal,
+          ],
+        )
     if (!rows.length) {
       res.status(404).json({ error: '模板不存在' })
       return
