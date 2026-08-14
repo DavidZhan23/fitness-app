@@ -384,6 +384,24 @@ export type WeeklyAchievementType =
   | 'fat_loss_pioneer'
   | 'food_king'
 
+export type WeeklySuggestionType = 'exercise' | 'diet' | 'habit' | 'recovery'
+
+export interface WeeklyReportEvidence {
+  id: string
+  dimension: 'coverage' | 'calorie' | 'exercise' | 'diet'
+  text: string
+  value: number | null
+}
+
+export interface WeeklyReportWowDelta {
+  activeDays: number | null
+  dietLoggedDays: number | null
+  totalExerciseCalories: number | null
+  totalCaloriesIn: number | null
+  totalCalorieDeficit: number | null
+  achievementCount: number | null
+}
+
 export interface UserWeeklyReport {
   id: string
   userId: string
@@ -396,6 +414,46 @@ export interface UserWeeklyReport {
   isViewed: boolean
   sharedToCommunityAt?: string | null
   isSharedToCommunity?: boolean
+  headline: string
+  narrativeSource: 'ai' | 'rules'
+  wowDelta: WeeklyReportWowDelta
+  insights: {
+    coverage: {
+      dietLoggedDays: number
+      activeDays: number
+      trackedDeficitDays: number
+      macroLoggedDays: number
+      weekendDietMissing: boolean
+    }
+    calorie: {
+      level: WeeklyDeficitLevel
+      averageDailyDeficit: number | null
+      trackedDays: number
+    }
+    exercise: {
+      activeDays: number
+      totalWorkouts: number
+      favoriteName: string | null
+      favoriteCount: number
+      concentration: number
+    }
+    diet: {
+      loggedDays: number
+      macroStatus: 'sufficient' | 'insufficient'
+      proteinStatus: 'low' | 'steady' | 'insufficient'
+      averageProtein: number | null
+      macroTargets: {
+        protein_g: number
+        fat_g: number
+        carbs_g: number
+        sugar_g: number
+      } | null
+    }
+    persona: 'recovery' | 'coverage' | 'movement' | 'protein' | 'steady'
+    headline: string
+    evidence: WeeklyReportEvidence[]
+    wowDelta: WeeklyReportWowDelta
+  }
   summary: {
     dataStatus: 'complete' | 'insufficient'
     activeDays: number
@@ -435,6 +493,14 @@ export interface UserWeeklyReport {
     loggedDays: number
     totalCalories: number
     averageCalories: number | null
+    macroStatus: 'sufficient' | 'insufficient'
+    macroLoggedDays: number
+    macroTargets: {
+      protein_g: number
+      fat_g: number
+      carbs_g: number
+      sugar_g: number
+    } | null
     totalProtein: number | null
     averageProtein: number | null
     totalCarbs: number | null
@@ -448,12 +514,15 @@ export interface UserWeeklyReport {
     bestProteinFood: string | null
     snackCount: number | null
     drinkCount: number | null
+    foodRanking: Array<{ name: string; count: number; calories: number }>
     dailyDiet: Array<{
       date: string
       calories: number
       protein: number | null
       carbs: number | null
       fat: number | null
+      sugar: number | null
+      hasCompleteMacros: boolean
       foodCount: number
     }>
   }
@@ -461,6 +530,7 @@ export interface UserWeeklyReport {
     totalCaloriesIn: number
     totalExerciseCalories: number
     estimatedTdeeTotal: number | null
+    baseMetabolismTotal: number | null
     totalDeficit: number | null
     averageDailyDeficit: number | null
     deficitLevel: WeeklyDeficitLevel
@@ -470,6 +540,7 @@ export interface UserWeeklyReport {
       caloriesIn: number
       exerciseCalories: number
       estimatedTdee: number | null
+      baseMetabolism: number | null
       deficit: number | null
       status: WeeklyDeficitStatus
     }>
@@ -492,9 +563,12 @@ export interface UserWeeklyReport {
   }
   foxComment: string
   nextWeekSuggestions: Array<{
-    type: 'exercise' | 'diet' | 'habit' | 'recovery'
+    type: WeeklySuggestionType
     title: string
+    why: string
     content: string
+    successMetric: string
+    evidenceIds: string[]
   }>
   shareImageUrl?: string
 }

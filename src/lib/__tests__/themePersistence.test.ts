@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   createSerialThemeWriter,
   normalizeAppStyle,
+  readFoxStageCollapsedPreference,
   readThemePreferenceOwner,
   readStylePreference,
   resolveStylePreference,
+  writeFoxStageCollapsedPreference,
   writeStylePreference,
   writeThemePreferenceOwner,
 } from '../themePersistence'
@@ -54,6 +56,40 @@ describe('themePersistence', () => {
       style: 'batman-v-superman',
       source: 'localStorage',
     })
+  })
+
+  it('defaults the fox stage to expanded and dual-writes collapsed state', () => {
+    expect(readFoxStageCollapsedPreference({
+      storage: memoryStorage(),
+      cookieDocument: { cookie: '' },
+    })).toEqual({ enabled: false, source: 'default' })
+
+    const storage = memoryStorage()
+    const cookieDocument = { cookie: '' }
+    writeFoxStageCollapsedPreference(true, { storage, cookieDocument })
+
+    expect(storage.value('fitness_fox_stage_collapsed')).toBe('1')
+    expect(cookieDocument.cookie).toContain('fitness_fox_stage_collapsed=1')
+    expect(readFoxStageCollapsedPreference({ storage, cookieDocument })).toEqual({
+      enabled: true,
+      source: 'localStorage',
+    })
+
+    writeFoxStageCollapsedPreference(false, { storage, cookieDocument })
+    expect(storage.value('fitness_fox_stage_collapsed')).toBe('0')
+    expect(cookieDocument.cookie).toContain('fitness_fox_stage_collapsed=0')
+  })
+
+  it('falls back to the fox stage cookie and ignores invalid values', () => {
+    expect(readFoxStageCollapsedPreference({
+      storage: memoryStorage({ fitness_fox_stage_collapsed: 'invalid' }),
+      cookieDocument: { cookie: 'fitness_fox_stage_collapsed=1' },
+    })).toEqual({ enabled: true, source: 'cookie' })
+
+    expect(readFoxStageCollapsedPreference({
+      storage: memoryStorage({ fitness_fox_stage_collapsed: 'invalid' }),
+      cookieDocument: { cookie: 'fitness_fox_stage_collapsed=invalid' },
+    })).toEqual({ enabled: false, source: 'default' })
   })
 
   it('binds local preferences to an account and can clear the owner', () => {

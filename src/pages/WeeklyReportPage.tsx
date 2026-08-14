@@ -31,8 +31,28 @@ function numberOrDash(value: number | null | undefined) {
   return value == null ? '—' : Math.round(value).toLocaleString('zh-CN')
 }
 
+function deltaCopy(value: number | null, suffix = '') {
+  if (value == null) return null
+  if (value === 0) return '与上周持平'
+  return `比上周${value > 0 ? '+' : ''}${Math.round(value).toLocaleString('zh-CN')}${suffix}`
+}
+
 function suggestionIcon(type: UserWeeklyReport['nextWeekSuggestions'][number]['type']) {
   return { exercise: '🏃', diet: '🥗', habit: '🌱', recovery: '🌙' }[type]
+}
+
+function suggestionHowTo(item: UserWeeklyReport['nextWeekSuggestions'][number]) {
+  let text = item.content.trim()
+  if (item.why && text.startsWith(`${item.why}。`)) {
+    text = text.slice(item.why.length + 1)
+  }
+  const metricSuffix = item.successMetric
+    ? `。做到标准：${item.successMetric}。`
+    : ''
+  if (metricSuffix && text.endsWith(metricSuffix)) {
+    text = text.slice(0, -metricSuffix.length)
+  }
+  return text || item.content
 }
 
 type WeeklyReportPageContentProps = {
@@ -120,6 +140,18 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
     )
   }
 
+  const sourceNotes: string[] = []
+  if (report.calorieStats.trackedDeficitDays < report.dietStats.loggedDays) {
+    sourceNotes.push(
+      `有 ${report.dietStats.loggedDays - report.calorieStats.trackedDeficitDays} 个饮食日因身体资料不完整，未计算缺口`,
+    )
+  }
+  if (report.dietStats.macroStatus === 'insufficient') {
+    sourceNotes.push(
+      `宏量完整覆盖 ${report.dietStats.macroLoggedDays}/7 天，少于 4 天，暂不判断蛋白质高低`,
+    )
+  }
+
   return (
     <div className="page-standalone weekly-report-bg">
       <PageShell variant="standalone" className="weekly-report-page">
@@ -137,7 +169,8 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
             <p className="weekly-cover__eyebrow">
               XIAOMAN WEEKLY · 第 {report.weekNumber} 周
             </p>
-            <h1>小满周报</h1>
+            <p className="weekly-cover__brand">小满周报</p>
+            <h1>{report.headline}</h1>
             <p className="weekly-cover__subtitle">
               {communityMode ? '来自社区分享的周报' : '这是你和小狸一起努力的一周'}
             </p>
@@ -150,6 +183,14 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
           <img src={foxImage} alt="小狸捧着你的周报" className="weekly-cover__fox" />
         </header>
 
+        <section className="weekly-fox-letter weekly-fox-letter--lead">
+          <img src={foxImage} alt="" aria-hidden />
+          <div>
+            <p>小狸的具体点评</p>
+            <blockquote>{report.foxComment}</blockquote>
+          </div>
+        </section>
+
         <section className="weekly-section">
           <div className="weekly-section__heading">
             <p>01 · OVERVIEW</p>
@@ -159,6 +200,9 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
             <div>
               <strong>{report.summary.activeDays}</strong>
               <span>运动天数</span>
+              {deltaCopy(report.wowDelta.activeDays, ' 天') && (
+                <small>{deltaCopy(report.wowDelta.activeDays, ' 天')}</small>
+              )}
             </div>
             <div>
               <strong>{report.exerciseStats.totalWorkouts}</strong>
@@ -167,23 +211,35 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
             <div>
               <strong>{numberOrDash(report.summary.totalExerciseCalories)}</strong>
               <span>运动消耗 kcal</span>
+              {deltaCopy(report.wowDelta.totalExerciseCalories, ' kcal') && (
+                <small>{deltaCopy(report.wowDelta.totalExerciseCalories, ' kcal')}</small>
+              )}
             </div>
             <div>
               <strong>{numberOrDash(report.summary.totalCaloriesIn)}</strong>
               <span>摄入 kcal</span>
+              {deltaCopy(report.wowDelta.totalCaloriesIn, ' kcal') && (
+                <small>{deltaCopy(report.wowDelta.totalCaloriesIn, ' kcal')}</small>
+              )}
             </div>
             <div>
               <strong>{numberOrDash(report.summary.totalCalorieDeficit)}</strong>
               <span>热量缺口 kcal</span>
+              {deltaCopy(report.wowDelta.totalCalorieDeficit, ' kcal') && (
+                <small>{deltaCopy(report.wowDelta.totalCalorieDeficit, ' kcal')}</small>
+              )}
             </div>
             <div>
               <strong>{report.summary.achievementCount}</strong>
               <span>成就卡</span>
+              {deltaCopy(report.wowDelta.achievementCount, ' 张') && (
+                <small>{deltaCopy(report.wowDelta.achievementCount, ' 张')}</small>
+              )}
             </div>
           </div>
-          <p className="weekly-source-note">
-            当前记录未包含运动时长、营养素和体重历史，因此这些指标不会被推测。
-          </p>
+          {sourceNotes.map((note) => (
+            <p className="weekly-source-note" key={note}>{note}。</p>
+          ))}
         </section>
 
         <section className="weekly-section">
@@ -213,6 +269,12 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
                   day.deficit == null
                     ? 8
                     : Math.max(12, Math.round((Math.abs(day.deficit) / chartMax) * 92))
+                const exercised = Boolean(
+                  report.exerciseStats.dailyExercise.find((item) => item.date === day.date)?.workoutCount,
+                )
+                const ate = Boolean(
+                  report.dietStats.dailyDiet.find((item) => item.date === day.date)?.foodCount,
+                )
                 return (
                   <div className="weekly-chart__day" key={day.date}>
                     <span className="weekly-chart__value">
@@ -224,6 +286,10 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
                     />
                     <strong>周{WEEKDAYS[index] ?? index + 1}</strong>
                     <small>{STATUS_LABEL[day.status] ?? STATUS_LABEL.unknown}</small>
+                    <span className="weekly-chart__markers" aria-label={`${exercised ? '有运动' : '无运动'}，${ate ? '有饮食' : '无饮食'}`}>
+                      <i className={exercised ? 'is-on' : ''}>动</i>
+                      <i className={ate ? 'is-on' : ''}>食</i>
+                    </span>
                   </div>
                 )
               })
@@ -311,9 +377,29 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
               </small>
             </div>
           </div>
-          <div className="weekly-nutrition-empty">
-            蛋白质 · 碳水 · 脂肪 · 当前记录未包含营养素数据
-          </div>
+          {report.dietStats.macroStatus === 'sufficient' ? (
+            <div className="weekly-macro-grid">
+              <div>
+                <span>覆盖日日均蛋白质</span>
+                <strong>{numberOrDash(report.dietStats.averageProtein)} g</strong>
+                <small>规则目标 {numberOrDash(report.dietStats.macroTargets?.protein_g)} g</small>
+              </div>
+              <div>
+                <span>覆盖日日均脂肪</span>
+                <strong>{numberOrDash(report.dietStats.averageFat)} g</strong>
+                <small>规则目标 {numberOrDash(report.dietStats.macroTargets?.fat_g)} g</small>
+              </div>
+              <div>
+                <span>覆盖日日均碳水</span>
+                <strong>{numberOrDash(report.dietStats.averageCarbs)} g</strong>
+                <small>规则目标 {numberOrDash(report.dietStats.macroTargets?.carbs_g)} g</small>
+              </div>
+            </div>
+          ) : (
+            <div className="weekly-nutrition-empty">
+              宏量完整覆盖 {report.dietStats.macroLoggedDays} / 7 天；满 4 天后再展示 P / F / C 周结论
+            </div>
+          )}
         </section>
 
         <section className="weekly-section">
@@ -341,8 +427,7 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
                 >
                   <small>周{WEEKDAYS[index] ?? index + 1}</small>
                   <strong>
-                    {day.achievements[0]?.title ||
-                      ['休整日', '生活日', '小狸陪伴日'][index % 3]}
+                    {day.achievements[0]?.title || '未点亮'}
                   </strong>
                   <span aria-hidden>
                     {day.achievements[0]?.type === 'exercise_king'
@@ -351,21 +436,13 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
                         ? '🔥'
                         : day.achievements[0]?.type === 'food_king'
                           ? '🥘'
-                          : '✦'}
+                          : '○'}
                   </span>
                 </article>
               ))
             ) : (
               <p className="weekly-empty-line">这周还没有成就卡，继续记录就会亮起来。</p>
             )}
-          </div>
-        </section>
-
-        <section className="weekly-fox-letter">
-          <img src={foxImage} alt="" aria-hidden />
-          <div>
-            <p>小狸想对你说</p>
-            <blockquote>{report.foxComment}</blockquote>
           </div>
         </section>
 
@@ -381,7 +458,20 @@ function WeeklyReportPageContent({ communityMode = false }: WeeklyReportPageCont
                   <span aria-hidden>{suggestionIcon(item.type)}</span>
                   <div>
                     <h3>{item.title}</h3>
-                    <p>{item.content}</p>
+                    <dl>
+                      <div>
+                        <dt>为什么</dt>
+                        <dd>{item.why || item.content}</dd>
+                      </div>
+                      <div>
+                        <dt>怎么做</dt>
+                        <dd>{suggestionHowTo(item)}</dd>
+                      </div>
+                      <div>
+                        <dt>怎样算做到</dt>
+                        <dd>{item.successMetric || '按建议完成一次即可。'}</dd>
+                      </div>
+                    </dl>
                   </div>
                 </article>
               ))

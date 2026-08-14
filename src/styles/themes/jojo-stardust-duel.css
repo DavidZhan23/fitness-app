@@ -57,6 +57,20 @@
   --btn-primary-hover: #476cff;
   --btn-primary-text: #f8f9ff;
 
+  --fox-card-bg: #11182a;
+  --fox-card-border: rgb(255 243 90 / 0.28);
+  --fox-card-glow: rgb(49 81 201 / 0.25);
+  --fox-stage-bg: linear-gradient(155deg, #070a12 0%, #11182a 100%);
+  --fox-stage-border: rgb(255 243 90 / 0.28);
+  --fox-stage-ground: rgb(155 140 255 / 0.16);
+  --fox-stage-moon: rgb(255 243 90 / 0.34);
+  --fox-stage-moon-glow: rgb(255 243 90 / 0.24);
+  --fox-stage-fire: #d6d930;
+  --fox-stage-fire-glow: rgb(214 217 48 / 0.4);
+  --fox-progress-from: #476cff;
+  --fox-progress-to: #d6d930;
+  --fox-eyebrow: #fff35a;
+
   /*
    * 热力图限定：
    * 缺口 = 承太郎 / 白金之星蓝紫（图1 四阶）

@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import dajiFoxCompanionUrl from '../assets/daji-fox-companion-cutout-768.png'
 import dajiFoxCompanionMirroredUrl from '../assets/daji-fox-companion-cutout-768-mirrored.png'
 import { httpData, type FoxCompanionSummary } from '../lib/api'
+import {
+  readFoxStageCollapsedPreference,
+  writeFoxStageCollapsedPreference,
+} from '../lib/themePersistence'
 import { FoxInteractionMenu } from './fox/FoxInteractionMenu'
 import { FoxSpeechBubble } from './fox/FoxSpeechBubble'
 import {
@@ -48,7 +52,13 @@ export function DajiFoxCompanion({
   lastWorkoutType,
   todayGoalCompleted,
 }: DajiFoxCompanionProps) {
-  const { state, dispatch, showResponse } = useFoxStateMachine(summary.eligible)
+  const [stageCollapsed, setStageCollapsed] = useState(
+    () => readFoxStageCollapsedPreference().enabled,
+  )
+  const { state, dispatch, showResponse } = useFoxStateMachine(
+    summary.eligible,
+    stageCollapsed,
+  )
   const [loadingText, setLoadingText] = useState('')
   const controllerRef = useRef<AbortController | null>(null)
   const lastAiAtRef = useRef(0)
@@ -59,19 +69,23 @@ export function DajiFoxCompanion({
   const proactiveCountRef = useRef(0)
   const lastScrollAtRef = useRef(0)
   const lastManualDismissAtRef = useRef(0)
+  const entranceHandledRef = useRef(false)
   const progress = Math.max(0, exerciseKcal / FOX_EXERCISE_PROGRESS_TARGET)
+  const isPaused = state.paused || stageCollapsed
 
   useEffect(() => {
-    if (!summary.eligible) return
+    if (!summary.eligible || entranceHandledRef.current) return
+    entranceHandledRef.current = true
+    if (stageCollapsed) return
     const timer = window.setTimeout(() => {
       proactiveCountRef.current += 1
       showResponse(getLocalFoxResponse('enter'), 'SHOW_LOCAL')
     }, 1_050)
     return () => window.clearTimeout(timer)
-  }, [summary.eligible, showResponse])
+  }, [stageCollapsed, summary.eligible, showResponse])
 
   useEffect(() => {
-    if (!summary.eligible) return
+    if (!summary.eligible || stageCollapsed) return
     const onScroll = () => { lastScrollAtRef.current = Date.now() }
     window.addEventListener('scroll', onScroll, { passive: true })
     const timer = window.setTimeout(() => {
@@ -92,7 +106,13 @@ export function DajiFoxCompanion({
       window.removeEventListener('scroll', onScroll)
       window.clearTimeout(timer)
     }
-  }, [exerciseKcal, showResponse, summary.eligible, todayGoalCompleted])
+  }, [
+    exerciseKcal,
+    showResponse,
+    stageCollapsed,
+    summary.eligible,
+    todayGoalCompleted,
+  ])
 
   useEffect(() => {
     if (summary.eligible && todayGoalCompleted && !previousGoalRef.current) {
@@ -197,11 +217,39 @@ export function DajiFoxCompanion({
     ? loadingText
     : state.response?.text
 
+  const updateStageCollapsed = (collapsed: boolean) => {
+    writeFoxStageCollapsedPreference(collapsed)
+    setStageCollapsed(collapsed)
+  }
+
   return (
     <section
-      className={`daji-fox-card daji-fox-card--${state.mood}${state.paused ? ' is-paused' : ''}`}
+      className={`daji-fox-card daji-fox-card--${state.mood}${stageCollapsed ? ' daji-fox-card--collapsed' : ''}${isPaused ? ' is-paused' : ''}`}
       aria-label="小狸陪伴舞台"
     >
+      <button
+        type="button"
+        className="daji-fox-card__collapsed-toggle"
+        aria-expanded={false}
+        aria-label="展开小狸舞台"
+        onClick={() => updateStageCollapsed(false)}
+      >
+        <img src={dajiFoxCompanionUrl} alt="" draggable={false} aria-hidden />
+        <span className="daji-fox-card__collapsed-copy">小狸在休息</span>
+        <strong>{Math.round(exerciseKcal)} kcal</strong>
+        <span className="daji-fox-card__collapsed-chevron" aria-hidden>⌄</span>
+      </button>
+
+      <button
+        type="button"
+        className="daji-fox-card__collapse-toggle"
+        aria-expanded={true}
+        aria-label="收起小狸舞台"
+        onClick={() => updateStageCollapsed(true)}
+      >
+        收起舞台
+      </button>
+
       <div className="daji-fox-card__copy">
         <p className="daji-fox-card__eyebrow">本周运动大王陪伴</p>
         <h2 className="daji-fox-card__title">小狸在今日页等你</h2>

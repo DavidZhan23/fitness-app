@@ -106,7 +106,7 @@ export async function shareWeeklyReportImage(
   const file = new File([blob], filename, { type: 'image/jpeg' })
   const shareData = {
     title: '小满周报',
-    text: `${report.summary.overallTitle} · 第 ${report.weekNumber} 周`,
+    text: `${report.headline || report.summary.overallTitle} · 第 ${report.weekNumber} 周`,
     files: [file],
   }
 

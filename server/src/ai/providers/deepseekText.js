@@ -402,9 +402,9 @@ function mapDeepSeekHttpError(status, data) {
   return `AI 服务返回错误 (${status})`
 }
 
-async function requestDeepSeekOnce(apiKey, body) {
+async function requestDeepSeekOnce(apiKey, body, timeoutMs = TIMEOUT_MS) {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -432,6 +432,53 @@ async function requestDeepSeekOnce(apiKey, body) {
   } finally {
     clearTimeout(timer)
   }
+}
+
+/**
+ * 复用 DeepSeek 文本客户端的单次严格 JSON 请求。
+ * 调用方自行校验领域 JSON；本函数不会宽松提取代码块。
+ */
+export async function requestDeepSeekTextJson({
+  systemPrompt,
+  userPrompt,
+  maxTokens = 768,
+  temperature = 0.2,
+  timeoutMs = 12_000,
+}) {
+  const apiKey = getDeepSeekApiKey()
+  if (!apiKey) {
+    const err = new Error('AI 文本生成未配置')
+    err.status = 503
+    throw err
+  }
+  const safeTimeout = Math.min(12_000, Math.max(1_000, Number(timeoutMs) || 12_000))
+  const { res, data } = await requestDeepSeekOnce(
+    apiKey,
+    {
+      model: resolveDeepSeekModel(),
+      max_tokens: Math.min(1800, Math.max(128, Number(maxTokens) || 768)),
+      temperature: Math.min(1, Math.max(0, Number(temperature) || 0)),
+      response_format: { type: 'json_object' },
+      ...deepSeekNonThinkingExtras(),
+      messages: [
+        { role: 'system', content: String(systemPrompt || '') },
+        { role: 'user', content: String(userPrompt || '') },
+      ],
+    },
+    safeTimeout,
+  )
+  if (!res.ok) {
+    const err = new Error(mapDeepSeekHttpError(res.status, data))
+    err.status = res.status === 503 ? 503 : 502
+    throw err
+  }
+  const content = extractMessageContent(data?.choices?.[0])
+  if (!content) {
+    const err = new Error('AI 未返回内容')
+    err.status = 502
+    throw err
+  }
+  return content
 }
 
 async function requestDeepSeekWithRetry(apiKey, body) {
