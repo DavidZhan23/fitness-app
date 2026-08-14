@@ -5,6 +5,7 @@ import type {
   MicronutrientStatus,
   MicronutrientSummary,
 } from '../types'
+import { formatMicronutrientAmount } from './micronutrientTargets'
 
 export const MICRONUTRIENT_CATALOG: {
   id: MicronutrientId
@@ -174,4 +175,24 @@ export function mealMicronutrientRowStatus(
   if (mealHasMicronutrientEstimate(meal)) return 'ready'
   if (dayStatus === 'pending' || meal.macros_status === 'pending') return 'pending'
   return 'error'
+}
+
+export function mealMicronutrientEstimateLines(
+  meal: Pick<Meal, 'micronutrients'>,
+): { id: MicronutrientId; label: string; amountText: string }[] {
+  const byId = new Map(
+    (meal.micronutrients?.items ?? []).map((item) => [item.id, item]),
+  )
+  return MICRONUTRIENT_CATALOG.flatMap((catalog) => {
+    const item = byId.get(catalog.id)
+    const amount = Number(item?.amount)
+    if (!item || !Number.isFinite(amount) || amount <= 0) return []
+    return [
+      {
+        id: catalog.id,
+        label: catalog.shortLabel,
+        amountText: formatMicronutrientAmount(amount, item.unit),
+      },
+    ]
+  })
 }

@@ -2502,7 +2502,33 @@ select:focus-visible {
   color: var(--danger-strong);
 }
 
-.micronutrient-food-row__components {
+.micronutrient-food-row__amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.micronutrient-food-row__amounts li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  border-radius: 999px;
+  background: var(--surface-card-bg, var(--surface-bg));
+  padding: 0.22rem 0.55rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.micronutrient-food-row__amounts strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.micronutrient-food-row__note {
   margin: 0.35rem 0 0;
   color: var(--text-secondary);
   font-size: 0.78rem;

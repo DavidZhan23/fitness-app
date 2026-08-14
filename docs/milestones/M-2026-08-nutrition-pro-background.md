@@ -17,7 +17,7 @@
 
 - [x] 宏量不再阻塞 `POST/PATCH /meals`；保存成功后后台补全，营养页可见「估算中」并自动刷新
 - [x] 微量保持后台；有餐正在问 DeepSeek 时，营养入口与微量页都有明确计算中标识（不会只留下旧快照却毫无提示）
-- [x] 微量页底部食物明细：已估算 / 估算中 / 失败；已估算可看到配料拆解
+- [x] 微量页底部食物明细：已估算 / 估算中 / 失败；已估算显示该餐微量元素估算量（不展示配料名）
 - [x] 营养估算（宏量 + 微量）使用 `deepseek-v4-pro` 且开启 thinking；记运动热量、小狸仍用 Flash 并关闭 thinking
 - [x] `npm run verify`；api-contract / README 同步
 
@@ -43,7 +43,7 @@
 | 宏量写入校准 | `server/src/mealMacros.js`、`resolveMealMacrosForSave` | 是；改为保存后异步，不挡 200 |
 | DeepSeek 模型 | `resolveDeepSeekModel` 已识别 `deepseek-v4-pro` | 扩展为营养任务单独走 Pro，勿全局改默认 Flash |
 | 营养页餐食行 | `NutritionPage` 已有「待补全」 | 扩展为估算中 |
-| 餐级配料 | `meals.micronutrients.components` | 是，微量页底部渲染 |
+| 餐级配料 | `meals.micronutrients.components` | 后台仍写入；底部 UI 改展示 `items` 估算量 |
 
 ## 7. Inputs / Outputs
 
@@ -111,4 +111,4 @@
 2. 计算中标识：营养页顶部横幅 + 微量页加强横幅 + 底部食物行「估算中」；记饮食保存成功即离开，表单不干等
 3. 营养后台 Pro **开启 thinking**
 4. 记饮食/记运动点「AI 估热量」、小狸对话 **保持 Flash 且关闭 thinking**
-5. 微量页底部列出当日食物明细（已估算 / 估算中 / 失败，已估算可见配料）
+5. 微量页底部列出当日食物明细（已估算 / 估算中 / 失败；已估算显示该餐微量元素估算量，不展示配料名）

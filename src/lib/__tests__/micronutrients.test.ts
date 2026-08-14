@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MICRONUTRIENT_CATALOG,
   filterMicronutrientItems,
+  mealMicronutrientEstimateLines,
   mealMicronutrientRowStatus,
   micronutrientItemsForDisplay,
 } from '../micronutrients'
@@ -91,5 +92,22 @@ describe('micronutrient display catalog', () => {
     expect(
       mealMicronutrientRowStatus({ micronutrients: null, macros_status: 'error' }, 'error'),
     ).toBe('error')
+  })
+
+  it('lists positive meal micronutrient estimates and skips zeros', () => {
+    const lines = mealMicronutrientEstimateLines({
+      micronutrients: {
+        version: 1,
+        components: [{ name: '米饭', grams: 150 }],
+        items: [
+          { id: 'iron', amount: 2.4, unit: 'mg', confidence: 'medium' },
+          { id: 'vit_c', amount: 12, unit: 'mg', confidence: 'high' },
+          { id: 'calcium', amount: 0, unit: 'mg', confidence: 'unknown' },
+        ],
+      },
+    })
+    expect(lines.map((line) => line.id)).toEqual(['vit_c', 'iron'])
+    expect(lines[0]).toMatchObject({ label: '维 C', amountText: '12 mg' })
+    expect(lines[1]).toMatchObject({ label: '铁', amountText: '2.4 mg' })
   })
 })

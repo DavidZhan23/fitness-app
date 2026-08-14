@@ -7,6 +7,7 @@ import { scrollCommunityMainToTop } from '../lib/communityListCache'
 import {
   MICRONUTRIENT_STATUS_LABELS,
   filterMicronutrientItems,
+  mealMicronutrientEstimateLines,
   mealMicronutrientRowStatus,
   micronutrientCatalogItem,
   micronutrientItemsForDisplay,
@@ -559,7 +560,7 @@ export function MicronutrientsPage() {
               <ul>
                 {meals.map((meal) => {
                   const rowStatus = mealMicronutrientRowStatus(meal, status)
-                  const components = meal.micronutrients?.components ?? []
+                  const estimates = mealMicronutrientEstimateLines(meal)
                   return (
                     <li
                       key={meal.id}
@@ -576,20 +577,28 @@ export function MicronutrientsPage() {
                               : '失败'}
                         </span>
                       </div>
-                      {rowStatus === 'ready' && components.length > 0 ? (
-                        <p className="micronutrient-food-row__components">
-                          拆出{' '}
-                          {components
-                            .map((component) =>
-                              component.grams > 0
-                                ? `${component.name}约${Math.round(component.grams)}g`
-                                : component.name,
-                            )
-                            .join('、')}
+                      {rowStatus === 'ready' && estimates.length > 0 ? (
+                        <ul className="micronutrient-food-row__amounts">
+                          {estimates.map((estimate) => (
+                            <li key={estimate.id}>
+                              <span>{estimate.label}</span>
+                              <strong>{estimate.amountText}</strong>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      {rowStatus === 'ready' && estimates.length === 0 ? (
+                        <p className="micronutrient-food-row__note">
+                          这道菜没有估出有效的微量元素数量。
+                        </p>
+                      ) : null}
+                      {rowStatus === 'pending' ? (
+                        <p className="micronutrient-food-row__note">
+                          算完后会显示这道菜的微量元素估算量。
                         </p>
                       ) : null}
                       {rowStatus === 'error' ? (
-                        <p className="micronutrient-food-row__components">
+                        <p className="micronutrient-food-row__note">
                           这道菜还没有算出微量元素，可点上方重试。
                         </p>
                       ) : null}
