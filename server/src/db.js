@@ -454,6 +454,10 @@ export async function runMigrations() {
       alter table public.meals
         add constraint meals_sugar_scope_check
         check (sugar_scope is null or sugar_scope = 'added')`)
+    await pool.query(`
+      alter table public.meals
+        add column if not exists micronutrients jsonb,
+        add column if not exists micronutrients_fingerprint text`)
   } catch {
     /* 表未建等 */
   }

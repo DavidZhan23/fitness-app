@@ -11,8 +11,17 @@ import {
   micronutrientItemsForDisplay,
   type MicronutrientFilter,
 } from '../lib/micronutrients'
+import {
+  formatMicronutrientAmount,
+  resolveMicronutrientTargets,
+} from '../lib/micronutrientTargets'
 import { formatDateKeyLabel } from '../lib/streaks'
-import type { MicronutrientItem, MicronutrientStatus } from '../types'
+import type {
+  MicronutrientId,
+  MicronutrientItem,
+  MicronutrientStatus,
+  Profile,
+} from '../types'
 
 const SEGMENT_FILTERS: { id: MicronutrientFilter; label: string }[] = [
   { id: 'all', label: '全部' },
@@ -30,9 +39,11 @@ const SUMMARY_STATUSES: { status: MicronutrientStatus; label: string }[] = [
 function MicronutrientDetailSheet({
   item,
   onClose,
+  onOpenReference,
 }: {
   item: MicronutrientItem | null
   onClose: () => void
+  onOpenReference: (id: MicronutrientId) => void
 }) {
   const [educationOpen, setEducationOpen] = useState<'role' | 'foods' | null>(
     null,
@@ -97,6 +108,42 @@ function MicronutrientDetailSheet({
             <p className="micronutrient-detail-sheet__note">{item.note}</p>
           ) : null}
 
+          {item.estimated_pct != null || item.dri_amount != null ? (
+            <section className="micronutrient-estimate">
+              <div className="micronutrient-estimate__head">
+                <strong>今日估算 vs 参考值</strong>
+                <button
+                  type="button"
+                  className="micronutrient-estimate__ref"
+                  onClick={() => onOpenReference(item.id)}
+                >
+                  参考
+                </button>
+              </div>
+              <div
+                className="micronutrient-estimate__bar"
+                role="meter"
+                aria-label="估算占参考值比例"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.max(0, Math.round(item.estimated_pct ?? 0))}
+              >
+                <i
+                  style={{
+                    width: `${Math.max(0, Math.min(item.estimated_pct ?? 0, 100))}%`,
+                  }}
+                />
+              </div>
+              <p>
+                约达参考值 {item.estimated_pct == null ? '—' : `${Math.round(item.estimated_pct)}%`}
+                {item.dri_amount
+                  ? `（参考 ${formatMicronutrientAmount(item.dri_amount, item.unit ?? 'mg')}）`
+                  : ''}
+                。估算，非检测。
+              </p>
+            </section>
+          ) : null}
+
           {item.status === 'low' && item.food_suggestions?.length ? (
             <section className="micronutrient-detail-sheet__ai-advice">
               <h3>结合今日饮食的建议</h3>
@@ -159,8 +206,104 @@ function MicronutrientDetailSheet({
   )
 }
 
+function MicronutrientReferenceSheet({
+  open,
+  highlightId,
+  profile,
+  onClose,
+}: {
+  open: boolean
+  highlightId: MicronutrientId | null
+  profile: Profile | null | undefined
+  onClose: () => void
+}) {
+  const targets = useMemo(() => resolveMicronutrientTargets(profile), [profile])
+
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open, onClose])
+
+  useEffect(() => {
+    if (!open || !highlightId) return
+    document
+      .getElementById(`dri-row-${highlightId}`)
+      ?.scrollIntoView({ block: 'center' })
+  }, [highlightId, open])
+
+  if (!open) return null
+
+  return createPortal(
+    <div
+      className="micronutrient-detail-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="micronutrient-dri-title"
+    >
+      <button
+        type="button"
+        className="micronutrient-detail-sheet__backdrop"
+        aria-label="关闭参考摄入量"
+        onClick={onClose}
+      />
+      <article className="micronutrient-detail-sheet__panel">
+        <header className="micronutrient-detail-sheet__header">
+          <div>
+            <p>{targets.label}</p>
+            <h2 id="micronutrient-dri-title">参考摄入量</h2>
+          </div>
+          <button
+            type="button"
+            className="micronutrient-detail-sheet__close"
+            aria-label="关闭"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+        <div className="micronutrient-detail-sheet__body">
+          <p className="micronutrient-dri-disclaimer">
+            按性别与年龄档给出的膳食参考值，供对照今日估算，不是医嘱或检测标准。
+          </p>
+          <ul className="micronutrient-dri-list">
+            {targets.items.map((target) => {
+              const catalogItem = micronutrientCatalogItem(
+                target.id as MicronutrientId,
+              )
+              const highlighted = highlightId === target.id
+              return (
+                <li
+                  key={target.id}
+                  id={`dri-row-${target.id}`}
+                  data-highlight={highlighted ? 'true' : undefined}
+                >
+                  <span>{catalogItem?.label ?? target.id}</span>
+                  <strong>
+                    {formatMicronutrientAmount(target.amount, target.unit)}
+                  </strong>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </article>
+    </div>,
+    document.body,
+  )
+}
+
 export function MicronutrientsPage() {
   const {
+    profile,
     today,
     dateKey,
     accountStart,
@@ -179,6 +322,10 @@ export function MicronutrientsPage() {
   } = useNutritionDay('/micronutrients')
   const [filter, setFilter] = useState<MicronutrientFilter>('all')
   const [selectedItem, setSelectedItem] = useState<MicronutrientItem | null>(
+    null,
+  )
+  const [driOpen, setDriOpen] = useState(false)
+  const [driHighlightId, setDriHighlightId] = useState<MicronutrientId | null>(
     null,
   )
   const summary = dayLog?.micronutrient_summary
@@ -202,6 +349,8 @@ export function MicronutrientsPage() {
   useEffect(() => {
     setFilter('all')
     setSelectedItem(null)
+    setDriOpen(false)
+    setDriHighlightId(null)
     scrollCommunityMainToTop()
   }, [dateKey])
 
@@ -221,6 +370,16 @@ export function MicronutrientsPage() {
           </Link>
           <p>每日营养素</p>
           <h1>微量元素</h1>
+          <button
+            type="button"
+            className="micronutrients-page-header__dri"
+            onClick={() => {
+              setDriHighlightId(null)
+              setDriOpen(true)
+            }}
+          >
+            参考摄入量
+          </button>
           <span>{formatDateKeyLabel(dateKey)}</span>
         </div>
         <div className="nutrition-date-nav" aria-label="切换日期">
@@ -396,6 +555,19 @@ export function MicronutrientsPage() {
       <MicronutrientDetailSheet
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
+        onOpenReference={(id) => {
+          setDriHighlightId(id)
+          setDriOpen(true)
+        }}
+      />
+      <MicronutrientReferenceSheet
+        open={driOpen}
+        highlightId={driHighlightId}
+        profile={profile}
+        onClose={() => {
+          setDriOpen(false)
+          setDriHighlightId(null)
+        }}
       />
     </PageShell>
   )

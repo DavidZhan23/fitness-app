@@ -2489,6 +2489,17 @@ select:focus-visible {
   font-size: clamp(1.25rem, 5vw, 1.65rem);
 }
 
+.micronutrients-page-header__dri {
+  margin: 0.25rem 0 0.15rem;
+  border: 1px solid var(--surface-card-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  background: var(--surface-panel-soft-bg);
+  color: var(--text-link);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .micronutrient-summary-chips {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2724,6 +2735,92 @@ select:focus-visible {
   color: var(--text-muted);
   font-size: 0.72rem;
   line-height: 1.55;
+}
+
+.micronutrient-estimate {
+  margin-top: 0.75rem;
+}
+
+.micronutrient-estimate__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.micronutrient-estimate__head strong {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.micronutrient-estimate__ref {
+  border: 0;
+  background: none;
+  color: var(--text-link);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.micronutrient-estimate__bar {
+  margin-top: 0.45rem;
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-panel-border);
+}
+
+.micronutrient-estimate__bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-exercise-strong);
+}
+
+.micronutrient-estimate p {
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.micronutrient-dri-disclaimer {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.micronutrient-dri-list {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.micronutrient-dri-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--surface-panel-border);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface-panel-soft-bg);
+}
+
+.micronutrient-dri-list li[data-highlight='true'] {
+  border-color: var(--text-link);
+}
+
+.micronutrient-dri-list span {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.micronutrient-dri-list strong {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
 }
 
 .micronutrient-detail-sheet__ai-advice,

@@ -49,4 +49,25 @@ describe('micronutrient display catalog', () => {
     expect(filterMicronutrientItems(items, 'vitamins')).toHaveLength(10)
     expect(filterMicronutrientItems(items, 'minerals')).toHaveLength(6)
   })
+
+  it('keeps estimated progress fields from a v2 summary', () => {
+    const items = micronutrientItemsForDisplay({
+      version: 2,
+      items: [
+        {
+          id: 'iron',
+          status: 'low',
+          estimated_amount: 3,
+          unit: 'mg',
+          dri_amount: 20,
+          estimated_pct: 15,
+        },
+      ],
+    })
+    expect(items[0]).toMatchObject({
+      id: 'iron',
+      estimated_pct: 15,
+      dri_amount: 20,
+    })
+  })
 })

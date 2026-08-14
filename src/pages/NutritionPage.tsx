@@ -196,7 +196,7 @@ function MicronutrientEntryCard({
     <section className="surface-card nutrition-card micronutrient-entry-card">
       <div className="nutrition-card__heading">
         <div>
-          <p className="nutrition-card__eyebrow">整日 AI 快照</p>
+          <p className="nutrition-card__eyebrow">按餐估算后汇总</p>
           <h2>微量元素</h2>
         </div>
         <Link

@@ -29,6 +29,7 @@
 | [M-2026-08-daily-micronutrients](M-2026-08-daily-micronutrients.md) | done | `dev/huanghongli`（独立微量元素页 + 整日 AI 快照） |
 | [M-2026-08-profile-persistence-fixes](M-2026-08-profile-persistence-fixes.md) | done | `dev/huanghongli`（主题与社区可见性持久化修复） |
 | [M-2026-08-weekly-report-quality](M-2026-08-weekly-report-quality.md) | done | `dev/huanghongli`（事实洞察 + 规则建议 + AI 润色 fallback） |
+| [M-2026-08-meal-micronutrient-sum](M-2026-08-meal-micronutrient-sum.md) | done | `dev/huanghongli`（逐餐微量加总，修越吃越少） |
 | [M-2026-08-fox-stage-collapse-theme](M-2026-08-fox-stage-collapse-theme.md) | done | `dev/huanghongli`（舞台折叠持久化 + 12 套狐狸主题 token） |
 
 ← [回到 Active 表](README.md)

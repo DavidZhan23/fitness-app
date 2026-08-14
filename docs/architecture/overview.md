@@ -30,8 +30,8 @@
 | `users` | 账号（email + password_hash） | — |
 | `password_reset_tokens` | 密码找回 token | `user_id → users.id` |
 | `profiles` | 身体指标、`wall_style`、`metabolism_mode`、账号主题/联名开关、社区总开关与开发者隐藏锁 | `id → users.id` |
-| `day_logs` | 每日汇总；`community_visible` 控制当日是否对他人公开；本人整日微量元素以 status + meal fingerprint + JSONB summary 快照持久化 | `user_id → users.id` |
-| `exercises` / `meals` | 单条运动 / 饮食；`meals` 含 nullable `protein_g/fat_g/carbs_g/sugar_g`（`sugar_g`=添加糖）、`sugar_scope(added)` 与 `macros_source(user\|ai)` | `day_log_id → day_logs.id` |
+| `day_logs` | 每日汇总；`community_visible` 控制当日是否对他人公开；本人微量日快照以 status + meal fingerprint + JSONB summary（由餐级估算加总派生）持久化 | `user_id → users.id` |
+| `exercises` / `meals` | 单条运动 / 饮食；`meals` 含 nullable `protein_g/fat_g/carbs_g/sugar_g`（`sugar_g`=添加糖）、`sugar_scope(added)`、`macros_source(user\|ai)`，以及餐级 `micronutrients` JSON 与指纹 | `day_log_id → day_logs.id` |
 | `exercise_templates` / `meal_templates` | 快捷模板 | `user_id → users.id` |
 
 ## 3. 卫星能力（点到为止）
@@ -39,7 +39,7 @@
 | 能力 | 要点 | 深读 |
 |------|------|------|
 | **社区** | follows / likes / comments / reactions；列表需 `community_visible` + onboarding；可见性规则见下 | [api-contract 社区节](api-contract.md) |
-| **AI** | 文本/拍照估 kcal 与 meal 宏量、整日微量三态快照、按需营养建议、狐狸陪伴；配额按上海日历日 | [api-contract AI 节](api-contract.md) |
+| **AI** | 文本/拍照估 kcal 与 meal 宏量、逐餐微量估算再加总、按需营养建议、狐狸陪伴；配额按上海日历日 | [api-contract AI 节](api-contract.md) |
 | **遥测** | `telemetry_events` 轻量埋点 | [api-contract 遥测节](api-contract.md) |
 | **周报** | 质量周报 + 用户周报快照 | [api-contract 周报节](api-contract.md) |
 

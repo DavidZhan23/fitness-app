@@ -634,7 +634,7 @@ export async function deepseekTextEstimator(input) {
   }
 }
 
-const MICRONUTRIENT_IDS = [
+const MEAL_MICRONUTRIENT_IDS = [
   'vit_a',
   'vit_c',
   'vit_d',
@@ -653,23 +653,31 @@ const MICRONUTRIENT_IDS = [
   'iodine',
 ]
 
-export function buildMicronutrientSystemPrompt() {
+export function buildMealMicronutrientSystemPrompt() {
   return (
-    '你是谨慎的整日饮食微量元素估算助手。只能根据当天餐食名称和热量，判断固定营养素是否“可能充足、可能不足、信息不足”，不能当作检测或医疗诊断。' +
-    `只允许以下 id：${MICRONUTRIENT_IDS.join(',')}。` +
-    'status 只允许 adequate、low、unknown；资料不充分时必须用 unknown，不要假装确定。' +
-    '严禁输出毫克、微克、达标率或任何精确摄入量。' +
-    'low 项给出 1–3 个普通日常食物，禁止保健品、补充剂、品牌和服用剂量；adequate/unknown 不给食物建议。' +
-    '只输出严格 JSON object，不要 Markdown 或解释文字。格式：' +
-    '{"version":1,"items":[{"id":"iron","status":"low","note":"简短可能性说明","food_suggestions":["瘦肉","菠菜"]}],"advice":"可选总评，不超过80字"}。' +
-    '应尽量覆盖 16 项；服务端会把缺项补成 unknown。'
+    '你是谨慎的单餐微量元素估算助手，依据中国食物成分表常见值和家常份量估算，不能当作检测或医疗诊断。' +
+    '先把这道菜拆成配料和大约克数，再估算整餐 16 项微量元素合计。日汇总由服务端加总，你不要判断是否充足。' +
+    `items 只允许以下 id：${MEAL_MICRONUTRIENT_IDS.join(',')}，必须 16 项都出现。` +
+    '单位必须准确：vit_a(RAE)、vit_d、vit_k、vit_b9、vit_b12、iodine 用 µg；其余用 mg。' +
+    '没有把握的项 amount 填 0，confidence 填 unknown；不要省略字段。' +
+    'confidence 只允许 high、medium、low、unknown。' +
+    '禁止保健品、补充剂、品牌和服用剂量。' +
+    '只输出严格 JSON object，不要 Markdown。格式：' +
+    '{"components":[{"name":"米饭","grams":150}],"items":[{"id":"iron","amount":2.4,"unit":"mg","confidence":"medium"}]}。'
   )
 }
 
 /**
- * @param {{ meals: {id?: string, name: string, kcal: number|string}[], sex?: string|null }} input
+ * @param {{
+ *   name: string,
+ *   kcal: number|string,
+ *   protein_g?: number|string|null,
+ *   fat_g?: number|string|null,
+ *   carbs_g?: number|string|null,
+ *   sex?: string|null,
+ * }} input
  */
-export async function estimateDailyMicronutrients(input) {
+export async function estimateMealMicronutrients(input) {
   const apiKey = getDeepSeekApiKey()
   if (!apiKey) {
     const err = new Error('AI 微量元素估算未配置')
@@ -677,30 +685,36 @@ export async function estimateDailyMicronutrients(input) {
     throw err
   }
 
-  const meals = Array.isArray(input?.meals)
-    ? input.meals.slice(0, 100).map((meal) => ({
-        name: Array.from(String(meal?.name ?? '').trim()).slice(0, 120).join(''),
-        kcal: Math.max(0, Math.round(Number(meal?.kcal) || 0)),
-      }))
-    : []
-  if (meals.length === 0) {
+  const name = Array.from(String(input?.name ?? '').trim()).slice(0, 120).join('')
+  const kcal = Math.max(0, Math.round(Number(input?.kcal) || 0))
+  if (!name || kcal <= 0) {
     const err = new Error('没有可估算的餐食')
     err.status = 400
     throw err
   }
 
+  const macros = {}
+  for (const field of ['protein_g', 'fat_g', 'carbs_g']) {
+    const value = Number(input?.[field])
+    if (Number.isFinite(value) && value >= 0) macros[field] = Math.round(value * 10) / 10
+  }
+
   const body = {
     model: resolveDeepSeekModel(),
-    max_tokens: 1800,
+    max_tokens: 2800,
     temperature: 0.1,
     ...deepSeekNonThinkingExtras(),
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: buildMicronutrientSystemPrompt() },
+      { role: 'system', content: buildMealMicronutrientSystemPrompt() },
       {
         role: 'user',
         content: JSON.stringify({
-          meals,
+          meal: {
+            name,
+            kcal,
+            ...macros,
+          },
           ...(input?.sex === 'male' || input?.sex === 'female'
             ? { sex: input.sex }
             : {}),

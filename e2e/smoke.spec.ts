@@ -42,6 +42,7 @@ test.describe.serial('main flow smoke', () => {
     await micronutrientEntry.getByRole('link', { name: '查看详情' }).click()
     await expect(page).toHaveURL(/\/micronutrients\?date=\d{4}-\d{2}-\d{2}$/)
     await expect(page.getByRole('heading', { name: '微量元素' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '参考摄入量' })).toBeVisible()
     await expect(page.getByText('AI 估算，非检测/非医疗建议。')).toBeVisible()
     await expect(
       page

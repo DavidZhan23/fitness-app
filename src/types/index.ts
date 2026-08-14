@@ -254,12 +254,22 @@ export interface MicronutrientItem {
   status: MicronutrientStatus
   note?: string
   food_suggestions?: string[]
+  estimated_amount?: number
+  unit?: 'mg' | 'µg'
+  dri_amount?: number
+  estimated_pct?: number | null
+  coverage?: number
 }
 
 export interface MicronutrientSummary {
-  version: 1
+  version: 1 | 2
   items: MicronutrientItem[]
   advice?: string
+  profile_band?: {
+    sex?: 'male' | 'female' | null
+    ageBand?: 'child' | 'adult' | 'older'
+    label?: string
+  } | null
 }
 
 export interface Exercise {
@@ -285,6 +295,24 @@ export interface Meal {
   sugar_g: number | null
   sugar_scope: 'added' | null
   macros_source: 'user' | 'ai' | null
+  micronutrients?: MealMicronutrients | null
+  micronutrients_fingerprint?: string | null
+}
+
+export interface MealMicronutrientComponent {
+  name: string
+  grams: number
+}
+
+export interface MealMicronutrients {
+  version: 1
+  components: MealMicronutrientComponent[]
+  items: {
+    id: MicronutrientId
+    amount: number
+    unit: 'mg' | 'µg'
+    confidence: 'high' | 'medium' | 'low' | 'unknown'
+  }[]
 }
 
 export interface MealMacrosInput {
