@@ -10,6 +10,7 @@ import {
   MACRO_TARGET_TIERS,
   calculateMacroTargets,
   compareMacroToTarget,
+  isMealMacroEstimating,
   macroEnergyKcal,
   needsMealMacroBackfill,
   summarizeMealMacros,
@@ -168,19 +169,23 @@ function MicronutrientEntryCard({
   dayLog,
   mealCount,
   dateKey,
+  estimating,
 }: {
   dayLog: DayLog | null
   mealCount: number
   dateKey: string
+  estimating: boolean
 }) {
   const summary = dayLog?.micronutrient_summary
   const items = micronutrientItemsForDisplay(summary)
   const lowCount = items.filter((item) => item.status === 'low').length
-  const status = dayLog?.micronutrient_status ?? 'idle'
+  const status = estimating
+    ? 'pending'
+    : dayLog?.micronutrient_status ?? 'idle'
   const statusText =
     mealCount === 0
       ? '当天暂无餐食'
-      : status === 'pending'
+      : estimating
         ? '更新中…'
         : status === 'error'
           ? summary
@@ -196,7 +201,7 @@ function MicronutrientEntryCard({
     <section className="surface-card nutrition-card micronutrient-entry-card">
       <div className="nutrition-card__heading">
         <div>
-          <p className="nutrition-card__eyebrow">整日 AI 快照</p>
+          <p className="nutrition-card__eyebrow">按餐估算后汇总</p>
           <h2>微量元素</h2>
         </div>
         <Link
@@ -216,6 +221,7 @@ function MicronutrientEntryCard({
 
 function MealMacroLine({ meal }: { meal: Meal }) {
   const addedSugar = meal.sugar_scope === 'added' ? meal.sugar_g : null
+  const estimating = isMealMacroEstimating(meal)
   const hasAnyMacro = [meal.protein_g, meal.fat_g, meal.carbs_g, addedSugar].some(
     (value) => value != null,
   )
@@ -241,13 +247,15 @@ function MealMacroLine({ meal }: { meal: Meal }) {
         添加糖 {addedSugar == null ? '—' : `${formatGrams(addedSugar)}g`}
       </p>
       <p className="nutrition-meal-row__source">
-        {!hasAnyMacro
-          ? '待补全'
-          : sourceLabel
-            ? `${sourceLabel}${pending ? ' · 部分待补全' : ''}`
-            : pending
-              ? '部分待补全'
-              : '已填写'}
+        {estimating
+          ? '估算中'
+          : !hasAnyMacro
+            ? '待补全'
+            : sourceLabel
+              ? `${sourceLabel}${pending ? ' · 部分待补全' : ''}`
+              : pending
+                ? '部分待补全'
+                : '已填写'}
       </p>
     </li>
   )
@@ -270,6 +278,7 @@ export function NutritionPage() {
     refreshDay,
     goToDate,
     mealLogHref,
+    nutritionEstimating,
   } = useNutritionDay('/nutrition')
   const [targetTier, setTargetTier] = useState<MacroTargetTier>('normal')
   const ruleTargets = useMemo(
@@ -379,6 +388,14 @@ export function NutritionPage() {
 
       {!loading && !error ? (
         <>
+          {nutritionEstimating ? (
+            <p
+              className="surface-card micronutrient-status micronutrient-status--pending"
+              role="status"
+            >
+              正在根据刚记的食物估算营养素…
+            </p>
+          ) : null}
           <section className="surface-card nutrition-card">
             <div className="nutrition-card__heading">
               <div>
@@ -408,6 +425,7 @@ export function NutritionPage() {
             dayLog={dayLog}
             mealCount={meals.length}
             dateKey={dateKey}
+            estimating={nutritionEstimating}
           />
 
           <section className="surface-card nutrition-card">

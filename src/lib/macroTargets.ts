@@ -114,6 +114,18 @@ export function needsMealMacroBackfill(meal: Meal): boolean {
   return meal.sugar_scope !== 'added'
 }
 
+export function isMealMacroEstimating(meal: Pick<Meal, 'macros_status'>): boolean {
+  return meal.macros_status === 'pending'
+}
+
+export function isNutritionEstimateInProgress(
+  dayLog: { micronutrient_status?: string | null } | null,
+  meals: Pick<Meal, 'macros_status'>[],
+): boolean {
+  if (dayLog?.micronutrient_status === 'pending') return true
+  return meals.some(isMealMacroEstimating)
+}
+
 export function macroEnergyKcal(
   macros: Pick<MacroAmounts, 'protein_g' | 'fat_g' | 'carbs_g'>,
 ): number {

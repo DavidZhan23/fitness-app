@@ -7,12 +7,24 @@ import { scrollCommunityMainToTop } from '../lib/communityListCache'
 import {
   MICRONUTRIENT_STATUS_LABELS,
   filterMicronutrientItems,
+  mealMicronutrientEstimateLines,
+  mealMicronutrientRowStatus,
   micronutrientCatalogItem,
   micronutrientItemsForDisplay,
   type MicronutrientFilter,
 } from '../lib/micronutrients'
+import {
+  formatMicronutrientAmount,
+  resolveMicronutrientTargets,
+} from '../lib/micronutrientTargets'
 import { formatDateKeyLabel } from '../lib/streaks'
-import type { MicronutrientItem, MicronutrientStatus } from '../types'
+import type {
+  Meal,
+  MicronutrientId,
+  MicronutrientItem,
+  MicronutrientStatus,
+  Profile,
+} from '../types'
 
 const SEGMENT_FILTERS: { id: MicronutrientFilter; label: string }[] = [
   { id: 'all', label: '全部' },
@@ -30,9 +42,11 @@ const SUMMARY_STATUSES: { status: MicronutrientStatus; label: string }[] = [
 function MicronutrientDetailSheet({
   item,
   onClose,
+  onOpenReference,
 }: {
   item: MicronutrientItem | null
   onClose: () => void
+  onOpenReference: (id: MicronutrientId) => void
 }) {
   const [educationOpen, setEducationOpen] = useState<'role' | 'foods' | null>(
     null,
@@ -97,6 +111,42 @@ function MicronutrientDetailSheet({
             <p className="micronutrient-detail-sheet__note">{item.note}</p>
           ) : null}
 
+          {item.estimated_pct != null || item.dri_amount != null ? (
+            <section className="micronutrient-estimate">
+              <div className="micronutrient-estimate__head">
+                <strong>今日估算 vs 参考值</strong>
+                <button
+                  type="button"
+                  className="micronutrient-estimate__ref"
+                  onClick={() => onOpenReference(item.id)}
+                >
+                  参考
+                </button>
+              </div>
+              <div
+                className="micronutrient-estimate__bar"
+                role="meter"
+                aria-label="估算占参考值比例"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.max(0, Math.round(item.estimated_pct ?? 0))}
+              >
+                <i
+                  style={{
+                    width: `${Math.max(0, Math.min(item.estimated_pct ?? 0, 100))}%`,
+                  }}
+                />
+              </div>
+              <p>
+                约达参考值 {item.estimated_pct == null ? '—' : `${Math.round(item.estimated_pct)}%`}
+                {item.dri_amount
+                  ? `（参考 ${formatMicronutrientAmount(item.dri_amount, item.unit ?? 'mg')}）`
+                  : ''}
+                。估算，非检测。
+              </p>
+            </section>
+          ) : null}
+
           {item.status === 'low' && item.food_suggestions?.length ? (
             <section className="micronutrient-detail-sheet__ai-advice">
               <h3>结合今日饮食的建议</h3>
@@ -159,8 +209,178 @@ function MicronutrientDetailSheet({
   )
 }
 
+function MicronutrientReferenceSheet({
+  open,
+  highlightId,
+  profile,
+  onClose,
+}: {
+  open: boolean
+  highlightId: MicronutrientId | null
+  profile: Profile | null | undefined
+  onClose: () => void
+}) {
+  const targets = useMemo(() => resolveMicronutrientTargets(profile), [profile])
+
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open, onClose])
+
+  useEffect(() => {
+    if (!open || !highlightId) return
+    document
+      .getElementById(`dri-row-${highlightId}`)
+      ?.scrollIntoView({ block: 'center' })
+  }, [highlightId, open])
+
+  if (!open) return null
+
+  return createPortal(
+    <div
+      className="micronutrient-detail-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="micronutrient-dri-title"
+    >
+      <button
+        type="button"
+        className="micronutrient-detail-sheet__backdrop"
+        aria-label="关闭参考摄入量"
+        onClick={onClose}
+      />
+      <article className="micronutrient-detail-sheet__panel">
+        <header className="micronutrient-detail-sheet__header">
+          <div>
+            <p>{targets.label}</p>
+            <h2 id="micronutrient-dri-title">参考摄入量</h2>
+          </div>
+          <button
+            type="button"
+            className="micronutrient-detail-sheet__close"
+            aria-label="关闭"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+        <div className="micronutrient-detail-sheet__body">
+          <p className="micronutrient-dri-disclaimer">
+            按性别与年龄档给出的膳食参考值，供对照今日估算，不是医嘱或检测标准。
+          </p>
+          <ul className="micronutrient-dri-list">
+            {targets.items.map((target) => {
+              const catalogItem = micronutrientCatalogItem(
+                target.id as MicronutrientId,
+              )
+              const highlighted = highlightId === target.id
+              return (
+                <li
+                  key={target.id}
+                  id={`dri-row-${target.id}`}
+                  data-highlight={highlighted ? 'true' : undefined}
+                >
+                  <span>{catalogItem?.label ?? target.id}</span>
+                  <strong>
+                    {formatMicronutrientAmount(target.amount, target.unit)}
+                  </strong>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </article>
+    </div>,
+    document.body,
+  )
+}
+
+const ROW_STATUS_LABELS = {
+  ready: '已估算',
+  pending: '估算中',
+  error: '失败',
+} as const
+
+function MicronutrientFoodRow({
+  meal,
+  dayStatus,
+  expanded,
+  onToggle,
+}: {
+  meal: Meal
+  dayStatus: string | null | undefined
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const rowStatus = mealMicronutrientRowStatus(meal, dayStatus)
+  const estimates = mealMicronutrientEstimateLines(meal)
+  return (
+    <li
+      className="micronutrient-food-row"
+      data-status={rowStatus}
+      data-expanded={expanded ? 'true' : 'false'}
+    >
+      <button
+        type="button"
+        className="micronutrient-food-row__toggle"
+        aria-expanded={expanded}
+        onClick={onToggle}
+      >
+        <span className="micronutrient-food-row__heading">
+          <strong>{meal.name}</strong>
+          <span className="micronutrient-food-row__meta">
+            <em>{ROW_STATUS_LABELS[rowStatus]}</em>
+            <span className="micronutrient-food-row__expand-label">
+              {expanded ? '收起' : '展开'}
+            </span>
+          </span>
+        </span>
+      </button>
+      {expanded ? (
+        <>
+          {rowStatus === 'ready' && estimates.length > 0 ? (
+            <ul className="micronutrient-food-row__amounts">
+              {estimates.map((estimate) => (
+                <li key={estimate.id}>
+                  <span>{estimate.label}</span>
+                  <strong>{estimate.amountText}</strong>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {rowStatus === 'ready' && estimates.length === 0 ? (
+            <p className="micronutrient-food-row__note">
+              这道菜没有估出有效的微量元素数量。
+            </p>
+          ) : null}
+          {rowStatus === 'pending' ? (
+            <p className="micronutrient-food-row__note">
+              算完后会显示这道菜的微量元素估算量。
+            </p>
+          ) : null}
+          {rowStatus === 'error' ? (
+            <p className="micronutrient-food-row__note">
+              这道菜还没有算出微量元素，可点上方重试。
+            </p>
+          ) : null}
+        </>
+      ) : null}
+    </li>
+  )
+}
+
 export function MicronutrientsPage() {
   const {
+    profile,
     today,
     dateKey,
     accountStart,
@@ -176,11 +396,17 @@ export function MicronutrientsPage() {
     micronutrientRetrying,
     micronutrientRetryError,
     retryMicronutrients,
+    nutritionEstimating,
   } = useNutritionDay('/micronutrients')
   const [filter, setFilter] = useState<MicronutrientFilter>('all')
   const [selectedItem, setSelectedItem] = useState<MicronutrientItem | null>(
     null,
   )
+  const [driOpen, setDriOpen] = useState(false)
+  const [driHighlightId, setDriHighlightId] = useState<MicronutrientId | null>(
+    null,
+  )
+  const [expandedMealIds, setExpandedMealIds] = useState<string[]>([])
   const summary = dayLog?.micronutrient_summary
   const items = useMemo(() => micronutrientItemsForDisplay(summary), [summary])
   const filteredItems = useMemo(
@@ -202,6 +428,9 @@ export function MicronutrientsPage() {
   useEffect(() => {
     setFilter('all')
     setSelectedItem(null)
+    setDriOpen(false)
+    setDriHighlightId(null)
+    setExpandedMealIds([])
     scrollCommunityMainToTop()
   }, [dateKey])
 
@@ -221,6 +450,16 @@ export function MicronutrientsPage() {
           </Link>
           <p>每日营养素</p>
           <h1>微量元素</h1>
+          <button
+            type="button"
+            className="micronutrients-page-header__dri"
+            onClick={() => {
+              setDriHighlightId(null)
+              setDriOpen(true)
+            }}
+          >
+            参考摄入量
+          </button>
           <span>{formatDateKeyLabel(dateKey)}</span>
         </div>
         <div className="nutrition-date-nav" aria-label="切换日期">
@@ -269,13 +508,13 @@ export function MicronutrientsPage() {
             </section>
           ) : (
             <>
-              {status === 'pending' ? (
+              {nutritionEstimating ? (
                 <p
                   className="surface-card micronutrient-status micronutrient-status--pending"
                   role="status"
                 >
                   正在根据今日饮食更新微量元素…
-                  {summary ? ' 当前先显示上次结果。' : ''}
+                  {summary ? ' 当前先显示上次结果，新食物算完后会自动刷新。' : ''}
                 </p>
               ) : null}
               {status === 'error' ? (
@@ -297,7 +536,7 @@ export function MicronutrientsPage() {
                   </button>
                 </div>
               ) : null}
-              {status === 'idle' && !summary ? (
+              {status === 'idle' && !summary && !nutritionEstimating ? (
                 <div className="surface-card micronutrient-status">
                   <p>微量元素快照尚未生成。</p>
                   <button
@@ -386,6 +625,34 @@ export function MicronutrientsPage() {
               </section>
             </>
           ) : null}
+
+          {meals.length > 0 ? (
+            <section className="surface-card micronutrient-food-list">
+              <div className="nutrition-card__heading">
+                <div>
+                  <p className="nutrition-card__eyebrow">按餐核对</p>
+                  <h2>今日食物</h2>
+                </div>
+              </div>
+              <ul>
+                {meals.map((meal) => (
+                  <MicronutrientFoodRow
+                    key={meal.id}
+                    meal={meal}
+                    dayStatus={status}
+                    expanded={expandedMealIds.includes(meal.id)}
+                    onToggle={() =>
+                      setExpandedMealIds((current) =>
+                        current.includes(meal.id)
+                          ? current.filter((id) => id !== meal.id)
+                          : [...current, meal.id],
+                      )
+                    }
+                  />
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </>
       ) : null}
 
@@ -396,6 +663,19 @@ export function MicronutrientsPage() {
       <MicronutrientDetailSheet
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
+        onOpenReference={(id) => {
+          setDriHighlightId(id)
+          setDriOpen(true)
+        }}
+      />
+      <MicronutrientReferenceSheet
+        open={driOpen}
+        highlightId={driHighlightId}
+        profile={profile}
+        onClose={() => {
+          setDriOpen(false)
+          setDriHighlightId(null)
+        }}
       />
     </PageShell>
   )

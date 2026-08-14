@@ -4,6 +4,7 @@ import {
   fillMissingMealMacros,
   macrosFromEstimateItems,
   parseMealMacroInput,
+  resolveMealMacrosForSave,
   resolveMealMacrosSource,
 } from '../src/mealMacros.js'
 
@@ -81,5 +82,27 @@ describe('meal macro normalization', () => {
       resolveMealMacrosSource(empty, { attemptedEstimate: true }),
     ).toBe('ai')
     expect(resolveMealMacrosSource(empty)).toBeNull()
+  })
+
+  it('saves incomplete macros as pending without calling AI', () => {
+    const result = resolveMealMacrosForSave({
+      kcal: 400,
+      macros: { protein_g: null, fat_g: null, carbs_g: null, sugar_g: null },
+      source: null,
+    })
+    expect(result.macrosStatus).toBe('pending')
+    expect(result.needsBackgroundEstimate).toBe(true)
+    expect(result.source).toBeNull()
+  })
+
+  it('marks complete user macros ready and skips background estimate', () => {
+    const result = resolveMealMacrosForSave({
+      kcal: 400,
+      macros: { protein_g: 20, fat_g: 10, carbs_g: 40, sugar_g: 5 },
+      source: 'user',
+    })
+    expect(result.macrosStatus).toBe('ready')
+    expect(result.needsBackgroundEstimate).toBe(false)
+    expect(result.source).toBe('user')
   })
 })

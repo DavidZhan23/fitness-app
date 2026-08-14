@@ -8,7 +8,11 @@ const API_URL =
   process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/chat/completions'
 /** 对齐旧 deepseek-chat：快、非思考 */
 export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-v4-flash'
+export const NUTRITION_DEEPSEEK_MODEL = 'deepseek-v4-pro'
 const TIMEOUT_MS = Number(process.env.DEEPSEEK_TIMEOUT_MS || 25_000)
+export const NUTRITION_TIMEOUT_MS = Number(
+  process.env.DEEPSEEK_NUTRITION_TIMEOUT_MS || 90_000,
+)
 
 /**
  * 解析可用模型名；旧别名自动映射，避免服务器 .env 未改时继续 400。
@@ -38,6 +42,11 @@ export function resolveDeepSeekModel(raw = process.env.DEEPSEEK_MODEL) {
 /** V4 请求体附加项：显式关闭 thinking，对齐旧 chat 行为 */
 export function deepSeekNonThinkingExtras() {
   return { thinking: { type: 'disabled' } }
+}
+
+/** 营养后台任务：Pro + thinking，换更准的拆料和宏量 */
+export function deepSeekThinkingExtras() {
+  return { thinking: { type: 'enabled' }, reasoning_effort: 'high' }
 }
 
 const MAX_HTTP_RETRIES = 3
@@ -313,6 +322,8 @@ function extractMessageContent(choice) {
 
   const reasoning = msg.reasoning_content
   if (reasoning != null && String(reasoning).trim()) {
+    const json = extractFirstJsonObject(String(reasoning))
+    if (json) return JSON.stringify(json)
     const num = String(reasoning).match(/\b(\d{1,4})\b/)
     if (num) return String(num[1])
   }
@@ -481,7 +492,7 @@ export async function requestDeepSeekTextJson({
   return content
 }
 
-async function requestDeepSeekWithRetry(apiKey, body) {
+async function requestDeepSeekWithRetry(apiKey, body, timeoutMs = TIMEOUT_MS) {
   let lastStatus = 0
   let lastData = {}
 
@@ -491,7 +502,7 @@ async function requestDeepSeekWithRetry(apiKey, body) {
       console.warn('[deepseek] retry http', attempt + 1, lastStatus)
     }
 
-    const { res, data } = await requestDeepSeekOnce(apiKey, body)
+    const { res, data } = await requestDeepSeekOnce(apiKey, body, timeoutMs)
     if (res.ok) return { res, data }
 
     lastStatus = res.status
@@ -516,12 +527,12 @@ function contentPreview(data) {
   return c.length > 120 ? `${c.slice(0, 120)}…` : c
 }
 
-function buildPayload({ type, description, profile, mode }) {
+function buildPayload({ type, description, profile, mode, model, thinking }) {
   const base = {
-    model: resolveDeepSeekModel(),
-    max_tokens: MAX_TOKENS,
+    model: model || resolveDeepSeekModel(),
+    max_tokens: thinking ? 1800 : MAX_TOKENS,
     temperature: 0.1,
-    ...deepSeekNonThinkingExtras(),
+    ...(thinking ? deepSeekThinkingExtras() : deepSeekNonThinkingExtras()),
   }
 
   if (mode === 'minimal') {
@@ -552,6 +563,7 @@ async function tryStrategy(apiKey, options) {
   const { data } = await requestDeepSeekWithRetry(
     apiKey,
     buildPayload(options),
+    options.timeoutMs,
   )
   const content = extractMessageContent(data?.choices?.[0])
   if (!content) {
@@ -566,8 +578,9 @@ async function tryStrategy(apiKey, options) {
 
 /**
  * @param {{ type: 'exercise'|'meal', description: string, profile?: { weight_kg?: number|null } }} input
+ * @param {{ model?: string, thinking?: boolean, timeoutMs?: number }} [options]
  */
-export async function estimateKcalFromDescription(input) {
+export async function estimateKcalFromDescription(input, options = {}) {
   const apiKey = getDeepSeekApiKey()
   if (!apiKey) {
     const err = new Error(
@@ -577,8 +590,11 @@ export async function estimateKcalFromDescription(input) {
     throw err
   }
 
-  const model = resolveDeepSeekModel()
-  if (model.includes('reasoner') || model.includes('pro')) {
+  const model = options.model || resolveDeepSeekModel()
+  if (
+    !options.thinking &&
+    (model.includes('reasoner') || model.includes('pro'))
+  ) {
     console.warn(
       '[deepseek] 当前模型',
       model,
@@ -599,7 +615,14 @@ export async function estimateKcalFromDescription(input) {
     throw err
   }
 
-  const baseOpts = { type, description, profile: input.profile }
+  const baseOpts = {
+    type,
+    description,
+    profile: input.profile,
+    model,
+    thinking: Boolean(options.thinking),
+    timeoutMs: options.timeoutMs,
+  }
   const modes = ['json', 'plain', 'minimal']
   let lastError = 'AI 估算失败，请稍后重试'
 
@@ -634,7 +657,22 @@ export async function deepseekTextEstimator(input) {
   }
 }
 
-const MICRONUTRIENT_IDS = [
+export async function estimateMealMacrosFromDescription(input) {
+  return estimateKcalFromDescription(
+    {
+      type: 'meal',
+      description: input?.description || input?.name,
+      profile: input?.profile,
+    },
+    {
+      model: NUTRITION_DEEPSEEK_MODEL,
+      thinking: true,
+      timeoutMs: NUTRITION_TIMEOUT_MS,
+    },
+  )
+}
+
+const MEAL_MICRONUTRIENT_IDS = [
   'vit_a',
   'vit_c',
   'vit_d',
@@ -653,23 +691,31 @@ const MICRONUTRIENT_IDS = [
   'iodine',
 ]
 
-export function buildMicronutrientSystemPrompt() {
+export function buildMealMicronutrientSystemPrompt() {
   return (
-    '你是谨慎的整日饮食微量元素估算助手。只能根据当天餐食名称和热量，判断固定营养素是否“可能充足、可能不足、信息不足”，不能当作检测或医疗诊断。' +
-    `只允许以下 id：${MICRONUTRIENT_IDS.join(',')}。` +
-    'status 只允许 adequate、low、unknown；资料不充分时必须用 unknown，不要假装确定。' +
-    '严禁输出毫克、微克、达标率或任何精确摄入量。' +
-    'low 项给出 1–3 个普通日常食物，禁止保健品、补充剂、品牌和服用剂量；adequate/unknown 不给食物建议。' +
-    '只输出严格 JSON object，不要 Markdown 或解释文字。格式：' +
-    '{"version":1,"items":[{"id":"iron","status":"low","note":"简短可能性说明","food_suggestions":["瘦肉","菠菜"]}],"advice":"可选总评，不超过80字"}。' +
-    '应尽量覆盖 16 项；服务端会把缺项补成 unknown。'
+    '你是谨慎的单餐微量元素估算助手，依据中国食物成分表常见值和家常份量估算，不能当作检测或医疗诊断。' +
+    '先把这道菜拆成配料和大约克数，再估算整餐 16 项微量元素合计。日汇总由服务端加总，你不要判断是否充足。' +
+    `items 只允许以下 id：${MEAL_MICRONUTRIENT_IDS.join(',')}，必须 16 项都出现。` +
+    '单位必须准确：vit_a(RAE)、vit_d、vit_k、vit_b9、vit_b12、iodine 用 µg；其余用 mg。' +
+    '没有把握的项 amount 填 0，confidence 填 unknown；不要省略字段。' +
+    'confidence 只允许 high、medium、low、unknown。' +
+    '禁止保健品、补充剂、品牌和服用剂量。' +
+    '只输出严格 JSON object，不要 Markdown。格式：' +
+    '{"components":[{"name":"米饭","grams":150}],"items":[{"id":"iron","amount":2.4,"unit":"mg","confidence":"medium"}]}。'
   )
 }
 
 /**
- * @param {{ meals: {id?: string, name: string, kcal: number|string}[], sex?: string|null }} input
+ * @param {{
+ *   name: string,
+ *   kcal: number|string,
+ *   protein_g?: number|string|null,
+ *   fat_g?: number|string|null,
+ *   carbs_g?: number|string|null,
+ *   sex?: string|null,
+ * }} input
  */
-export async function estimateDailyMicronutrients(input) {
+export async function estimateMealMicronutrients(input) {
   const apiKey = getDeepSeekApiKey()
   if (!apiKey) {
     const err = new Error('AI 微量元素估算未配置')
@@ -677,30 +723,36 @@ export async function estimateDailyMicronutrients(input) {
     throw err
   }
 
-  const meals = Array.isArray(input?.meals)
-    ? input.meals.slice(0, 100).map((meal) => ({
-        name: Array.from(String(meal?.name ?? '').trim()).slice(0, 120).join(''),
-        kcal: Math.max(0, Math.round(Number(meal?.kcal) || 0)),
-      }))
-    : []
-  if (meals.length === 0) {
+  const name = Array.from(String(input?.name ?? '').trim()).slice(0, 120).join('')
+  const kcal = Math.max(0, Math.round(Number(input?.kcal) || 0))
+  if (!name || kcal <= 0) {
     const err = new Error('没有可估算的餐食')
     err.status = 400
     throw err
   }
 
+  const macros = {}
+  for (const field of ['protein_g', 'fat_g', 'carbs_g']) {
+    const value = Number(input?.[field])
+    if (Number.isFinite(value) && value >= 0) macros[field] = Math.round(value * 10) / 10
+  }
+
   const body = {
-    model: resolveDeepSeekModel(),
-    max_tokens: 1800,
+    model: NUTRITION_DEEPSEEK_MODEL,
+    max_tokens: 4000,
     temperature: 0.1,
-    ...deepSeekNonThinkingExtras(),
+    ...deepSeekThinkingExtras(),
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: buildMicronutrientSystemPrompt() },
+      { role: 'system', content: buildMealMicronutrientSystemPrompt() },
       {
         role: 'user',
         content: JSON.stringify({
-          meals,
+          meal: {
+            name,
+            kcal,
+            ...macros,
+          },
           ...(input?.sex === 'male' || input?.sex === 'female'
             ? { sex: input.sex }
             : {}),
@@ -708,7 +760,11 @@ export async function estimateDailyMicronutrients(input) {
       },
     ],
   }
-  const { data } = await requestDeepSeekWithRetry(apiKey, body)
+  const { data } = await requestDeepSeekWithRetry(
+    apiKey,
+    body,
+    NUTRITION_TIMEOUT_MS,
+  )
   const content = extractMessageContent(data?.choices?.[0])
   const unfenced = stripCodeFence(String(content ?? '').trim())
   const parsed = tryParseJsonObject(unfenced) ?? extractFirstJsonObject(unfenced)

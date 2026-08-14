@@ -9,6 +9,7 @@ import {
   getAccountStartDateKey,
   parseDateKey,
 } from '../lib/streaks'
+import { isNutritionEstimateInProgress } from '../lib/macroTargets'
 import type { DayLog, Meal } from '../types'
 
 function shiftDateKey(dateKey: string, delta: number): string {
@@ -86,8 +87,10 @@ export function useNutritionDay(pagePath: '/nutrition' | '/micronutrients') {
     void loadDay()
   }, [loadDay])
 
+  const nutritionEstimating = isNutritionEstimateInProgress(dayLog, meals)
+
   useEffect(() => {
-    if (dayLog?.micronutrient_status !== 'pending' || !user || !profile) return
+    if (!nutritionEstimating || !user || !profile) return
     let cancelled = false
     let polling = false
     const poll = async () => {
@@ -110,7 +113,7 @@ export function useNutritionDay(pagePath: '/nutrition' | '/micronutrients') {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [dateKey, dayLog?.micronutrient_status, profile, user])
+  }, [dateKey, nutritionEstimating, profile, user])
 
   const retryMicronutrients = useCallback(async () => {
     setMicronutrientRetrying(true)
@@ -167,5 +170,6 @@ export function useNutritionDay(pagePath: '/nutrition' | '/micronutrients') {
     micronutrientRetrying,
     micronutrientRetryError,
     retryMicronutrients,
+    nutritionEstimating,
   }
 }

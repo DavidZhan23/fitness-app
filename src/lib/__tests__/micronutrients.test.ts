@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   MICRONUTRIENT_CATALOG,
   filterMicronutrientItems,
+  mealMicronutrientEstimateLines,
+  mealMicronutrientRowStatus,
   micronutrientItemsForDisplay,
 } from '../micronutrients'
 
@@ -48,5 +50,64 @@ describe('micronutrient display catalog', () => {
     ])
     expect(filterMicronutrientItems(items, 'vitamins')).toHaveLength(10)
     expect(filterMicronutrientItems(items, 'minerals')).toHaveLength(6)
+  })
+
+  it('keeps estimated progress fields from a v2 summary', () => {
+    const items = micronutrientItemsForDisplay({
+      version: 2,
+      items: [
+        {
+          id: 'iron',
+          status: 'low',
+          estimated_amount: 3,
+          unit: 'mg',
+          dri_amount: 20,
+          estimated_pct: 15,
+        },
+      ],
+    })
+    expect(items[0]).toMatchObject({
+      id: 'iron',
+      estimated_pct: 15,
+      dri_amount: 20,
+    })
+  })
+
+  it('labels meal food rows as ready, pending, or failed', () => {
+    const readyMeal = {
+      micronutrients: {
+        version: 1 as const,
+        components: [{ name: '米饭', grams: 150 }],
+        items: [{ id: 'iron' as const, amount: 1, unit: 'mg' as const, confidence: 'medium' as const }],
+      },
+      macros_status: 'ready' as const,
+    }
+    expect(mealMicronutrientRowStatus(readyMeal, 'ready')).toBe('ready')
+    expect(
+      mealMicronutrientRowStatus({ micronutrients: null, macros_status: 'pending' }, 'ready'),
+    ).toBe('pending')
+    expect(
+      mealMicronutrientRowStatus({ micronutrients: null }, 'pending'),
+    ).toBe('pending')
+    expect(
+      mealMicronutrientRowStatus({ micronutrients: null, macros_status: 'error' }, 'error'),
+    ).toBe('error')
+  })
+
+  it('lists positive meal micronutrient estimates and skips zeros', () => {
+    const lines = mealMicronutrientEstimateLines({
+      micronutrients: {
+        version: 1,
+        components: [{ name: '米饭', grams: 150 }],
+        items: [
+          { id: 'iron', amount: 2.4, unit: 'mg', confidence: 'medium' },
+          { id: 'vit_c', amount: 12, unit: 'mg', confidence: 'high' },
+          { id: 'calcium', amount: 0, unit: 'mg', confidence: 'unknown' },
+        ],
+      },
+    })
+    expect(lines.map((line) => line.id)).toEqual(['vit_c', 'iron'])
+    expect(lines[0]).toMatchObject({ label: '维 C', amountText: '12 mg' })
+    expect(lines[1]).toMatchObject({ label: '铁', amountText: '2.4 mg' })
   })
 })

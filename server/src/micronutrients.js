@@ -1,33 +1,23 @@
 import { createHash } from 'node:crypto'
-import { estimateDailyMicronutrients } from './ai/providers/deepseekText.js'
+import { estimateMealMicronutrients } from './ai/providers/deepseekText.js'
 import { query } from './db.js'
+import { ageFromBirthdayKey } from './profilePatch.js'
+import {
+  MICRONUTRIENT_AMOUNT_CAPS,
+  MICRONUTRIENT_IDS,
+  MICRONUTRIENT_UNITS,
+  resolveMicronutrientTargets,
+} from './micronutrientTargets.js'
 
-export const MICRONUTRIENT_IDS = [
-  'vit_a',
-  'vit_c',
-  'vit_d',
-  'vit_e',
-  'vit_k',
-  'vit_b1',
-  'vit_b2',
-  'vit_b6',
-  'vit_b9',
-  'vit_b12',
-  'calcium',
-  'iron',
-  'zinc',
-  'magnesium',
-  'potassium',
-  'iodine',
-]
+export { MICRONUTRIENT_IDS }
 
 const MICRONUTRIENT_ID_SET = new Set(MICRONUTRIENT_IDS)
 const MICRONUTRIENT_STATUS_SET = new Set(['adequate', 'low', 'unknown'])
+const CONFIDENCE_SET = new Set(['high', 'medium', 'low', 'unknown'])
 const PENDING_STALE_MS = 60_000
+const ADEQUATE_RATIO = 0.8
 const FORBIDDEN_SUGGESTION_RE =
   /(保健品|补充剂|胶囊|药片|片剂|口服液|品牌|\d\s*(?:mg|μg|ug|毫克|微克|片|粒))/i
-const EXACT_QUANTITY_RE =
-  /\d+(?:\.\d+)?\s*(?:mg|μg|ug|毫克|微克|%|％)/i
 
 const FALLBACK_FOODS = {
   vit_a: ['胡萝卜', '菠菜'],
@@ -75,39 +65,265 @@ export function createMicronutrientFingerprint(meals) {
   return createHash('sha256').update(fingerprintSource(meals)).digest('hex')
 }
 
-function normalizeSuggestions(raw, id) {
-  const values = Array.isArray(raw) ? raw : []
-  const safe = []
-  for (const value of values) {
-    const text = clippedText(value, 20)
-    if (!text || FORBIDDEN_SUGGESTION_RE.test(text) || safe.includes(text)) continue
-    safe.push(text)
-    if (safe.length === 3) break
-  }
-  return safe.length > 0 ? safe : FALLBACK_FOODS[id].slice(0, 2)
+export function createMealMicronutrientFingerprint(name, kcal) {
+  return createHash('sha256')
+    .update(`${String(name ?? '').trim()}|${String(kcal)}`)
+    .digest('hex')
 }
 
-function normalizeNote(raw, status) {
-  const text = clippedText(raw, 80)
-  if (!EXACT_QUANTITY_RE.test(text)) return text
-  if (status === 'low') return '根据当天餐食名称推断，相关食物来源可能较少。'
-  if (status === 'adequate') return '根据当天餐食名称推断，可能已有相关食物来源。'
-  return '餐食信息不足，暂时无法可靠判断。'
+export function mealNeedsMicronutrientEstimate(meal, { force = false } = {}) {
+  if (force) return true
+  const fingerprint = createMealMicronutrientFingerprint(meal?.name, meal?.kcal)
+  if (meal?.micronutrients_fingerprint !== fingerprint) return true
+  return !parseMealMicronutrients(meal?.micronutrients)
+}
+
+function parseJsonObject(raw) {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw
+  if (typeof raw !== 'string') return null
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : null
+  } catch {
+    return null
+  }
+}
+
+function normalizeUnit(raw) {
+  const text = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+    .replace('μg', 'µg')
+    .replace('ug', 'µg')
+    .replace('微克', 'µg')
+    .replace('毫克', 'mg')
+  if (text === 'mg' || text === 'µg') return text
+  return null
+}
+
+function convertAmount(amount, fromUnit, toUnit) {
+  if (fromUnit === toUnit) return amount
+  if (fromUnit === 'mg' && toUnit === 'µg') return amount * 1000
+  if (fromUnit === 'µg' && toUnit === 'mg') return amount / 1000
+  return null
+}
+
+export function normalizeMealMicronutrients(raw) {
+  const parsed = parseJsonObject(raw)
+  if (!parsed) {
+    const err = new Error('AI 返回的餐级微量元素格式无效')
+    err.status = 502
+    throw err
+  }
+
+  const components = []
+  const seenComponents = new Set()
+  for (const item of Array.isArray(parsed.components) ? parsed.components : []) {
+    if (!item || typeof item !== 'object') continue
+    const name = clippedText(item.name, 40)
+    const grams = Number(item.grams ?? item.g)
+    if (!name || !Number.isFinite(grams) || grams <= 0 || grams > 5000) continue
+    const key = name.toLowerCase()
+    if (seenComponents.has(key)) continue
+    seenComponents.add(key)
+    components.push({ name, grams: Math.round(grams * 10) / 10 })
+    if (components.length === 12) break
+  }
+
+  const byId = new Map()
+  for (const item of Array.isArray(parsed.items) ? parsed.items : []) {
+    if (!item || typeof item !== 'object') continue
+    const id = String(item.id ?? '').trim()
+    if (!MICRONUTRIENT_ID_SET.has(id)) continue
+    const expectedUnit = MICRONUTRIENT_UNITS[id]
+    const unit = normalizeUnit(item.unit) ?? expectedUnit
+    let amount = Number(item.amount)
+    if (!Number.isFinite(amount) || amount < 0) {
+      byId.set(id, {
+        id,
+        amount: 0,
+        unit: expectedUnit,
+        confidence: 'unknown',
+      })
+      continue
+    }
+    const converted = convertAmount(amount, unit, expectedUnit)
+    amount = converted == null ? 0 : converted
+    const cap = MICRONUTRIENT_AMOUNT_CAPS[id]
+    const confidenceRaw = String(item.confidence ?? '').trim().toLowerCase()
+    let confidence = CONFIDENCE_SET.has(confidenceRaw)
+      ? confidenceRaw
+      : converted == null
+        ? 'unknown'
+        : 'low'
+    if (converted == null) {
+      amount = 0
+      confidence = 'unknown'
+    } else if (amount > cap) {
+      amount = cap
+      confidence = 'low'
+    }
+    byId.set(id, {
+      id,
+      amount: Math.round(amount * 1000) / 1000,
+      unit: expectedUnit,
+      confidence,
+    })
+  }
+
+  if (byId.size === 0 && components.length === 0 && !Array.isArray(parsed.items)) {
+    const err = new Error('AI 返回的餐级微量元素格式无效')
+    err.status = 502
+    throw err
+  }
+
+  return {
+    version: 1,
+    components,
+    items: MICRONUTRIENT_IDS.map(
+      (id) =>
+        byId.get(id) ?? {
+          id,
+          amount: 0,
+          unit: MICRONUTRIENT_UNITS[id],
+          confidence: 'unknown',
+        },
+    ),
+  }
+}
+
+export function parseMealMicronutrients(raw) {
+  const parsed = parseJsonObject(raw)
+  if (!parsed || !Array.isArray(parsed.items)) return null
+  try {
+    return normalizeMealMicronutrients(parsed)
+  } catch {
+    return null
+  }
+}
+
+function fallbackSuggestions(id) {
+  return FALLBACK_FOODS[id].slice(0, 2)
+}
+
+function coverageEnough(knownCount, mealCount) {
+  if (mealCount <= 0) return false
+  return knownCount >= Math.ceil(mealCount / 2) || knownCount >= 1
+}
+
+export function rollupMicronutrientSummary(meals, { sex, age } = {}) {
+  const targets = resolveMicronutrientTargets({ sex, age })
+  const parsedMeals = (meals ?? [])
+    .map((meal) => parseMealMicronutrients(meal?.micronutrients))
+    .filter(Boolean)
+  const mealCount = meals?.length ?? 0
+  const dayAmounts = Object.fromEntries(MICRONUTRIENT_IDS.map((id) => [id, 0]))
+  const knownCounts = Object.fromEntries(MICRONUTRIENT_IDS.map((id) => [id, 0]))
+
+  for (const meal of parsedMeals) {
+    for (const item of meal.items) {
+      dayAmounts[item.id] += item.amount
+      if (item.confidence === 'medium' || item.confidence === 'high') {
+        knownCounts[item.id] += 1
+      }
+    }
+  }
+
+  const items = MICRONUTRIENT_IDS.map((id) => {
+    const driAmount = targets.amounts[id]
+    const estimatedAmount = Math.round(dayAmounts[id] * 1000) / 1000
+    const estimatedPct =
+      driAmount > 0 ? Math.round((estimatedAmount / driAmount) * 1000) / 10 : null
+    const coverage = mealCount > 0 ? knownCounts[id] / mealCount : 0
+    let status = 'unknown'
+    if (estimatedPct != null && estimatedPct >= ADEQUATE_RATIO * 100) {
+      status = 'adequate'
+    } else if (coverageEnough(knownCounts[id], mealCount)) {
+      status = 'low'
+    }
+    const note =
+      status === 'adequate'
+        ? `今日估算合计约达参考值的 ${Math.min(estimatedPct ?? 0, 999)}%。`
+        : status === 'low'
+          ? `今日估算合计约达参考值的 ${estimatedPct ?? 0}%，来源可能偏少。`
+          : '部分餐食信息不足，暂时无法可靠判断。'
+    return {
+      id,
+      status,
+      note,
+      food_suggestions: status === 'low' ? fallbackSuggestions(id) : [],
+      estimated_amount: estimatedAmount,
+      unit: MICRONUTRIENT_UNITS[id],
+      dri_amount: driAmount,
+      estimated_pct: estimatedPct,
+      coverage,
+    }
+  })
+
+  const lowCount = items.filter((item) => item.status === 'low').length
+  const adequateCount = items.filter((item) => item.status === 'adequate').length
+  const advice =
+    mealCount === 0
+      ? ''
+      : lowCount > 0
+        ? `有 ${lowCount} 项可能不足，可用日常食物慢慢补上。`
+        : adequateCount >= 10
+          ? '多数微量元素估算已接近参考值，继续保持食物多样。'
+          : '已按今天吃过的食物汇总估算，信息不足的项目会随记餐补全。'
+
+  return {
+    version: 2,
+    items,
+    advice,
+    profile_band: {
+      sex: targets.sex,
+      ageBand: targets.ageBand,
+      label: targets.label,
+    },
+  }
 }
 
 export function normalizeMicronutrientSummary(raw) {
-  let parsed = raw
-  if (typeof raw === 'string') {
-    try {
-      parsed = JSON.parse(raw)
-    } catch {
-      parsed = null
-    }
-  }
-  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.items)) {
-    const err = new Error('AI 返回的微量元素格式无效')
+  const parsed = parseJsonObject(raw)
+  if (!parsed || !Array.isArray(parsed.items)) {
+    const err = new Error('微量元素快照格式无效')
     err.status = 502
     throw err
+  }
+
+  if (Number(parsed.version) === 2) {
+    return {
+      version: 2,
+      items: MICRONUTRIENT_IDS.map((id) => {
+        const item = parsed.items.find((entry) => entry?.id === id) ?? {}
+        const status = MICRONUTRIENT_STATUS_SET.has(item.status)
+          ? item.status
+          : 'unknown'
+        return {
+          id,
+          status,
+          note: clippedText(item.note, 80),
+          food_suggestions:
+            status === 'low'
+              ? Array.isArray(item.food_suggestions) && item.food_suggestions.length
+                ? item.food_suggestions.slice(0, 3).map((value) => clippedText(value, 20))
+                : fallbackSuggestions(id)
+              : [],
+          estimated_amount: Number(item.estimated_amount) || 0,
+          unit: MICRONUTRIENT_UNITS[id],
+          dri_amount: Number(item.dri_amount) || 0,
+          estimated_pct:
+            Number.isFinite(Number(item.estimated_pct))
+              ? Number(item.estimated_pct)
+              : null,
+          coverage: Number(item.coverage) || 0,
+        }
+      }),
+      advice: clippedText(parsed.advice, 80),
+      profile_band: parsed.profile_band ?? null,
+    }
   }
 
   const byId = new Map()
@@ -121,9 +337,16 @@ export function normalizeMicronutrientSummary(raw) {
     byId.set(id, {
       id,
       status,
-      note: normalizeNote(item.note, status),
+      note: clippedText(item.note, 80),
       food_suggestions:
-        status === 'low' ? normalizeSuggestions(item.food_suggestions, id) : [],
+        status === 'low'
+          ? Array.isArray(item.food_suggestions) && item.food_suggestions.length
+            ? item.food_suggestions
+                .map((value) => clippedText(value, 20))
+                .filter((value) => value && !FORBIDDEN_SUGGESTION_RE.test(value))
+                .slice(0, 3)
+            : fallbackSuggestions(id)
+          : [],
     })
   }
 
@@ -138,9 +361,7 @@ export function normalizeMicronutrientSummary(raw) {
           food_suggestions: [],
         },
     ),
-    advice: EXACT_QUANTITY_RE.test(String(parsed.advice ?? ''))
-      ? ''
-      : clippedText(parsed.advice, 80),
+    advice: clippedText(parsed.advice, 80),
   }
 }
 
@@ -148,17 +369,24 @@ export function isMicronutrientResultCurrent(taskFingerprint, meals) {
   return taskFingerprint === createMicronutrientFingerprint(meals)
 }
 
+function profileAge(birthday) {
+  if (!birthday) return null
+  const key = String(birthday).slice(0, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(key) ? ageFromBirthdayKey(key) : null
+}
+
 async function loadDayContext(userId, dayLogId) {
   const [dayResult, mealResult] = await Promise.all([
     query(
-      `select dl.*, p.sex
+      `select dl.*, p.sex, p.birthday::text as birthday
        from day_logs dl
        left join profiles p on p.id = dl.user_id
        where dl.id = $1 and dl.user_id = $2`,
       [dayLogId, userId],
     ),
     query(
-      `select id, name, kcal
+      `select id, name, kcal, protein_g, fat_g, carbs_g,
+              micronutrients, micronutrients_fingerprint
        from meals
        where day_log_id = $1 and user_id = $2
        order by id`,
@@ -247,6 +475,44 @@ async function writeErrorIfCurrent(userId, dayLogId, fingerprint, err) {
   )
 }
 
+async function writeMealMicronutrients(userId, meal, fingerprint, payload) {
+  const { rows } = await query(
+    `update meals
+     set micronutrients = $3::jsonb,
+         micronutrients_fingerprint = $4
+     where id = $1 and user_id = $2
+       and encode(
+         digest(trim(name) || '|' || kcal::text, 'sha256'),
+         'hex'
+       ) = $4
+     returning id`,
+    [meal.id, userId, JSON.stringify(payload), fingerprint],
+  )
+  return Boolean(rows[0])
+}
+
+async function estimateAndStoreMeal(userId, meal, profile) {
+  const fingerprint = createMealMicronutrientFingerprint(meal.name, meal.kcal)
+  const raw = await estimateMealMicronutrients({
+    name: meal.name,
+    kcal: meal.kcal,
+    protein_g: meal.protein_g,
+    fat_g: meal.fat_g,
+    carbs_g: meal.carbs_g,
+    sex: profile?.sex,
+  })
+  const payload = normalizeMealMicronutrients(raw)
+  await writeMealMicronutrients(userId, meal, fingerprint, payload)
+  return payload
+}
+
+function rollupFromContext(context) {
+  return rollupMicronutrientSummary(context.meals, {
+    sex: context.dayLog?.sex,
+    age: profileAge(context.dayLog?.birthday),
+  })
+}
+
 async function refreshDay(
   userId,
   dayLogId,
@@ -260,32 +526,51 @@ async function refreshDay(
   }
 
   const fingerprint = createMicronutrientFingerprint(context.meals)
-  if (
-    !force &&
-    context.dayLog.micronutrient_status === 'ready' &&
-    context.dayLog.micronutrient_fingerprint === fingerprint
-  ) {
+  const missing = context.meals.filter((meal) =>
+    mealNeedsMicronutrientEstimate(meal, { force }),
+  )
+
+  if (missing.length === 0) {
+    const summary = rollupFromContext(context)
+    await writeReadyIfCurrent(userId, dayLogId, fingerprint, summary)
     return
   }
+
   if (!pendingAlready) await markPending(userId, dayLogId)
-  try {
-    const raw = await estimateDailyMicronutrients({
-      meals: context.meals,
-      sex: context.dayLog.sex,
-    })
-    const summary = normalizeMicronutrientSummary(raw)
-    const latest = await loadDayContext(userId, dayLogId)
-    if (!isMicronutrientResultCurrent(fingerprint, latest.meals)) return
-    await writeReadyIfCurrent(userId, dayLogId, fingerprint, summary)
-  } catch (err) {
+
+  const results = await Promise.allSettled(
+    missing.map((meal) =>
+      estimateAndStoreMeal(userId, meal, {
+        sex: context.dayLog.sex,
+      }),
+    ),
+  )
+  const failures = results.filter((result) => result.status === 'rejected')
+  for (const result of failures) {
     console.warn(
-      '[micronutrients] refresh failed:',
-      err?.code || err?.message || err,
+      '[micronutrients] meal estimate failed:',
+      result.reason?.code || result.reason?.message || result.reason,
     )
-    const latest = await loadDayContext(userId, dayLogId)
-    if (!isMicronutrientResultCurrent(fingerprint, latest.meals)) return
-    await writeErrorIfCurrent(userId, dayLogId, fingerprint, err)
   }
+
+  const latest = await loadDayContext(userId, dayLogId)
+  if (!isMicronutrientResultCurrent(fingerprint, latest.meals)) return
+
+  const estimatedCount = latest.meals.filter(
+    (meal) => !mealNeedsMicronutrientEstimate(meal),
+  ).length
+  if (estimatedCount === 0) {
+    await writeErrorIfCurrent(
+      userId,
+      dayLogId,
+      fingerprint,
+      failures[0]?.reason ?? new Error('微量元素更新失败'),
+    )
+    return
+  }
+
+  const summary = rollupFromContext(latest)
+  await writeReadyIfCurrent(userId, dayLogId, fingerprint, summary)
 }
 
 export function scheduleMicronutrientRefresh(
@@ -294,10 +579,13 @@ export function scheduleMicronutrientRefresh(
   { pendingAlready = false, force = false } = {},
 ) {
   const key = `${userId}:${dayLogId}`
+  if (!pendingAlready) void markPending(userId, dayLogId)
   const previous = taskChains.get(key) ?? Promise.resolve()
   const task = previous
     .catch(() => undefined)
-    .then(() => refreshDay(userId, dayLogId, { pendingAlready, force }))
+    .then(() =>
+      refreshDay(userId, dayLogId, { pendingAlready: true, force }),
+    )
   taskChains.set(key, task)
   void task
     .finally(() => {
@@ -309,6 +597,15 @@ export function scheduleMicronutrientRefresh(
 function pendingIsStale(updatedAt) {
   const timestamp = new Date(updatedAt ?? 0).getTime()
   return !Number.isFinite(timestamp) || Date.now() - timestamp > PENDING_STALE_MS
+}
+
+function summaryNeedsRollup(dayLog, fingerprint) {
+  const summary = parseJsonObject(dayLog.micronutrient_summary)
+  return (
+    dayLog.micronutrient_status !== 'ready' ||
+    dayLog.micronutrient_fingerprint !== fingerprint ||
+    Number(summary?.version) !== 2
+  )
 }
 
 export async function ensureMicronutrientsForDayRead({ userId, dayLog, meals }) {
@@ -325,13 +622,43 @@ export async function ensureMicronutrientsForDayRead({ userId, dayLog, meals }) 
   }
 
   const fingerprint = createMicronutrientFingerprint(meals)
-  const status = dayLog.micronutrient_status ?? 'idle'
-  const shouldStart =
-    status === 'idle' ||
-    (status === 'ready' && dayLog.micronutrient_fingerprint !== fingerprint) ||
-    (status === 'pending' && pendingIsStale(dayLog.micronutrient_updated_at))
+  const needsAi = meals.some((meal) => mealNeedsMicronutrientEstimate(meal))
+  if (!needsAi) {
+    if (!summaryNeedsRollup(dayLog, fingerprint)) return dayLog
+    let sex = dayLog.sex
+    let birthday = dayLog.birthday
+    if (sex == null && birthday == null) {
+      const profileResult = await query(
+        `select sex, birthday::text as birthday from profiles where id = $1`,
+        [userId],
+      )
+      sex = profileResult.rows[0]?.sex
+      birthday = profileResult.rows[0]?.birthday
+    }
+    const summary = rollupMicronutrientSummary(meals, {
+      sex,
+      age: profileAge(birthday),
+    })
+    const written = await writeReadyIfCurrent(
+      userId,
+      dayLog.id,
+      fingerprint,
+      summary,
+    )
+    if (!written) return dayLog
+    return {
+      ...dayLog,
+      micronutrient_status: 'ready',
+      micronutrient_fingerprint: fingerprint,
+      micronutrient_summary: summary,
+      micronutrient_error: null,
+    }
+  }
 
-  if (!shouldStart) return dayLog
+  const status = dayLog.micronutrient_status ?? 'idle'
+  if (status === 'pending' && !pendingIsStale(dayLog.micronutrient_updated_at)) {
+    return dayLog
+  }
   const pending = await markPending(userId, dayLog.id)
   scheduleMicronutrientRefresh(userId, dayLog.id, { pendingAlready: true })
   return pending ? { ...dayLog, ...pending } : dayLog
@@ -339,14 +666,18 @@ export async function ensureMicronutrientsForDayRead({ userId, dayLog, meals }) 
 
 export async function requestMicronutrientRefresh(userId, logDate) {
   const { rows } = await query(
-    `select *, log_date::text as log_date
-     from day_logs where user_id = $1 and log_date = $2`,
+    `select dl.*, dl.log_date::text as log_date, p.sex, p.birthday::text as birthday
+     from day_logs dl
+     left join profiles p on p.id = dl.user_id
+     where dl.user_id = $1 and dl.log_date = $2`,
     [userId, logDate],
   )
   const dayLog = rows[0]
   if (!dayLog) return null
   const mealResult = await query(
-    `select id, name, kcal from meals
+    `select id, name, kcal, protein_g, fat_g, carbs_g,
+            micronutrients, micronutrients_fingerprint
+     from meals
      where day_log_id = $1 and user_id = $2 order by id`,
     [dayLog.id, userId],
   )
