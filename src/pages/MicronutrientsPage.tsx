@@ -19,6 +19,7 @@ import {
 } from '../lib/micronutrientTargets'
 import { formatDateKeyLabel } from '../lib/streaks'
 import type {
+  Meal,
   MicronutrientId,
   MicronutrientItem,
   MicronutrientStatus,
@@ -303,6 +304,80 @@ function MicronutrientReferenceSheet({
   )
 }
 
+const ROW_STATUS_LABELS = {
+  ready: '已估算',
+  pending: '估算中',
+  error: '失败',
+} as const
+
+function MicronutrientFoodRow({
+  meal,
+  dayStatus,
+  expanded,
+  onToggle,
+}: {
+  meal: Meal
+  dayStatus: string | null | undefined
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const rowStatus = mealMicronutrientRowStatus(meal, dayStatus)
+  const estimates = mealMicronutrientEstimateLines(meal)
+  return (
+    <li
+      className="micronutrient-food-row"
+      data-status={rowStatus}
+      data-expanded={expanded ? 'true' : 'false'}
+    >
+      <button
+        type="button"
+        className="micronutrient-food-row__toggle"
+        aria-expanded={expanded}
+        onClick={onToggle}
+      >
+        <span className="micronutrient-food-row__heading">
+          <strong>{meal.name}</strong>
+          <span className="micronutrient-food-row__meta">
+            <em>{ROW_STATUS_LABELS[rowStatus]}</em>
+            <span className="micronutrient-food-row__expand-label">
+              {expanded ? '收起' : '展开'}
+            </span>
+          </span>
+        </span>
+      </button>
+      {expanded ? (
+        <>
+          {rowStatus === 'ready' && estimates.length > 0 ? (
+            <ul className="micronutrient-food-row__amounts">
+              {estimates.map((estimate) => (
+                <li key={estimate.id}>
+                  <span>{estimate.label}</span>
+                  <strong>{estimate.amountText}</strong>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {rowStatus === 'ready' && estimates.length === 0 ? (
+            <p className="micronutrient-food-row__note">
+              这道菜没有估出有效的微量元素数量。
+            </p>
+          ) : null}
+          {rowStatus === 'pending' ? (
+            <p className="micronutrient-food-row__note">
+              算完后会显示这道菜的微量元素估算量。
+            </p>
+          ) : null}
+          {rowStatus === 'error' ? (
+            <p className="micronutrient-food-row__note">
+              这道菜还没有算出微量元素，可点上方重试。
+            </p>
+          ) : null}
+        </>
+      ) : null}
+    </li>
+  )
+}
+
 export function MicronutrientsPage() {
   const {
     profile,
@@ -331,6 +406,7 @@ export function MicronutrientsPage() {
   const [driHighlightId, setDriHighlightId] = useState<MicronutrientId | null>(
     null,
   )
+  const [expandedMealIds, setExpandedMealIds] = useState<string[]>([])
   const summary = dayLog?.micronutrient_summary
   const items = useMemo(() => micronutrientItemsForDisplay(summary), [summary])
   const filteredItems = useMemo(
@@ -354,6 +430,7 @@ export function MicronutrientsPage() {
     setSelectedItem(null)
     setDriOpen(false)
     setDriHighlightId(null)
+    setExpandedMealIds([])
     scrollCommunityMainToTop()
   }, [dateKey])
 
@@ -558,53 +635,21 @@ export function MicronutrientsPage() {
                 </div>
               </div>
               <ul>
-                {meals.map((meal) => {
-                  const rowStatus = mealMicronutrientRowStatus(meal, status)
-                  const estimates = mealMicronutrientEstimateLines(meal)
-                  return (
-                    <li
-                      key={meal.id}
-                      className="micronutrient-food-row"
-                      data-status={rowStatus}
-                    >
-                      <div className="micronutrient-food-row__heading">
-                        <strong>{meal.name}</strong>
-                        <span>
-                          {rowStatus === 'ready'
-                            ? '已估算'
-                            : rowStatus === 'pending'
-                              ? '估算中'
-                              : '失败'}
-                        </span>
-                      </div>
-                      {rowStatus === 'ready' && estimates.length > 0 ? (
-                        <ul className="micronutrient-food-row__amounts">
-                          {estimates.map((estimate) => (
-                            <li key={estimate.id}>
-                              <span>{estimate.label}</span>
-                              <strong>{estimate.amountText}</strong>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      {rowStatus === 'ready' && estimates.length === 0 ? (
-                        <p className="micronutrient-food-row__note">
-                          这道菜没有估出有效的微量元素数量。
-                        </p>
-                      ) : null}
-                      {rowStatus === 'pending' ? (
-                        <p className="micronutrient-food-row__note">
-                          算完后会显示这道菜的微量元素估算量。
-                        </p>
-                      ) : null}
-                      {rowStatus === 'error' ? (
-                        <p className="micronutrient-food-row__note">
-                          这道菜还没有算出微量元素，可点上方重试。
-                        </p>
-                      ) : null}
-                    </li>
-                  )
-                })}
+                {meals.map((meal) => (
+                  <MicronutrientFoodRow
+                    key={meal.id}
+                    meal={meal}
+                    dayStatus={status}
+                    expanded={expandedMealIds.includes(meal.id)}
+                    onToggle={() =>
+                      setExpandedMealIds((current) =>
+                        current.includes(meal.id)
+                          ? current.filter((id) => id !== meal.id)
+                          : [...current, meal.id],
+                      )
+                    }
+                  />
+                ))}
               </ul>
             </section>
           ) : null}

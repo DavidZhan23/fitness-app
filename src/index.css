@@ -2471,7 +2471,31 @@ select:focus-visible {
 .micronutrient-food-row {
   border-radius: 0.85rem;
   background: var(--surface-panel-soft-bg);
-  padding: 0.75rem 0.85rem;
+  padding: 0.2rem 0.35rem 0.2rem 0.55rem;
+}
+
+.micronutrient-food-row__toggle {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.5rem 0.55rem 0.3rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 0.7rem;
+}
+
+.micronutrient-food-row__toggle:hover {
+  background: color-mix(in oklab, var(--surface-border) 18%, transparent);
+}
+
+.micronutrient-food-row__toggle:hover .micronutrient-food-row__expand-label {
+  color: var(--text-primary);
+}
+
+.micronutrient-food-row__toggle:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
 }
 
 .micronutrient-food-row__heading {
@@ -2487,26 +2511,43 @@ select:focus-visible {
   font-size: 0.92rem;
 }
 
-.micronutrient-food-row__heading span {
+.micronutrient-food-row__meta {
+  display: flex;
   flex-shrink: 0;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.micronutrient-food-row__meta em {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.micronutrient-food-row[data-status='pending'] .micronutrient-food-row__meta em {
+  color: var(--text-link);
+}
+
+.micronutrient-food-row[data-status='error'] .micronutrient-food-row__meta em {
+  color: var(--danger-strong);
+}
+
+.micronutrient-food-row__expand-label {
   color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 700;
 }
 
-.micronutrient-food-row[data-status='pending'] .micronutrient-food-row__heading span {
-  color: var(--text-link);
-}
-
-.micronutrient-food-row[data-status='error'] .micronutrient-food-row__heading span {
-  color: var(--danger-strong);
+.micronutrient-food-row[data-expanded='true'] {
+  padding-bottom: 0.55rem;
 }
 
 .micronutrient-food-row__amounts {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin: 0.5rem 0 0;
+  margin: 0 0.3rem 0.15rem;
   padding: 0;
   list-style: none;
 }
@@ -2529,7 +2570,7 @@ select:focus-visible {
 }
 
 .micronutrient-food-row__note {
-  margin: 0.35rem 0 0;
+  margin: 0 0.3rem 0.15rem;
   color: var(--text-secondary);
   font-size: 0.78rem;
   line-height: 1.45;
