@@ -32,7 +32,7 @@
 | `profiles` | 身体指标、`wall_style`、`metabolism_mode`、账号主题/联名开关、社区总开关与开发者隐藏锁 | `id → users.id` |
 | `day_logs` | 每日汇总；`community_visible` 控制当日是否对他人公开；本人微量日快照以 status + meal fingerprint + JSONB summary（由餐级估算加总派生）持久化 | `user_id → users.id` |
 | `exercises` / `meals` | 单条运动 / 饮食；`meals` 含 nullable `protein_g/fat_g/carbs_g/sugar_g`（`sugar_g`=添加糖）、`sugar_scope(added)`、`macros_source(user\|ai)`、`macros_status(pending\|ready\|error)`，以及餐级 `micronutrients` JSON 与指纹 | `day_log_id → day_logs.id` |
-| `exercise_templates` / `meal_templates` | 快捷模板 | `user_id → users.id` |
+| `exercise_templates` / `meal_templates` | 快捷模板；`meal_templates` 可选手填 `protein_g/fat_g/carbs_g/sugar_g`（对应默认份量，空则记餐时 AI 补） | `user_id → users.id` |
 
 ## 3. 卫星能力（点到为止）
 

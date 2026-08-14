@@ -469,6 +469,10 @@ export const httpData = {
         default_quantity?: number | string | null
         kcal?: number | string | null
         created_at?: string | null
+        protein_g?: number | string | null
+        fat_g?: number | string | null
+        carbs_g?: number | string | null
+        sugar_g?: number | string | null
       }[]
     >(`/templates/${type}`)
   },
@@ -480,6 +484,10 @@ export const httpData = {
       unit: string
       kcalPerUnit: number
       defaultQuantity: number
+      protein_g?: number | null
+      fat_g?: number | null
+      carbs_g?: number | null
+      sugar_g?: number | null
     },
   ) {
     return apiFetch(`/templates/${type}`, {
@@ -496,6 +504,10 @@ export const httpData = {
       unit: string
       kcalPerUnit: number
       defaultQuantity: number
+      protein_g?: number | null
+      fat_g?: number | null
+      carbs_g?: number | null
+      sugar_g?: number | null
     },
   ) {
     return apiFetch(`/templates/${type}/${id}`, {

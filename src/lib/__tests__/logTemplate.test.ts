@@ -11,6 +11,9 @@ import {
   normalizeLogTemplate,
   parseNameQuantityUnit,
   saveTemplatesFromItems,
+  scaleMealMacros,
+  macrosFromTemplate,
+  macrosForTemplateDefault,
   sortTemplatesForPicker,
   sumAiItemsLineKcal,
   toFinitePositive,
@@ -51,6 +54,44 @@ describe('normalizeLogTemplate', () => {
       kcalPerUnit: 1.65,
       defaultQuantity: 100,
     })
+  })
+
+  it('reads optional meal macros from snake_case columns', () => {
+    const t = normalizeLogTemplate(
+      {
+        id: '1',
+        name: '鸡胸肉',
+        unit: 'g',
+        kcal_per_unit: '1.65',
+        default_quantity: '100',
+        protein_g: '23.4',
+        fat_g: '1.2',
+        carbs_g: '0',
+        sugar_g: null,
+      },
+      'meal',
+    )
+    expect(t).toMatchObject({
+      protein_g: 23.4,
+      fat_g: 1.2,
+      carbs_g: 0,
+    })
+    expect(t).not.toHaveProperty('sugar_g')
+  })
+
+  it('ignores macros on exercise templates', () => {
+    const t = normalizeLogTemplate(
+      {
+        id: '4',
+        name: '跑步',
+        unit: '分钟',
+        kcal_per_unit: 10,
+        default_quantity: 30,
+        protein_g: 10,
+      },
+      'exercise',
+    )
+    expect(t).not.toHaveProperty('protein_g')
   })
 
   it('falls back legacy kcal to 份/1/kcalPerUnit', () => {
@@ -321,6 +362,100 @@ describe('saveTemplatesFromItems', () => {
       failedCount: 0,
     })
     expect(addTemplate).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes handwritten macros through to addTemplate', async () => {
+    const addTemplate = vi.fn().mockResolvedValue({})
+    await saveTemplatesFromItems({
+      existingTemplates: [],
+      items: [
+        {
+          name: '鸡排',
+          unit: 'g',
+          defaultQuantity: 100,
+          kcalPerUnit: 2,
+          protein_g: 20,
+          fat_g: 8,
+          carbs_g: null,
+          sugar_g: 0,
+        },
+      ],
+      addTemplate,
+    })
+    expect(addTemplate).toHaveBeenCalledWith({
+      name: '鸡排',
+      unit: 'g',
+      kcalPerUnit: 2,
+      defaultQuantity: 100,
+      protein_g: 20,
+      fat_g: 8,
+      sugar_g: 0,
+    })
+  })
+})
+
+describe('scaleMealMacros', () => {
+  it('scales filled grams and keeps empty fields empty', () => {
+    expect(
+      scaleMealMacros(
+        { protein_g: 30, fat_g: 10, carbs_g: null, sugar_g: 0 },
+        150,
+        100,
+      ),
+    ).toEqual({
+      protein_g: 20,
+      fat_g: 6.7,
+      carbs_g: null,
+      sugar_g: 0,
+      macros_source: 'user',
+    })
+  })
+
+  it('returns undefined when all macros are empty', () => {
+    expect(
+      scaleMealMacros(
+        { protein_g: null, fat_g: null, carbs_g: null, sugar_g: null },
+        100,
+        150,
+      ),
+    ).toBeUndefined()
+  })
+
+  it('scales template macros by quantity / defaultQuantity', () => {
+    expect(
+      macrosFromTemplate(
+        {
+          kind: 'meal',
+          defaultQuantity: 100,
+          protein_g: 23,
+          fat_g: 1.5,
+          carbs_g: null,
+          sugar_g: null,
+        },
+        150,
+      ),
+    ).toEqual({
+      protein_g: 34.5,
+      fat_g: 2.3,
+      carbs_g: null,
+      sugar_g: null,
+      macros_source: 'user',
+    })
+  })
+
+  it('scales handwritten log macros onto the template default quantity', () => {
+    expect(
+      macrosForTemplateDefault(
+        { protein_g: 30, fat_g: 10, carbs_g: 0, sugar_g: null },
+        150,
+        100,
+      ),
+    ).toEqual({
+      protein_g: 20,
+      fat_g: 6.7,
+      carbs_g: 0,
+      sugar_g: null,
+    })
   })
 })
 

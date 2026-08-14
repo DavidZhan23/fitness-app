@@ -13,7 +13,7 @@
 
 **Status 取值：** `active` | `done` | `cancelled`（`npm run check:milestones` 校验文件头 Status）
 
-已完成条目见 **[archive.md](archive.md)**（最新：[M-2026-08-nutrition-pro-background](M-2026-08-nutrition-pro-background.md)；默认不必打开）。
+已完成条目见 **[archive.md](archive.md)**（最新：[M-2026-08-meal-template-macros](M-2026-08-meal-template-macros.md)；默认不必打开）。
 
 ## 创建
 

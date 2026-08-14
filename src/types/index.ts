@@ -333,6 +333,11 @@ export interface LogTemplate {
   defaultQuantity: number
   /** Legacy cache; do not use for log-page kcal calculation */
   kcal?: number
+  /** 饮食模板：对应 defaultQuantity 的手填克数；空表示不固化 */
+  protein_g?: number | null
+  fat_g?: number | null
+  carbs_g?: number | null
+  sugar_g?: number | null
 }
 
 export interface ExerciseTemplate {
@@ -353,6 +358,10 @@ export interface MealTemplate {
   kcal_per_unit: number
   default_quantity: number
   kcal: number
+  protein_g?: number | null
+  fat_g?: number | null
+  carbs_g?: number | null
+  sugar_g?: number | null
 }
 
 export interface HeatmapDay {

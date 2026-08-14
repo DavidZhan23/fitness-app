@@ -2,13 +2,18 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { ResponsiveForm } from '../../components/ui/responsive'
 import { computeDraftKcal, toFinitePositive } from '../../lib/logTemplate'
-import type { LogTemplate } from '../../types'
+import { parseMacroDraft, type MacroDraft } from '../../lib/macroTargets'
+import type { LogTemplate, MealMacrosInput } from '../../types'
 
 export interface TemplateFormValues {
   name: string
   unit: string
   kcalPerUnit: string
   defaultQuantity: string
+  protein_g: string
+  fat_g: string
+  carbs_g: string
+  sugar_g: string
 }
 
 interface TemplateFormDialogProps {
@@ -24,11 +29,25 @@ interface TemplateFormDialogProps {
     unit: string
     kcalPerUnit: number
     defaultQuantity: number
+    protein_g?: number | null
+    fat_g?: number | null
+    carbs_g?: number | null
+    sugar_g?: number | null
   }) => void | Promise<void>
 }
 
+function emptyMacroDraft(): MacroDraft {
+  return { protein_g: '', fat_g: '', carbs_g: '', sugar_g: '' }
+}
+
 function emptyForm(): TemplateFormValues {
-  return { name: '', unit: '', kcalPerUnit: '', defaultQuantity: '' }
+  return {
+    name: '',
+    unit: '',
+    kcalPerUnit: '',
+    defaultQuantity: '',
+    ...emptyMacroDraft(),
+  }
 }
 
 function formFromTemplate(template: LogTemplate): TemplateFormValues {
@@ -37,6 +56,10 @@ function formFromTemplate(template: LogTemplate): TemplateFormValues {
     unit: template.unit,
     kcalPerUnit: String(template.kcalPerUnit),
     defaultQuantity: String(template.defaultQuantity),
+    protein_g: template.protein_g == null ? '' : String(template.protein_g),
+    fat_g: template.fat_g == null ? '' : String(template.fat_g),
+    carbs_g: template.carbs_g == null ? '' : String(template.carbs_g),
+    sugar_g: template.sugar_g == null ? '' : String(template.sugar_g),
   }
 }
 
@@ -82,16 +105,24 @@ export function TemplateFormDialog({
 }: TemplateFormDialogProps) {
   const [form, setForm] = useState<TemplateFormValues>(emptyForm)
   const [localError, setLocalError] = useState('')
+  const [macrosOpen, setMacrosOpen] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setLocalError('')
     if (mode === 'edit' && template) {
       setForm(formFromTemplate(template))
+      setMacrosOpen(
+        kind === 'meal' &&
+          [template.protein_g, template.fat_g, template.carbs_g, template.sugar_g].some(
+            (value) => value != null,
+          ),
+      )
     } else {
       setForm(emptyForm())
+      setMacrosOpen(false)
     }
-  }, [open, mode, template])
+  }, [open, mode, template, kind])
 
   useEffect(() => {
     if (!open) return
@@ -137,8 +168,37 @@ export function TemplateFormDialog({
       setLocalError('请填写有效的默认数量')
       return
     }
+
+    let macros: MealMacrosInput | undefined
+    if (kind === 'meal') {
+      const parsed = parseMacroDraft({
+        protein_g: form.protein_g,
+        fat_g: form.fat_g,
+        carbs_g: form.carbs_g,
+        sugar_g: form.sugar_g,
+      })
+      if (!parsed.ok) {
+        setLocalError(parsed.error)
+        return
+      }
+      macros = parsed.macros
+    }
+
     setLocalError('')
-    await onSubmit({ name, unit, kcalPerUnit, defaultQuantity })
+    await onSubmit({
+      name,
+      unit,
+      kcalPerUnit,
+      defaultQuantity,
+      ...(macros
+        ? {
+            protein_g: macros.protein_g ?? null,
+            fat_g: macros.fat_g ?? null,
+            carbs_g: macros.carbs_g ?? null,
+            sugar_g: macros.sugar_g ?? null,
+          }
+        : {}),
+    })
   }
 
   const displayError = localError || error
@@ -241,6 +301,56 @@ export function TemplateFormDialog({
                   disabled={saving}
                 />
               </label>
+              {kind === 'meal' ? (
+                <details
+                  className="macro-input-disclosure"
+                  open={macrosOpen}
+                  onToggle={(event) => {
+                    setMacrosOpen(event.currentTarget.open)
+                  }}
+                >
+                  <summary>营养素（选填）</summary>
+                  <p className="macro-input-disclosure__hint">
+                    对应默认份量下的克数。留空表示不固化，用模板记餐时由 AI
+                    补全。
+                  </p>
+                  <div className="macro-input-grid">
+                    {(
+                      [
+                        ['protein_g', '蛋白质'],
+                        ['fat_g', '脂肪'],
+                        ['carbs_g', '碳水'],
+                        ['sugar_g', '添加糖'],
+                      ] as const
+                    ).map(([field, label]) => (
+                      <label key={field} className="template-form-dialog__field">
+                        <span className="template-form-dialog__label">
+                          {label} (g)
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          inputMode="decimal"
+                          value={form[field]}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              [field]: e.target.value,
+                            }))
+                          }
+                          className="input w-full min-w-0 tabular-nums"
+                          aria-label={`${label} (g)`}
+                          disabled={saving}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <p className="macro-input-disclosure__hint">
+                    添加糖只记制作或加工时加入的蔗糖、葡萄糖、果糖、糖浆、蜂蜜等；完整水果和牛奶中的天然糖不填。
+                  </p>
+                </details>
+              ) : null}
             </div>
             {displayError ? (
               <p className="template-form-dialog__error" role="alert">

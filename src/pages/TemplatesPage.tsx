@@ -114,6 +114,10 @@ export function TemplatesPage() {
     unit: string
     kcalPerUnit: number
     defaultQuantity: number
+    protein_g?: number | null
+    fat_g?: number | null
+    carbs_g?: number | null
+    sugar_g?: number | null
   }) => {
     if (!formDialog || saving) return
     setSaving(true)

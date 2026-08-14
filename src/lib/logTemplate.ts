@@ -1,4 +1,5 @@
 import type { LogTemplate, MealMacrosInput } from '../types'
+import { MACRO_FIELDS } from './macroTargets'
 
 export type LogTemplateKind = LogTemplate['kind']
 
@@ -18,6 +19,32 @@ export interface RawLogTemplateRow {
   defaultQuantity?: number | string | null
   kcal?: number | string | null
   created_at?: string | null
+  protein_g?: number | string | null
+  fat_g?: number | string | null
+  carbs_g?: number | string | null
+  sugar_g?: number | string | null
+}
+
+function roundGram(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
+function parseOptionalGram(value: unknown): number | null {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  if (!Number.isFinite(n) || n < 0) return null
+  return roundGram(n)
+}
+
+function pickTemplateMacros(
+  source: Partial<MealMacrosInput> | RawLogTemplateRow | null | undefined,
+): MealMacrosInput {
+  const macros: MealMacrosInput = {}
+  for (const field of MACRO_FIELDS) {
+    const value = parseOptionalGram(source?.[field])
+    if (value != null) macros[field] = value
+  }
+  return macros
 }
 
 function parseTemplateCreatedAt(value: string | null | undefined): number {
@@ -82,6 +109,7 @@ export function normalizeLogTemplate(
 
   const id = raw.id ?? fallbackId ?? `${name}-${kcalPerUnit}-${unit}`
   const legacyKcal = toFinitePositive(raw.kcal)
+  const macros = kind === 'meal' ? pickTemplateMacros(raw) : {}
 
   return {
     id,
@@ -91,6 +119,64 @@ export function normalizeLogTemplate(
     kcalPerUnit,
     defaultQuantity,
     ...(legacyKcal != null ? { kcal: legacyKcal } : {}),
+    ...macros,
+  }
+}
+
+/** 按 fromQuantity → toQuantity 线性缩放手填克数；空字段保持空。 */
+export function scaleMealMacros(
+  macros: Pick<MealMacrosInput, 'protein_g' | 'fat_g' | 'carbs_g' | 'sugar_g'> | null | undefined,
+  fromQuantity: number,
+  toQuantity: number,
+): MealMacrosInput | undefined {
+  const from = toFinitePositive(fromQuantity)
+  const to = toFinitePositive(toQuantity)
+  if (!macros || from == null || to == null) return undefined
+
+  const scaled: MealMacrosInput = {}
+  let hasAny = false
+  for (const field of MACRO_FIELDS) {
+    const raw = macros[field]
+    if (raw == null) {
+      scaled[field] = null
+      continue
+    }
+    const n = Number(raw)
+    if (!Number.isFinite(n) || n < 0) {
+      scaled[field] = null
+      continue
+    }
+    scaled[field] = roundGram((n * to) / from)
+    hasAny = true
+  }
+  if (!hasAny) return undefined
+  scaled.macros_source = 'user'
+  return scaled
+}
+
+export function macrosFromTemplate(
+  template: Pick<
+    LogTemplate,
+    'protein_g' | 'fat_g' | 'carbs_g' | 'sugar_g' | 'defaultQuantity' | 'kind'
+  >,
+  quantity: number,
+): MealMacrosInput | undefined {
+  if (template.kind === 'exercise') return undefined
+  return scaleMealMacros(template, template.defaultQuantity, quantity)
+}
+
+export function macrosForTemplateDefault(
+  macros: MealMacrosInput | undefined,
+  loggedQuantity: number,
+  defaultQuantity: number,
+): Pick<TemplateSeedCandidate, 'protein_g' | 'fat_g' | 'carbs_g' | 'sugar_g'> | undefined {
+  const scaled = scaleMealMacros(macros, loggedQuantity, defaultQuantity)
+  if (!scaled) return undefined
+  return {
+    protein_g: scaled.protein_g ?? null,
+    fat_g: scaled.fat_g ?? null,
+    carbs_g: scaled.carbs_g ?? null,
+    sugar_g: scaled.sugar_g ?? null,
   }
 }
 
@@ -187,6 +273,10 @@ export interface TemplateSeedCandidate {
   unit: string
   defaultQuantity: number
   kcalPerUnit: number
+  protein_g?: number | null
+  fat_g?: number | null
+  carbs_g?: number | null
+  sugar_g?: number | null
 }
 
 export interface LogItemForTemplate {
@@ -279,6 +369,7 @@ export async function saveTemplatesFromItems(input: {
         unit,
         kcalPerUnit,
         defaultQuantity,
+        ...pickTemplateMacros(item),
       })
       input.existingTemplates.push({ name, unit })
       result.createdCount += 1

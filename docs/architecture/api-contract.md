@@ -108,11 +108,11 @@ Base URL：
 
 | Method | Path | 说明 |
 |--------|------|------|
-| GET | `/templates/:type` | type: `exercise` \| `meal`；返回 `id, name, unit, kcal_per_unit, default_quantity, kcal`（`kcal` 为兼容缓存） |
-| POST | `/templates/:type` | body: `{ name, unit, kcalPerUnit, defaultQuantity }`；服务端写入并同步 `kcal = round(kcalPerUnit × defaultQuantity)` |
-| PATCH | `/templates/:type/:id` | 同 POST body；更新模板字段并同步 `kcal` |
+| GET | `/templates/:type` | type: `exercise` \| `meal`；返回 `id, name, unit, kcal_per_unit, default_quantity, kcal`（`kcal` 为兼容缓存）。饮食模板额外可含可空 `protein_g/fat_g/carbs_g/sugar_g`（对应 `default_quantity` 的手填克数） |
+| POST | `/templates/:type` | body: `{ name, unit, kcalPerUnit, defaultQuantity }`；饮食模板可选 `protein_g/fat_g/carbs_g/sugar_g`（空=不固化）。服务端写入并同步 `kcal = round(kcalPerUnit × defaultQuantity)`。运动模板忽略宏量字段 |
+| PATCH | `/templates/:type/:id` | 同 POST body；更新模板字段并同步 `kcal`。饮食模板空宏量字段会写成 null |
 | DELETE | `/templates/:type/:id` | 删除模板 |
-| POST | `/templates/seed` | 种子默认模板；body `{ exerciseTemplates[], mealTemplates[] }`，每项含 `name, unit, kcalPerUnit, defaultQuantity` |
+| POST | `/templates/seed` | 种子默认模板；body `{ exerciseTemplates[], mealTemplates[] }`，每项含 `name, unit, kcalPerUnit, defaultQuantity`；预置饮食模板不写宏量 |
 
 ## 用户周报
 
