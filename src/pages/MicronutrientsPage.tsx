@@ -7,6 +7,7 @@ import { scrollCommunityMainToTop } from '../lib/communityListCache'
 import {
   MICRONUTRIENT_STATUS_LABELS,
   filterMicronutrientItems,
+  mealMicronutrientRowStatus,
   micronutrientCatalogItem,
   micronutrientItemsForDisplay,
   type MicronutrientFilter,
@@ -319,6 +320,7 @@ export function MicronutrientsPage() {
     micronutrientRetrying,
     micronutrientRetryError,
     retryMicronutrients,
+    nutritionEstimating,
   } = useNutritionDay('/micronutrients')
   const [filter, setFilter] = useState<MicronutrientFilter>('all')
   const [selectedItem, setSelectedItem] = useState<MicronutrientItem | null>(
@@ -428,13 +430,13 @@ export function MicronutrientsPage() {
             </section>
           ) : (
             <>
-              {status === 'pending' ? (
+              {nutritionEstimating ? (
                 <p
                   className="surface-card micronutrient-status micronutrient-status--pending"
                   role="status"
                 >
                   正在根据今日饮食更新微量元素…
-                  {summary ? ' 当前先显示上次结果。' : ''}
+                  {summary ? ' 当前先显示上次结果，新食物算完后会自动刷新。' : ''}
                 </p>
               ) : null}
               {status === 'error' ? (
@@ -456,7 +458,7 @@ export function MicronutrientsPage() {
                   </button>
                 </div>
               ) : null}
-              {status === 'idle' && !summary ? (
+              {status === 'idle' && !summary && !nutritionEstimating ? (
                 <div className="surface-card micronutrient-status">
                   <p>微量元素快照尚未生成。</p>
                   <button
@@ -544,6 +546,58 @@ export function MicronutrientsPage() {
                 )}
               </section>
             </>
+          ) : null}
+
+          {meals.length > 0 ? (
+            <section className="surface-card micronutrient-food-list">
+              <div className="nutrition-card__heading">
+                <div>
+                  <p className="nutrition-card__eyebrow">按餐核对</p>
+                  <h2>今日食物</h2>
+                </div>
+              </div>
+              <ul>
+                {meals.map((meal) => {
+                  const rowStatus = mealMicronutrientRowStatus(meal, status)
+                  const components = meal.micronutrients?.components ?? []
+                  return (
+                    <li
+                      key={meal.id}
+                      className="micronutrient-food-row"
+                      data-status={rowStatus}
+                    >
+                      <div className="micronutrient-food-row__heading">
+                        <strong>{meal.name}</strong>
+                        <span>
+                          {rowStatus === 'ready'
+                            ? '已估算'
+                            : rowStatus === 'pending'
+                              ? '估算中'
+                              : '失败'}
+                        </span>
+                      </div>
+                      {rowStatus === 'ready' && components.length > 0 ? (
+                        <p className="micronutrient-food-row__components">
+                          拆出{' '}
+                          {components
+                            .map((component) =>
+                              component.grams > 0
+                                ? `${component.name}约${Math.round(component.grams)}g`
+                                : component.name,
+                            )
+                            .join('、')}
+                        </p>
+                      ) : null}
+                      {rowStatus === 'error' ? (
+                        <p className="micronutrient-food-row__components">
+                          这道菜还没有算出微量元素，可点上方重试。
+                        </p>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
           ) : null}
         </>
       ) : null}

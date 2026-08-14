@@ -2,20 +2,14 @@ import { Router } from 'express'
 import { asyncHandler } from '../asyncHandler.js'
 import { authMiddleware } from '../auth.js'
 import { query } from '../db.js'
-import {
-  afterDayLogIdChanged,
-  afterExerciseOrMealChanged,
-} from '../dayLogMutation.js'
-import { getKcalEstimator } from '../ai/registry.js'
+import { afterDayLogIdChanged, afterExerciseOrMealChanged } from '../dayLogMutation.js'
 import { isValidDateKey } from '../dateKey.js'
 import {
   MEAL_MACRO_FIELDS,
-  calibrateMealMacros,
-  fillMissingMealMacros,
   hasAnyMealMacro,
-  macrosFromEstimateItems,
   parseMealMacroInput,
-  resolveMealMacrosSource,
+  resolveMealMacrosForSave,
+  scheduleMealMacroEstimate,
 } from '../mealMacros.js'
 import {
   ensureMicronutrientsForDayRead,
@@ -37,64 +31,6 @@ function parseOptionalBatchId(value) {
     return { error: 'batch_id 无效' }
   }
   return { batchId: value.trim() }
-}
-
-const MEAL_MACRO_ESTIMATE_TIMEOUT_MS = 8_000
-
-async function estimateMissingMealMacros(userId, name) {
-  try {
-    const { rows } = await query(
-      `select weight_kg from profiles where id = $1`,
-      [userId],
-    )
-    const estimator = getKcalEstimator()
-    const estimatePromise = estimator({
-      kind: 'meal',
-      description: name,
-      profile: rows[0] || {},
-      modality: 'text',
-    })
-    const timeoutPromise = new Promise((_, reject) => {
-      const timer = setTimeout(() => {
-        const err = new Error('meal macro estimate timeout')
-        err.code = 'MEAL_MACRO_TIMEOUT'
-        reject(err)
-      }, MEAL_MACRO_ESTIMATE_TIMEOUT_MS)
-      estimatePromise.finally(() => clearTimeout(timer)).catch(() => undefined)
-    })
-    const result = await Promise.race([estimatePromise, timeoutPromise])
-    return macrosFromEstimateItems(result?.items)
-  } catch (err) {
-    console.warn('[meal-macros] estimate skipped:', err?.code || err?.message || err)
-    return null
-  }
-}
-
-async function resolveMealMacrosForSave({
-  userId,
-  name,
-  kcal,
-  macros,
-  source,
-}) {
-  let next = fillMissingMealMacros(macros, null)
-  const missingAny = MEAL_MACRO_FIELDS.some((field) => next[field] == null)
-  let estimated = null
-  let attemptedEstimate = false
-  if (missingAny && source !== 'ai') {
-    attemptedEstimate = true
-    estimated = await estimateMissingMealMacros(userId, name)
-    next = fillMissingMealMacros(next, estimated)
-  }
-  const calibrated = calibrateMealMacros(next, kcal)
-  return {
-    ...calibrated,
-    source: resolveMealMacrosSource(calibrated.macros, {
-      source,
-      estimated: estimated != null,
-      attemptedEstimate,
-    }),
-  }
 }
 
 async function getOrCreateDayLog(userId, date, tdee) {
@@ -296,18 +232,18 @@ router.post(
       ? requestedSource ?? 'user'
       : null
     await assertOwnedDayLog(day_log_id, req.userId)
-    const resolved = await resolveMealMacrosForSave({
-      userId: req.userId,
-      name: name.trim(),
+    const resolved = resolveMealMacrosForSave({
       kcal,
       macros: parsedMacros.macros,
       source,
     })
-    await query(
+    const inserted = await query(
       `insert into meals
          (day_log_id, user_id, name, kcal, batch_id,
-          protein_g, fat_g, carbs_g, sugar_g, sugar_scope, macros_source)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'added', $10)`,
+          protein_g, fat_g, carbs_g, sugar_g, sugar_scope, macros_source,
+          macros_status)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'added', $10, $11)
+       returning id`,
       [
         day_log_id,
         req.userId,
@@ -319,8 +255,12 @@ router.post(
         resolved.macros.carbs_g,
         resolved.macros.sugar_g,
         resolved.source,
+        resolved.macrosStatus,
       ],
     )
+    if (resolved.needsBackgroundEstimate) {
+      scheduleMealMacroEstimate(req.userId, inserted.rows[0].id)
+    }
     const { rows } = await query(`select * from day_logs where id = $1`, [
       day_log_id,
     ])
@@ -364,38 +304,21 @@ router.post(
       rows.map(async (meal) => {
         const preserveUserSugar =
           meal.macros_source === 'user' && meal.sugar_g != null
-        if (preserveUserSugar) {
-          const result = await query(
-            `update meals set sugar_scope = 'added'
-             where id = $1 and user_id = $2 and sugar_scope is null
-             returning id`,
-            [meal.id, req.userId],
-          )
-          if (result.rows[0]) {
-            updated += 1
-            completed += 1
-          }
-          return
-        }
-
-        const resolved = await resolveMealMacrosForSave({
-          userId: req.userId,
-          name: meal.name,
+        const resolved = resolveMealMacrosForSave({
           kcal: meal.kcal,
           macros: {
             protein_g: meal.protein_g,
             fat_g: meal.fat_g,
             carbs_g: meal.carbs_g,
-            // Legacy AI sugar used the total-sugar definition; never carry it over.
-            sugar_g: null,
+            sugar_g: preserveUserSugar ? meal.sugar_g : null,
           },
           source: meal.macros_source === 'user' ? 'user' : null,
         })
         const result = await query(
           `update meals
            set protein_g = $1, fat_g = $2, carbs_g = $3, sugar_g = $4,
-               sugar_scope = 'added', macros_source = $5
-           where id = $6 and user_id = $7
+               sugar_scope = 'added', macros_source = $5, macros_status = $6
+           where id = $7 and user_id = $8
              and sugar_scope is null
            returning id`,
           [
@@ -404,13 +327,17 @@ router.post(
             resolved.macros.carbs_g,
             resolved.macros.sugar_g,
             resolved.source,
+            resolved.macrosStatus,
             meal.id,
             req.userId,
           ],
         )
-        if (result.rows[0]) {
-          updated += 1
-          if (resolved.macros.sugar_g != null) completed += 1
+        if (!result.rows[0]) return
+        updated += 1
+        if (resolved.needsBackgroundEstimate) {
+          scheduleMealMacroEstimate(req.userId, meal.id)
+        } else {
+          completed += 1
         }
       }),
     )
@@ -465,9 +392,7 @@ router.patch(
       !Object.prototype.hasOwnProperty.call(req.body, 'sugar_g')
         ? null
         : source
-    const resolved = await resolveMealMacrosForSave({
-      userId: req.userId,
-      name: name.trim(),
+    const resolved = resolveMealMacrosForSave({
       kcal,
       macros,
       source: resolutionSource,
@@ -476,8 +401,9 @@ router.patch(
     const { rows } = await query(
       `update meals
        set name = $1, kcal = $2, protein_g = $3, fat_g = $4,
-           carbs_g = $5, sugar_g = $6, sugar_scope = 'added', macros_source = $7
-       where id = $8 and user_id = $9
+           carbs_g = $5, sugar_g = $6, sugar_scope = 'added',
+           macros_source = $7, macros_status = $8
+       where id = $9 and user_id = $10
        returning *`,
       [
         name.trim(),
@@ -487,10 +413,14 @@ router.patch(
         resolved.macros.carbs_g,
         resolved.macros.sugar_g,
         resolved.source,
+        resolved.macrosStatus,
         req.params.id,
         req.userId,
       ],
     )
+    if (resolved.needsBackgroundEstimate) {
+      scheduleMealMacroEstimate(req.userId, req.params.id)
+    }
     const visibility = await afterExerciseOrMealChanged(
       req.userId,
       req.params.id,

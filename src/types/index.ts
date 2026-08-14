@@ -295,6 +295,7 @@ export interface Meal {
   sugar_g: number | null
   sugar_scope: 'added' | null
   macros_source: 'user' | 'ai' | null
+  macros_status?: 'pending' | 'ready' | 'error' | null
   micronutrients?: MealMicronutrients | null
   micronutrients_fingerprint?: string | null
 }

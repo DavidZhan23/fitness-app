@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEstimateResult,
   DEFAULT_DEEPSEEK_MODEL,
+  NUTRITION_DEEPSEEK_MODEL,
   deepSeekNonThinkingExtras,
+  deepSeekThinkingExtras,
   defaultReason,
   EXERCISE_NET_ACTIVITY_RULES,
   FALLBACK_REASON,
@@ -23,6 +25,15 @@ describe('resolveDeepSeekModel', () => {
 
   it('disables thinking for chat-style requests', () => {
     expect(deepSeekNonThinkingExtras()).toEqual({ thinking: { type: 'disabled' } })
+  })
+
+  it('keeps nutrition estimates on Pro with thinking enabled', () => {
+    expect(NUTRITION_DEEPSEEK_MODEL).toBe('deepseek-v4-pro')
+    expect(DEFAULT_DEEPSEEK_MODEL).toBe('deepseek-v4-flash')
+    expect(deepSeekThinkingExtras()).toEqual({
+      thinking: { type: 'enabled' },
+      reasoning_effort: 'high',
+    })
   })
 })
 

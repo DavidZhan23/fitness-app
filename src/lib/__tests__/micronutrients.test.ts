@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MICRONUTRIENT_CATALOG,
   filterMicronutrientItems,
+  mealMicronutrientRowStatus,
   micronutrientItemsForDisplay,
 } from '../micronutrients'
 
@@ -69,5 +70,26 @@ describe('micronutrient display catalog', () => {
       estimated_pct: 15,
       dri_amount: 20,
     })
+  })
+
+  it('labels meal food rows as ready, pending, or failed', () => {
+    const readyMeal = {
+      micronutrients: {
+        version: 1 as const,
+        components: [{ name: '米饭', grams: 150 }],
+        items: [{ id: 'iron' as const, amount: 1, unit: 'mg' as const, confidence: 'medium' as const }],
+      },
+      macros_status: 'ready' as const,
+    }
+    expect(mealMicronutrientRowStatus(readyMeal, 'ready')).toBe('ready')
+    expect(
+      mealMicronutrientRowStatus({ micronutrients: null, macros_status: 'pending' }, 'ready'),
+    ).toBe('pending')
+    expect(
+      mealMicronutrientRowStatus({ micronutrients: null }, 'pending'),
+    ).toBe('pending')
+    expect(
+      mealMicronutrientRowStatus({ micronutrients: null, macros_status: 'error' }, 'error'),
+    ).toBe('error')
   })
 })

@@ -1,9 +1,14 @@
+import { estimateMealMacrosFromDescription } from './ai/providers/deepseekText.js'
+import { query } from './db.js'
+
 export const MEAL_MACRO_FIELDS = [
   'protein_g',
   'fat_g',
   'carbs_g',
   'sugar_g',
 ]
+
+const macroTaskChains = new Map()
 
 const MAX_MACRO_GRAMS = 10_000
 
@@ -111,4 +116,116 @@ export function calibrateMealMacros(macros, kcal) {
   }
 
   return { macros: next, sugarClamped: false }
+}
+
+export function resolveMealMacrosForSave({ kcal, macros, source = null }) {
+  const next = fillMissingMealMacros(macros, null)
+  const calibrated = calibrateMealMacros(next, kcal)
+  const missingAny = MEAL_MACRO_FIELDS.some(
+    (field) => calibrated.macros[field] == null,
+  )
+  return {
+    ...calibrated,
+    source: hasAnyMealMacro(calibrated.macros) ? source ?? 'user' : source,
+    macrosStatus: missingAny ? 'pending' : 'ready',
+    needsBackgroundEstimate: missingAny,
+  }
+}
+
+async function writeMealMacros(userId, mealId, { macros, source, status }) {
+  await query(
+    `update meals
+     set protein_g = $3, fat_g = $4, carbs_g = $5, sugar_g = $6,
+         sugar_scope = 'added', macros_source = $7, macros_status = $8
+     where id = $1 and user_id = $2`,
+    [
+      mealId,
+      userId,
+      macros.protein_g,
+      macros.fat_g,
+      macros.carbs_g,
+      macros.sugar_g,
+      source,
+      status,
+    ],
+  )
+}
+
+export async function estimateAndStoreMealMacros(userId, mealId) {
+  const { rows } = await query(
+    `select id, name, kcal, protein_g, fat_g, carbs_g, sugar_g, macros_source
+     from meals where id = $1 and user_id = $2`,
+    [mealId, userId],
+  )
+  const meal = rows[0]
+  if (!meal) return
+
+  const current = Object.fromEntries(
+    MEAL_MACRO_FIELDS.map((field) => [field, meal[field]]),
+  )
+  if (!MEAL_MACRO_FIELDS.some((field) => current[field] == null)) {
+    await query(
+      `update meals set macros_status = 'ready'
+       where id = $1 and user_id = $2`,
+      [mealId, userId],
+    )
+    return
+  }
+
+  try {
+    const profileResult = await query(
+      `select weight_kg from profiles where id = $1`,
+      [userId],
+    )
+    const estimated = macrosFromEstimateItems(
+      (
+        await estimateMealMacrosFromDescription({
+          description: meal.name,
+          profile: profileResult.rows[0] || {},
+        })
+      )?.items,
+    )
+    const filled = fillMissingMealMacros(current, estimated)
+    const calibrated = calibrateMealMacros(filled, meal.kcal)
+    const stillMissing = MEAL_MACRO_FIELDS.some(
+      (field) => calibrated.macros[field] == null,
+    )
+    await writeMealMacros(userId, mealId, {
+      macros: calibrated.macros,
+      source: resolveMealMacrosSource(calibrated.macros, {
+        source: meal.macros_source,
+        estimated: estimated != null,
+        attemptedEstimate: true,
+      }),
+      status: stillMissing ? 'error' : 'ready',
+    })
+  } catch (err) {
+    console.warn(
+      '[meal-macros] background estimate failed:',
+      err?.code || err?.message || err,
+    )
+    await writeMealMacros(userId, mealId, {
+      macros: current,
+      source: resolveMealMacrosSource(current, {
+        source: meal.macros_source,
+        attemptedEstimate: true,
+      }),
+      status: 'error',
+    })
+  }
+}
+
+export function scheduleMealMacroEstimate(userId, mealId) {
+  if (!userId || !mealId) return
+  const key = `${userId}:${mealId}`
+  const previous = macroTaskChains.get(key) ?? Promise.resolve()
+  const task = previous
+    .catch(() => undefined)
+    .then(() => estimateAndStoreMealMacros(userId, mealId))
+  macroTaskChains.set(key, task)
+  void task
+    .finally(() => {
+      if (macroTaskChains.get(key) === task) macroTaskChains.delete(key)
+    })
+    .catch(() => undefined)
 }

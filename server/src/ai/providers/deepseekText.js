@@ -8,7 +8,11 @@ const API_URL =
   process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/chat/completions'
 /** 对齐旧 deepseek-chat：快、非思考 */
 export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-v4-flash'
+export const NUTRITION_DEEPSEEK_MODEL = 'deepseek-v4-pro'
 const TIMEOUT_MS = Number(process.env.DEEPSEEK_TIMEOUT_MS || 25_000)
+export const NUTRITION_TIMEOUT_MS = Number(
+  process.env.DEEPSEEK_NUTRITION_TIMEOUT_MS || 90_000,
+)
 
 /**
  * 解析可用模型名；旧别名自动映射，避免服务器 .env 未改时继续 400。
@@ -38,6 +42,11 @@ export function resolveDeepSeekModel(raw = process.env.DEEPSEEK_MODEL) {
 /** V4 请求体附加项：显式关闭 thinking，对齐旧 chat 行为 */
 export function deepSeekNonThinkingExtras() {
   return { thinking: { type: 'disabled' } }
+}
+
+/** 营养后台任务：Pro + thinking，换更准的拆料和宏量 */
+export function deepSeekThinkingExtras() {
+  return { thinking: { type: 'enabled' }, reasoning_effort: 'high' }
 }
 
 const MAX_HTTP_RETRIES = 3
@@ -313,6 +322,8 @@ function extractMessageContent(choice) {
 
   const reasoning = msg.reasoning_content
   if (reasoning != null && String(reasoning).trim()) {
+    const json = extractFirstJsonObject(String(reasoning))
+    if (json) return JSON.stringify(json)
     const num = String(reasoning).match(/\b(\d{1,4})\b/)
     if (num) return String(num[1])
   }
@@ -481,7 +492,7 @@ export async function requestDeepSeekTextJson({
   return content
 }
 
-async function requestDeepSeekWithRetry(apiKey, body) {
+async function requestDeepSeekWithRetry(apiKey, body, timeoutMs = TIMEOUT_MS) {
   let lastStatus = 0
   let lastData = {}
 
@@ -491,7 +502,7 @@ async function requestDeepSeekWithRetry(apiKey, body) {
       console.warn('[deepseek] retry http', attempt + 1, lastStatus)
     }
 
-    const { res, data } = await requestDeepSeekOnce(apiKey, body)
+    const { res, data } = await requestDeepSeekOnce(apiKey, body, timeoutMs)
     if (res.ok) return { res, data }
 
     lastStatus = res.status
@@ -516,12 +527,12 @@ function contentPreview(data) {
   return c.length > 120 ? `${c.slice(0, 120)}…` : c
 }
 
-function buildPayload({ type, description, profile, mode }) {
+function buildPayload({ type, description, profile, mode, model, thinking }) {
   const base = {
-    model: resolveDeepSeekModel(),
-    max_tokens: MAX_TOKENS,
+    model: model || resolveDeepSeekModel(),
+    max_tokens: thinking ? 1800 : MAX_TOKENS,
     temperature: 0.1,
-    ...deepSeekNonThinkingExtras(),
+    ...(thinking ? deepSeekThinkingExtras() : deepSeekNonThinkingExtras()),
   }
 
   if (mode === 'minimal') {
@@ -552,6 +563,7 @@ async function tryStrategy(apiKey, options) {
   const { data } = await requestDeepSeekWithRetry(
     apiKey,
     buildPayload(options),
+    options.timeoutMs,
   )
   const content = extractMessageContent(data?.choices?.[0])
   if (!content) {
@@ -566,8 +578,9 @@ async function tryStrategy(apiKey, options) {
 
 /**
  * @param {{ type: 'exercise'|'meal', description: string, profile?: { weight_kg?: number|null } }} input
+ * @param {{ model?: string, thinking?: boolean, timeoutMs?: number }} [options]
  */
-export async function estimateKcalFromDescription(input) {
+export async function estimateKcalFromDescription(input, options = {}) {
   const apiKey = getDeepSeekApiKey()
   if (!apiKey) {
     const err = new Error(
@@ -577,8 +590,11 @@ export async function estimateKcalFromDescription(input) {
     throw err
   }
 
-  const model = resolveDeepSeekModel()
-  if (model.includes('reasoner') || model.includes('pro')) {
+  const model = options.model || resolveDeepSeekModel()
+  if (
+    !options.thinking &&
+    (model.includes('reasoner') || model.includes('pro'))
+  ) {
     console.warn(
       '[deepseek] 当前模型',
       model,
@@ -599,7 +615,14 @@ export async function estimateKcalFromDescription(input) {
     throw err
   }
 
-  const baseOpts = { type, description, profile: input.profile }
+  const baseOpts = {
+    type,
+    description,
+    profile: input.profile,
+    model,
+    thinking: Boolean(options.thinking),
+    timeoutMs: options.timeoutMs,
+  }
   const modes = ['json', 'plain', 'minimal']
   let lastError = 'AI 估算失败，请稍后重试'
 
@@ -632,6 +655,21 @@ export async function deepseekTextEstimator(input) {
     ...(result.items?.length ? { items: result.items } : {}),
     providerId: DEEPSEEK_TEXT_PROVIDER_ID,
   }
+}
+
+export async function estimateMealMacrosFromDescription(input) {
+  return estimateKcalFromDescription(
+    {
+      type: 'meal',
+      description: input?.description || input?.name,
+      profile: input?.profile,
+    },
+    {
+      model: NUTRITION_DEEPSEEK_MODEL,
+      thinking: true,
+      timeoutMs: NUTRITION_TIMEOUT_MS,
+    },
+  )
 }
 
 const MEAL_MICRONUTRIENT_IDS = [
@@ -700,10 +738,10 @@ export async function estimateMealMicronutrients(input) {
   }
 
   const body = {
-    model: resolveDeepSeekModel(),
-    max_tokens: 2800,
+    model: NUTRITION_DEEPSEEK_MODEL,
+    max_tokens: 4000,
     temperature: 0.1,
-    ...deepSeekNonThinkingExtras(),
+    ...deepSeekThinkingExtras(),
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: buildMealMicronutrientSystemPrompt() },
@@ -722,7 +760,11 @@ export async function estimateMealMicronutrients(input) {
       },
     ],
   }
-  const { data } = await requestDeepSeekWithRetry(apiKey, body)
+  const { data } = await requestDeepSeekWithRetry(
+    apiKey,
+    body,
+    NUTRITION_TIMEOUT_MS,
+  )
   const content = extractMessageContent(data?.choices?.[0])
   const unfenced = stripCodeFence(String(content ?? '').trim())
   const parsed = tryParseJsonObject(unfenced) ?? extractFirstJsonObject(unfenced)

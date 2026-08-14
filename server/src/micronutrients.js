@@ -579,10 +579,13 @@ export function scheduleMicronutrientRefresh(
   { pendingAlready = false, force = false } = {},
 ) {
   const key = `${userId}:${dayLogId}`
+  if (!pendingAlready) void markPending(userId, dayLogId)
   const previous = taskChains.get(key) ?? Promise.resolve()
   const task = previous
     .catch(() => undefined)
-    .then(() => refreshDay(userId, dayLogId, { pendingAlready, force }))
+    .then(() =>
+      refreshDay(userId, dayLogId, { pendingAlready: true, force }),
+    )
   taskChains.set(key, task)
   void task
     .finally(() => {

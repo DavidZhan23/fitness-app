@@ -31,5 +31,6 @@
 | [M-2026-08-weekly-report-quality](M-2026-08-weekly-report-quality.md) | done | `dev/huanghongli`（事实洞察 + 规则建议 + AI 润色 fallback） |
 | [M-2026-08-meal-micronutrient-sum](M-2026-08-meal-micronutrient-sum.md) | done | `dev/huanghongli`（逐餐微量加总，修越吃越少） |
 | [M-2026-08-fox-stage-collapse-theme](M-2026-08-fox-stage-collapse-theme.md) | done | `dev/huanghongli`（舞台折叠持久化 + 12 套狐狸主题 token） |
+| [M-2026-08-nutrition-pro-background](M-2026-08-nutrition-pro-background.md) | done | `dev/huanghongli`（营养后台 Pro + 计算中标识 + 食物明细） |
 
 ← [回到 Active 表](README.md)

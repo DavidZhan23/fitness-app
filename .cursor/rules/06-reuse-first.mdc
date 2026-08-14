@@ -59,7 +59,8 @@ Before adding any new file to `src/lib/`, `src/hooks/`, `src/context/`, `server/
 | Community inbox | `server/src/communityInbox.js#getCommunityInboxUnread`, `markCommunityInboxRead` | Inbox notifications |
 | Public nickname | `server/src/publicProfile.js#publicNickname`, `publicNicknameById` | Community/social display names |
 | Day-log mutations hooks | `server/src/dayLogMutation.js` | `afterDayLogChanged`, `afterDayLogIdChanged`, `afterExerciseOrMealChanged` — call after mutating logs |
-| DeepSeek AI estimate | `server/src/ai/providers/deepseekText.js#estimateKcalFromDescription` | AI kcal estimation via DeepSeek API |
+| Meal macros | `server/src/mealMacros.js` | 餐级 P/F/C/糖校准与 `macros_status`；后台 Pro 估算用 `scheduleMealMacroEstimate`，勿在路由里同步等 AI |
+| DeepSeek AI estimate | `server/src/ai/providers/deepseekText.js#estimateKcalFromDescription` | 记热量/小狸默认 Flash + thinking disabled；营养宏量/微量用 `estimateMealMacrosFromDescription` / `estimateMealMicronutrients`（Pro + thinking） |
 | Micronutrient DRI + rollup | `server/src/micronutrientTargets.js`, `server/src/micronutrients.js` | 静态参考摄入量、餐级微量校验与日加总；勿让模型编 DRI |
 
 ## Hard Rules

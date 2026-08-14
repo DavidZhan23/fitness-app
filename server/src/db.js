@@ -458,6 +458,19 @@ export async function runMigrations() {
       alter table public.meals
         add column if not exists micronutrients jsonb,
         add column if not exists micronutrients_fingerprint text`)
+    await pool.query(`
+      alter table public.meals
+        add column if not exists macros_status text`)
+    await pool.query(`
+      alter table public.meals
+        drop constraint if exists meals_macros_status_check`)
+    await pool.query(`
+      alter table public.meals
+        add constraint meals_macros_status_check
+        check (
+          macros_status is null
+          or macros_status in ('pending', 'ready', 'error')
+        )`)
   } catch {
     /* 表未建等 */
   }

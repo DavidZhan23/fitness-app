@@ -1,4 +1,5 @@
 import type {
+  Meal,
   MicronutrientId,
   MicronutrientItem,
   MicronutrientStatus,
@@ -158,4 +159,19 @@ export function filterMicronutrientItems(
   return items.filter(
     (item) => micronutrientCatalogItem(item.id)?.group === group,
   )
+}
+
+export type MealMicronutrientRowStatus = 'ready' | 'pending' | 'error'
+
+export function mealHasMicronutrientEstimate(meal: Pick<Meal, 'micronutrients'>): boolean {
+  return Array.isArray(meal.micronutrients?.items) && meal.micronutrients.items.length > 0
+}
+
+export function mealMicronutrientRowStatus(
+  meal: Pick<Meal, 'micronutrients' | 'macros_status'>,
+  dayStatus: string | null | undefined,
+): MealMicronutrientRowStatus {
+  if (mealHasMicronutrientEstimate(meal)) return 'ready'
+  if (dayStatus === 'pending' || meal.macros_status === 'pending') return 'pending'
+  return 'error'
 }

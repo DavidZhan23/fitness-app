@@ -5,6 +5,8 @@ import {
   needsMealMacroBackfill,
   parseMacroDraft,
   summarizeMealMacros,
+  isMealMacroEstimating,
+  isNutritionEstimateInProgress,
 } from '../macroTargets'
 import type { Meal, Profile } from '../../types'
 
@@ -119,5 +121,27 @@ describe('macro targets', () => {
     expect(needsMealMacroBackfill(meal('legacy', { sugar_scope: null }))).toBe(true)
     expect(needsMealMacroBackfill(meal('attempted', { macros_source: 'ai' }))).toBe(false)
     expect(needsMealMacroBackfill(meal('partial', { protein_g: 20 }))).toBe(false)
+  })
+
+  it('treats pending macros or pending micronutrients as in-progress', () => {
+    expect(isMealMacroEstimating(meal('p', { macros_status: 'pending' }))).toBe(true)
+    expect(
+      isNutritionEstimateInProgress(
+        { micronutrient_status: 'ready' },
+        [meal('p', { macros_status: 'pending' })],
+      ),
+    ).toBe(true)
+    expect(
+      isNutritionEstimateInProgress(
+        { micronutrient_status: 'pending' },
+        [meal('ready', { macros_status: 'ready' })],
+      ),
+    ).toBe(true)
+    expect(
+      isNutritionEstimateInProgress(
+        { micronutrient_status: 'ready' },
+        [meal('ready', { macros_status: 'ready' })],
+      ),
+    ).toBe(false)
   })
 })
