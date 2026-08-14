@@ -340,6 +340,12 @@ export const httpData = {
     })
   },
 
+  async regenerateUserWeeklyReport(reportId: string): Promise<UserWeeklyReport> {
+    return apiFetch(`/weekly-reports/${encodeURIComponent(reportId)}/regenerate`, {
+      method: 'POST',
+    })
+  },
+
   async shareUserWeeklyReportToCommunity(reportId: string): Promise<UserWeeklyReport> {
     return apiFetch(`/weekly-reports/${encodeURIComponent(reportId)}/share-community`, {
       method: 'POST',

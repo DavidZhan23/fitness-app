@@ -57,3 +57,73 @@ describe('Huawei WebView sprite compatibility', () => {
     expect(foxCss).toContain('opacity: 0')
   })
 })
+
+describe('fox stage collapse and theme tokens', () => {
+  const foxTokens = [
+    '--fox-card-bg',
+    '--fox-card-border',
+    '--fox-card-glow',
+    '--fox-stage-bg',
+    '--fox-stage-border',
+    '--fox-stage-ground',
+    '--fox-stage-moon',
+    '--fox-stage-moon-glow',
+    '--fox-stage-fire',
+    '--fox-stage-fire-glow',
+    '--fox-progress-from',
+    '--fox-progress-to',
+    '--fox-eyebrow',
+  ]
+  const themeFiles = [
+    'default.css',
+    'lavender.css',
+    'sakura.css',
+    'sakura-blush.css',
+    'active-mint.css',
+    'soy-tea.css',
+    'wood-zen.css',
+    'eva.css',
+    'eva-unit02.css',
+    'gundam-hangar.css',
+    'jojo-stardust-duel.css',
+    'batman-v-superman.css',
+  ]
+
+  it('uses semantic stage tokens instead of the old peach main background', () => {
+    const css = readFileSync(new URL('../../index.css', import.meta.url), 'utf8')
+    const foxStart = css.indexOf('/* 今日页：本周运动大王狐狸陪伴 */')
+    const foxEnd = css.indexOf('/* 今日记录：', foxStart)
+    const foxCss = css.slice(foxStart, foxEnd)
+
+    expect(foxCss).toContain('background: var(--fox-stage-bg)')
+    expect(foxCss).toContain('background: var(--fox-card-bg)')
+    expect(foxCss).not.toContain('rgb(255 246 243')
+    expect(foxCss).not.toContain('@media (prefers-color-scheme: dark)')
+    expect(foxCss.match(/^\.daji-fox-stage \{/gm)).toHaveLength(1)
+  })
+
+  it('defines the complete fox palette independently in all 12 themes', () => {
+    for (const filename of themeFiles) {
+      const themeCss = readFileSync(
+        new URL(`../../styles/themes/${filename}`, import.meta.url),
+        'utf8',
+      )
+      for (const token of foxTokens) {
+        expect(themeCss, `${filename} is missing ${token}`).toContain(`${token}:`)
+      }
+    }
+  })
+
+  it('keeps collapse persistence out of the component and exposes both labels', () => {
+    const source = readFileSync(
+      new URL('../../components/DajiFoxCompanion.tsx', import.meta.url),
+      'utf8',
+    )
+
+    expect(source).toContain('readFoxStageCollapsedPreference')
+    expect(source).toContain('writeFoxStageCollapsedPreference')
+    expect(source).toContain('aria-label="收起小狸舞台"')
+    expect(source).toContain('aria-label="展开小狸舞台"')
+    expect(source).toContain('daji-fox-card--collapsed')
+  })
+})

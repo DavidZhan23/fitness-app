@@ -63,7 +63,7 @@ function WeeklyReportsPageContent() {
               </span>
               {!report.isViewed && <i>未读</i>}
             </div>
-            <h2>{report.summary.overallTitle}</h2>
+            <h2>{report.headline || report.summary.overallTitle}</h2>
             <div className="weekly-history-item__metrics">
               <span>
                 <strong>{report.summary.activeDays}</strong>运动天

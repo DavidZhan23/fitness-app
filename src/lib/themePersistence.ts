@@ -26,6 +26,7 @@ export const HERO_COLLAB_STYLES = [
 const STYLE_KEY = 'fitness_style'
 const PREFERENCE_OWNER_KEY = 'fitness_theme_preference_user_id'
 const HERO_COLLAB_KEY_PREFIX = 'fitness_hero_collab_'
+const FOX_STAGE_COLLAPSED_KEY = 'fitness_fox_stage_collapsed'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 interface KeyValueStorage {
@@ -248,4 +249,25 @@ export function writeHeroCollabPreference(
   const value = enabled ? '1' : '0'
   writeStorage(env.storage, key, value)
   writeCookie(env.cookieDocument, key, value)
+}
+
+export function readFoxStageCollapsedPreference(
+  env: ThemePersistenceEnvironment = browserEnvironment(),
+): BooleanPreference {
+  const local = parseBoolean(readStorage(env.storage, FOX_STAGE_COLLAPSED_KEY))
+  if (local != null) return { enabled: local, source: 'localStorage' }
+  const cookie = parseBoolean(
+    readCookie(env.cookieDocument?.cookie ?? '', FOX_STAGE_COLLAPSED_KEY),
+  )
+  if (cookie != null) return { enabled: cookie, source: 'cookie' }
+  return { enabled: false, source: 'default' }
+}
+
+export function writeFoxStageCollapsedPreference(
+  collapsed: boolean,
+  env: ThemePersistenceEnvironment = browserEnvironment(),
+) {
+  const value = collapsed ? '1' : '0'
+  writeStorage(env.storage, FOX_STAGE_COLLAPSED_KEY, value)
+  writeCookie(env.cookieDocument, FOX_STAGE_COLLAPSED_KEY, value)
 }

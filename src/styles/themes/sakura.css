@@ -45,6 +45,20 @@
   --btn-primary-hover: #5e97e8;
   --btn-primary-text: #1f4a78;
 
+  --fox-card-bg: #f7fbff;
+  --fox-card-border: #c8daeb;
+  --fox-card-glow: rgb(94 151 232 / 0.12);
+  --fox-stage-bg: linear-gradient(155deg, #eef6fc 0%, #fff1f7 100%);
+  --fox-stage-border: #d5dce8;
+  --fox-stage-ground: rgb(94 151 232 / 0.14);
+  --fox-stage-moon: rgb(255 255 255 / 0.9);
+  --fox-stage-moon-glow: rgb(132 189 245 / 0.28);
+  --fox-stage-fire: #f0a8c8;
+  --fox-stage-fire-glow: rgb(240 168 200 / 0.42);
+  --fox-progress-from: #84bdf5;
+  --fox-progress-to: #f0a8c8;
+  --fox-eyebrow: #496f99;
+
   --heatmap-empty: #f7fbff;
   --heatmap-exercise-1: #eef7ff;
   --heatmap-exercise-2: #d7ecff;

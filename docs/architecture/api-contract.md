@@ -116,7 +116,9 @@ Base URL：
 
 ## 用户周报
 
-自然周按 `DISPLAY_TIMEZONE`（默认 `Asia/Shanghai`）的周一至周日计算。报告生成后固化统计快照；同一用户、同一 `week_start_date` 仅一份。周报本期仍未接入运动时长、宏量营养素和体重历史，对应字段返回 `null`，客户端不得从 meal 宏量列自行拼入旧周报快照。
+自然周按 `DISPLAY_TIMEZONE`（默认 `Asia/Shanghai`）的周一至周日计算。报告生成后固化统计快照；同一用户、同一 `week_start_date` 仅一份。新快照会读取上一自然周已有快照生成 `wowDelta`（无上周时各项为 `null`），并固化 `headline`、`insights` 和 `evidence[]`。
+
+周报会聚合 meal 的 `protein_g/fat_g/carbs_g/sugar_g`。只有 P/F/C 完整的饮食日才计入宏量覆盖；覆盖少于 4/7 天时 `dietStats.macroStatus = 'insufficient'`，`totalProtein/averageProtein/totalFat/averageFat/totalCarbs/averageCarbs` 为 `null`，不以 0 伪装已有数据。宏量日均目标与营养页共用同一规则。运动时长和体重历史仍不在本期范围。
 
 | Method | Path | 说明 |
 |--------|------|------|
@@ -124,12 +126,15 @@ Base URL：
 | GET | `/weekly-reports` | 当前用户历史周报，按周倒序，最多 104 份。响应 `{ reports: UserWeeklyReport[] }` |
 | GET | `/weekly-reports/:id` | 当前用户指定周报详情；跨用户 id 返回 404 |
 | PATCH | `/weekly-reports/:id/viewed` | 标记已读；首次写入 `viewedAt`，重复调用幂等 |
+| POST | `/weekly-reports/:id/regenerate` | 仅所有者可再生成单份周报；按该报告的自然周重查统计、洞察和文案。保留 id、`isViewed/viewedAt`、`sharedToCommunityAt`，不批量重跑其它历史报告；跨用户 id 返回 404 |
 | POST | `/weekly-reports/:id/share-community` | 将指定周报分享到社区；用户须已公开社区名片 |
 | DELETE | `/weekly-reports/:id/share-community` | 从社区撤下指定周报 |
 | GET | `/community/users/:userId/weekly-reports` | 用户社区主页最近一份已分享周报；不返回更早的历史分享 |
 | GET | `/community/users/:userId/weekly-reports/:reportId` | 指定的已分享周报详情；遵循社区可见性 |
 
-热量缺口仅在当天有饮食记录且用户 BMR 可计算时统计：`BMR + 运动消耗 - 摄入`。缺少任一条件时为 `null / unknown`，避免把未记录饮食误判为巨大缺口。每日成就复用社区既有规则，并固化在周报 JSON 快照中。
+热量缺口仅在当天有饮食记录且用户 BMR 可计算时统计：历史日统一调用 `calculateDeficitByMode(BMR, 运动消耗, 摄入, date, 'full_day')`。缺少任一条件时为 `null / unknown`，避免把未记录饮食误判为巨大缺口。新快照用 `baseMetabolism/baseMetabolismTotal` 表示 BMR，不再把 `BMR×7` 称为 TDEE。每日成就复用社区既有规则，空日不伪造成就标题。
+
+`nextWeekSuggestions` 至多 3 条，每条为 `{ type, title, why, content, successMetric, evidenceIds }`；`type` 仍只使用 `exercise|diet|habit|recovery`。`content` 保持单独可读，旧客户端只读 `title/content` 也能得到完整建议。规则引擎决定 persona、选题、数字、类型和验收标准；DeepSeek 仅可润色 `foxComment` 与建议的 `title/why/content`。服务端会校验严格 JSON、evidence、数字、已有食物/运动实体、长度与安全边界；任何失败都 `console.warn` 并使用规则文案落库。`narrativeSource` 为 `ai|rules`。
 
 ## 社区
 

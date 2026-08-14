@@ -22,6 +22,7 @@ Each file defines **CSS custom properties only** for one `data-style` value. Sem
 1. Open the palette file for the theme you are tuning.
 2. Keep **token names** identical across all palette files (see ADR-0007).
    每套主题必须独立定义营养图表 token：`--macro-protein`、`--macro-fat`、`--macro-carbs`、`--macro-sugar`、`--macro-track`、`--macro-muted`；饼图、图例和进度条只引用这些语义变量。
+   小狸卡片与舞台同样只消费各主题独立定义的 `--fox-card-*`、`--fox-stage-*`、`--fox-progress-*` 与 `--fox-eyebrow` token。
 3. Run `npm run verify` from repo root.
 
 ## Add a new theme

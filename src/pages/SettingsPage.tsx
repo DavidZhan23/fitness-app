@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AvatarCropEditor } from '../components/AvatarCropEditor'
-import { WeeklyReportArrivalSheet } from '../components/WeeklyReportArrivalSheet'
 import { PageShell } from '../components/ui/responsive'
 import { HeroCollabSwitch } from '../components/HeroCollabSwitch'
 import { InstallGuide } from '../components/InstallGuide'
@@ -76,7 +75,6 @@ export function SettingsPage() {
   })
   const themeDetailsRef = useRef<HTMLDetailsElement>(null)
   const [weeklyReport, setWeeklyReport] = useState<UserWeeklyReport | null>(null)
-  const [showWeeklyArrival, setShowWeeklyArrival] = useState(false)
 
   const todayKey = formatTodayDateKey()
   const derivedAge = birthday ? ageFromBirthdayKey(birthday) : null
@@ -105,9 +103,6 @@ export function SettingsPage() {
         if (!active) return
         const normalized = normalizeUserWeeklyReport(report)
         setWeeklyReport(normalized)
-        if (normalized && !normalized.isViewed) {
-          setShowWeeklyArrival(true)
-        }
       })
       .catch(() => {})
     return () => { active = false }
@@ -949,17 +944,6 @@ export function SettingsPage() {
         退出登录
       </button>
       </PageShell>
-
-      {weeklyReport && showWeeklyArrival && (
-        <WeeklyReportArrivalSheet
-          report={weeklyReport}
-          onLater={() => setShowWeeklyArrival(false)}
-          onView={() => {
-            setShowWeeklyArrival(false)
-            navigate(`/weekly-reports/${weeklyReport.id}`)
-          }}
-        />
-      )}
 
       {isAvatarPreviewOpen && (
         <div className="settings-avatar-modal" role="dialog" aria-modal="true">

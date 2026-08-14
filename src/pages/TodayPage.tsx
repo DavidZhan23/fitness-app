@@ -10,6 +10,7 @@ import { SplitMonthWall } from '../components/SplitMonthWall'
 import { TodayFeedbackCard } from '../components/TodayFeedbackCard'
 import { TodayRecordsSection } from '../components/TodayRecordsSection'
 import { UserAvatar } from '../components/UserAvatar'
+import { WeeklyReportArrivalSheet } from '../components/WeeklyReportArrivalSheet'
 import { PageShell, StatsGrid } from '../components/ui/responsive'
 import { useAuth } from '../context/AuthContext'
 import { useAppStyle } from '../context/StyleContext'
@@ -58,6 +59,7 @@ import {
   parseDateKey,
 } from '../lib/streaks'
 import { buildTodayHonors } from '../lib/todayHonors'
+import { normalizeUserWeeklyReport } from '../lib/userWeeklyReport'
 import type {
   DayComment,
   DayLog,
@@ -65,6 +67,7 @@ import type {
   HeatmapDay,
   Meal,
   MealMacrosInput,
+  UserWeeklyReport,
 } from '../types'
 
 function resolveViewDate(
@@ -99,6 +102,9 @@ export function TodayPage() {
   const [meals, setMeals] = useState<Meal[]>([])
   const [comments, setComments] = useState<DayComment[]>([])
   const [foxSummary, setFoxSummary] = useState<FoxCompanionSummary | null>(null)
+  const [weeklyArrivalReport, setWeeklyArrivalReport] =
+    useState<UserWeeklyReport | null>(null)
+  const checkedWeeklyReportIdsRef = useRef(new Set<string>())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [, tick] = useState(0)
@@ -153,6 +159,28 @@ export function TodayPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [isViewingToday])
+
+  useEffect(() => {
+    if (!user || !onboardingComplete || !isViewingToday) return
+    let active = true
+    void httpData.ensureLatestUserWeeklyReport()
+      .then(({ report }) => {
+        if (!active) return
+        const normalized = normalizeUserWeeklyReport(report)
+        if (
+          normalized &&
+          !normalized.isViewed &&
+          !checkedWeeklyReportIdsRef.current.has(normalized.id)
+        ) {
+          checkedWeeklyReportIdsRef.current.add(normalized.id)
+          setWeeklyArrivalReport(normalized)
+        }
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [isViewingToday, onboardingComplete, user])
 
   const loadDay = useCallback(async () => {
     const generation = ++loadDayGenerationRef.current
@@ -534,6 +562,7 @@ export function TodayPage() {
     ) : null
 
   return (
+    <>
     <PageShell className="today-page-shell">
       <div className="today-hero-block today-hero-block--compact">
         <div className="today-hero-heading">
@@ -725,6 +754,18 @@ export function TodayPage() {
         切换
       </p>
     </PageShell>
+    {isViewingToday && weeklyArrivalReport && (
+      <WeeklyReportArrivalSheet
+        report={weeklyArrivalReport}
+        onLater={() => setWeeklyArrivalReport(null)}
+        onView={() => {
+          const reportId = weeklyArrivalReport.id
+          setWeeklyArrivalReport(null)
+          navigate(`/weekly-reports/${reportId}`)
+        }}
+      />
+    )}
+    </>
   )
 }
 

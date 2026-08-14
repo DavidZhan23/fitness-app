@@ -1,7 +1,10 @@
-import { resolveProfileBmr, toKcal } from './calories.js'
+import { resolveProfileBmr, resolveProfileTdee, toKcal } from './calories.js'
 import { evaluateCommunityDayStatus } from './communityBadges.js'
 import { assertCanViewCommunity, loadProfile } from './community.js'
 import { formatDateKeyInTz } from './dateKey.js'
+import { calculateMacroTargetsFromMetabolism } from './macroTargets.js'
+import { calculateDeficitByMode } from './metabolism.js'
+import { requestDeepSeekTextJson } from './ai/providers/deepseekText.js'
 
 function addDateDays(dateKey, days) {
   const date = new Date(`${dateKey}T00:00:00Z`)
@@ -108,64 +111,440 @@ function chooseOverallTitle(summary, dietStats, calorieStats) {
   return '温和进步周'
 }
 
+function delta(current, previous) {
+  const a = Number(current)
+  const b = Number(previous)
+  return Number.isFinite(a) && Number.isFinite(b) ? Math.round((a - b) * 10) / 10 : null
+}
+
+function buildWowDelta(report, prevReport) {
+  if (!prevReport?.summary) {
+    return {
+      activeDays: null,
+      dietLoggedDays: null,
+      totalExerciseCalories: null,
+      totalCaloriesIn: null,
+      totalCalorieDeficit: null,
+      achievementCount: null,
+    }
+  }
+  return {
+    activeDays: delta(report.summary.activeDays, prevReport.summary.activeDays),
+    dietLoggedDays: delta(report.summary.dietLoggedDays, prevReport.summary.dietLoggedDays),
+    totalExerciseCalories: delta(
+      report.summary.totalExerciseCalories,
+      prevReport.summary.totalExerciseCalories,
+    ),
+    totalCaloriesIn: delta(report.summary.totalCaloriesIn, prevReport.summary.totalCaloriesIn),
+    totalCalorieDeficit:
+      report.summary.totalCalorieDeficit == null ||
+      prevReport.summary.totalCalorieDeficit == null
+        ? null
+        : delta(
+            report.summary.totalCalorieDeficit,
+            prevReport.summary.totalCalorieDeficit,
+          ),
+    achievementCount: delta(
+      report.summary.achievementCount,
+      prevReport.summary.achievementCount,
+    ),
+  }
+}
+
+export function buildWeeklyInsights(report, prevReport = null) {
+  const activeDays = Number(report.summary?.activeDays) || 0
+  const dietLoggedDays = Number(report.summary?.dietLoggedDays) || 0
+  const trackedDeficitDays = Number(report.calorieStats?.trackedDeficitDays) || 0
+  const macroLoggedDays = Number(report.dietStats?.macroLoggedDays) || 0
+  const dailyDiet = Array.isArray(report.dietStats?.dailyDiet)
+    ? report.dietStats.dailyDiet
+    : []
+  const weekendDietMissing = dailyDiet.slice(5, 7).some((day) => !day?.foodCount)
+  const totalWorkouts = Number(report.exerciseStats?.totalWorkouts) || 0
+  const favoriteCount = Number(report.exerciseStats?.favoriteExerciseCount) || 0
+  const concentration = totalWorkouts > 0 ? favoriteCount / totalWorkouts : 0
+  const averageDeficit = report.calorieStats?.averageDailyDeficit ?? null
+  const macroTargets = report.dietStats?.macroTargets ?? null
+  const averageProtein = report.dietStats?.averageProtein ?? null
+  const proteinStatus =
+    macroLoggedDays < 4 || averageProtein == null || !macroTargets?.protein_g
+      ? 'insufficient'
+      : averageProtein < macroTargets.protein_g * 0.8
+        ? 'low'
+        : 'steady'
+
+  const evidence = [
+    {
+      id: 'coverage-diet',
+      dimension: 'coverage',
+      text: `本周有 ${dietLoggedDays}/7 天记录了饮食`,
+      value: dietLoggedDays,
+    },
+    {
+      id: 'exercise-frequency',
+      dimension: 'exercise',
+      text: `本周运动 ${activeDays} 天，共 ${totalWorkouts} 次${
+        report.exerciseStats?.favoriteExerciseName
+          ? `，「${report.exerciseStats.favoriteExerciseName}」出现 ${favoriteCount} 次`
+          : ''
+      }`,
+      value: activeDays,
+    },
+    {
+      id: 'calorie-deficit',
+      dimension: 'calorie',
+      text:
+        averageDeficit == null
+          ? `本周 ${trackedDeficitDays}/7 天可计算热量缺口`
+          : `本周 ${trackedDeficitDays}/7 天可计算缺口，有效日均 ${Math.round(averageDeficit)} kcal`,
+      value: averageDeficit,
+    },
+    {
+      id: 'macro-coverage',
+      dimension: 'diet',
+      text:
+        macroLoggedDays >= 4
+          ? `本周宏量覆盖 ${macroLoggedDays}/7 天，覆盖日日均蛋白质 ${Math.round(averageProtein ?? 0)} 克`
+          : `本周宏量覆盖 ${macroLoggedDays}/7 天，暂不判断蛋白质高低`,
+      value: macroLoggedDays,
+    },
+  ]
+
+  let persona = 'steady'
+  if (report.calorieStats?.deficitLevel === 'aggressive') persona = 'recovery'
+  else if (dietLoggedDays < 5 || weekendDietMissing) persona = 'coverage'
+  else if (activeDays < 3 || concentration >= 0.75) persona = 'movement'
+  else if (proteinStatus === 'low') persona = 'protein'
+
+  let headline
+  if (report.calorieStats?.deficitLevel === 'aggressive' && averageDeficit != null) {
+    headline = `有效日均缺口 ${Math.round(averageDeficit)} kcal，下周先把恢复放前面`
+  } else if (activeDays > 0) {
+    headline = report.exerciseStats?.favoriteExerciseName
+      ? `运动 ${activeDays} 天，「${report.exerciseStats.favoriteExerciseName}」是本周主角`
+      : `运动 ${activeDays} 天，行动已经开始累积`
+  } else if (dietLoggedDays > 0) {
+    headline = `饮食记录覆盖 ${dietLoggedDays}/7 天，本周节奏有迹可循`
+  } else {
+    headline = '本周记录还很少，先点亮第 1 个事实日'
+  }
+
+  return {
+    coverage: {
+      dietLoggedDays,
+      activeDays,
+      trackedDeficitDays,
+      macroLoggedDays,
+      weekendDietMissing,
+    },
+    calorie: {
+      level: report.calorieStats?.deficitLevel ?? 'unknown',
+      averageDailyDeficit: averageDeficit,
+      trackedDays: trackedDeficitDays,
+    },
+    exercise: {
+      activeDays,
+      totalWorkouts,
+      favoriteName: report.exerciseStats?.favoriteExerciseName ?? null,
+      favoriteCount,
+      concentration: Math.round(concentration * 100) / 100,
+    },
+    diet: {
+      loggedDays: dietLoggedDays,
+      macroStatus: macroLoggedDays >= 4 ? 'sufficient' : 'insufficient',
+      proteinStatus,
+      averageProtein,
+      macroTargets,
+    },
+    persona,
+    headline,
+    evidence,
+    wowDelta: buildWowDelta(report, prevReport),
+  }
+}
+
 export function generateWeeklyFoxComment(report) {
-  if (report.summary.dataStatus === 'insufficient') {
-    return '小狸还没有收集到足够多的上周记录，所以这次周报比较简单。没关系，从今天开始多记录一点，下周一小满就能给你一份更完整的专属周报。'
+  const evidence = report.insights?.evidence ?? []
+  const exercise = evidence.find((item) => item.id === 'exercise-frequency')?.text
+  const diet = evidence.find((item) => item.id === 'coverage-diet')?.text
+  const calorie = evidence.find((item) => item.id === 'calorie-deficit')?.text
+  const persona = report.insights?.persona
+  if (persona === 'recovery') {
+    return `${calorie}，这说明你的行动很坚决，也值得为恢复留出位置。${exercise}，下周不用再往上加码；先把规律进食和轻松日安排好，让训练能稳稳地接上，比短暂冲得更猛更重要。`
   }
-  if (report.summary.activeDays >= 4 && report.summary.dietLoggedDays < 3) {
-    return '小狸发现你上周运动很努力，不过饮食记录有点少。下周不用一下子做到完美，先把晚餐认真记下来，小满就能更准确地帮你分析。'
+  if (persona === 'coverage') {
+    return `${exercise}，${diet}。你已经留下了一部分很有用的线索，只是空白日还会让热量节奏变得难判断。下周先补齐最容易漏的一天，不追求每餐完美，只要让一周的轮廓更连贯就是真进步。`
   }
-  if (report.summary.activeDays < 2 && report.summary.dietLoggedDays >= 4) {
-    return '你上周的饮食记录很认真，这是很好的开始。下周可以从散步、拉伸或短时间力量训练开始，小狸会陪你慢慢加起来。'
+  if (persona === 'movement') {
+    return `${exercise}，${diet}。这周的基础并不空，下周的关键不是换更花哨的计划，而是让运动更均匀地出现。把最顺手的项目保留下来，再加一次低门槛活动，会比一天集中完成更容易坚持。`
   }
-  if (report.calorieStats.deficitLevel === 'aggressive') {
-    return '小狸看见你上周很有行动力，也想提醒你给身体留一点恢复空间。稳定吃、安心练，比把缺口拉得太大更容易走得长久。'
+  if (persona === 'protein') {
+    const macro = evidence.find((item) => item.id === 'macro-coverage')?.text
+    return `${exercise}，${macro}。记录已经足够看到饮食结构，这比凭感觉猜要可靠得多。下周不需要大改菜单，先给每个已记录日补上一份熟悉的蛋白质来源，再用数字看看是否更接近目标。`
   }
-  return '小狸看完你的上周记录啦！这一周的进步不是靠某一天突然爆发，而是由一次次认真记录撑起来的。继续保持自己的节奏，身体会慢慢给你反馈。'
+  return `${exercise}，${diet}。这周没有需要被放大的短板，更值得肯定的是，运动和记录已经能在同一周里稳定出现。下周照着现在的节奏再做一次，保留可量化的底线，就能清楚看到这份稳定是怎样累积起来的。`
+}
+
+function suggestion({ type, title, why, action, successMetric, evidenceIds }) {
+  return {
+    type,
+    title,
+    why,
+    content: `${why}。${action}。做到标准：${successMetric}。`,
+    successMetric,
+    evidenceIds,
+  }
 }
 
 export function generateNextWeekSuggestions(report) {
+  const insights = report.insights ?? buildWeeklyInsights(report)
   const suggestions = []
-  if (report.summary.activeDays < 3) {
-    suggestions.push({
-      type: 'exercise',
-      title: '先稳定出现三次',
-      content: '下周先安排 3 次轻量运动。当前记录没有时长字段，以完成一次可持续的活动为准，不用追求练得很猛。',
-    })
-  } else {
-    suggestions.push({
-      type: 'exercise',
-      title: '延续最顺手的运动',
-      content: report.exerciseStats.favoriteExerciseName
-        ? `继续安排你最常做的「${report.exerciseStats.favoriteExerciseName}」，再留一天做轻松恢复。`
-        : '保持当前运动频率，并留一天做散步或拉伸恢复。',
-    })
+  const usedTypes = new Set()
+  const add = (item) => {
+    if (suggestions.length >= 3 || usedTypes.has(item.type)) return
+    suggestions.push(item)
+    usedTypes.add(item.type)
   }
-  if (report.summary.dietLoggedDays < 5) {
-    suggestions.push({
-      type: 'diet',
-      title: '挑战记录五天',
-      content: '下周先挑战 5 天饮食记录，不要求每餐完美，只要让小满更了解你的真实节奏。',
-    })
-  } else if (report.calorieStats.deficitLevel === 'aggressive') {
-    suggestions.push({
+
+  if (insights.calorie.level === 'aggressive') {
+    add(suggestion({
       type: 'recovery',
-      title: '给恢复留出空间',
-      content: '下周不要继续拉大热量缺口，规律进食并保证休息，减脂也需要恢复。',
-    })
-  } else {
-    suggestions.push({
-      type: 'diet',
-      title: '继续完整记录',
-      content: '保持现在的记录习惯，每餐优先安排一份看得见的蛋白质来源。',
-    })
+      title: '先把缺口收回稳健区',
+      why: `本周有效日均缺口是 ${Math.round(insights.calorie.averageDailyDeficit ?? 0)} kcal，继续加练会挤压恢复`,
+      action: '下周保持规律进食，至少安排 2 个不额外加练的轻松日',
+      successMetric: '周报的有效日均缺口不再处于 aggressive',
+      evidenceIds: ['calorie-deficit'],
+    }))
   }
-  suggestions.push({
-    type: 'habit',
-    title: '给记录一个固定触发点',
-    content: '试试在晚餐后统一补齐当天记录，用两分钟收尾，比靠记忆更轻松。',
-  })
+
+  if (insights.coverage.dietLoggedDays < 5 || insights.coverage.weekendDietMissing) {
+    const target = insights.coverage.dietLoggedDays < 5 ? 5 : 6
+    add(suggestion({
+      type: 'diet',
+      title: insights.coverage.weekendDietMissing ? '补上一个周末饮食日' : '把饮食轮廓补到 5 天',
+      why: `本周饮食只覆盖 ${insights.coverage.dietLoggedDays}/7 天，空白日会让缺口变成 unknown`,
+      action: insights.coverage.weekendDietMissing
+        ? '选周六或周日其中 1 天，在每餐完成后当场记下'
+        : '先选定 5 天，每餐完成后当场记下，不要求菜单完美',
+      successMetric: `下周饮食记录至少覆盖 ${target}/7 天`,
+      evidenceIds: ['coverage-diet'],
+    }))
+  }
+
+  if (
+    insights.calorie.level !== 'aggressive' &&
+    (insights.exercise.activeDays < 3 ||
+      (insights.exercise.totalWorkouts >= 3 && insights.exercise.concentration >= 0.75))
+  ) {
+    const favorite = insights.exercise.favoriteName
+    add(suggestion({
+      type: 'exercise',
+      title: insights.exercise.activeDays < 3 ? '让运动稳定出现 3 天' : '给单一项目加一次补充',
+      why: insights.exercise.activeDays < 3
+        ? `本周运动 ${insights.exercise.activeDays} 天，频率还没有形成稳定节奏`
+        : `「${favorite}」占了本周大部分运动记录，项目较集中`,
+      action: insights.exercise.activeDays < 3
+        ? `保留${favorite ? `「${favorite}」` : '最顺手的活动'}，拆成 3 个不连续的完成日`
+        : '保留主项目，另加 1 天散步、拉伸或其他低门槛活动',
+      successMetric: '下周至少 3 个运动日，且不在同一天补齐',
+      evidenceIds: ['exercise-frequency'],
+    }))
+  }
+
+  if (insights.diet.proteinStatus === 'low' && !usedTypes.has('diet')) {
+    const target = Math.round(insights.diet.macroTargets?.protein_g ?? 0)
+    add(suggestion({
+      type: 'diet',
+      title: '让蛋白质靠近日均目标',
+      why: `宏量已覆盖 ${insights.coverage.macroLoggedDays}/7 天，覆盖日日均蛋白质 ${Math.round(insights.diet.averageProtein ?? 0)} 克，低于规则目标`,
+      action: '每个已记录日选 1 餐，增加一份熟悉且可记录的蛋白质来源',
+      successMetric: `下周宏量覆盖日的日均蛋白质达到 ${Math.round(target * 0.8)} 克或以上`,
+      evidenceIds: ['macro-coverage'],
+    }))
+  }
+
+  if (insights.exercise.activeDays >= 3 && !usedTypes.has('exercise')) {
+    add(suggestion({
+      type: 'exercise',
+      title: '把本周的运动底线保留下来',
+      why: `本周已有 ${insights.exercise.activeDays} 个运动日，稳定复制比临时加码更有价值`,
+      action: `优先排入${insights.exercise.favoriteName ? `「${insights.exercise.favoriteName}」` : '最顺手的运动'}，并预留同样数量的运动日`,
+      successMetric: `下周运动日不低于 ${insights.exercise.activeDays} 天`,
+      evidenceIds: ['exercise-frequency'],
+    }))
+  }
+
+  if (insights.coverage.dietLoggedDays >= 5 && !usedTypes.has('diet')) {
+    add(suggestion({
+      type: 'diet',
+      title: '保持现有饮食覆盖',
+      why: `本周饮食已覆盖 ${insights.coverage.dietLoggedDays}/7 天，数据连续性已经足够支撑周报判断`,
+      action: '沿用现在最顺手的记录方式，不额外增加复杂步骤',
+      successMetric: `下周饮食记录仍覆盖至少 ${insights.coverage.dietLoggedDays}/7 天`,
+      evidenceIds: ['coverage-diet'],
+    }))
+  }
+
+  if (suggestions.length < 3) {
+    add(suggestion({
+      type: 'habit',
+      title: '周末用 2 分钟验收本周',
+      why: '可量化的周目标需要一个固定的收尾时刻，才不会只凭感觉判断',
+      action: '周日打开 7 天记录，只核对运动日和饮食覆盖天数',
+      successMetric: '周日能说出本周运动天数和饮食覆盖天数',
+      evidenceIds: ['exercise-frequency', 'coverage-diet'],
+    }))
+  }
+
   return suggestions.slice(0, 3)
+}
+
+const WEEKLY_NARRATIVE_BANNED = /AI|时长字段|绝食|断食|极端节食|暴食|羞耻|废物|胖子|诊断|治疗|带伤训练/i
+
+function narrativeStrings(value) {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(narrativeStrings)
+  if (value && typeof value === 'object') return Object.values(value).flatMap(narrativeStrings)
+  return []
+}
+
+function numericTokens(value) {
+  return new Set(
+    narrativeStrings(value).flatMap(
+      (text) => text.match(/\d+(?:\.\d+)?|[零一二两三四五六七八九十百千万]+/g) ?? [],
+    ),
+  )
+}
+
+export function validateWeeklyNarrative(raw, report) {
+  let value = raw
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw)
+    } catch {
+      throw new Error('AI 周报文案不是严格 JSON')
+    }
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('AI 周报文案结构无效')
+  }
+  const foxComment = typeof value.foxComment === 'string' ? value.foxComment.trim() : ''
+  const commentLength = Array.from(foxComment).length
+  if (commentLength < 80 || commentLength > 220) {
+    throw new Error('AI 周报点评长度无效')
+  }
+  const evidenceIds = Array.isArray(value.foxEvidenceIds)
+    ? value.foxEvidenceIds.filter((id) => typeof id === 'string')
+    : []
+  const evidenceById = new Map((report.insights?.evidence ?? []).map((item) => [item.id, item]))
+  if (evidenceIds.length === 0 || evidenceIds.some((id) => !evidenceById.has(id))) {
+    throw new Error('AI 周报点评未引用有效 evidence')
+  }
+  const referencedTokens = numericTokens(
+    evidenceIds.map((id) => evidenceById.get(id)?.text ?? ''),
+  )
+  if (![...referencedTokens].some((token) => foxComment.includes(token))) {
+    throw new Error('AI 周报点评未点到 evidence 中的事实')
+  }
+  if (!Array.isArray(value.suggestions) || value.suggestions.length !== report.nextWeekSuggestions.length) {
+    throw new Error('AI 周报建议数量无效')
+  }
+  const polishedSuggestions = value.suggestions.map((item, index) => {
+    if (!item || typeof item !== 'object') throw new Error('AI 周报建议结构无效')
+    const title = typeof item.title === 'string' ? item.title.trim() : ''
+    const why = typeof item.why === 'string' ? item.why.trim() : ''
+    const content = typeof item.content === 'string' ? item.content.trim() : ''
+    if (!title || !why || !content || Array.from(title).length > 36 || Array.from(content).length > 220) {
+      throw new Error('AI 周报建议文案无效')
+    }
+    const ruleSuggestion = report.nextWeekSuggestions[index]
+    const completeContent = `${why}。${content}。${
+      ruleSuggestion.successMetric
+        ? `做到标准：${ruleSuggestion.successMetric}。`
+        : ''
+    }`
+    return {
+      ...ruleSuggestion,
+      title,
+      why,
+      content: completeContent,
+    }
+  })
+  const polishedText = [foxComment, ...polishedSuggestions.flatMap((item) => [item.title, item.why, item.content])]
+  if (polishedText.some((text) => WEEKLY_NARRATIVE_BANNED.test(text))) {
+    throw new Error('AI 周报文案包含禁止内容')
+  }
+  const allowedNumbers = numericTokens({
+    evidence: report.insights?.evidence,
+    suggestions: report.nextWeekSuggestions,
+  })
+  for (const token of numericTokens(polishedText)) {
+    if (!allowedNumbers.has(token)) throw new Error(`AI 周报文案编造数字 ${token}`)
+  }
+  const allowedEntities = new Set([
+    ...(report.exerciseStats?.exerciseTypeDistribution ?? []).map((item) => item.name),
+    ...(report.dietStats?.foodRanking ?? []).map((item) => item.name),
+  ])
+  for (const text of polishedText) {
+    for (const entity of text.matchAll(/「([^\」]+)」/g)) {
+      if (!allowedEntities.has(entity[1])) throw new Error(`AI 周报文案编造项目 ${entity[1]}`)
+    }
+  }
+  return { foxComment, nextWeekSuggestions: polishedSuggestions }
+}
+
+function buildWeeklyNarrativePrompt(report) {
+  return JSON.stringify({
+    headline: report.insights.headline,
+    persona: report.insights.persona,
+    evidence: report.insights.evidence,
+    allowedExerciseNames: report.exerciseStats.exerciseTypeDistribution.map((item) => item.name),
+    allowedFoodNames: report.dietStats.foodRanking.map((item) => item.name),
+    ruleFoxComment: report.foxComment,
+    ruleSuggestions: report.nextWeekSuggestions,
+  })
+}
+
+export async function polishWeeklyNarrative(report, options = {}) {
+  if (options.skipAi) return report
+  const provider = options.provider ?? requestDeepSeekTextJson
+  try {
+    const raw = await provider({
+      timeoutMs: 12_000,
+      maxTokens: 1200,
+      temperature: 0.45,
+      systemPrompt:
+        '你只负责润色小满周报文案，规则引擎已决定事实、人设、选题、数字和验收标准。不得修改或增加数字、食物、运动、类型、successMetric 或 evidenceIds；若提到具体食物或运动项目，必须从 allowed 列表选择并用「」包裹。语气温柔、具体、不说教，比今日气泡更稳，不要每句自称。禁止医疗建议、极端节食、过度运动、羞辱、编造，禁止提 AI 或工程字段。只输出严格 JSON：{"foxComment":"80-220字","foxEvidenceIds":["evidence id"],"suggestions":[{"title":"","why":"","content":""}]}。',
+      userPrompt: buildWeeklyNarrativePrompt(report),
+    })
+    const polished = validateWeeklyNarrative(raw, report)
+    return {
+      ...report,
+      ...polished,
+      narrativeSource: 'ai',
+    }
+  } catch (err) {
+    console.warn('[weekly-report] narrative fallback', err?.message || err)
+    return { ...report, narrativeSource: 'rules' }
+  }
+}
+
+function macroValue(value) {
+  if (value == null || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+function completeMealMacros(meals) {
+  return meals.length > 0 && meals.every((meal) =>
+    ['protein_g', 'fat_g', 'carbs_g'].every((field) => macroValue(meal[field]) != null),
+  )
+}
+
+function sumMealMacro(meals, field) {
+  return Math.round(
+    meals.reduce((sum, meal) => sum + (macroValue(meal[field]) ?? 0), 0) * 10,
+  ) / 10
 }
 
 export function buildWeeklyReportSnapshot({
@@ -178,6 +557,7 @@ export function buildWeeklyReportSnapshot({
   logs = [],
   exercises = [],
   meals = [],
+  prevReport = null,
   generatedAt = new Date().toISOString(),
 }) {
   const dates = dateKeysBetween(weekStartDate)
@@ -209,11 +589,26 @@ export function buildWeeklyReportSnapshot({
     )
     const hasDeficitData = dailyBmr > 0 && dayMeals.length > 0
     const deficit = hasDeficitData
-      ? Math.round(dailyBmr + exerciseCalories - caloriesIn)
+      ? calculateDeficitByMode(
+          dailyBmr,
+          exerciseCalories,
+          caloriesIn,
+          date,
+          'full_day',
+          new Date(`${date}T23:59:59Z`),
+        )
       : null
     const achievementDeficit = dayMeals.length > 0
-      ? Math.round(dailyBmr + exerciseCalories - caloriesIn)
+      ? calculateDeficitByMode(
+          dailyBmr,
+          exerciseCalories,
+          caloriesIn,
+          date,
+          'full_day',
+          new Date(`${date}T23:59:59Z`),
+        )
       : exerciseCalories
+    const hasCompleteMacros = completeMealMacros(dayMeals)
     const achievements = log
       ? achievementsForDay({
           deficit: achievementDeficit,
@@ -236,16 +631,21 @@ export function buildWeeklyReportSnapshot({
     dailyDiet.push({
       date,
       calories: caloriesIn,
-      protein: null,
-      carbs: null,
-      fat: null,
+      protein: hasCompleteMacros ? sumMealMacro(dayMeals, 'protein_g') : null,
+      carbs: hasCompleteMacros ? sumMealMacro(dayMeals, 'carbs_g') : null,
+      fat: hasCompleteMacros ? sumMealMacro(dayMeals, 'fat_g') : null,
+      sugar: hasCompleteMacros
+        ? Math.round(dayMeals.reduce((sum, meal) => sum + (macroValue(meal.sugar_g) ?? 0), 0) * 10) / 10
+        : null,
+      hasCompleteMacros,
       foodCount: dayMeals.length,
     })
     dailyCalories.push({
       date,
       caloriesIn,
       exerciseCalories,
-      estimatedTdee: dailyBmr > 0 ? dailyBmr : null,
+      estimatedTdee: null,
+      baseMetabolism: dailyBmr > 0 ? dailyBmr : null,
       deficit,
       status: statusForDeficit(deficit),
     })
@@ -265,6 +665,28 @@ export function buildWeeklyReportSnapshot({
     ? Math.round(totalDeficit / knownDeficits.length)
     : null
   const achievementCount = exerciseKingCount + fatLossPioneerCount + foodKingCount
+  const macroDays = dailyDiet.filter((day) => day.hasCompleteMacros)
+  const macroLoggedDays = macroDays.length
+  const hasSufficientMacros = macroLoggedDays >= 4
+  const totalProtein = hasSufficientMacros
+    ? Math.round(macroDays.reduce((sum, day) => sum + day.protein, 0) * 10) / 10
+    : null
+  const totalCarbs = hasSufficientMacros
+    ? Math.round(macroDays.reduce((sum, day) => sum + day.carbs, 0) * 10) / 10
+    : null
+  const totalFat = hasSufficientMacros
+    ? Math.round(macroDays.reduce((sum, day) => sum + day.fat, 0) * 10) / 10
+    : null
+  const macroTargets = calculateMacroTargetsFromMetabolism({
+    sex: profile?.sex,
+    weightKg: profile?.weight_kg,
+    activityFactor: profile?.activity_factor,
+    tdee: resolveProfileTdee(profile),
+    deficitThreshold: profile?.deficit_threshold,
+  })
+  const bestProteinMeal = [...meals]
+    .filter((meal) => macroValue(meal.protein_g) != null)
+    .sort((a, b) => macroValue(b.protein_g) - macroValue(a.protein_g))[0]
   const bestExerciseDay = [...dailyExercise]
     .filter((day) => day.workoutCount > 0)
     .sort((a, b) => b.calories - a.calories || b.workoutCount - a.workoutCount)[0]?.date
@@ -308,25 +730,30 @@ export function buildWeeklyReportSnapshot({
     averageCalories: summary.dietLoggedDays
       ? Math.round(totalCaloriesIn / summary.dietLoggedDays)
       : null,
-    totalProtein: null,
-    averageProtein: null,
-    totalCarbs: null,
-    averageCarbs: null,
-    totalFat: null,
-    averageFat: null,
+    macroStatus: hasSufficientMacros ? 'sufficient' : 'insufficient',
+    macroLoggedDays,
+    macroTargets,
+    totalProtein,
+    averageProtein: totalProtein == null ? null : Math.round((totalProtein / macroLoggedDays) * 10) / 10,
+    totalCarbs,
+    averageCarbs: totalCarbs == null ? null : Math.round((totalCarbs / macroLoggedDays) * 10) / 10,
+    totalFat,
+    averageFat: totalFat == null ? null : Math.round((totalFat / macroLoggedDays) * 10) / 10,
     favoriteFood: foodRanking[0]?.name,
     favoriteFoodCount: foodRanking[0]?.count,
     highestCalorieFood: highestFood?.name,
     highestCalorieFoodCalories: highestFood ? Math.round(toKcal(highestFood.kcal)) : null,
-    bestProteinFood: null,
+    bestProteinFood: bestProteinMeal?.name ?? null,
     snackCount: null,
     drinkCount: null,
+    foodRanking,
     dailyDiet,
   }
   const calorieStats = {
     totalCaloriesIn,
     totalExerciseCalories,
-    estimatedTdeeTotal: dailyBmr > 0 ? dailyBmr * 7 : null,
+    estimatedTdeeTotal: null,
+    baseMetabolismTotal: dailyBmr > 0 ? dailyBmr * 7 : null,
     totalDeficit: knownDeficits.length ? totalDeficit : null,
     averageDailyDeficit,
     deficitLevel: levelForAverageDeficit(averageDailyDeficit, knownDeficits.length > 0),
@@ -355,9 +782,13 @@ export function buildWeeklyReportSnapshot({
     dietStats,
     calorieStats,
     achievementStats,
+    narrativeSource: 'rules',
     foxComment: '',
     nextWeekSuggestions: [],
   }
+  report.insights = buildWeeklyInsights(report, prevReport)
+  report.headline = report.insights.headline
+  report.wowDelta = report.insights.wowDelta
   report.foxComment = generateWeeklyFoxComment(report)
   report.nextWeekSuggestions = generateNextWeekSuggestions(report)
   return report
@@ -374,14 +805,14 @@ export function isPublishableUserWeeklyReport(report) {
   return report?.summary?.dataStatus === 'complete'
 }
 
-function normalizeReportJson(report) {
+export function normalizeReportJson(report) {
   if (!report || typeof report !== 'object') return null
   const summary = report.summary ?? {}
   const exerciseStats = report.exerciseStats ?? {}
   const dietStats = report.dietStats ?? {}
   const calorieStats = report.calorieStats ?? {}
   const achievementStats = report.achievementStats ?? {}
-  return {
+  const normalized = {
     ...report,
     summary,
     exerciseStats: {
@@ -395,6 +826,10 @@ function normalizeReportJson(report) {
     },
     dietStats: {
       ...dietStats,
+      macroStatus: dietStats.macroStatus === 'sufficient' ? 'sufficient' : 'insufficient',
+      macroLoggedDays: Number(dietStats.macroLoggedDays) || 0,
+      macroTargets: dietStats.macroTargets ?? null,
+      foodRanking: Array.isArray(dietStats.foodRanking) ? dietStats.foodRanking : [],
       dailyDiet: Array.isArray(dietStats.dailyDiet) ? dietStats.dailyDiet : [],
     },
     calorieStats: {
@@ -409,10 +844,35 @@ function normalizeReportJson(report) {
         ? achievementStats.dailyAchievements
         : [],
     },
+    narrativeSource: report.narrativeSource === 'ai' ? 'ai' : 'rules',
     nextWeekSuggestions: Array.isArray(report.nextWeekSuggestions)
-      ? report.nextWeekSuggestions
+      ? report.nextWeekSuggestions.map((item) => ({
+          ...item,
+          why: typeof item?.why === 'string' ? item.why : '',
+          content:
+            typeof item?.content === 'string' && item.content.trim()
+              ? item.content
+              : typeof item?.why === 'string'
+                ? item.why
+                : '',
+          successMetric:
+            typeof item?.successMetric === 'string' ? item.successMetric : '',
+          evidenceIds: Array.isArray(item?.evidenceIds) ? item.evidenceIds : [],
+        }))
       : [],
   }
+  normalized.insights =
+    report.insights && typeof report.insights === 'object'
+      ? {
+          ...report.insights,
+          headline: report.insights.headline || report.headline || summary.overallTitle || '小满周报',
+          evidence: Array.isArray(report.insights.evidence) ? report.insights.evidence : [],
+          wowDelta: report.insights.wowDelta ?? buildWowDelta(normalized, null),
+        }
+      : buildWeeklyInsights(normalized, null)
+  normalized.headline = report.headline || normalized.insights.headline || summary.overallTitle || '小满周报'
+  normalized.wowDelta = report.wowDelta ?? normalized.insights.wowDelta ?? buildWowDelta(normalized, null)
+  return normalized
 }
 
 export function rowDateKey(value) {
@@ -454,6 +914,44 @@ function rowToReport(row) {
   }
 }
 
+async function loadWeeklyReportInputs(userId, range, queryFn) {
+  const previousWeekStart = addDateDays(range.weekStartDate, -7)
+  const [profileResult, logsResult, exerciseResult, mealResult, previousResult] =
+    await Promise.all([
+      queryFn(`select * from profiles where id = $1`, [userId]),
+      queryFn(
+        `select log_date::text as log_date, exercise_kcal, meal_kcal, deficit
+         from day_logs where user_id = $1 and log_date between $2 and $3 order by log_date`,
+        [userId, range.weekStartDate, range.weekEndDate],
+      ),
+      queryFn(
+        `select e.name, e.kcal, d.log_date::text as log_date
+         from exercises e join day_logs d on d.id = e.day_log_id
+         where e.user_id = $1 and d.log_date between $2 and $3 order by d.log_date, e.created_at`,
+        [userId, range.weekStartDate, range.weekEndDate],
+      ),
+      queryFn(
+        `select m.name, m.kcal, m.protein_g, m.fat_g, m.carbs_g, m.sugar_g,
+                d.log_date::text as log_date
+         from meals m join day_logs d on d.id = m.day_log_id
+         where m.user_id = $1 and d.log_date between $2 and $3 order by d.log_date, m.created_at`,
+        [userId, range.weekStartDate, range.weekEndDate],
+      ),
+      queryFn(
+        `select * from user_weekly_reports
+         where user_id = $1 and week_start_date = $2`,
+        [userId, previousWeekStart],
+      ),
+    ])
+  return {
+    profile: profileResult.rows[0],
+    logs: logsResult.rows,
+    exercises: exerciseResult.rows,
+    meals: mealResult.rows,
+    prevReport: rowToReport(previousResult.rows[0]),
+  }
+}
+
 export async function ensureLatestUserWeeklyReport(userId, queryFn, now = new Date()) {
   const range = getPreviousWeekRange(now)
   const existing = await queryFn(
@@ -469,42 +967,19 @@ export async function ensureLatestUserWeeklyReport(userId, queryFn, now = new Da
     }
   }
 
-  const [profileResult, logsResult, exerciseResult, mealResult] = await Promise.all([
-    queryFn(`select * from profiles where id = $1`, [userId]),
-    queryFn(
-      `select log_date::text as log_date, exercise_kcal, meal_kcal, deficit
-       from day_logs where user_id = $1 and log_date between $2 and $3 order by log_date`,
-      [userId, range.weekStartDate, range.weekEndDate],
-    ),
-    queryFn(
-      `select e.name, e.kcal, d.log_date::text as log_date
-       from exercises e join day_logs d on d.id = e.day_log_id
-       where e.user_id = $1 and d.log_date between $2 and $3 order by d.log_date, e.created_at`,
-      [userId, range.weekStartDate, range.weekEndDate],
-    ),
-    queryFn(
-      `select m.name, m.kcal, d.log_date::text as log_date
-       from meals m join day_logs d on d.id = m.day_log_id
-       where m.user_id = $1 and d.log_date between $2 and $3 order by d.log_date, m.created_at`,
-      [userId, range.weekStartDate, range.weekEndDate],
-    ),
-  ])
-  const logs = logsResult.rows
-  const exercises = exerciseResult.rows
-  const meals = mealResult.rows
+  const inputs = await loadWeeklyReportInputs(userId, range, queryFn)
+  const { logs, exercises, meals } = inputs
 
   if (!weekHasReportableActivity(logs, exercises, meals)) {
     return { report: null, generated: false, eligible: false }
   }
 
-  const snapshot = buildWeeklyReportSnapshot({
+  const ruleSnapshot = buildWeeklyReportSnapshot({
     userId,
     ...range,
-    profile: profileResult.rows[0],
-    logs,
-    exercises,
-    meals,
+    ...inputs,
   })
+  const snapshot = await polishWeeklyNarrative(ruleSnapshot)
   const inserted = await queryFn(
     `insert into user_weekly_reports
        (user_id, week_start_date, week_end_date, week_number, year, report_json)
@@ -527,6 +1002,41 @@ export async function ensureLatestUserWeeklyReport(userId, queryFn, now = new Da
     generated: false,
     eligible: isPublishableUserWeeklyReport(report),
   }
+}
+
+export async function regenerateUserWeeklyReport(
+  userId,
+  reportId,
+  queryFn,
+  options = {},
+) {
+  const existing = await queryFn(
+    `select * from user_weekly_reports where id = $1 and user_id = $2`,
+    [reportId, userId],
+  )
+  const row = existing.rows[0]
+  if (!row) return null
+  const range = {
+    weekStartDate: rowDateKey(row.week_start_date),
+    weekEndDate: rowDateKey(row.week_end_date),
+    weekNumber: Number(row.week_number),
+    year: Number(row.year),
+  }
+  const inputs = await loadWeeklyReportInputs(userId, range, queryFn)
+  const ruleSnapshot = buildWeeklyReportSnapshot({
+    userId,
+    ...range,
+    ...inputs,
+    generatedAt: new Date().toISOString(),
+  })
+  const snapshot = await polishWeeklyNarrative(ruleSnapshot, options)
+  const updated = await queryFn(
+    `update user_weekly_reports
+     set report_json = $3::jsonb, generated_at = now(), updated_at = now()
+     where id = $1 and user_id = $2 returning *`,
+    [reportId, userId, JSON.stringify(snapshot)],
+  )
+  return rowToReport(updated.rows[0])
 }
 
 export async function listUserWeeklyReports(userId, queryFn) {

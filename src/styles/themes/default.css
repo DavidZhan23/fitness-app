@@ -40,6 +40,20 @@
   --btn-primary-hover: var(--accent-pop-strong);
   --btn-primary-text: #042f2e;
 
+  --fox-card-bg: #1e293b;
+  --fox-card-border: rgb(94 234 212 / 0.24);
+  --fox-card-glow: rgb(2 6 23 / 0.32);
+  --fox-stage-bg: linear-gradient(155deg, #0f172a 0%, #1e293b 100%);
+  --fox-stage-border: rgb(94 234 212 / 0.26);
+  --fox-stage-ground: rgb(94 234 212 / 0.18);
+  --fox-stage-moon: rgb(94 234 212 / 0.38);
+  --fox-stage-moon-glow: rgb(94 234 212 / 0.24);
+  --fox-stage-fire: #f59e0b;
+  --fox-stage-fire-glow: rgb(245 158 11 / 0.38);
+  --fox-progress-from: #14b8a6;
+  --fox-progress-to: #f59e0b;
+  --fox-eyebrow: #5eead4;
+
   /* Heatmap levels (default / 深海能量) */
   --heatmap-empty: rgb(51 65 85 / 0.6);
   --heatmap-exercise-1: rgb(19 78 74 / 0.8);

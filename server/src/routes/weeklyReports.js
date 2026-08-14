@@ -7,6 +7,7 @@ import {
   getUserWeeklyReport,
   listUserWeeklyReports,
   markUserWeeklyReportViewed,
+  regenerateUserWeeklyReport,
   shareUserWeeklyReportToCommunity,
   unshareUserWeeklyReportFromCommunity,
 } from '../userWeeklyReport.js'
@@ -47,6 +48,17 @@ router.patch(
   asyncHandler(async (req, res) => {
     if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: '周报 id 无效' })
     const report = await markUserWeeklyReportViewed(req.userId, req.params.id, query)
+    if (!report) return res.status(404).json({ error: '周报不存在' })
+    res.json(report)
+  }),
+)
+
+router.post(
+  '/weekly-reports/:id/regenerate',
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: '周报 id 无效' })
+    const report = await regenerateUserWeeklyReport(req.userId, req.params.id, query)
     if (!report) return res.status(404).json({ error: '周报不存在' })
     res.json(report)
   }),

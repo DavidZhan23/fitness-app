@@ -72,7 +72,7 @@ const idleActions: Array<{ motion: FoxMotion; mood: FoxMood }> = [
   { motion: 'tease', mood: 'teasing' },
 ]
 
-export function useFoxStateMachine(eligible: boolean) {
+export function useFoxStateMachine(eligible: boolean, externallyPaused = false) {
   const [state, dispatch] = useReducer(reducer, initialState)
   const dismissTimer = useRef<number | null>(null)
 
@@ -84,14 +84,21 @@ export function useFoxStateMachine(eligible: boolean) {
   }, [eligible])
 
   useEffect(() => {
-    if (!eligible || state.paused) return
+    if (!eligible || state.paused || externallyPaused) return
     const delay = 6_000 + Math.random() * 6_000
     const timer = window.setTimeout(() => {
       const action = idleActions[Math.floor(Math.random() * idleActions.length)] ?? idleActions[0]
       dispatch({ type: 'IDLE_ACTION', ...action })
     }, delay)
     return () => window.clearTimeout(timer)
-  }, [eligible, state.mood, state.paused, state.bubbleVisible, state.menuVisible])
+  }, [
+    eligible,
+    externallyPaused,
+    state.mood,
+    state.paused,
+    state.bubbleVisible,
+    state.menuVisible,
+  ])
 
   useEffect(() => {
     const onVisibility = () => dispatch({
