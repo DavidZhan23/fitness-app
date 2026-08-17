@@ -3,10 +3,12 @@ import {
   calibrateMealMacros,
   fillMissingMealMacros,
   macrosFromEstimateItems,
+  macrosStatusForLogDate,
   parseMealMacroInput,
   resolveMealMacrosForSave,
   resolveMealMacrosSource,
 } from '../src/mealMacros.js'
+import { formatDateKeyInTz, yesterdayDateKey } from '../src/dateKey.js'
 
 describe('meal macro normalization', () => {
   it('scales complete P/F/C to saved kcal but preserves added sugar', () => {
@@ -104,5 +106,20 @@ describe('meal macro normalization', () => {
     expect(result.macrosStatus).toBe('ready')
     expect(result.needsBackgroundEstimate).toBe(false)
     expect(result.source).toBe('user')
+  })
+
+  it('keeps historical incomplete meals out of pending so they do not poll Pro', () => {
+    const pending = resolveMealMacrosForSave({
+      kcal: 400,
+      macros: { protein_g: null, fat_g: null, carbs_g: null, sugar_g: null },
+    })
+    expect(macrosStatusForLogDate(pending, formatDateKeyInTz())).toBe('pending')
+    expect(macrosStatusForLogDate(pending, yesterdayDateKey())).toBeNull()
+    const ready = resolveMealMacrosForSave({
+      kcal: 400,
+      macros: { protein_g: 20, fat_g: 10, carbs_g: 40, sugar_g: 5 },
+      source: 'user',
+    })
+    expect(macrosStatusForLogDate(ready, yesterdayDateKey())).toBe('ready')
   })
 })

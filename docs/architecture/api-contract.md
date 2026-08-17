@@ -93,16 +93,16 @@ Base URL：
 | Method | Path | 说明 |
 |--------|------|------|
 | GET | `/day-logs/range` | 日期范围查询 |
-| GET | `/day-logs/:date` | 单日详情；`dayLog` 含微量快照 `micronutrient_status/fingerprint/summary/updated_at/error`。`meals` 可含餐级 `micronutrients` JSON、`micronutrients_fingerprint` 与 `macros_status`（`pending\|ready\|error`）。有餐但该日仍有缺失餐级估算时立即标 `pending` 并异步补全；全部餐已估算则同步加总为 `ready`；无餐保持 `idle`，不调用 AI |
+| GET | `/day-logs/:date` | 单日详情；`dayLog` 含微量快照 `micronutrient_status/fingerprint/summary/updated_at/error`。`meals` 可含餐级 `micronutrients` JSON、`micronutrients_fingerprint` 与 `macros_status`（`pending\|ready\|error`）。**后台 Pro 只跑 Asia/Shanghai 的今天**：今日且 `idle`（或 `pending` 已超过超时窗口）才异步补缺失餐级估算。翻历史日、`error`/`ready` 都不自动重打；历史日已有餐级结果时仅本地加总。失败需 `POST .../micronutrients/refresh`。无餐保持 `idle`，不调用 AI |
 | POST | `/day-logs/ensure` | 确保当日 log 存在 |
-| POST | `/day-logs/:date/micronutrients/refresh` | 本人手动重试该日餐级微量估算并重算加总。无餐返回 `idle`；有餐立即返回 `pending`，对当天每餐并行重估。成功 summary 为加总后的 16 项三态（version 2），失败保留旧 summary 且不写新成功指纹 |
+| POST | `/day-logs/:date/micronutrients/refresh` | 本人手动重试该日**仍缺估算**的餐并重算加总（已成功的餐按 name+kcal 指纹跳过，不整日重打 Pro）。无餐返回 `idle`；有餐立即返回 `pending`。成功 summary 为加总后的 16 项三态（version 2），失败保留旧 summary 且不写新成功指纹 |
 | POST | `/exercises` | 添加运动；body 的 `day_log_id` 必须属于当前用户，否则返回 404「记录不存在」 |
 | PATCH/DELETE | `/exercises/:id` | 更新/删除运动 |
-| POST | `/meals` | 添加饮食；body 必填 `day_log_id,name,kcal`，其中 `day_log_id` 必须属于当前用户，否则返回 404「记录不存在」。可选 `batch_id` 及 `protein_g/fat_g/carbs_g/sugar_g`（nullable numeric）、`macros_source`（`user\|ai`）。四项有空时立刻保存并返回，`macros_status=pending`，后台用 DeepSeek Pro 补全；手填完整则 `ready`，不打 AI。新写入的 `sugar_g` 均标记 `sugar_scope=added`。保存成功后异步估算该餐微量并重算当日加总，不等待 AI 响应 |
-| POST | `/meals/macros/backfill` | 本人旧餐食一次性后台补全。Body `{ log_date: 'YYYY-MM-DD' }`；仅处理该日 `sugar_scope is null` 的 meal。旧 AI 糖值不直接沿用，而是按添加糖口径后台重估；旧手填糖保留。成功或失败均落 `sugar_scope=added` 避免重复调用。响应 `{ attempted, completed }` |
-| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；PATCH 同样支持四项。完整 P/F/C 按 `P×4+C×4+F×9≈kcal` 缩放；`sugar_g` 是独立跟踪的添加糖，不随碳水缩放、不额外参与热量校准。宏量仍空时 `macros_status=pending` 并后台补全，不阻塞响应。`Meal` 返回宏量列、`sugar_scope`、`macros_source`、`macros_status`、`batch_id` 与可选餐级微量 JSON。成功后异步按名称/kcal 指纹重估该餐（删除则只重算加总）；纯运动变更不触发微量 AI |
+| POST | `/meals` | 添加饮食；body 必填 `day_log_id,name,kcal`，其中 `day_log_id` 必须属于当前用户，否则返回 404「记录不存在」。可选 `batch_id` 及 `protein_g/fat_g/carbs_g/sugar_g`（nullable numeric）、`macros_source`（`user\|ai`）。四项有空时立刻保存并返回；**仅今天** `macros_status=pending` 并后台 DeepSeek Pro 补全，历史日不打 AI、不进入 pending。手填完整则 `ready`，不打 AI。新写入的 `sugar_g` 均标记 `sugar_scope=added`。今天保存成功后才异步估算该餐微量并重算当日加总 |
+| POST | `/meals/macros/backfill` | 仅 **今天** 的旧餐一次性后台补全。Body `{ log_date: 'YYYY-MM-DD' }`；历史日直接 `{ attempted: 0, completed: 0 }`，不打 AI。今天仅处理 `sugar_scope is null` 的 meal。旧 AI 糖值不直接沿用，而是按添加糖口径后台重估；旧手填糖保留。成功或失败均落 `sugar_scope=added` 避免重复调用。 |
+| PATCH/DELETE | `/meals/:id` | 更新/删除饮食；PATCH 同样支持四项。完整 P/F/C 按 `P×4+C×4+F×9≈kcal` 缩放；`sugar_g` 是独立跟踪的添加糖，不随碳水缩放、不额外参与热量校准。宏量仍空时仅 **今天** `macros_status=pending` 并后台补全。`Meal` 返回宏量列、`sugar_scope`、`macros_source`、`macros_status`、`batch_id` 与可选餐级微量 JSON。今天成功后才异步按名称/kcal 指纹重估该餐（删除则只重算加总）；历史日与纯运动变更不触发微量 AI |
 
-餐级微量 JSON 为 `{ version: 1, components, items }`：`components` 是配料名+大约克数；`items` 固定 16 项 `{ id, amount, unit, confidence }`。日 summary 现为 `{ version: 2, items, advice?, profile_band? }`。`items` 仍补齐 `vit_a,vit_c,vit_d,vit_e,vit_k,vit_b1,vit_b2,vit_b6,vit_b9,vit_b12,calcium,iron,zinc,magnesium,potassium,iodine`；每项状态仅为 `adequate|low|unknown`，并可含 `estimated_amount/unit/dri_amount/estimated_pct`。旧 version 1 定性快照仍可展示。日加总只使用餐级 16 项合计，不把配料再加一遍。后台写回以按 `id|name|kcal` 生成的当前餐食指纹做原子校验，过期任务不得覆盖新餐结果。参考摄入量按性别+儿童/成人/老年档静态表计算，不由模型编造。营养宏量/微量后台估算使用 `deepseek-v4-pro` 并开启 thinking；`POST /ai/estimate-kcal` 与小狸仍用 `deepseek-v4-flash` 且关闭 thinking。
+餐级微量 JSON 为 `{ version: 1, components, items }`：`components` 是配料名+大约克数；`items` 固定 16 项 `{ id, amount, unit, confidence }`。日 summary 现为 `{ version: 2, items, advice?, profile_band? }`。`items` 仍补齐 `vit_a,vit_c,vit_d,vit_e,vit_k,vit_b1,vit_b2,vit_b6,vit_b9,vit_b12,calcium,iron,zinc,magnesium,potassium,iodine`；每项状态仅为 `adequate|low|unknown`，并可含 `estimated_amount/unit/dri_amount/estimated_pct`。旧 version 1 定性快照仍可展示。日加总只使用餐级 16 项合计，不把配料再加一遍。后台写回以按 `id|name|kcal` 生成的当前餐食指纹做原子校验，过期任务不得覆盖新餐结果。参考摄入量按性别+儿童/成人/老年档静态表计算，不由模型编造。营养宏量/微量后台估算使用 `deepseek-v4-pro` 并开启 thinking，且 **只跑当天**（Asia/Shanghai）；翻历史日、改历史餐、营养页 backfill 都不会主动补全历史。同一餐成功后按指纹跳过，不重复计算。`POST /ai/estimate-kcal` 与小狸仍用 `deepseek-v4-flash` 且关闭 thinking。手动 `POST /day-logs/:date/micronutrients/refresh` 仍可对指定日补算缺失餐。
 
 ## 模板
 

@@ -3,6 +3,7 @@ import { buildMealMicronutrientSystemPrompt } from '../src/ai/providers/deepseek
 import { resolveMicronutrientTargets } from '../src/micronutrientTargets.js'
 import {
   MICRONUTRIENT_IDS,
+  PENDING_STALE_MS,
   createMealMicronutrientFingerprint,
   createMicronutrientFingerprint,
   isMicronutrientResultCurrent,
@@ -10,6 +11,7 @@ import {
   normalizeMealMicronutrients,
   normalizeMicronutrientSummary,
   rollupMicronutrientSummary,
+  shouldAutoScheduleMicronutrientRefresh,
 } from '../src/micronutrients.js'
 
 const meals = [
@@ -266,5 +268,79 @@ describe('daily micronutrients', () => {
     expect(prompt).toContain('µg')
     expect(prompt).toContain('禁止保健品、补充剂、品牌和服用剂量')
     expect(prompt).not.toContain('严禁输出毫克')
+  })
+
+  it('only auto-hits Pro for today and never repeats finished or historical days', () => {
+    const now = Date.parse('2026-08-17T06:00:00.000Z')
+    const today = '2026-08-17'
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: true,
+        status: 'idle',
+        updatedAt: null,
+        logDate: today,
+        today,
+        now,
+      }),
+    ).toBe(true)
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: true,
+        status: 'idle',
+        updatedAt: null,
+        logDate: '2026-08-16',
+        today,
+        now,
+      }),
+    ).toBe(false)
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: true,
+        status: 'pending',
+        updatedAt: new Date(now - 30_000).toISOString(),
+        logDate: today,
+        today,
+        now,
+      }),
+    ).toBe(false)
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: true,
+        status: 'pending',
+        updatedAt: new Date(now - PENDING_STALE_MS - 1).toISOString(),
+        logDate: today,
+        today,
+        now,
+      }),
+    ).toBe(true)
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: true,
+        status: 'error',
+        updatedAt: new Date(now - 5_000).toISOString(),
+        logDate: today,
+        today,
+        now,
+      }),
+    ).toBe(false)
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: true,
+        status: 'ready',
+        updatedAt: new Date(now - 7 * 60 * 60 * 1000).toISOString(),
+        logDate: today,
+        today,
+        now,
+      }),
+    ).toBe(false)
+    expect(
+      shouldAutoScheduleMicronutrientRefresh({
+        needsAi: false,
+        status: 'idle',
+        logDate: today,
+        today,
+        now,
+      }),
+    ).toBe(false)
   })
 })

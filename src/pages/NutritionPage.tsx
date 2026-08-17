@@ -308,6 +308,7 @@ export function NutritionPage() {
       !user ||
       !profile ||
       backfillDatesRef.current.has(dateKey) ||
+      dateKey !== today ||
       !meals.some(needsMealMacroBackfill)
     ) {
       return
@@ -330,7 +331,7 @@ export function NutritionPage() {
       cancelled = true
       setBackfillPending(false)
     }
-  }, [dateKey, loading, meals, profile, refreshDay, user])
+  }, [dateKey, loading, meals, profile, refreshDay, today, user])
 
   const requestAdvice = async () => {
     setAdviceLoading(true)

@@ -41,3 +41,9 @@ export function shiftDateKey(dateKey, days) {
 export function yesterdayDateKey(today = formatDateKeyInTz()) {
   return shiftDateKey(today, -1)
 }
+
+/** 是否为 DISPLAY_TIMEZONE 下的「今天」。历史日不得走后台 Pro。 */
+export function isCurrentLogDate(logDate, now = new Date()) {
+  const key = String(logDate ?? '').slice(0, 10)
+  return isValidDateKey(key) && key === formatDateKeyInTz(now)
+}
