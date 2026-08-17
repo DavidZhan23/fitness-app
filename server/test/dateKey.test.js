@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatDateKeyInTz,
+  isCurrentLogDate,
   isValidDateKey,
   shiftDateKey,
   yesterdayDateKey,
@@ -24,5 +25,12 @@ describe('dateKey', () => {
   it('yesterdayDateKey is shift -1 from today', () => {
     const today = '2026-05-24'
     expect(yesterdayDateKey(today)).toBe('2026-05-23')
+  })
+
+  it('isCurrentLogDate is true only for DISPLAY_TIMEZONE today', () => {
+    const now = new Date('2026-08-17T04:00:00Z')
+    expect(isCurrentLogDate('2026-08-17', now)).toBe(true)
+    expect(isCurrentLogDate('2026-08-16', now)).toBe(false)
+    expect(isCurrentLogDate(null, now)).toBe(false)
   })
 })

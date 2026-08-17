@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEstimateResult,
   DEFAULT_DEEPSEEK_MODEL,
+  DEFAULT_ESTIMATE_MODES,
   NUTRITION_DEEPSEEK_MODEL,
+  NUTRITION_MACRO_ESTIMATE_MODES,
   deepSeekNonThinkingExtras,
   deepSeekThinkingExtras,
   defaultReason,
@@ -30,6 +32,8 @@ describe('resolveDeepSeekModel', () => {
   it('keeps nutrition estimates on Pro with thinking enabled', () => {
     expect(NUTRITION_DEEPSEEK_MODEL).toBe('deepseek-v4-pro')
     expect(DEFAULT_DEEPSEEK_MODEL).toBe('deepseek-v4-flash')
+    expect(NUTRITION_MACRO_ESTIMATE_MODES).toEqual(['json'])
+    expect(DEFAULT_ESTIMATE_MODES).toEqual(['json', 'plain', 'minimal'])
     expect(deepSeekThinkingExtras()).toEqual({
       thinking: { type: 'enabled' },
       reasoning_effort: 'high',

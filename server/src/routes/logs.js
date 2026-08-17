@@ -3,13 +3,14 @@ import { asyncHandler } from '../asyncHandler.js'
 import { authMiddleware } from '../auth.js'
 import { query } from '../db.js'
 import { afterDayLogIdChanged, afterExerciseOrMealChanged } from '../dayLogMutation.js'
-import { isValidDateKey } from '../dateKey.js'
+import { isCurrentLogDate, isValidDateKey } from '../dateKey.js'
 import {
   MEAL_MACRO_FIELDS,
   hasAnyMealMacro,
   parseMealMacroInput,
   resolveMealMacrosForSave,
   scheduleMealMacroEstimate,
+  macrosStatusForLogDate,
 } from '../mealMacros.js'
 import {
   ensureMicronutrientsForDayRead,
@@ -60,7 +61,7 @@ async function getOrCreateDayLog(userId, date, tdee) {
 
 async function assertOwnedDayLog(dayLogId, userId) {
   const { rows } = await query(
-    `select id from day_logs where id = $1 and user_id = $2`,
+    `select id, log_date::text as log_date from day_logs where id = $1 and user_id = $2`,
     [dayLogId, userId],
   )
   if (!rows[0]) {
@@ -68,6 +69,7 @@ async function assertOwnedDayLog(dayLogId, userId) {
     err.status = 404
     throw err
   }
+  return rows[0]
 }
 
 router.get(
@@ -231,12 +233,13 @@ router.post(
     const source = hasAnyMealMacro(parsedMacros.macros)
       ? requestedSource ?? 'user'
       : null
-    await assertOwnedDayLog(day_log_id, req.userId)
+    const owned = await assertOwnedDayLog(day_log_id, req.userId)
     const resolved = resolveMealMacrosForSave({
       kcal,
       macros: parsedMacros.macros,
       source,
     })
+    const macrosStatus = macrosStatusForLogDate(resolved, owned.log_date)
     const inserted = await query(
       `insert into meals
          (day_log_id, user_id, name, kcal, batch_id,
@@ -255,10 +258,10 @@ router.post(
         resolved.macros.carbs_g,
         resolved.macros.sugar_g,
         resolved.source,
-        resolved.macrosStatus,
+        macrosStatus,
       ],
     )
-    if (resolved.needsBackgroundEstimate) {
+    if (macrosStatus === 'pending') {
       scheduleMealMacroEstimate(req.userId, inserted.rows[0].id)
     }
     const { rows } = await query(`select * from day_logs where id = $1`, [
@@ -282,6 +285,9 @@ router.post(
     const { log_date: logDate } = req.body ?? {}
     if (!isValidDateKey(logDate)) {
       return res.status(400).json({ error: '日期格式无效' })
+    }
+    if (!isCurrentLogDate(logDate)) {
+      return res.json({ attempted: 0, completed: 0 })
     }
 
     const { rows } = await query(
@@ -358,7 +364,10 @@ router.patch(
       return res.status(400).json({ error: '请填写名称和有效热量' })
     }
     const existingResult = await query(
-      `select * from meals where id = $1 and user_id = $2`,
+      `select m.*, dl.log_date::text as log_date
+       from meals m
+       join day_logs dl on dl.id = m.day_log_id
+       where m.id = $1 and m.user_id = $2`,
       [req.params.id, req.userId],
     )
     const existing = existingResult.rows[0]
@@ -397,6 +406,7 @@ router.patch(
       macros,
       source: resolutionSource,
     })
+    const macrosStatus = macrosStatusForLogDate(resolved, existing.log_date)
 
     const { rows } = await query(
       `update meals
@@ -413,12 +423,12 @@ router.patch(
         resolved.macros.carbs_g,
         resolved.macros.sugar_g,
         resolved.source,
-        resolved.macrosStatus,
+        macrosStatus,
         req.params.id,
         req.userId,
       ],
     )
-    if (resolved.needsBackgroundEstimate) {
+    if (macrosStatus === 'pending') {
       scheduleMealMacroEstimate(req.userId, req.params.id)
     }
     const visibility = await afterExerciseOrMealChanged(

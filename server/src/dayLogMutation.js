@@ -1,4 +1,5 @@
 import { syncCommunityVisibilityAfterLogChange } from './communityVisibility.js'
+import { isCurrentLogDate } from './dateKey.js'
 import { query } from './db.js'
 import { scheduleMicronutrientRefresh } from './micronutrients.js'
 
@@ -36,7 +37,7 @@ export async function afterDayLogIdChanged(
 ) {
   const logDate = await logDateFromDayLogId(userId, dayLogId)
   const result = await afterDayLogChanged(userId, logDate)
-  if (mealChanged && logDate) {
+  if (mealChanged && logDate && isCurrentLogDate(logDate)) {
     scheduleMicronutrientRefresh(userId, dayLogId)
   }
   return result
@@ -45,7 +46,7 @@ export async function afterDayLogIdChanged(
 export async function afterExerciseOrMealChanged(userId, itemId, table) {
   const context = await logContextFromItemId(userId, itemId, table)
   const result = await afterDayLogChanged(userId, context?.log_date ?? null)
-  if (table === 'meals' && context?.day_log_id) {
+  if (table === 'meals' && context?.day_log_id && isCurrentLogDate(context.log_date)) {
     scheduleMicronutrientRefresh(userId, context.day_log_id)
   }
   return result

@@ -1,4 +1,5 @@
 import { estimateMealMacrosFromDescription } from './ai/providers/deepseekText.js'
+import { isCurrentLogDate } from './dateKey.js'
 import { query } from './db.js'
 
 export const MEAL_MACRO_FIELDS = [
@@ -132,6 +133,12 @@ export function resolveMealMacrosForSave({ kcal, macros, source = null }) {
   }
 }
 
+/** 历史日不进入 pending，避免营养页一直轮询、后台却不跑。 */
+export function macrosStatusForLogDate(resolved, logDate) {
+  if (!resolved?.needsBackgroundEstimate) return resolved?.macrosStatus ?? null
+  return isCurrentLogDate(logDate) ? 'pending' : null
+}
+
 async function writeMealMacros(userId, mealId, { macros, source, status }) {
   await query(
     `update meals
@@ -221,7 +228,17 @@ export function scheduleMealMacroEstimate(userId, mealId) {
   const previous = macroTaskChains.get(key) ?? Promise.resolve()
   const task = previous
     .catch(() => undefined)
-    .then(() => estimateAndStoreMealMacros(userId, mealId))
+    .then(async () => {
+      const { rows } = await query(
+        `select dl.log_date::text as log_date
+         from meals m
+         join day_logs dl on dl.id = m.day_log_id
+         where m.id = $1 and m.user_id = $2`,
+        [mealId, userId],
+      )
+      if (!isCurrentLogDate(rows[0]?.log_date)) return
+      return estimateAndStoreMealMacros(userId, mealId)
+    })
   macroTaskChains.set(key, task)
   void task
     .finally(() => {

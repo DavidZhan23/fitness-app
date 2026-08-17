@@ -49,9 +49,12 @@ export function deepSeekThinkingExtras() {
   return { thinking: { type: 'enabled' }, reasoning_effort: 'high' }
 }
 
-const MAX_HTTP_RETRIES = 3
+export const MAX_HTTP_RETRIES = 3
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503])
 const MAX_TOKENS = 768
+/** Flash 热量估算可降级；Pro 营养估算只打一轮 json，避免 thinking 失败后再烧两次 Pro */
+export const DEFAULT_ESTIMATE_MODES = ['json', 'plain', 'minimal']
+export const NUTRITION_MACRO_ESTIMATE_MODES = ['json']
 const REASON_MAX_LEN = 60
 export const FALLBACK_REASON = '按整体描述估算，可按实际份量调整'
 
@@ -578,7 +581,7 @@ async function tryStrategy(apiKey, options) {
 
 /**
  * @param {{ type: 'exercise'|'meal', description: string, profile?: { weight_kg?: number|null } }} input
- * @param {{ model?: string, thinking?: boolean, timeoutMs?: number }} [options]
+ * @param {{ model?: string, thinking?: boolean, timeoutMs?: number, modes?: string[] }} [options]
  */
 export async function estimateKcalFromDescription(input, options = {}) {
   const apiKey = getDeepSeekApiKey()
@@ -623,7 +626,10 @@ export async function estimateKcalFromDescription(input, options = {}) {
     thinking: Boolean(options.thinking),
     timeoutMs: options.timeoutMs,
   }
-  const modes = ['json', 'plain', 'minimal']
+  const modes =
+    Array.isArray(options.modes) && options.modes.length > 0
+      ? options.modes
+      : DEFAULT_ESTIMATE_MODES
   let lastError = 'AI 估算失败，请稍后重试'
 
   for (const mode of modes) {
@@ -668,6 +674,7 @@ export async function estimateMealMacrosFromDescription(input) {
       model: NUTRITION_DEEPSEEK_MODEL,
       thinking: true,
       timeoutMs: NUTRITION_TIMEOUT_MS,
+      modes: NUTRITION_MACRO_ESTIMATE_MODES,
     },
   )
 }

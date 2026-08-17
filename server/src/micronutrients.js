@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { estimateMealMicronutrients } from './ai/providers/deepseekText.js'
+import { estimateMealMicronutrients, MAX_HTTP_RETRIES, NUTRITION_TIMEOUT_MS } from './ai/providers/deepseekText.js'
+import { formatDateKeyInTz } from './dateKey.js'
 import { query } from './db.js'
 import { ageFromBirthdayKey } from './profilePatch.js'
 import {
@@ -14,7 +15,8 @@ export { MICRONUTRIENT_IDS }
 const MICRONUTRIENT_ID_SET = new Set(MICRONUTRIENT_IDS)
 const MICRONUTRIENT_STATUS_SET = new Set(['adequate', 'low', 'unknown'])
 const CONFIDENCE_SET = new Set(['high', 'medium', 'low', 'unknown'])
-const PENDING_STALE_MS = 60_000
+/** Pro+thinking 单次最长约 90s，HTTP 最多再试 3 次。短于此时窗会把营养页 1.5s 轮询当成任务死亡并重复入队。 */
+export const PENDING_STALE_MS = NUTRITION_TIMEOUT_MS * MAX_HTTP_RETRIES + 60_000
 const ADEQUATE_RATIO = 0.8
 const FORBIDDEN_SUGGESTION_RE =
   /(保健品|补充剂|胶囊|药片|片剂|口服液|品牌|\d\s*(?:mg|μg|ug|毫克|微克|片|粒))/i
@@ -491,18 +493,33 @@ async function writeMealMicronutrients(userId, meal, fingerprint, payload) {
   return Boolean(rows[0])
 }
 
-async function estimateAndStoreMeal(userId, meal, profile) {
-  const fingerprint = createMealMicronutrientFingerprint(meal.name, meal.kcal)
+async function loadMealForEstimate(userId, mealId) {
+  const { rows } = await query(
+    `select id, name, kcal, protein_g, fat_g, carbs_g,
+            micronutrients, micronutrients_fingerprint
+     from meals
+     where id = $1 and user_id = $2`,
+    [mealId, userId],
+  )
+  return rows[0] ?? null
+}
+
+async function estimateAndStoreMeal(userId, meal, profile, { force = false } = {}) {
+  const current = await loadMealForEstimate(userId, meal.id)
+  if (!current) return null
+  if (!mealNeedsMicronutrientEstimate(current, { force })) return null
+
+  const fingerprint = createMealMicronutrientFingerprint(current.name, current.kcal)
   const raw = await estimateMealMicronutrients({
-    name: meal.name,
-    kcal: meal.kcal,
-    protein_g: meal.protein_g,
-    fat_g: meal.fat_g,
-    carbs_g: meal.carbs_g,
+    name: current.name,
+    kcal: current.kcal,
+    protein_g: current.protein_g,
+    fat_g: current.fat_g,
+    carbs_g: current.carbs_g,
     sex: profile?.sex,
   })
   const payload = normalizeMealMicronutrients(raw)
-  await writeMealMicronutrients(userId, meal, fingerprint, payload)
+  await writeMealMicronutrients(userId, current, fingerprint, payload)
   return payload
 }
 
@@ -538,11 +555,24 @@ async function refreshDay(
 
   if (!pendingAlready) await markPending(userId, dayLogId)
 
+  console.info(
+    '[micronutrients] Pro refresh',
+    JSON.stringify({
+      dayLogId,
+      missing: missing.length,
+      force,
+    }),
+  )
   const results = await Promise.allSettled(
     missing.map((meal) =>
-      estimateAndStoreMeal(userId, meal, {
-        sex: context.dayLog.sex,
-      }),
+      estimateAndStoreMeal(
+        userId,
+        meal,
+        {
+          sex: context.dayLog.sex,
+        },
+        { force },
+      ),
     ),
   )
   const failures = results.filter((result) => result.status === 'rejected')
@@ -594,9 +624,29 @@ export function scheduleMicronutrientRefresh(
     .catch(() => undefined)
 }
 
-function pendingIsStale(updatedAt) {
+export function pendingIsStale(updatedAt, now = Date.now()) {
   const timestamp = new Date(updatedAt ?? 0).getTime()
-  return !Number.isFinite(timestamp) || Date.now() - timestamp > PENDING_STALE_MS
+  return !Number.isFinite(timestamp) || now - timestamp > PENDING_STALE_MS
+}
+
+/**
+ * 自动打 Pro 仅限「今天」且尚未成功的餐：idle 或 pending 已超时。
+ * 历史日、error、ready 都不自动重打；手动 POST refresh 仍可点。
+ */
+export function shouldAutoScheduleMicronutrientRefresh({
+  needsAi,
+  status,
+  updatedAt,
+  logDate,
+  today,
+  now = Date.now(),
+}) {
+  if (!needsAi) return false
+  const todayKey = today ?? formatDateKeyInTz()
+  if (String(logDate ?? '').slice(0, 10) !== todayKey) return false
+  const normalized = status ?? 'idle'
+  if (normalized === 'pending') return pendingIsStale(updatedAt, now)
+  return normalized === 'idle'
 }
 
 function summaryNeedsRollup(dayLog, fingerprint) {
@@ -655,8 +705,14 @@ export async function ensureMicronutrientsForDayRead({ userId, dayLog, meals }) 
     }
   }
 
-  const status = dayLog.micronutrient_status ?? 'idle'
-  if (status === 'pending' && !pendingIsStale(dayLog.micronutrient_updated_at)) {
+  if (
+    !shouldAutoScheduleMicronutrientRefresh({
+      needsAi,
+      status: dayLog.micronutrient_status,
+      updatedAt: dayLog.micronutrient_updated_at,
+      logDate: dayLog.log_date,
+    })
+  ) {
     return dayLog
   }
   const pending = await markPending(userId, dayLog.id)
@@ -688,7 +744,7 @@ export async function requestMicronutrientRefresh(userId, logDate) {
   const pending = await markPending(userId, dayLog.id)
   scheduleMicronutrientRefresh(userId, dayLog.id, {
     pendingAlready: true,
-    force: true,
+    force: false,
   })
   return pending ? { ...dayLog, ...pending } : dayLog
 }
